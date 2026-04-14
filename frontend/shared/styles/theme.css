@@ -1,27 +1,101 @@
-/* 🏹 FluidHR Design Tokens: Brand Fusion Palette */
+/* Binance.US-Inspired Design System: Fintech and Urgency */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap');
 
 :root {
-  /* 🎨 Primary Structure (Soft Navy & Light Executive) */
-  --primary-color: #2E3A59; /* Sidebar Base - "The Right Color" */
-  --secondary-color: #F5F7FA; /* Content Background */
-  --accent-gold: #C8A96A; /* Champagne Details */
+  /* Core Fintech Palette */
+  --binance-yellow: #F0B90B;   /* The Bull Accent */
+  --binance-gold: #FFD000;     /* Secondary Brand */
+  --binance-dark: #222126;     /* Depth Panel */
+  --binance-ink: #1E2026;      /* Primary Text */
   
-  /* ⚡ Original Brand Identity (For the "Main Part") */
-  --original-blue: #4F7DF3; 
-  --original-orange: #FF9900;
-  --original-red: #EF4444; /* Notification/Pulse Red */
-  
-  --text-dark: #1F2937;
-  --text-muted: #6B7280;
-  
-  /* 🔘 Components */
-  --card-radius: 12px;
-  --button-radius: 8px;
-  
-  /* 🏗️ Transitions */
-  --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  /* 🌊 Shadows */
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02);
-  --shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.04);
+  /* Neutrals */
+  --binance-slate: #848E9C;    /* Metadata Gray */
+  --binance-snow: #F5F5F5;     /* Input Backing */
+  --binance-white: #FFFFFF;    /* Trust Canvas */
+  --binance-border: #E6E8EA;   /* Light Border */
+
+  /* Semantic Data */
+  --crypto-green: #0ECB81;     /* Bullish Success */
+  --crypto-red: #F6465D;       /* Bearish Alert */
+  --focus-blue: #1EAEDB;       /* Interactive Blue */
+
+  /* Typography Hierarchy */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Geometry */
+  --radius-pill: 50px;
+  --radius-card: 12px;
+  --radius-data: 8px;
+  --radius-btn: 6px;
+
+  /* Elevation (5% Whisper Shadow) */
+  --binance-shadow: rgba(32, 32, 37, 0.05) 0px 3px 5px 0px;
+  --binance-shadow-hover: rgba(8, 8, 8, 0.05) 0px 3px 5px 5px;
 }
+
+/* Global Base */
+body {
+  background-color: var(--binance-white);
+  color: var(--binance-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum" 1; /* Tabular numerals for data trust */
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Fintech Headings */
+h1, h2, h3, h4 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--binance-ink);
+  line-height: 1.2;
+}
+
+/* Binance Pill Buttons */
+.btn-binance-primary {
+  background-color: var(--binance-yellow);
+  color: var(--binance-ink);
+  padding: 12px 32px;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-binance-primary:hover {
+  background-color: var(--binance-gold);
+  box-shadow: 0 4px 12px rgba(240, 185, 11, 0.2);
+  transform: translateY(-1px);
+}
+
+.btn-binance-dark {
+  background-color: var(--binance-dark);
+  color: var(--binance-white);
+  padding: 10px 24px;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+/* Data Grid Cards */
+.binance-card {
+  background-color: var(--binance-white);
+  border: 1px solid var(--binance-border);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  box-shadow: var(--binance-shadow);
+  transition: box-shadow 0.2s ease;
+}
+
+.binance-card:hover {
+  box-shadow: var(--binance-shadow-hover);
+}
+
+/* Active Indicators */
+.bullish { color: var(--crypto-green); }
+.bearish { color: var(--crypto-red); }

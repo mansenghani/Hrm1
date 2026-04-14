@@ -1,196 +1,146 @@
-import React from 'react';
-import Card from '@shared/components/Card';
-import Badge from '@shared/components/Badge';
-import Button from '@shared/components/Button';
-import Table from '@shared/components/Table';
-import { PlusCircle, AlertCircle, Users, Check, X, MoreVertical, Calendar, Info, MedicalServices } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { PlusCircle, Calendar, CheckCircle, XCircle, Clock, AlertTriangle, MoreHorizontal, User } from 'lucide-react';
 
 const Leaves = () => {
-  const stats = [
-    { label: "Today's Presence", value: '142', total: '156', color: 'border-primary', progress: 91 },
-    { label: "Pending Requests", value: '18', extra: 'Requires Action', color: 'border-[#934700]', urgent: true },
-    { label: "On Leave Today", value: '14', extra: 'Scheduled return: Tomorrow (6)', color: 'border-[#475f89]' },
-  ];
+  const [leaves, setLeaves] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const token = localStorage.getItem('token');
 
-  const columns = [
-    { 
-      key: 'employee', 
-      title: 'Employee',
-      render: (val, item) => (
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#E5E7EB] flex items-center justify-center font-bold text-xs text-[#1F2937]">
-            {item.name.split(' ').map(n => n[0]).join('')}
-          </div>
-          <div>
-            <p className="text-sm font-bold text-[#191c1e]">{item.name}</p>
-            <p className="text-xs text-[#6B7280]">{item.dept}</p>
-          </div>
-        </div>
-      )
-    },
-    { 
-      key: 'type', 
-      title: 'Type',
-      render: (val) => (
-        <Badge variant={val === 'Sick' ? 'error' : 'secondary'} className="text-[10px] font-bold uppercase tracking-widest">{val}</Badge>
-      )
-    },
-    { 
-      key: 'period', 
-      title: 'Period',
-      render: (val, item) => (
-        <div>
-          <p className="text-sm font-bold text-[#191c1e]">{item.period}</p>
-          <p className="text-[10px] text-[#6B7280] font-medium">{item.days} Days Total</p>
-        </div>
-      )
-    },
-    { 
-      key: 'status', 
-      title: 'Status',
-      render: (val) => (
-        <div className="flex items-center gap-1.5">
-          <span className={`w-1.5 h-1.5 rounded-full ${val === 'Approved' ? 'bg-green-500' : 'bg-orange-500'}`}></span>
-          <span className={`text-xs font-bold ${val === 'Approved' ? 'text-green-600' : 'text-orange-600'}`}>{val}</span>
-        </div>
-      )
-    },
-    {
-      key: 'actions',
-      title: 'Actions',
-      render: (_, item) => (
-        <div className="flex justify-end gap-2 pr-4">
-          <button className="p-1.5 hover:bg-green-50 text-green-600 rounded-lg transition-colors"><Check size={18} /></button>
-          <button className="p-1.5 hover:bg-red-50 text-red-600 rounded-lg transition-colors"><X size={18} /></button>
-        </div>
-      )
+  useEffect(() => {
+    const fetchLeaves = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/api/leaves', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setLeaves(res.data || []);
+      } catch (err) {
+        console.error('Fetch failed:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLeaves();
+  }, []);
+
+  const handleAction = async (id, status) => {
+    try {
+      await axios.put(`http://localhost:5000/api/leaves/${id}`, { status }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setLeaves(leaves.map(l => l._id === id ? { ...l, status } : l));
+    } catch (err) {
+      console.error('Action failed:', err);
     }
-  ];
-
-  const data = [
-    { id: 1, name: 'Jordan Smith', dept: 'Product Design', type: 'Earned', period: 'Oct 24 - Oct 28', days: 5, status: 'Pending' },
-    { id: 2, name: 'Sarah Jenkins', dept: 'Engineering', type: 'Sick', period: 'Oct 21 - Oct 22', days: 2, status: 'Approved' },
-    { id: 3, name: 'Markus Aurelio', dept: 'Marketing', type: 'Casual', period: 'Nov 02', days: 1, status: 'Pending' },
-  ];
+  };
 
   return (
-    <div className="space-y-10 animate-fade-in">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div className="space-y-12 animate-in fade-in duration-500 pb-20">
+      
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
         <div>
-          <h2 className="text-3xl font-black text-[#191c1e] tracking-tight">Leave Management</h2>
-          <p className="text-[#414753] font-medium mt-1">Review, approve, and configure organization-wide leave policies.</p>
+          <h1 className="text-4xl font-black text-[#1E2026] tracking-tight leading-none mb-3">
+            Leave <span className="text-[#F0B90B]">Management</span>
+          </h1>
+          <p className="text-[#848E9C] font-bold text-[11px] uppercase tracking-[0.2em] flex items-center gap-3">
+            <span className="w-12 h-[2px] bg-[#F0B90B]"></span>
+            Protocol Scheduling Node
+          </p>
         </div>
-        <Button className="bg-[#005ab6] shadow-lg shadow-primary/20">
-          <PlusCircle size={18} />
-          Add Adjustment
-        </Button>
+        <button className="bg-[#F0B90B] text-[#1E2026] px-10 py-4 rounded-full font-black text-[13px] uppercase tracking-wider shadow-lg hover:bg-[#FFD000] transition-all flex items-center gap-2">
+          <Calendar size={18} />
+          Adjust Policies
+        </button>
       </div>
 
-      {/* Summary Cards */}
+      {/* SUMMARY STATS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {stats.map((stat, i) => (
-          <Card key={i} className={`border-l-4 ${stat.color}`}>
-            <p className="text-[10px] font-black text-[#414753] uppercase tracking-widest mb-2">{stat.label}</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-[#191c1e] tracking-tight">{stat.value}</span>
-              {stat.total && <span className="text-[#414753] text-sm font-medium">/ {stat.total} Employees</span>}
-              {stat.urgent && (
-                <span className="flex items-center gap-1 text-[#934700] text-[10px] font-black uppercase tracking-wider bg-orange-50 px-2 py-0.5 rounded-lg ml-auto">
-                  <AlertCircle size={12} />
-                  Requires Action
-                </span>
-              )}
-            </div>
-            {stat.progress ? (
-              <div className="mt-4 w-full bg-[#f2f4f6] rounded-full h-1.5 overflow-hidden">
-                <div className="bg-[#005ab6] h-full rounded-full transition-all duration-700" style={{ width: `${stat.progress}%` }}></div>
-              </div>
-            ) : (
-              <p className="mt-4 text-[10px] text-[#414753] italic font-medium">{stat.extra}</p>
-            )}
-          </Card>
+        {[
+          { label: 'Pending Requests', val: leaves.filter(l => l.status === 'Pending').length, cap: 'Immediate Action', color: 'text-[#F0B90B]', bg: 'bg-[#F0B90B]/10' },
+          { label: 'Currently On Leave', val: leaves.filter(l => l.status === 'Approved').length, cap: 'Capacity: 92%', color: 'text-[#1EAEDB]', bg: 'bg-[#1EAEDB]/10' },
+          { label: 'System Denials', val: leaves.filter(l => l.status === 'Rejected').length, cap: 'Policy Constraints', color: 'text-[#F6465D]', bg: 'bg-[#F6465D]/10' }
+        ].map((stat, i) => (
+          <div key={i} className="bg-white p-8 border border-[#E6E8EA] rounded-xl hover:shadow-[0_8px_24px_rgba(0,0,0,0.05)] transition-all">
+             <div className="flex justify-between items-start mb-10">
+                <span className={`text-[10px] font-black uppercase tracking-widest ${stat.color} px-4 py-1.5 rounded-full ${stat.bg}`}>{stat.label}</span>
+                <Clock size={18} className="text-[#848E9C]" />
+             </div>
+             <div className="text-left">
+                <h3 className="text-4xl font-black text-[#1E2026] tabular-nums mb-1">{stat.val}</h3>
+                <p className="text-[11px] font-bold text-[#848E9C] uppercase tracking-[0.1em]">{stat.cap}</p>
+             </div>
+          </div>
         ))}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Main Column */}
-        <div className="flex-1 space-y-6">
-          <div className="flex gap-8 border-b border-[#E5E7EB]">
-            <button className="pb-4 text-sm font-black border-b-2 border-primary text-primary transition-all">Leave Requests</button>
-            <button className="pb-4 text-sm font-bold text-[#6B7280] hover:text-[#1F2937] transition-all">Policies</button>
-            <button className="pb-4 text-sm font-bold text-[#6B7280] hover:text-[#1F2937] transition-all">Calendar</button>
-          </div>
-
-          <Card className="p-0 overflow-hidden" noPadding>
-            <Table columns={columns} data={data} />
-            <div className="p-4 bg-[#F7F9FC] flex justify-between items-center border-t border-[#F1F3F6]">
-              <span className="text-[11px] text-[#6B7280] font-bold">Showing 1-10 of 48 requests</span>
-              <div className="flex gap-2">
-                <Button variant="secondary" size="sm" className="bg-white border-[#E5E7EB]">Previous</Button>
-                <Button variant="secondary" size="sm" className="bg-white border-[#E5E7EB]">Next</Button>
-              </div>
-            </div>
-          </Card>
+      <div className="bg-white border border-[#E6E8EA] rounded-2xl overflow-hidden shadow-[0_3px_5px_rgba(32,32,37,0.05)]">
+        <div className="p-8 border-b border-[#E6E8EA] bg-[#F5F5F5]/30 flex justify-between items-center">
+           <h3 className="text-[14px] font-black uppercase tracking-widest text-[#1E2026]">Protocol Request History</h3>
+           <div className="flex gap-4">
+              <span className="text-[11px] font-black text-[#848E9C] uppercase tracking-widest bg-white px-4 py-2 rounded-full border border-[#E6E8EA]">All Segments</span>
+           </div>
         </div>
 
-        {/* Sidebar Column */}
-        <div className="w-full lg:w-80 space-y-6">
-          <Card className="flex flex-col gap-6">
-            <div className="flex justify-between items-center">
-              <h3 className="font-black text-[#191c1e] tracking-tight">Active Policies</h3>
-              <MoreVertical size={18} className="text-[#6B7280] cursor-pointer" />
-            </div>
-            {[
-              { label: 'Annual Paid Leave', day: '24 Days / Year', info: 'Roll-over enabled (5d)', icon: <Info size={14} />, color: 'primary' },
-              { label: 'Sick Leave', day: '12 Days / Year', info: 'Medical certificate req.', icon: <MedicalServices size={14} />, color: 'error' },
-            ].map((p, i) => (
-              <div key={i} className="p-4 rounded-xl bg-[#F7F9FC] border border-[#F1F3F6] group hover:border-[#4F7DF3] transition-all">
-                <p className="text-sm font-black text-[#191c1e] mb-1">{p.label}</p>
-                <div className="flex justify-between text-[11px] font-bold text-[#414753] mb-3">
-                  <span>{p.day}</span>
-                  <span className="text-[#005ab6]">Active</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-[10px] text-[#6B7280] font-medium">
-                  {p.icon}
-                  {p.info}
-                </div>
-              </div>
-            ))}
-            <button className="w-full py-3 rounded-xl border-2 border-dashed border-[#c1c6d5] text-[#6B7280] text-[11px] font-black tracking-tight hover:border-primary hover:text-primary transition-all">
-              + New Policy Type
-            </button>
-          </Card>
-
-          <Card className="bg-[#1672df] text-white">
-            <h4 className="font-black mb-6 flex items-center gap-2 tracking-tight">
-              <Calendar size={18} />
-              Upcoming Holidays
-            </h4>
-            <ul className="space-y-4">
-              <li className="flex gap-4">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex flex-col items-center justify-center font-black">
-                  <span className="text-[9px] leading-none">OCT</span>
-                  <span className="text-base leading-none">31</span>
-                </div>
-                <div>
-                  <p className="text-xs font-black">Halloween</p>
-                  <p className="text-[10px] opacity-70 font-bold uppercase tracking-widest">Optional</p>
-                </div>
-              </li>
-              <li className="flex gap-4">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex flex-col items-center justify-center font-black">
-                  <span className="text-[9px] leading-none">NOV</span>
-                  <span className="text-base leading-none">11</span>
-                </div>
-                <div>
-                  <p className="text-xs font-black">Veterans Day</p>
-                  <p className="text-[10px] opacity-70 font-bold uppercase tracking-widest">Public Holiday</p>
-                </div>
-              </li>
-            </ul>
-            <button className="w-full mt-6 text-[10px] font-black underline underline-offset-4 opacity-80 hover:opacity-100 uppercase tracking-widest">View Calendar</button>
-          </Card>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-[#F5F5F5]/50 border-b border-[#E6E8EA]">
+                <th className="px-10 py-6 text-[11px] font-black text-[#848E9C] uppercase tracking-widest">Personnel Node</th>
+                <th className="px-10 py-6 text-[11px] font-black text-[#848E9C] uppercase tracking-widest">Type</th>
+                <th className="px-10 py-6 text-[11px] font-black text-[#848E9C] uppercase tracking-widest">Duration Cycle</th>
+                <th className="px-10 py-6 text-[11px] font-black text-[#848E9C] uppercase tracking-widest">Status Trace</th>
+                <th className="px-10 py-6 text-[11px] font-black text-[#848E9C] uppercase tracking-widest text-right">Ops Logic</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E6E8EA]">
+              {loading ? (
+                <tr><td colSpan="5" className="text-center py-32 opacity-30 text-[11px] font-black uppercase tracking-[0.2em]">Querying Leave Matrix...</td></tr>
+              ) : leaves.length === 0 ? (
+                <tr><td colSpan="5" className="text-center py-32 opacity-30 text-[11px] font-black uppercase tracking-[0.2em]">No scheduling logs detected</td></tr>
+              ) : (
+                leaves.map((row, i) => (
+                  <tr key={i} className="hover:bg-[#F5F5F5] transition-colors group">
+                    <td className="px-10 py-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#1E2026] border border-[#E6E8EA] font-black text-xs">
+                           <User size={16} className="text-[#F0B90B]" />
+                        </div>
+                        <span className="text-[13px] font-black text-[#1E2026]">
+                           {row.employeeId?.profile?.firstName} {row.employeeId?.profile?.lastName}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-10 py-6 text-[12px] font-bold text-[#1E2026] uppercase tracking-widest">{row.leaveType}</td>
+                    <td className="px-10 py-6">
+                       <p className="text-[13px] font-black text-[#1E2026] tabular-nums">{row.startDate} - {row.endDate}</p>
+                       <p className="text-[11px] font-bold text-[#848E9C]">{row.totalDays} Days</p>
+                    </td>
+                    <td className="px-10 py-6">
+                       <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                         row.status === 'Approved' ? 'bg-[#0ECB81]/10 text-[#0ECB81]' : 
+                         row.status === 'Rejected' ? 'bg-[#F6465D]/10 text-[#F6465D]' : 
+                         'bg-[#F0B90B]/10 text-[#D0980B]'
+                       }`}>
+                         {row.status}
+                       </span>
+                    </td>
+                    <td className="px-10 py-6 text-right">
+                       <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
+                          {row.status === 'Pending' && (
+                            <>
+                              <button onClick={() => handleAction(row._id, 'Approved')} className="p-2.5 rounded-lg bg-[#0ECB81]/10 text-[#0ECB81] hover:bg-[#0ECB81] hover:text-white transition-all"><CheckCircle size={16} /></button>
+                              <button onClick={() => handleAction(row._id, 'Rejected')} className="p-2.5 rounded-lg bg-[#F6465D]/10 text-[#F6465D] hover:bg-[#F6465D] hover:text-white transition-all"><XCircle size={16} /></button>
+                            </>
+                          )}
+                          <button className="p-2.5 text-[#848E9C] hover:text-[#1E2026]"><MoreHorizontal size={18} /></button>
+                       </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

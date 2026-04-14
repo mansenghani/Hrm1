@@ -1,96 +1,120 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Layers, Users, Share2, Activity, ArrowUpRight } from 'lucide-react';
 
 const Departments = () => {
-  const [departments, setDepartments] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDepartments = async () => {
+    const fetchEmployees = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/departments', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        const token = localStorage.getItem('token');
+        const res = await axios.get('http://localhost:5000/api/employees', {
+          headers: { Authorization: `Bearer ${token}` }
         });
-        setDepartments(res.data);
+        setEmployees(res.data || []);
       } catch (err) {
         console.error('Fetch failed:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchDepartments();
+    fetchEmployees();
   }, []);
 
-  return (
-    <div className="space-y-10 animate-fade-in text-left max-w-7xl mx-auto pb-12">
-      <style>{`
-        .font-manrope { font-family: 'Manrope', sans-serif; }
-      `}</style>
+  const departmentsMap = employees.reduce((acc, emp) => {
+    const dept = emp.department || 'Unassigned';
+    if (!acc[dept]) acc[dept] = { name: dept, count: 0, members: [] };
+    acc[dept].count += 1;
+    acc[dept].members.push(emp);
+    return acc;
+  }, {});
 
-      {/* 🏙️ Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 uppercase tracking-tight">
+  const departments = Object.values(departmentsMap);
+
+  return (
+    <div className="space-y-12 animate-in fade-in duration-500 pb-20">
+      
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
         <div>
-          <h1 className="text-4xl font-black text-[#2E3A59] tracking-tighter leading-none mb-3 font-manrope">
-            Unit <span className="text-[var(--original-orange)]">Architecture</span>
+          <h1 className="text-4xl font-black text-[#1E2026] tracking-tight leading-none mb-3">
+            Unit <span className="text-[#F0B90B]">Architecture</span>
           </h1>
-          <p className="text-slate-400 font-bold text-[9px] tracking-[0.4em] flex items-center gap-3">
-            <span className="w-10 h-[2px] bg-[var(--original-orange)]"></span>
-            Defining Organizational Nodes
+          <p className="text-[#848E9C] font-bold text-[11px] uppercase tracking-[0.2em] flex items-center gap-3">
+            <span className="w-12 h-[2px] bg-[#F0B90B]"></span>
+            Structural Node Mapping
           </p>
         </div>
-        <button className="bg-[#2E3A59] text-white px-8 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-slate-900/10 hover:bg-[#1f2a44] transition-all flex items-center gap-3">
-          <span className="material-symbols-outlined text-sm">account_tree</span>
+        <button className="bg-[#F0B90B] text-[#1E2026] px-10 py-4 rounded-full font-black text-[13px] uppercase tracking-wider shadow-lg hover:bg-[#FFD000] transition-all flex items-center gap-3">
+          <Layers size={18} />
           Initialize Unit
         </button>
       </div>
 
-      {/* 🍱 Grid Matrix */}
+      {/* GRID MATRIX */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {loading ? (
-          <div className="col-span-full py-24 text-center animate-pulse text-slate-300 text-[10px] font-black uppercase tracking-widest italic">
-            Mapping Node Structures...
+          <div className="col-span-full py-32 text-center">
+             <div className="flex flex-col items-center gap-4 opacity-30">
+                <div className="w-10 h-10 border-4 border-[#F0B90B]/20 border-t-[#F0B90B] rounded-full animate-spin"></div>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em]">Mapping Hub Matrix...</p>
+             </div>
+          </div>
+        ) : departments.length === 0 ? (
+          <div className="col-span-full py-32 text-center opacity-30">
+             <p className="text-[11px] font-black uppercase tracking-[0.2em]">No structural units detected in the matrix</p>
           </div>
         ) : (
           departments.map((dept, i) => (
-            <div key={dept._id} className="card group hover:shadow-hover border-slate-200/60 transition-all duration-500 overflow-hidden relative">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full -mr-12 -mt-12 group-hover:bg-[var(--original-orange)]/5 transition-colors"></div>
+            <div key={i} className="bg-white border border-[#E6E8EA] rounded-2xl p-8 hover:border-[#F0B90B] hover:shadow-[0_8px_24px_rgba(0,0,0,0.05)] transition-all group relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-[#F5F5F5] rounded-full -mr-12 -mt-12 group-hover:bg-[#F0B90B]/5 transition-colors"></div>
               
-              <div className="flex justify-between items-start mb-8 relative z-10">
-                <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-[#2E3A59] group-hover:bg-[var(--original-orange)] group-hover:text-white transition-all shadow-inner">
-                  <span className="material-symbols-outlined text-2xl font-black">hub</span>
+              <div className="flex justify-between items-start mb-10 relative z-10">
+                <div className="w-14 h-14 bg-[#F5F5F5] rounded-2xl flex items-center justify-center text-[#1E2026] group-hover:bg-[#F0B90B] transition-all shadow-sm">
+                  <Share2 size={24} strokeWidth={2.5} />
                 </div>
                 <div className="flex flex-col items-end">
-                   <p className="text-[7px] font-black text-slate-300 uppercase tracking-widest">Node UID</p>
-                   <p className="text-[10px] font-bold text-[#2E3A59] tracking-tighter overflow-hidden truncate max-w-[80px]">{dept._id.slice(-8)}</p>
+                   <p className="text-[9px] font-black text-[#848E9C] uppercase tracking-widest mb-1">Node Integrity</p>
+                   <div className="flex items-center gap-1.5 px-3 py-1 bg-[#0ECB81]/10 rounded-full">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#0ECB81] animate-pulse"></div>
+                      <span className="text-[10px] font-black text-[#0ECB81] uppercase tracking-widest">Active</span>
+                   </div>
                 </div>
               </div>
 
-              <h3 className="text-lg font-black text-[#2E3A59] uppercase tracking-tighter mb-1 font-manrope group-hover:text-[var(--original-orange)] transition-colors">{dept.depName}</h3>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-8">Structural Unit Protocol</p>
+              <h3 className="text-xl font-black text-[#1E2026] tracking-tight mb-2 group-hover:text-[#F0B90B] transition-colors">{dept.name}</h3>
+              <p className="text-[11px] font-bold text-[#848E9C] uppercase tracking-[0.1em] mb-8">SaaS Operational Segment</p>
               
-              <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-6 mt-2">
+              <div className="grid grid-cols-2 gap-6 border-t border-[#E6E8EA] pt-8 mt-4">
                  <div className="space-y-1">
-                    <p className="text-[7px] font-black text-slate-300 uppercase tracking-widest">Active Personnel</p>
-                    <p className="text-xs font-black text-[#2E3A59]">-- Nodes</p>
+                    <p className="text-[10px] font-black text-[#848E9C] uppercase tracking-widest">Personnel Depth</p>
+                    <p className="text-xl font-black text-[#1E2026] tabular-nums">{dept.count} <span className="text-[10px] text-[#848E9C]">Nodes</span></p>
                  </div>
                  <div className="text-right space-y-1">
-                    <p className="text-[7px] font-black text-slate-300 uppercase tracking-widest">Node Status</p>
-                    <div className="flex items-center justify-end gap-1.5">
-                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                       <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Online</span>
+                    <p className="text-[10px] font-black text-[#848E9C] uppercase tracking-widest">Trace Activity</p>
+                    <div className="flex items-center justify-end gap-1.5 text-[#1E2026]">
+                       <Activity size={12} className="text-[#0ECB81]" />
+                       <span className="text-[12px] font-black tabular-nums">High Ops</span>
                     </div>
                  </div>
+              </div>
+              
+              <div className="mt-8 flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-[#848E9C] group-hover:text-[#1E2026] transition-colors cursor-pointer">
+                 <span>View Cluster Map</span>
+                 <ArrowUpRight size={14} />
               </div>
             </div>
           ))
         )}
       </div>
 
-      {/* 🚀 Visual Trace Footer */}
-      <div className="pt-12 text-center opacity-30 pb-12">
-        <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.6em] leading-loose">
-          Org-Chart Logic Verified: trace.json <br />
-          <span className="text-[var(--original-orange)]">Distributed Node Active</span>
+      {/* FOOTER */}
+      <div className="pt-16 text-center opacity-30 pb-12">
+        <p className="text-[#848E9C] text-[10px] font-black uppercase tracking-[0.6em] leading-loose">
+           Chapter Summary: Architecture Stable <br />
+           <span className="text-[#F0B90B]">Distributed Hub Matrix: Verified</span>
         </p>
       </div>
     </div>

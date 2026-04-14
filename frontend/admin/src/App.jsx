@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Landing from '@shared/pages/Landing';
 import RoleSelection from '@shared/pages/RoleSelection';
 import Login from '@shared/pages/Login';
@@ -11,6 +11,7 @@ import Employees from './pages/admin/Employees';
 import Departments from './pages/Departments';
 import Attendance from './pages/hr/Attendance';
 import LeaveManagement from './pages/hr/LeaveManagement';
+import EmployeeLeave from './pages/employee/LeaveManagement';
 import TimeTracker from './pages/employee/TimeTracker';
 import Payroll from './pages/Payroll';
 import Performance from './pages/Performance';
@@ -20,17 +21,17 @@ import CreateUser from './pages/admin/CreateUser';
 import MainLayout from '@shared/layouts/MainLayout';
 import Profile from '@shared/pages/Profile';
 
-// 🔒 Route Protection
+// ROUTE PROTECTION LOGIC
 const ProtectedRoute = ({ children, allowedRole }) => {
-  const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role');
+  const token = sessionStorage.getItem('token');
+  const role = sessionStorage.getItem('role');
 
   if (!token) return <Navigate to="/select-role" replace />;
 
-  // 👔 SUPER ADMIN: Can see everything
+  // ADMIN OVERRIDE
   if (role === 'admin') return children;
 
-  // 👮 Specific Role Check
+  // ROLE SPECIFIC CHECK
   if (allowedRole && role !== allowedRole) {
     return <Navigate to="/" replace />;
   }
@@ -41,12 +42,12 @@ const ProtectedRoute = ({ children, allowedRole }) => {
 const App = () => {
   return (
     <Routes>
-      {/* 🏙️ Public Routes */}
+      {/* PUBLIC ROUTES */}
       <Route path="/" element={<Landing />} />
       <Route path="/select-role" element={<RoleSelection />} />
       <Route path="/login/:role" element={<Login />} />
 
-      {/* 🛡️ Admin Module (Full Access) */}
+      {/* ADMIN MODULE */}
       <Route path="/admin" element={
         <ProtectedRoute allowedRole="admin">
           <MainLayout />
@@ -67,7 +68,7 @@ const App = () => {
         <Route path="profile" element={<Profile />} />
       </Route>
 
-      {/* ✅ HR Module (Access for HR and Admin) */}
+      {/* HR MODULE */}
       <Route path="/hr" element={
         <ProtectedRoute allowedRole="hr">
           <MainLayout />
@@ -80,7 +81,7 @@ const App = () => {
         <Route path="profile" element={<Profile />} />
       </Route>
 
-      {/* 👤 Employee Module (Access for Employee and Admin) */}
+      {/* EMPLOYEE MODULE */}
       <Route path="/employee" element={
         <ProtectedRoute allowedRole="employee">
           <MainLayout />
@@ -89,11 +90,24 @@ const App = () => {
         <Route index element={<EmployeeDashboard />} />
         <Route path="dashboard" element={<EmployeeDashboard />} />
         <Route path="time-tracker" element={<TimeTracker />} />
+        <Route path="leave" element={<EmployeeLeave />} />
+        <Route path="profile" element={<Profile />} />
+      </Route>
+
+      {/* MANAGER MODULE */}
+      <Route path="/manager" element={
+        <ProtectedRoute allowedRole="manager">
+          <MainLayout />
+        </ProtectedRoute>
+      }>
+        <Route index element={<ManagerDashboard />} />
+        <Route path="dashboard" element={<ManagerDashboard />} />
+        <Route path="attendance" element={<Attendance />} />
         <Route path="leave" element={<LeaveManagement />} />
         <Route path="profile" element={<Profile />} />
       </Route>
 
-      {/* 🔄 Fallback */}
+      {/* FALLBACK */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

@@ -1,31 +1,37 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ShieldCheck, ArrowRight, Zap, Users, BarChart3, Wallet, Activity, Globe, CheckCircle } from 'lucide-react';
 
 const Landing = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="font-body selection:bg-[#ff9900]/30 min-h-screen bg-[#f7f9fb] text-[#191c1e]">
-      {/* 🧭 TopNavBar */}
-      <header className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-xl shadow-[0px_24px_48px_rgba(0,2,41,0.06)]">
-        <div className="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
-          <div className="text-xl font-bold tracking-tighter text-slate-900 font-headline">FluidHR</div>
-          <nav className="hidden md:flex items-center gap-8">
-            <a className="font-headline text-sm font-semibold tracking-tight text-slate-600 hover:text-slate-900 transition-all duration-300" href="#">Solutions</a>
-            <a className="font-headline text-sm font-semibold tracking-tight text-[#ff9900] border-b-2 border-[#ff9900] pb-1 transition-all duration-300" href="#">Features</a>
-            <a className="font-headline text-sm font-semibold tracking-tight text-slate-600 hover:text-slate-900 transition-all duration-300" href="#">Pricing</a>
-            <a className="font-headline text-sm font-semibold tracking-tight text-slate-600 hover:text-slate-900 transition-all duration-300" href="#">About</a>
+    <div className="min-h-screen bg-white text-[#1E2026] overflow-x-hidden">
+      
+      {/* NAVIGATION */}
+      <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-2xl border-b border-[#E6E8EA]">
+        <div className="flex justify-between items-center px-10 py-5 max-w-[1440px] mx-auto">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 bg-[#F0B90B] rounded-xl flex items-center justify-center shadow-lg shadow-[#F0B90B]/20">
+                <ShieldCheck size={24} className="text-[#1E2026]" fill="currentColor" />
+             </div>
+             <span className="text-2xl font-black tracking-tighter text-[#1E2026] uppercase italic">Fluid<span className="text-[#F0B90B]">HR</span></span>
+          </div>
+          <nav className="hidden lg:flex items-center gap-12">
+            {['Markets', 'Protocols', 'Institutional', 'Resources'].map(link => (
+              <a key={link} className="text-[12px] font-black uppercase tracking-widest text-[#848E9C] hover:text-[#F0B90B] transition-colors" href="#">{link}</a>
+            ))}
           </nav>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <button 
               onClick={() => navigate('/select-role')} 
-              className="font-headline text-sm font-semibold tracking-tight text-slate-600 hover:opacity-80 transition-all duration-300"
+              className="text-[12px] font-black uppercase tracking-widest text-[#1E2026] hover:text-[#F0B90B] transition-colors"
             >
               Sign In
             </button>
             <button 
               onClick={() => navigate('/select-role')}
-              className="bg-[#ff9900] text-white px-6 py-2.5 rounded-xl font-headline text-sm font-semibold tracking-tight hover:opacity-80 transition-all duration-300 shadow-sm"
+              className="bg-[#F0B90B] text-[#1E2026] px-8 py-3 rounded-full text-[12px] font-black uppercase tracking-widest hover:bg-[#FFD000] transition-all shadow-lg shadow-[#F0B90B]/10 active:scale-95"
             >
               Get Started
             </button>
@@ -33,141 +39,156 @@ const Landing = () => {
         </div>
       </header>
 
-      <main className="pt-24">
-        {/* 🚀 Hero Section */}
-        <section className="relative overflow-hidden px-8 py-24 md:py-32 max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="z-10 text-left">
-              <span className="inline-block px-4 py-1.5 mb-6 rounded-full bg-[#dfe0ff] text-[#525780] text-xs font-bold tracking-wider uppercase font-label">The Future of Workforce</span>
-              <h1 className="text-5xl md:text-7xl font-extrabold font-headline leading-[1.1] tracking-tighter text-[#191c1e] mb-8">
-                Smart HR <br/><span className="text-[#ff9900] bg-clip-text">Management</span> System
+      <main className="pt-32">
+        {/* HERO SECTION */}
+        <section className="relative px-10 py-24 md:py-40 max-w-[1440px] mx-auto overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] bg-gradient-to-br from-[#F0B90B]/5 to-transparent rounded-full -z-10 blur-3xl"></div>
+          
+          <div className="grid lg:grid-cols-2 gap-24 items-center">
+            <div className="text-left relative z-10">
+              <div className="inline-flex items-center gap-3 px-6 py-2 bg-[#F5F5F5] rounded-full mb-10 border border-[#E6E8EA]">
+                 <Zap size={14} className="text-[#F0B90B]" fill="currentColor" />
+                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#848E9C]">v4.0 Protocol Active</span>
+              </div>
+              <h1 className="text-7xl md:text-8xl font-black leading-[0.85] tracking-tighter text-[#1E2026] mb-10 uppercase italic">
+                 Buy, Sell, and <br/>Manage <span className="text-[#F0B90B]">Talent</span>
               </h1>
-              <p className="text-lg md:text-xl text-[#575b85] max-w-lg mb-10 leading-relaxed font-medium">
-                Orchestrate your entire organization with FluidHR. A seamless architecture designed for high-performance teams, from payroll to talent evolution.
+              <p className="text-xl md:text-2xl text-[#848E9C] max-w-xl mb-12 font-bold leading-relaxed border-l-8 border-[#F0B90B] pl-10 uppercase tracking-tight">
+                THE WORLD'S HIGHEST FIDELITY HR ECOSYSTEM. ORCHESTRATE PERSONNEL UNITS WITH THE PRECISION OF A DIGITAL TRADING FLOOR.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-6">
                 <button 
                   onClick={() => navigate('/select-role')}
-                  className="bg-[#ff9900] text-white px-8 py-4 rounded-xl font-headline font-bold text-lg hover:opacity-90 transition-all duration-300 scale-95 hover:scale-100 flex items-center justify-center gap-2"
+                  className="bg-[#222126] text-white px-12 py-5 rounded-full text-[14px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-3 shadow-2xl active:scale-95"
                 >
-                  Get Started 
-                  <span className="material-symbols-outlined">arrow_forward</span>
+                  Enter Portal 
+                  <ArrowRight size={20} />
                 </button>
-                <button className="bg-[#575b85] text-white px-8 py-4 rounded-xl font-headline font-bold text-lg hover:opacity-90 transition-all duration-300 flex items-center justify-center gap-2">
-                  View Demo
+                <button className="bg-white border-2 border-[#E6E8EA] text-[#1E2026] px-12 py-5 rounded-full text-[14px] font-black uppercase tracking-widest hover:border-[#F0B90B] hover:text-[#F0B90B] transition-all active:scale-95">
+                  Institutional Demo
                 </button>
               </div>
             </div>
-            <div className="relative">
-              <div className="absolute -top-20 -right-20 w-96 h-96 bg-[#ff9900]/10 rounded-full blur-3xl"></div>
-              <div className="relative rounded-[2rem] overflow-hidden shadow-[0px_48px_96px_rgba(0,2,41,0.08)] bg-white p-4">
-                <img className="w-full rounded-[1.5rem] object-cover h-full aspect-[4/3]" alt="professional minimalist hr dashboard" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC61ofkPaB_2723AN6jYRw0GwRoQFQVzS-ZLGL5y-d22rr7MlEy-iwQ1zq9VxU7bVFN3KIK8tiElBSrUxjPVMbsaUX4Wpce_gPR8Wri5T-ouipqO0oyfW_PPsMIdIlDPhJgkH9qsgg_XWOOF3K_DjlslxtgnlQ25wCAI0E7ivcw81Q5XTClL-AgYcM_5sIYxn2U7_gbCiR646KE4yD8AA0qlAPdCm-dtQFMpxdBDBcbHurhsfiCDxsWItSYZlXJGZP2HXmmmt9uOQc"/>
-              </div>
+            
+            <div className="relative group">
+               <div className="absolute inset-0 bg-gradient-to-br from-[#F0B90B]/20 to-transparent rounded-[3rem] blur-2xl group-hover:scale-110 transition-transform duration-1000"></div>
+               <div className="relative bg-[#222126] p-4 rounded-[3rem] border border-white/5 shadow-2xl overflow-hidden aspect-[4/3]">
+                  <img className="w-full h-full object-cover rounded-[2rem] grayscale group-hover:grayscale-0 transition-all duration-1000 opacity-80" alt="fintech hr terminal dashboard" src="https://images.unsplash.com/photo-1611974717528-587002019484?auto=format&fit=crop&q=80&w=2000"/>
+                  <div className="absolute bottom-10 left-10 right-10 p-8 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/10 flex justify-between items-center text-white">
+                     <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[#F0B90B]">System Status</p>
+                        <p className="text-xl font-black uppercase">Nodes Synchronized</p>
+                     </div>
+                     <Activity size={32} className="text-[#F0B90B]" />
+                  </div>
+               </div>
             </div>
           </div>
         </section>
 
-        {/* 🍱 Feature Bento Grid */}
-        <section className="px-8 py-24 max-w-7xl mx-auto bg-[#f2f4f6] rounded-[3rem]">
-          <div className="text-center mb-20 text-left md:text-center">
-            <h2 className="text-3xl md:text-5xl font-extrabold font-headline text-[#191c1e] mb-4 tracking-tighter">Engineered for Excellence</h2>
-            <p className="text-[#575b85] max-w-2xl mx-auto font-medium">Modern tools built into a unified workspace, eliminating the friction of traditional HR workflows.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            {/* Attendance Tracking */}
-            <div className="md:col-span-8 bg-white rounded-[2rem] p-10 flex flex-col justify-between group hover:shadow-2xl transition-all duration-500 border border-[#eceef0]">
-              <div className="text-left">
-                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mb-6 text-blue-600">
-                  <span className="material-symbols-outlined text-3xl">schedule</span>
-                </div>
-                <h3 className="text-3xl font-bold font-headline mb-4 text-[#191c1e] tracking-tight">Attendance Tracking</h3>
-                <p className="text-[#575b85] max-w-md font-medium leading-relaxed uppercase text-[11px] tracking-widest opacity-60">Real-time monitoring with geological fencing and automated shift reconciliation. Precision at every clock-in.</p>
+        {/* FEATURE MATRIX */}
+        <section className="px-10 py-32 bg-[#F5F5F5]">
+           <div className="max-w-[1440px] mx-auto">
+              <div className="flex flex-col md:flex-row justify-between items-end gap-10 mb-24 border-b border-[#E6E8EA] pb-12">
+                 <div className="text-left">
+                    <h2 className="text-4xl md:text-6xl font-black text-[#1E2026] uppercase tracking-tighter leading-none mb-4">Core Ecosystem</h2>
+                    <p className="text-xl font-bold text-[#848E9C] uppercase tracking-[0.1em]">Engineered for institutional-grade workforce orchestration.</p>
+                 </div>
+                 <div className="flex gap-4">
+                    <div className="w-12 h-[2px] bg-[#F0B90B] self-center"></div>
+                    <span className="text-[11px] font-black text-[#848E9C] uppercase tracking-[0.4em]">Protocol Matrix</span>
+                 </div>
               </div>
-              <div className="mt-10 overflow-hidden rounded-2xl h-64 shadow-inner bg-[#f7f9fb]">
-                <img className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="attendance tracker interface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGFMmmpvAHPzzXOar6Wwiw1jhPodchmSYGtT1w7J69IfMH8CqSr2ojWNXKwpXIAfQWEpv8Wa4v07T63K6bYrEJl4LShYPo5_Yxe97aw5xCKvr1YCCWA5cplJiqzSAuH6j4LcxBKSUaBpcnaOM1jSLZeE3IOh4SujOtS0xBFwobcRRe745Coo9tbDguAS_YyU4qdZXBscCjIjoSS56fZIFtuxHiEm1P1vfe9bdnMAS4rL_LuY0eZ3kK5DuO49Byo0P10zaAAzN6B_c"/>
-              </div>
-            </div>
 
-            {/* Payroll */}
-            <div className="md:col-span-4 bg-[#575b85] text-white rounded-[2rem] p-10 flex flex-col items-center text-center justify-center group hover:bg-[#13183d] transition-all duration-500 relative overflow-hidden shadow-xl">
-              <div className="absolute top-0 left-0 w-full h-1 bg-[#ff9900]"></div>
-              <div className="w-20 h-20 rounded-full bg-[#ff9900] flex items-center justify-center mb-8 text-white shadow-lg">
-                <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                 {[
+                   { title: 'Presence Trace', desc: 'Real-time monitoring with geo-protocol fencing and automated logic reconciliation.', icon: Activity, color: 'text-[#0ECB81]' },
+                   { title: 'Ledger Liquidity', desc: 'Global one-click payment flows with automated tax compliance and dynamic benefits cycle.', icon: Wallet, color: 'text-[#F0B90B]' },
+                   { title: 'Talent Scalability', desc: 'Data-driven appraisal nodes and feedback protocols to accelerate organizational growth.', icon: BarChart3, color: 'text-[#1EAEDB]' }
+                 ].map((feature, i) => (
+                   <div key={i} className="bg-white p-12 rounded-[2.5rem] border border-[#E6E8EA] hover:border-[#F0B90B] transition-all group relative overflow-hidden text-left">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-[#F5F5F5] rounded-full -mr-12 -mt-12 group-hover:bg-[#F0B90B]/10 transition-colors"></div>
+                      <div className={`p-4 bg-[#F5F5F5] ${feature.color} rounded-2xl w-fit mb-10 group-hover:scale-110 transition-transform`}>
+                         <feature.icon size={32} />
+                      </div>
+                      <h3 className="text-2xl font-black text-[#1E2026] uppercase mb-4 tracking-tight">{feature.title}</h3>
+                      <p className="text-[#848E9C] font-bold leading-relaxed uppercase text-[12px] tracking-widest opacity-80 mb-10">
+                        {feature.desc}
+                      </p>
+                      <button className="flex items-center gap-3 text-[11px] font-black uppercase tracking-widest text-[#1E2026] hover:text-[#F0B90B] transition-colors">
+                         Explore Node <ArrowRight size={16} />
+                      </button>
+                   </div>
+                 ))}
               </div>
-              <h3 className="text-3xl font-bold font-headline mb-4 tracking-tight">Payroll</h3>
-              <p className="text-[#dfe0ff] text-sm font-medium leading-relaxed">One-click global payments with automated tax compliance and dynamic benefits calculation.</p>
-              <button className="mt-10 text-[#ff9900] font-black text-xs uppercase tracking-[0.2em] hover:underline">Explore Payroll Node</button>
-            </div>
-
-            {/* Performance */}
-            <div className="md:col-span-4 bg-[#ff9900] text-white rounded-[2rem] p-10 flex flex-col justify-between hover:scale-[1.02] transition-all duration-300 shadow-xl">
-              <h3 className="text-3xl font-bold font-headline tracking-tight">Performance</h3>
-              <div className="my-10">
-                <span className="material-symbols-outlined text-7xl opacity-40">insights</span>
-              </div>
-              <p className="font-bold text-sm uppercase tracking-widest leading-relaxed">Data-driven appraisal cycles and feedback loops that actually drive growth.</p>
-            </div>
-
-            {/* Employee Management */}
-            <div className="md:col-span-8 bg-white rounded-[2rem] p-10 flex flex-col md:flex-row items-center gap-10 group border border-[#eceef0] hover:shadow-2xl transition-all duration-500">
-              <div className="flex-1 text-left">
-                <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center mb-6 text-emerald-600">
-                  <span className="material-symbols-outlined text-3xl">group_work</span>
-                </div>
-                <h3 className="text-3xl font-bold font-headline mb-4 text-[#191c1e] tracking-tight">Employee Management</h3>
-                <p className="text-[#575b85] font-medium leading-relaxed">A centralized source of truth for your most valuable asset. Scalable from 10 to 10,000 employees with precision orchestration.</p>
-              </div>
-              <div className="w-full md:w-1/3 aspect-square rounded-[2rem] overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-700 shadow-lg">
-                <img className="w-full h-full object-cover" alt="diverse professional team" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbcoilddA-keRzAK6Ea92SbcV-ll5-eA1Ln4jttwwlwyhZkpKFbH7lixSQlIvGy5kyYm4joIfYEjc9M0UQpqOdsa-cpWNVhmCUyOgVAeqgBOu8eok9cBC07lNeBhzsQVlE4XH2E6hbiGh_Zi4bCnUgpZvGhgxMcJlQiCUcF-wOlEfgWVCTBE1pQfRdovAxRky_1bntABdU8zkSS_-OlSl1nV15i51Mtw6wOyIZ8Monnaz31TW5EtmzD93dAef78Z2wc5qIpaeKBaw"/>
-              </div>
-            </div>
-          </div>
+           </div>
         </section>
 
-        {/* 📢 CTA Section */}
-        <section className="px-8 py-32 text-center">
-          <div className="max-w-4xl mx-auto bg-[#000229] rounded-[3rem] py-24 px-10 relative overflow-hidden shadow-[0px_64px_128px_rgba(0,2,41,0.2)]">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#00668a]/20 to-transparent"></div>
-            <div className="relative z-10">
-              <h2 className="text-4xl md:text-6xl font-extrabold font-headline text-white mb-8 tracking-tighter italic">Ready to architect your team?</h2>
-              <p className="text-[#bfc3f3] text-lg mb-12 max-w-xl mx-auto font-medium leading-relaxed">Join over 2,500+ modern companies using FluidHR to streamline their operations and scale faster.</p>
-              <div className="flex flex-col sm:flex-row justify-center gap-6">
-                <button 
-                  onClick={() => navigate('/select-role')}
-                  className="bg-[#ff9900] text-white px-10 py-5 rounded-2xl font-headline font-black text-lg hover:opacity-90 shadow-[0px_24px_48px_rgba(255,153,0,0.35)] transition-all active:scale-95"
-                >
-                  Start Free Trial
-                </button>
-                <button className="bg-white/10 backdrop-blur-md text-white px-10 py-5 rounded-2xl font-headline font-black text-lg hover:bg-white/20 border border-white/10 transition-all">
-                  Talk to Sales
-                </button>
+        {/* CTA SECTION */}
+        <section className="px-10 py-40">
+           <div className="max-w-[1440px] mx-auto bg-[#222126] rounded-[4rem] p-24 text-center relative overflow-hidden shadow-2xl border border-white/5">
+              <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-gradient-to-br from-[#F0B90B]/10 to-transparent rounded-full -mr-[400px] -mt-[400px] blur-[100px]"></div>
+              <div className="relative z-10">
+                 <h2 className="text-5xl md:text-8xl font-black text-white mb-10 uppercase italic tracking-tighter leading-none">
+                    Start Your <span className="text-[#F0B90B]">Sync</span> Today
+                 </h2>
+                 <p className="text-[#848E9C] text-2xl font-bold mb-16 max-w-2xl mx-auto uppercase tracking-tight border-b-2 border-[#F0B90B]/20 pb-10">
+                    Join 2,500+ global enterprises architecting their future on the FluidHR protocol.
+                 </p>
+                 <div className="flex flex-col md:flex-row justify-center gap-8">
+                    <button 
+                       onClick={() => navigate('/select-role')}
+                       className="bg-[#F0B90B] text-[#1E2026] px-16 py-6 rounded-full text-lg font-black uppercase tracking-widest hover:bg-[#FFD000] shadow-2xl shadow-[#F0B90B]/20 transition-all active:scale-95"
+                    >
+                       Get Started Now
+                    </button>
+                    <button className="bg-white/5 backdrop-blur-xl border border-white/10 text-white px-16 py-6 rounded-full text-lg font-black uppercase tracking-widest hover:bg-white/10 transition-all active:scale-95">
+                       Consult Sales Node
+                    </button>
+                 </div>
               </div>
-            </div>
-          </div>
+           </div>
         </section>
       </main>
 
-      {/* 🦶 Footer */}
-      <footer className="bg-[#000229] w-full py-20 px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-12 border-b border-white/10 pb-12 mb-12 text-left">
-            <div>
-               <div className="text-2xl font-black text-white font-headline tracking-tighter italic mb-2">FluidHR</div>
-               <p className="text-[#bfc3f3]/40 text-[10px] font-black uppercase tracking-[0.3em]">System Architect v4.0</p>
-            </div>
-            <div className="flex flex-wrap justify-center md:justify-end gap-x-12 gap-y-6">
-              <a className="font-headline text-[10px] font-black tracking-[0.2em] uppercase text-[#bfc3f3] hover:text-[#ff9900] transition-colors" href="#">Privacy Protocol</a>
-              <a className="font-headline text-[10px] font-black tracking-[0.2em] uppercase text-[#bfc3f3] hover:text-[#ff9900] transition-colors" href="#">Terms of Sync</a>
-              <a className="font-headline text-[10px] font-black tracking-[0.2em] uppercase text-[#bfc3f3] hover:text-[#ff9900] transition-colors" href="#">Cookie Schema</a>
-              <a className="font-headline text-[10px] font-black tracking-[0.2em] uppercase text-[#bfc3f3] hover:text-[#ff9900] transition-colors" href="#">Contact Source</a>
-            </div>
+      {/* FOOTER */}
+      <footer className="bg-[#1E2026] w-full py-24 px-10 border-t border-white/10">
+        <div className="max-w-[1440px] mx-auto text-left">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
+             <div className="col-span-1">
+                <div className="flex items-center gap-3 mb-8">
+                   <div className="w-8 h-8 bg-[#F0B90B] rounded-lg flex items-center justify-center">
+                      <ShieldCheck size={18} className="text-[#1E2026]" fill="currentColor" />
+                   </div>
+                   <span className="text-xl font-black text-white italic tracking-tighter uppercase">Fluid<span className="text-[#F0B90B]">HR</span></span>
+                </div>
+                <p className="text-[#848E9C] text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed">System Architecture v4.0.9 <br/>Digital Personnel Marketplace Protocol</p>
+             </div>
+             {[
+               { title: 'Ecosystem', links: ['Markets', 'Liquidity', 'Nodes', 'Architecture'] },
+               { title: 'Governance', links: ['Privacy Protocol', 'Terms of Sync', 'Security Trace', 'Ethics Hub'] },
+               { title: 'Resources', links: ['Node Status', 'Central API', 'Community Pulse', 'Whitepaper'] }
+             ].map((col, i) => (
+                <div key={i} className="space-y-6">
+                   <h4 className="text-[12px] font-black uppercase tracking-[0.2em] text-[#F0B90B]">{col.title}</h4>
+                   <ul className="space-y-4">
+                      {col.links.map(link => (
+                         <li key={link}><a className="text-[11px] font-bold uppercase tracking-widest text-[#848E9C] hover:text-white transition-colors" href="#">{link}</a></li>
+                      ))}
+                   </ul>
+                </div>
+             ))}
           </div>
-          <div className="flex flex-col md:flex-row justify-between items-center text-[#bfc3f3]/20 font-headline text-[10px] font-black tracking-[0.3em] uppercase">
-            <div>© 2026 FluidHR Architect. Secure Enterprise Ecosystem.</div>
-            <div className="mt-4 md:mt-0 flex gap-6">
-               <span className="hover:text-white transition-colors cursor-pointer">Global Hub</span>
-               <span className="hover:text-white transition-colors cursor-pointer">Node Status</span>
-            </div>
+          <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+             <div className="text-[#848E9C] text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-4">
+                <Globe size={14} />
+                Global Infrastructure Site (C) 2026 FluidHR.
+             </div>
+             <div className="flex gap-8">
+                {['Twitter', 'Discord', 'Telegram', 'Node Sync'].map(link => (
+                   <span key={link} className="text-[9px] font-black uppercase tracking-[0.4em] text-[#848E9C] hover:text-[#F0B90B] transition-colors cursor-pointer">{link}</span>
+                ))}
+             </div>
           </div>
         </div>
       </footer>

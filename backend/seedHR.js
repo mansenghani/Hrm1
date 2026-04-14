@@ -13,7 +13,7 @@ const seedHR = async () => {
 
     const hr = new HR({
       email: 'hr@fluidhr.com',
-      password: 'hrpassword123',
+      password: 'hr@2026',
       role: 'hr',
       profile: { firstName: 'HR', lastName: 'Manager' }
     });

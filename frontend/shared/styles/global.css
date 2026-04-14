@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 🌊 Narrative HR Global Design Language System (Minimal Refinement) */
+/* Narrative HR Global Design Language System (Minimal Refinement) */
 
 @layer base {
   body {
@@ -14,7 +14,7 @@
 }
 
 @layer components {
-  /* 🏷️ SaaS Card Architecture (Soft & Clean) */
+  /* SaaS Card Architecture (Soft & Clean) */
   .card {
     background: #ffffff;
     border-radius: 12px;
@@ -28,7 +28,7 @@
     box-shadow: 0 8px 24px rgba(46, 58, 89, 0.08);
   }
 
-  /* ⚡ Action Buttons (Professional Navy) */
+  /* Action Buttons (Professional Navy) */
   .button-primary {
     background: #2E3A59;
     color: white;
@@ -46,7 +46,7 @@
     box-shadow: 0 4px 12px rgba(46, 58, 89, 0.2);
   }
 
-  /* 🔳 Modern Field Logic */
+  /* Modern Field Logic */
   .input-premium {
     @apply w-full bg-[#fcfcfc] border border-slate-200/80 rounded-xl px-4 py-3 text-[#1F2937] font-medium transition-all focus:outline-none focus:ring-2 focus:ring-[#2E3A59]/10 focus:border-[#2E3A59];
   }
@@ -58,7 +58,7 @@
   }
 }
 
-/* 🪐 Scrollbar Refinement */
+/* Scrollbar Refinement */
 ::-webkit-scrollbar {
   width: 6px;
 }

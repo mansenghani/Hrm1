@@ -36,11 +36,11 @@ exports.login = async (req, res) => {
 
     if (user && (await user.comparePassword(password))) {
       const token = jwt.sign(
-        { id: user._id, role: user.role }, 
-        process.env.JWT_SECRET, 
+        { id: user._id, role: user.role },
+        process.env.JWT_SECRET,
         { expiresIn: '30d' }
       );
-      
+
       res.json({
         _id: user._id,
         email: user.email,
@@ -79,7 +79,7 @@ exports.createUser = async (req, res) => {
 
     const newUser = new Model({
       email,
-      password, 
+      password,
       role: role.toLowerCase(),
       profile: { firstName, lastName }
     });
@@ -87,7 +87,7 @@ exports.createUser = async (req, res) => {
     await newUser.save();
     console.log(`✅ Success: ${email} added to ${role} collection`);
 
-    res.status(201).json({ 
+    res.status(201).json({
       message: `${role.toUpperCase()} created successfully`
     });
 
@@ -99,12 +99,12 @@ exports.createUser = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
-     const role = req.user.role;
-     const Model = getModelByRole(role);
-     const user = await Model.findById(req.user.id).select('-password');
-     res.json(user);
+    const role = req.user.role;
+    const Model = getModelByRole(role);
+    const user = await Model.findById(req.user.id).select('-password');
+    res.json(user);
   } catch (err) {
-      res.status(500).json({ message: 'Server Error' });
+    res.status(500).json({ message: 'Server Error' });
   }
 };
 
@@ -113,12 +113,12 @@ exports.updatePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     const role = req.user.role;
-    
+
     console.log(`🔐 [AUTH] Rotation check for role: ${role}, ID: ${req.user.id}`);
-    
+
     const Model = getModelByRole(role);
     const user = await Model.findById(req.user.id);
-    
+
     if (!user) {
       console.error('❌ [AUTH] Personnel node not found');
       return res.status(404).json({ message: 'User not found' });

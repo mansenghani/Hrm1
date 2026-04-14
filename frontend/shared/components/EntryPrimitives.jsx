@@ -1,12 +1,12 @@
 import React from 'react';
 
 export const EntryButton = ({ children, variant = 'primary', className = '', ...props }) => {
-  const baseStyles = "w-full font-headline font-bold py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 active:scale-[0.98] shadow-sm";
+  const baseStyles = "w-full py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98] font-black uppercase text-[12px] tracking-widest";
   const variants = {
-    primary: "bg-gradient-to-r from-[#8a5100] to-[#ff9900] text-white hover:opacity-90 shadow-[0px_24px_48px_rgba(255,153,0,0.2)]",
-    secondary: "bg-[#575b85] text-white hover:opacity-90",
-    outline: "bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20",
-    ghost: "bg-surface-container-high text-on-surface hover:opacity-80"
+    primary: "bg-[#F0B90B] text-[#1E2026] hover:bg-[#FFD000] shadow-lg shadow-[#F0B90B]/10",
+    secondary: "bg-[#222126] text-white hover:bg-black shadow-lg shadow-black/10",
+    outline: "bg-white border-2 border-[#E6E8EA] text-[#1E2026] hover:border-[#F0B90B] hover:text-[#F0B90B] shadow-sm",
+    ghost: "bg-transparent text-[#848E9C] hover:text-[#1E2026]"
   };
 
   return (
@@ -17,12 +17,12 @@ export const EntryButton = ({ children, variant = 'primary', className = '', ...
 };
 
 export const EntryInput = ({ label, icon, ...props }) => (
-  <div className="space-y-2 text-left">
-    {label && <label className="font-label text-xs font-semibold uppercase tracking-widest text-[#887361] ml-1">{label}</label>}
+  <div className="space-y-3 text-left w-full">
+    {label && <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C] ml-1">{label}</label>}
     <div className="relative group">
-      {icon && <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#887361]/50 group-focus-within:text-[#8a5100] transition-colors">{icon}</span>}
+      {icon && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#848E9C] group-focus-within:text-[#F0B90B] transition-colors">{icon}</span>}
       <input 
-        className={`w-full ${icon ? 'pl-12' : 'px-4'} pr-4 py-4 bg-[#e6e8ea] rounded-xl border-none focus:ring-2 focus:ring-[#ff9900]/40 focus:bg-white transition-all duration-300 font-body text-[#191c1e] placeholder:text-[#887361]/40`}
+        className={`w-full ${icon ? 'pl-14' : 'px-6'} pr-6 py-4 bg-[#F5F5F5] rounded-xl border-2 border-transparent focus:border-[#F0B90B] focus:bg-white transition-all duration-300 text-[14px] font-bold text-[#1E2026] placeholder:text-[#848E9C]/50 outline-none`}
         {...props}
       />
     </div>
@@ -32,23 +32,17 @@ export const EntryInput = ({ label, icon, ...props }) => (
 export const RoleCard = ({ title, desc, icon, active, onClick }) => (
   <button 
     onClick={onClick}
-    className={`group relative flex flex-col items-center justify-center p-8 px-10 pb-12 bg-white rounded-[40px] transition-all duration-500 border-2 ${active ? 'border-[#ff9900] shadow-2xl scale-105' : 'border-transparent hover:border-[#ff9900]/20 hover:-translate-y-2 hover:shadow-xl'}`}
+    className={`group relative flex flex-col items-center justify-center p-10 bg-white rounded-[40px] transition-all duration-500 border-2 ${active ? 'border-[#F0B90B] shadow-2xl scale-[1.05]' : 'border-transparent hover:border-[#F0B90B]/20 hover:-translate-y-2 hover:shadow-xl'}`}
   >
-    <div className={`w-16 h-16 mb-6 flex items-center justify-center rounded-2xl transition-all duration-300 ${active ? 'bg-[#ff9900]/10' : 'bg-[#eceef0] group-hover:bg-[#ff9900]/10'}`}>
-      <span className={`material-symbols-outlined text-4xl transition-colors duration-300 ${active ? 'text-[#ff9900]' : 'text-[#575b85] group-hover:text-[#ff9900]'}`}>{icon}</span>
+    <div className={`w-20 h-20 mb-8 flex items-center justify-center rounded-2xl transition-all duration-300 ${active ? 'bg-[#F0B90B]/10 text-[#F0B90B]' : 'bg-[#F5F5F5] text-[#848E9C] group-hover:bg-[#F0B90B]/10 group-hover:text-[#F0B90B]'}`}>
+      {icon}
     </div>
-    <h3 className={`font-headline text-xl font-bold tracking-tight transition-colors ${active ? 'text-[#ff9900]' : 'text-[#191c1e] group-hover:text-[#ff9900]'}`}>{title}</h3>
-    <div className="mt-4 flex items-center justify-center gap-5 w-full">
-      {/* 👻 Ghost Spacer for Perfect Centering */}
-      <div className="w-6 h-6 invisible px-2"></div> 
-      
-      <p className="text-[10px] text-[#554434] font-black uppercase tracking-[0.25em] opacity-40 leading-none text-center">
-        {desc}
-      </p>
-
-      <div className={`transition-all duration-500 flex items-center justify-center w-6 h-6 ${active ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0'}`}>
-        <span className="material-symbols-outlined text-[#ff9900] text-xl font-black hover:scale-125 transition-transform drop-shadow-[0_0_12px_rgba(255,153,0,0.4)]">arrow_forward</span>
-      </div>
+    <h3 className={`text-xl font-black uppercase tracking-tighter transition-colors ${active ? 'text-[#F0B90B]' : 'text-[#1E2026] group-hover:text-[#F0B90B]'}`}>{title}</h3>
+    <p className="mt-4 text-[10px] text-[#848E9C] font-black uppercase tracking-[0.2em] opacity-60 leading-none">
+      {desc}
+    </p>
+    <div className={`mt-8 transition-all duration-500 ${active ? 'opacity-100 scale-110' : 'opacity-0 scale-90 group-hover:opacity-60'}`}>
+       <div className="w-8 h-1 bg-[#F0B90B] rounded-full"></div>
     </div>
   </button>
 );

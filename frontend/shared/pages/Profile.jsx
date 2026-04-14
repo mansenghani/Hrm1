@@ -2,7 +2,14 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const Profile = () => {
-  const [userData, setUserData] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
+  const [userData, setUserData] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem('user');
+      return (stored && stored !== 'undefined' && stored !== 'null') ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
   const [passwords, setPasswords] = useState({
     currentPassword: '',
     newPassword: '',
@@ -11,17 +18,17 @@ const Profile = () => {
   const [status, setStatus] = useState({ type: '', message: '' });
   const [loading, setLoading] = useState(false);
 
-  const token = localStorage.getItem('token');
-  
+  const token = sessionStorage.getItem('token');
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:5000/api/auth/me', {
+        const response = await axios.get('/api/auth/me', {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (response.data) {
           setUserData(response.data);
-          localStorage.setItem('user', JSON.stringify(response.data));
+          sessionStorage.setItem('user', JSON.stringify(response.data));
         }
       } catch (err) {
         console.warn('Initial sync failed.');
@@ -30,11 +37,12 @@ const Profile = () => {
     if (token) fetchProfile();
   }, [token]);
 
-  const fullName = userData.profile ? `${userData.profile.firstName} ${userData.profile.lastName}` : 'System Admin';
-  const userEmail = userData.email || 'admin@fluidhr.com';
-  const userRole = userData.role || 'Personnel';
-  const userDept = userData.department || 'General Operations';
-  const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase() || 'NA';
+  const safeUserData = userData || {};
+  const fullName = safeUserData.profile ? `${safeUserData.profile.firstName || ''} ${safeUserData.profile.lastName || ''}`.trim() : 'System Admin';
+  const userEmail = safeUserData.email || 'admin@fluidhr.com';
+  const userRole = safeUserData.role || 'Personnel';
+  const userDept = safeUserData.department || 'General Operations';
+  const initials = fullName ? fullName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase() || 'NA' : 'NA';
 
   const resetForm = () => {
     setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -51,7 +59,7 @@ const Profile = () => {
       return setStatus({ type: 'error', message: 'Passwords mismatch.' });
     }
     setLoading(true);
-    const urls = ['/api/auth/update-password', 'http://localhost:5000/api/auth/update-password', 'http://127.0.0.1:5000/api/auth/update-password'];
+    const urls = ['/api/auth/update-password'];
     let success = false;
     for (const url of urls) {
       if (success) break;
@@ -64,8 +72,8 @@ const Profile = () => {
         }
       } catch (err) {
         if (err.response) {
-            setStatus({ type: 'error', message: err.response.data.message || 'Verification Failed' });
-            success = true; 
+          setStatus({ type: 'error', message: err.response.data.message || 'Verification Failed' });
+          success = true;
         }
       }
     }
@@ -80,7 +88,7 @@ const Profile = () => {
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; }
         .compact-input { 
           background-color: #f8fafc;
-          border: 1px solid #e1e8ed;
+          border: 2px solid rgba(251, 146, 60, 0.6);
           border-radius: 12px;
           padding: 14px 18px;
           font-size: 13px;
@@ -90,30 +98,30 @@ const Profile = () => {
           outline: none;
         }
         .compact-input:focus {
-          border-color: var(--accent-gold);
+          border-color: rgba(249, 115, 22, 1);
           background-color: white;
-          box-shadow: 0 0 0 4px rgba(200, 169, 106, 0.1);
+          box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.4);
         }
       `}</style>
 
-      {/* 🏙️ Security Success Alert */}
+      {/* ALERT SECTION */}
       {status.message && (
         <div className="mb-8 animate-scale-up">
           <div className={`${status.type === 'success' ? 'bg-emerald-50/50 border-emerald-200' : 'bg-rose-50/50 border-rose-200'} p-5 rounded-xl border shadow-sm`}>
             <div className="flex items-center gap-3 mb-1">
-               <span className={`material-symbols-outlined text-lg ${status.type === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {status.type === 'success' ? 'verified_user' : 'report'}
-               </span>
-               <h4 className={`text-[11px] font-black uppercase tracking-[0.2em] ${status.type === 'success' ? 'text-emerald-700' : 'text-rose-700'}`}>
-                  {status.type === 'success' ? 'System Protocol Verified' : 'Access Alert'}
-               </h4>
+              <span className={`material-symbols-outlined text-lg ${status.type === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {status.type === 'success' ? 'verified_user' : 'report'}
+              </span>
+              <h4 className={`text-[11px] font-black uppercase tracking-[0.2em] ${status.type === 'success' ? 'text-emerald-700' : 'text-rose-700'}`}>
+                {status.type === 'success' ? 'System Protocol Verified' : 'Access Alert'}
+              </h4>
             </div>
             <p className="text-[#1F2937] text-[12px] font-medium pl-8">{status.message}</p>
           </div>
         </div>
       )}
 
-      {/* 🎭 Minimalist Header Section */}
+      {/* HEADER SECTION */}
       <section className="bg-white p-8 rounded-[24px] border border-slate-200/60 shadow-sm mb-8 flex flex-col md:flex-row items-center gap-8">
         <div className="relative group">
           <div className="w-24 h-24 rounded-2xl bg-[#F5F7FA] flex items-center justify-center border border-slate-100 shadow-inner group-hover:scale-105 transition-transform duration-500">
@@ -126,23 +134,23 @@ const Profile = () => {
         <div className="text-center md:text-left flex-1">
           <h1 className="text-3xl font-black text-[#2E3A59] tracking-tighter font-manrope leading-none mb-2">{fullName}</h1>
           <div className="flex flex-wrap gap-4 mt-4 justify-center md:justify-start">
-             <div className="flex items-center gap-2 bg-[#F5F7FA] px-3 py-1.5 rounded-lg text-slate-500 text-[10px] font-bold uppercase tracking-widest border border-slate-100">
-                <span className="material-symbols-outlined text-sm text-[var(--accent-gold)]">mail</span> {userEmail}
-             </div>
-             <div className="flex items-center gap-2 bg-[#F5F7FA] px-3 py-1.5 rounded-lg text-slate-500 text-[10px] font-bold uppercase tracking-widest border border-slate-100">
-                <span className="material-symbols-outlined text-sm text-[#2E3A59]">badge</span> {userRole}
-             </div>
-             <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-emerald-100">
-                <span className="material-symbols-outlined text-sm">verified</span> Active Node
-             </div>
+            <div className="flex items-center gap-2 bg-[#F5F7FA] px-3 py-1.5 rounded-lg text-slate-500 text-[10px] font-bold uppercase tracking-widest border border-slate-100">
+              <span className="material-symbols-outlined text-sm text-[var(--accent-gold)]">mail</span> {userEmail}
+            </div>
+            <div className="flex items-center gap-2 bg-[#F5F7FA] px-3 py-1.5 rounded-lg text-slate-500 text-[10px] font-bold uppercase tracking-widest border border-slate-100">
+              <span className="material-symbols-outlined text-sm text-[#2E3A59]">badge</span> {userRole}
+            </div>
+            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-emerald-100">
+              <span className="material-symbols-outlined text-sm">verified</span> Active Node
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 🍱 Balanced Grid */}
+      {/* GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* 📝 Identity Registry */}
+
+        {/* IDENTITY REGISTRY */}
         <section className="lg:col-span-2 bg-white p-10 rounded-[24px] shadow-sm border border-slate-200/60 space-y-10">
           <div className="flex justify-between items-center pb-6 border-b border-slate-50">
             <div>
@@ -172,10 +180,10 @@ const Profile = () => {
           </div>
         </section>
 
-        {/* 📊 System Intelligence Hub */}
+        {/* INTELLIGENCE HUB */}
         <section className="bg-[#2E3A59] p-10 rounded-[28px] text-white flex flex-col justify-between relative shadow-2xl border border-white/5 overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-          
+
           <div className="space-y-8 relative z-10">
             <h3 className="text-[12px] font-black font-manrope uppercase tracking-[0.2em] text-[var(--accent-gold)]">Operational Trace</h3>
             <div className="space-y-6">
@@ -206,57 +214,57 @@ const Profile = () => {
           </p>
         </section>
 
-        {/* 🛡️ SECURITY REGISTRY */}
+        {/* SECURITY REGISTRY */}
         <section className="lg:col-span-3 bg-white p-10 rounded-[32px] shadow-sm border border-slate-200/60 relative overflow-hidden">
-           <div className="absolute top-0 left-0 w-full h-1.5 bg-[var(--accent-gold)]"></div>
-           
-           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 pb-8 border-b border-slate-50 gap-4">
-              <div>
-                <h3 className="text-2xl font-black text-[#2E3A59] font-manrope uppercase tracking-tighter">Security Registry</h3>
-                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-2 italic">Official Access Management Hub</p>
-              </div>
-              <div className="flex items-center gap-3">
-                 <div className="flex items-center gap-2 bg-[#F5F7FA] text-[#2E3A59] px-4 py-2 rounded-xl border border-slate-200/60 text-[9px] font-black uppercase tracking-widest shadow-sm">
-                   <span className="material-symbols-outlined text-sm">shield</span> AES-256 Validated
-                 </div>
-              </div>
-           </div>
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-[var(--accent-gold)]"></div>
 
-           <form onSubmit={handleUpdatePassword} className="space-y-12">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                 <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-4">Current Authorization Key</label>
-                    <input className="compact-input w-full" placeholder="••••••••" type="password" required value={passwords.currentPassword} onChange={(e) => setPasswords({...passwords, currentPassword: e.target.value})} />
-                 </div>
-                 <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-4">New Access Credentials</label>
-                    <input className="compact-input w-full" placeholder="••••••••" type="password" required value={passwords.newPassword} onChange={(e) => setPasswords({...passwords, newPassword: e.target.value})} />
-                 </div>
-                 <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-4">Verification Matrix</label>
-                    <input className="compact-input w-full" placeholder="••••••••" type="password" required value={passwords.confirmPassword} onChange={(e) => setPasswords({...passwords, confirmPassword: e.target.value})} />
-                 </div>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 pb-8 border-b border-slate-50 gap-4">
+            <div>
+              <h3 className="text-2xl font-black text-[#2E3A59] font-manrope uppercase tracking-tighter">Security Registry</h3>
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-2 italic">Official Access Management Hub</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 bg-[#F5F7FA] text-[#2E3A59] px-4 py-2 rounded-xl border border-slate-200/60 text-[9px] font-black uppercase tracking-widest shadow-sm">
+                <span className="material-symbols-outlined text-sm">shield</span> AES-256 Validated
               </div>
+            </div>
+          </div>
 
-              {/* 🔘 Control Hub */}
-              <div className="pt-10 flex flex-wrap gap-4 border-t border-slate-50">
-                 <button type="submit" disabled={loading} className="px-12 bg-[#2E3A59] text-white py-4 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-slate-900/10 hover:bg-[#1f2a44] hover:scale-[1.03] active:scale-95 transition-all disabled:opacity-50 flex items-center gap-3">
-                    <span className="material-symbols-outlined text-base">lock_reset</span>
-                    {loading ? 'Processing...' : 'Sync Security Keys'}
-                 </button>
-                 
-                 <button type="button" onClick={resetForm} className="px-12 bg-slate-50 text-slate-400 py-4 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-slate-100 hover:text-slate-600 border border-slate-100 transition-all flex items-center gap-3">
-                    <span className="material-symbols-outlined text-base">close</span>
-                    Discard Changes
-                 </button>
+          <form onSubmit={handleUpdatePassword} className="space-y-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-4">Current Authorization Key</label>
+                <input className="compact-input w-full" placeholder="********" type="password" required value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} />
               </div>
-           </form>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-4">New Access Credentials</label>
+                <input className="compact-input w-full" placeholder="********" type="password" required value={passwords.newPassword} onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} />
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-4">Verification Matrix</label>
+                <input className="compact-input w-full" placeholder="********" type="password" required value={passwords.confirmPassword} onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })} />
+              </div>
+            </div>
+
+            {/* CONTROL HUB */}
+            <div className="pt-10 flex flex-wrap gap-4 border-t border-slate-50">
+              <button type="submit" disabled={loading} className="px-12 bg-[#2E3A59] text-white py-4 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-slate-900/10 hover:bg-[#1f2a44] hover:scale-[1.03] active:scale-95 transition-all disabled:opacity-50 flex items-center gap-3">
+                <span className="material-symbols-outlined text-base">lock_reset</span>
+                {loading ? 'Processing...' : 'Sync Security Keys'}
+              </button>
+
+              <button type="button" onClick={resetForm} className="px-12 bg-slate-50 text-slate-400 py-4 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-slate-100 hover:text-slate-600 border border-slate-100 transition-all flex items-center gap-3">
+                <span className="material-symbols-outlined text-base">close</span>
+                Discard Changes
+              </button>
+            </div>
+          </form>
         </section>
       </div>
 
       <div className="text-center pt-24 pb-12 opacity-30">
         <p className="text-[#2E3A59] text-[10px] font-black uppercase tracking-[0.5em] leading-loose">
-          Narrative HR Central Operations Hub v2.5.1 <br /> 
+          Narrative HR Central Operations Hub v2.5.1 <br />
           <span className="text-[var(--accent-gold)]">Premium Security Tier Authorized</span>
         </p>
       </div>

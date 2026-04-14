@@ -24,18 +24,18 @@ const CreateUser = () => {
 
     try {
       const token = localStorage.getItem('token');
-      // 📡 Database Synchronization (Using Proxy Tunnel)
+      // Database Synchronization
       const response = await axios.post('/api/auth/create-user', formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       setMessage({ type: 'success', text: response.data.message });
-      setFormData({ firstName: '', lastName: '', email: '', password: '', role: '' });
+      setFormData({ firstName: '', lastName: '', email: '', password: '', role: 'employee' });
       setTimeout(() => setMessage({ type: '', text: '' }), 5000);
     } catch (err) {
-      setMessage({ 
-        type: 'error', 
-        text: err.response?.data?.message || 'Failed to create user.' 
+      setMessage({
+        type: 'error',
+        text: err.response?.data?.message || 'Failed to create user.'
       });
     } finally {
       setLoading(false);
@@ -44,13 +44,13 @@ const CreateUser = () => {
 
   return (
     <div className="w-full">
-      {/* 🛡️ CSS to hide browser-default password eye */}
+      {/* CSS to hide browser-default password eye */}
       <style>{`
         input::-ms-reveal, input::-ms-clear { display: none !important; }
         input::-webkit-contacts-auto-fill-button, input::-webkit-credentials-auto-fill-button { display: none !important; }
       `}</style>
 
-      {/* 🎊 Success/Error Toast Notification */}
+      {/* Success/Error Toast Notification */}
       {message.text && (
         <div className={`fixed top-24 right-8 bg-white shadow-[0px_24px_48px_rgba(0,2,41,0.08)] border-l-4 ${message.type === 'success' ? 'border-emerald-500' : 'border-rose-500'} px-6 py-5 rounded-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-6 duration-500 z-[100] ring-1 ring-black/5`}>
           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${message.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-500'}`}>
@@ -62,7 +62,7 @@ const CreateUser = () => {
             <p className="text-sm font-black text-slate-800 uppercase tracking-tight">{message.type === 'success' ? 'Personnel Created' : 'Process Halted'}</p>
             <p className="text-xs font-bold text-slate-500 mt-1">{message.text}</p>
           </div>
-          <button onClick={() => setMessage({ type: '', text: '' })} className="ml-4 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-50 transition-colors">
+          <button onClick={() => setMessage({ type: '', text: '' })} className="ml-4 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-50 transition-all">
             <span className="material-symbols-outlined text-slate-400 text-lg">close</span>
           </button>
         </div>
@@ -70,7 +70,7 @@ const CreateUser = () => {
 
       <div className="flex flex-col gap-6">
         <div>
-          <h2 className="text-4xl font-extrabold text-on-surface tracking-tight font-manrope">Create New User</h2>
+          <h2 className="text-4xl font-extrabold text-on-surface tracking-tight font-manrope">Create the Account</h2>
           <p className="text-secondary mt-2 text-lg">Register a new team member to the Narrative HR ecosystem.</p>
         </div>
 
@@ -83,14 +83,14 @@ const CreateUser = () => {
                   <label className="text-xs font-bold tracking-wider text-secondary uppercase ml-1">First Name</label>
                   <div className="relative group">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-focus-within:text-orange-500 transition-colors">person</span>
-                    <input 
+                    <input
                       required
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleChange}
                       autoComplete="off"
-                      className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-orange-500/40 focus:bg-white transition-all outline-none text-on-surface font-medium" 
-                      placeholder="" 
+                      className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-xl border-2 border-orange-400/60 focus:ring-2 focus:ring-orange-500/40 focus:bg-white transition-all outline-none text-on-surface font-medium"
+                      placeholder=""
                       type="text"
                     />
                   </div>
@@ -101,14 +101,14 @@ const CreateUser = () => {
                   <label className="text-xs font-bold tracking-wider text-secondary uppercase ml-1">Last Name</label>
                   <div className="relative group">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-focus-within:text-orange-500 transition-colors">person</span>
-                    <input 
+                    <input
                       required
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleChange}
                       autoComplete="off"
-                      className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-orange-500/40 focus:bg-white transition-all outline-none text-on-surface font-medium" 
-                      placeholder="" 
+                      className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-xl border-2 border-orange-400/60 focus:ring-2 focus:ring-orange-500/40 focus:bg-white transition-all outline-none text-on-surface font-medium"
+                      placeholder=""
                       type="text"
                     />
                   </div>
@@ -119,14 +119,14 @@ const CreateUser = () => {
                   <label className="text-xs font-bold tracking-wider text-secondary uppercase ml-1">Email Address</label>
                   <div className="relative group">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-focus-within:text-orange-500 transition-colors">mail</span>
-                    <input 
+                    <input
                       required
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
                       autoComplete="off"
-                      className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-orange-500/40 focus:bg-white transition-all outline-none text-on-surface font-medium" 
-                      placeholder="" 
+                      className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-xl border-2 border-orange-400/60 focus:ring-2 focus:ring-orange-500/40 focus:bg-white transition-all outline-none text-on-surface font-medium"
+                      placeholder=""
                     />
                   </div>
                 </div>
@@ -136,17 +136,17 @@ const CreateUser = () => {
                   <label className="text-xs font-bold tracking-wider text-secondary uppercase ml-1">Temporary Password</label>
                   <div className="relative group">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-focus-within:text-orange-500 transition-colors">lock</span>
-                    <input 
+                    <input
                       required
                       type={showPassword ? 'text' : 'password'}
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
                       autoComplete="new-password"
-                      className="w-full pl-12 pr-12 py-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-orange-500/40 focus:bg-white transition-all outline-none text-on-surface font-medium" 
-                      placeholder="" 
+                      className="w-full pl-12 pr-12 py-4 bg-slate-50 rounded-xl border-2 border-orange-400/60 focus:ring-2 focus:ring-orange-500/40 focus:bg-white transition-all outline-none text-on-surface font-medium"
+                      placeholder=""
                     />
-                    <button 
+                    <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-orange-500 transition-colors"
@@ -163,12 +163,12 @@ const CreateUser = () => {
                   <label className="text-xs font-bold tracking-wider text-secondary uppercase ml-1">System Role</label>
                   <div className="relative group">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-focus-within:text-orange-500 transition-colors">shield</span>
-                    <select 
+                    <select
                       required
                       name="role"
                       value={formData.role}
                       onChange={handleChange}
-                      className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-orange-500/40 focus:bg-white transition-all outline-none text-on-surface font-medium appearance-none"
+                      className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-xl border-2 border-orange-400/60 focus:ring-2 focus:ring-orange-500/40 focus:bg-white transition-all outline-none text-on-surface font-medium appearance-none"
                     >
                       <option value="" disabled>Select Access Level</option>
                       <option value="hr">HR Specialist</option>
@@ -192,7 +192,7 @@ const CreateUser = () => {
                     disabled={loading}
                     className="px-8 py-3 bg-[#ff9900] text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-orange-500/20 flex items-center gap-2 disabled:opacity-50"
                   >
-                    {loading ? 'Creating Node...' : 'Create Account'}
+                    {loading ? 'Creating Node...' : 'Create the Account'}
                     {!loading && <span className="material-symbols-outlined text-sm">add_circle</span>}
                   </button>
                 </div>
@@ -232,10 +232,10 @@ const CreateUser = () => {
             </div>
 
             <div className="flex-1 bg-orange-100 rounded-xl overflow-hidden min-h-[200px] relative">
-              <img 
-                alt="Modern Office" 
-                className="absolute inset-0 w-full h-full object-cover opacity-60" 
-                src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&q=80&w=1000" 
+              <img
+                alt="Modern Office"
+                className="absolute inset-0 w-full h-full object-cover opacity-60"
+                src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&q=80&w=1000"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-orange-500/40 to-transparent"></div>
               <div className="absolute bottom-6 left-6 right-6">

@@ -12,12 +12,12 @@ const hrSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-hrSchema.pre('save', async function(next) {
+hrSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 10);
 });
 
-hrSchema.methods.comparePassword = async function(candidatePassword) {
+hrSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 

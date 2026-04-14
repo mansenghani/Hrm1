@@ -1,205 +1,160 @@
 import React, { useState } from 'react';
+import { Settings as SettingsIcon, Shield, Bell, Key, Database, RefreshCw, Save, X, Globe, Cpu } from 'lucide-react';
 
 const Settings = () => {
   const [loading, setLoading] = useState(false);
 
   return (
-    <div className="space-y-10 animate-fade-in text-left max-w-7xl mx-auto pb-12">
-      <style>{`
-        .font-manrope { font-family: 'Manrope', sans-serif; }
-        .input-gold-focus:focus { border-color: var(--accent-gold); ring: 2px; --tw-ring-color: rgba(200, 169, 106, 0.1); }
-      `}</style>
-
-      {/* 🏙️ Page Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 uppercase tracking-tight">
+    <div className="space-y-12 animate-in fade-in duration-500 pb-20">
+      
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
         <div>
-          <h1 className="text-4xl font-black text-[#2E3A59] tracking-tighter leading-none mb-3 font-manrope">
-            System <span className="text-[var(--accent-gold)]">Architecture</span>
+          <h1 className="text-4xl font-black text-[#1E2026] tracking-tight leading-none mb-3">
+            System <span className="text-[#F0B90B]">Architecture</span>
           </h1>
-          <p className="text-slate-400 font-bold text-[9px] tracking-[0.4em] flex items-center gap-3">
-            <span className="w-10 h-[1px] bg-[var(--accent-gold)]"></span>
+          <p className="text-[#848E9C] font-bold text-[11px] uppercase tracking-[0.2em] flex items-center gap-3">
+            <span className="w-12 h-[2px] bg-[#F0B90B]"></span>
             Global Configuration Control
           </p>
         </div>
         <div className="flex gap-4">
-          <button className="px-6 py-3 rounded-xl border border-slate-200 text-slate-400 font-black uppercase text-[9px] tracking-widest hover:bg-slate-50 transition-all">Discard Changes</button>
-          <button className="bg-[#2E3A59] text-white px-8 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-slate-900/10 hover:bg-[#1f2a44] transition-all flex items-center gap-3">
-             <span className="material-symbols-outlined text-base">sync_saved_locally</span>
-             Synchronize Nodes
-          </button>
+           <button className="px-8 py-3 bg-[#F5F5F5] text-[#1E2026] rounded-full font-black text-[12px] uppercase tracking-wider hover:bg-[#E6E8EA] transition-all flex items-center gap-2">
+              <X size={16} />
+              Discard Trace
+           </button>
+           <button className="px-8 py-3 bg-[#F0B90B] text-[#1E2026] rounded-full font-black text-[12px] uppercase tracking-wider hover:bg-[#FFD000] transition-all shadow-lg flex items-center gap-2">
+              <Save size={16} />
+              Synchronize Nodes
+           </button>
         </div>
       </div>
 
-      {/* 🍱 Intelligence Grid Settings */}
-      <div className="grid grid-cols-12 gap-8">
+      {/* CORE CONFIGURATION GRID */}
+      <div className="grid grid-cols-12 gap-10">
         
-        {/* Company Identity HUB */}
-        <section className="col-span-12 lg:col-span-7 card !p-8 border-slate-200/60">
-          <div className="flex items-center gap-4 mb-10">
-            <div className="p-3 bg-slate-50 rounded-2xl text-[#2E3A59] border border-slate-100 shadow-sm">
-               <span className="material-symbols-outlined">business</span>
-            </div>
-            <h3 className="text-[11px] font-black text-[#2E3A59] uppercase tracking-tighter font-manrope">Organizational Identity</h3>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-8">
-            <div className="col-span-2 flex items-center gap-8 mb-6 border-b border-slate-50 pb-8">
-              <div className="relative group">
-                <div className="w-24 h-24 rounded-2xl bg-[#2E3A59] flex items-center justify-center p-4 shadow-xl border border-white/10 group-hover:scale-105 transition-transform duration-500">
-                  <span className="text-[var(--accent-gold)] text-3xl font-black font-manrope">NH</span>
-                </div>
-                <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                  <span className="material-symbols-outlined text-white text-xl">camera_enhance</span>
-                </div>
-              </div>
-              <div>
-                <h4 className="font-black text-[11px] text-[#2E3A59] uppercase leading-none font-manrope">Node Hub Logo</h4>
-                <p className="text-[9px] font-bold text-slate-400 mt-2 uppercase tracking-widest leading-relaxed">Visible across all employee portals.</p>
-                <button className="text-[10px] font-black text-[var(--accent-gold)] hover:underline uppercase tracking-widest mt-3">Upload Strategic Asset</button>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-300">Entity Designation</label>
-              <input className="w-full bg-[#F5F7FA] border-none rounded-xl px-4 py-3.5 text-[11px] font-black uppercase tracking-widest text-[#2E3A59] focus:ring-2 focus:ring-[var(--accent-gold)]/20 transition-all outline-none" type="text" defaultValue="FluidHR Global Architecture"/>
-            </div>
-            
-            <div className="space-y-3">
-              <label className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-300">Primary Core URL</label>
-              <input className="w-full bg-[#F5F7FA] border-none rounded-xl px-4 py-3.5 text-[11px] font-black uppercase tracking-widest text-[#2E3A59] focus:ring-2 focus:ring-[var(--accent-gold)]/20 transition-all outline-none" type="text" defaultValue="central.fluidhr.com"/>
-            </div>
-
-            <div className="col-span-2 space-y-3">
-              <label className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-300">HQ Coordinate Address</label>
-              <input className="w-full bg-[#F5F7FA] border-none rounded-xl px-4 py-3.5 text-[11px] font-black uppercase tracking-widest text-[#2E3A59] focus:ring-2 focus:ring-[var(--accent-gold)]/20 transition-all outline-none" type="text" defaultValue="72 Innovation Drive, Suite 400, San Francisco, CA"/>
-            </div>
-          </div>
-        </section>
-
-        {/* Sync Pillar Config */}
-        <section className="col-span-12 lg:col-span-5 card !p-8 border-slate-200/60">
-          <div className="flex items-center gap-4 mb-10">
-            <div className="p-3 bg-slate-50 rounded-2xl text-[var(--accent-gold)] border border-slate-100 shadow-sm">
-               <span className="material-symbols-outlined">schedule</span>
-            </div>
-            <h3 className="text-[11px] font-black text-[#2E3A59] uppercase tracking-tighter font-manrope">Sync Cycles</h3>
-          </div>
-
-          <div className="space-y-10">
-            <div>
-              <p className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-300 mb-6 flex items-center justify-between">
-                 Operating Days <span>MTD Active</span>
-              </p>
-              <div className="flex justify-between gap-2">
-                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
-                  <button key={i} className={`flex-1 h-10 rounded-xl border-2 font-black text-[10px] transition-all uppercase ${i < 5 ? 'border-[var(--accent-gold)] bg-[var(--accent-gold)]/10 text-[var(--accent-gold)] shadow-lg shadow-[var(--accent-gold)]/5' : 'border-slate-100 text-slate-300 hover:border-slate-200'}`}>{day}</button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <label className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-300">Pulse Check-in</label>
-                <input className="w-full bg-[#F5F7FA] border-none rounded-xl px-4 py-3.5 text-[10px] font-black text-[#2E3A59] focus:ring-2 focus:ring-[var(--accent-gold)]/20 transition-all outline-none" type="time" defaultValue="09:00"/>
-              </div>
-              <div className="space-y-3">
-                <label className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-300">Pulse Check-out</label>
-                <input className="w-full bg-[#F5F7FA] border-none rounded-xl px-4 py-3.5 text-[10px] font-black text-[#2E3A59] focus:ring-2 focus:ring-[var(--accent-gold)]/20 transition-all outline-none" type="time" defaultValue="18:00"/>
-              </div>
-            </div>
-
-            <div className="p-6 bg-[#F5F7FA] rounded-2xl border border-slate-200/40 relative group overflow-hidden">
-               <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--accent-gold)]/5 rounded-full -mr-16 -mt-16 group-hover:scale-125 transition-transform duration-700"></div>
-               <div className="flex items-center justify-between mb-3 relative z-10">
-                  <h4 className="font-black text-[10px] text-[#2E3A59] uppercase tracking-tighter font-manrope">Fluid Latency Buffer</h4>
-                  <div className="w-10 h-5 bg-[var(--accent-gold)] rounded-full relative shadow-lg shadow-[var(--accent-gold)]/10 transition-all">
-                     <div className="w-3.5 h-3.5 bg-white rounded-full absolute right-1 top-0.75 shadow-sm"></div>
-                  </div>
-               </div>
-               <p className="text-[9px] text-slate-400 font-bold leading-relaxed uppercase tracking-widest italic opacity-80 relative z-10">Allow personnel to clock-in within a 2-hour window of the default pulse.</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Global Access Protocol Sheet */}
-        <section className="col-span-12 card !p-0 border-slate-200/60 overflow-hidden">
-           <div className="p-8 flex flex-col md:flex-row items-center justify-between bg-slate-50/50 border-b border-slate-100 gap-6">
-              <div className="flex items-center gap-4">
-                 <div className="p-3 bg-[#2E3A59] rounded-2xl text-white shadow-xl shadow-[#2E3A59]/10">
-                    <span className="material-symbols-outlined font-black">lock_open</span>
+        {/* Identity & Branding Hub */}
+        <div className="col-span-12 lg:col-span-7 space-y-10">
+           <div className="bg-white border border-[#E6E8EA] rounded-3xl p-10 group">
+              <div className="flex items-center gap-4 mb-12">
+                 <div className="p-3 bg-[#F5F5F5] rounded-xl text-[#F0B90B] group-hover:bg-[#F0B90B] group-hover:text-white transition-all shadow-sm">
+                    <Globe size={24} />
                  </div>
                  <div>
-                    <h3 className="text-[12px] font-black text-[#2E3A59] uppercase tracking-tighter font-manrope">Permission Arc Matrix</h3>
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1 opacity-60">Architectural access control protocols.</p>
+                    <h3 className="text-[12px] font-black text-[#1E2026] uppercase tracking-[0.2em]">Organizational Identity</h3>
+                    <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest mt-1">Global branding & network visibility</p>
                  </div>
               </div>
-              <button className="flex items-center gap-3 px-6 py-3 bg-[#2E3A59] text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#1f2a44] transition-all shadow-md">
-                 <span className="material-symbols-outlined text-sm">shield_person</span>
-                 Define New Arc
-              </button>
-           </div>
-           
-           <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                 <thead>
-                    <tr className="bg-slate-50/20 border-b border-slate-50">
-                       <th className="px-8 py-5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Hub Module</th>
-                       <th className="px-6 py-5 text-center text-[9px] font-black uppercase tracking-[0.2em] text-[#2E3A59]">Master Node</th>
-                       <th className="px-6 py-5 text-center text-[9px] font-black uppercase tracking-[0.2em] text-[#2E3A59]">Dept Lead</th>
-                       <th className="px-6 py-5 text-center text-[9px] font-black uppercase tracking-[0.2em] text-[#2E3A59]">Personnel</th>
-                    </tr>
-                 </thead>
-                 <tbody className="divide-y divide-slate-50">
-                    {[
-                      { hub: 'Financial Cluster', desc: 'Salaries and Bonus Logic', icon: 'payments' },
-                      { hub: 'Registry Core', desc: 'Legal and Identity Trace', icon: 'fingerprint' },
-                      { hub: 'Pulse Monitoring', desc: 'Time and Attendance Logic', icon: 'timer' }
-                    ].map((row, i) => (
-                      <tr key={i} className="group hover:bg-[#F5F7FA]/70 transition-colors">
-                        <td className="px-8 py-6">
-                           <div className="flex items-center gap-4">
-                              <span className="material-symbols-outlined text-slate-200 group-hover:text-[var(--accent-gold)] transition-colors">{row.icon}</span>
-                              <div>
-                                 <p className="font-black text-[11px] text-[#2E3A59] uppercase font-manrope">{row.hub}</p>
-                                 <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest mt-1">{row.desc}</p>
-                              </div>
-                           </div>
-                        </td>
-                        {[1, 2, 3].map(col => (
-                          <td key={col} className="px-6 py-6 text-center">
-                             <div className={`w-2 h-2 rounded-full mx-auto ${col === 1 || (col === 2 && i > 0) ? 'bg-[var(--accent-gold)] shadow-lg shadow-[var(--accent-gold)]/20' : 'bg-slate-100'}`}></div>
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                 </tbody>
-              </table>
-           </div>
-        </section>
 
-        {/* System Danger Zone */}
-        <section className="col-span-12 card !bg-[#2E3A59] border-none shadow-2xl relative overflow-hidden group">
-           <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/10 rounded-full -mr-32 -mt-32 blur-[80px] group-hover:scale-125 transition-all duration-[2s]"></div>
-           <div className="p-10 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10 text-white">
-              <div className="text-left">
-                 <h3 className="text-sm font-black text-[var(--accent-gold)] uppercase tracking-[0.2em] mb-3 font-manrope">Structural Maintenance</h3>
-                 <p className="text-white/40 max-w-2xl text-[10px] font-bold leading-relaxed uppercase tracking-widest">
-                    Archive historical data clusters, manage core integrations, or reset organizational workspace. Proceed with extreme caution as these paths require high-level authorization.
+              <div className="space-y-8">
+                 <div className="flex items-center gap-8 pb-8 border-b border-[#F5F5F5]">
+                    <div className="relative group/logo">
+                       <div className="w-24 h-24 rounded-2xl bg-[#222126] flex items-center justify-center text-[#F0B90B] font-black text-2xl border border-white/5 shadow-xl transition-transform group-hover/logo:scale-105">
+                          FHR
+                       </div>
+                       <div className="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity cursor-pointer">
+                          <RefreshCw size={20} className="text-white" />
+                       </div>
+                    </div>
+                    <div>
+                       <h4 className="text-[14px] font-black text-[#1E2026] uppercase">Node Identity Asset</h4>
+                       <p className="text-[11px] font-bold text-[#848E9C] mt-1 mb-4">SVG or High-Res Logic Recommended</p>
+                       <button className="text-[11px] font-black text-[#F0B90B] uppercase tracking-widest hover:underline">Update Asset</button>
+                    </div>
+                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                       <label className="text-[10px] font-black uppercase tracking-widest text-[#848E9C]">Entity Designation</label>
+                       <input type="text" defaultValue="FluidHR Global Matrix" className="w-full bg-[#F5F5F5] border border-transparent rounded-xl px-5 py-4 text-[13px] font-bold text-[#1E2026] focus:border-[#F0B90B] focus:bg-white outline-none transition-all" />
+                    </div>
+                    <div className="space-y-3">
+                       <label className="text-[10px] font-black uppercase tracking-widest text-[#848E9C]">Core Network URL</label>
+                       <input type="text" defaultValue="internal.fluidhr.io" className="w-full bg-[#F5F5F5] border border-transparent rounded-xl px-5 py-4 text-[13px] font-bold text-[#1E2026] focus:border-[#F0B90B] focus:bg-white outline-none transition-all" />
+                    </div>
+                    <div className="col-span-full space-y-3">
+                       <label className="text-[10px] font-black uppercase tracking-widest text-[#848E9C]">HQ Coordinate Address</label>
+                       <input type="text" defaultValue="Global Infrastructure Center, Block A, SF" className="w-full bg-[#F5F5F5] border border-transparent rounded-xl px-5 py-4 text-[13px] font-bold text-[#1E2026] focus:border-[#F0B90B] focus:bg-white outline-none transition-all" />
+                    </div>
+                 </div>
+              </div>
+           </div>
+        </div>
+
+        {/* Sync Frequency Pillar */}
+        <div className="col-span-12 lg:col-span-5 space-y-10">
+           <div className="bg-white border border-[#E6E8EA] rounded-3xl p-10 group h-full">
+              <div className="flex items-center gap-4 mb-12">
+                 <div className="p-3 bg-[#F5F5F5] rounded-xl text-[#F0B90B] group-hover:bg-[#F0B90B] group-hover:text-white transition-all shadow-sm">
+                    <RefreshCw size={24} />
+                 </div>
+                 <div>
+                    <h3 className="text-[12px] font-black text-[#1E2026] uppercase tracking-[0.2em]">Operational Pulse</h3>
+                    <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest mt-1">Sync frequency & buffer logic</p>
+                 </div>
+              </div>
+
+              <div className="space-y-10">
+                 <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#848E9C] mb-6">Active Sync Days</p>
+                    <div className="flex justify-between gap-3">
+                       {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
+                          <button key={i} className={`flex-1 h-12 rounded-xl font-black text-[12px] transition-all border-2 ${i < 5 ? 'border-[#F0B90B] bg-[#F0B90B]/5 text-[#F0B90B]' : 'border-[#F5F5F5] text-[#848E9C] hover:border-[#E6E8EA]'}`}>{day}</button>
+                       ))}
+                    </div>
+                 </div>
+
+                 <div className="grid grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                       <label className="text-[10px] font-black uppercase tracking-widest text-[#848E9C]">Pulse Start</label>
+                       <input type="time" defaultValue="09:00" className="w-full bg-[#F5F5F5] rounded-xl px-5 py-4 text-[13px] font-black text-[#1E2026] border-none outline-none focus:bg-[#F0B90B]/5 transition-all" />
+                    </div>
+                    <div className="space-y-3">
+                       <label className="text-[10px] font-black uppercase tracking-widest text-[#848E9C]">Pulse End</label>
+                       <input type="time" defaultValue="18:00" className="w-full bg-[#F5F5F5] rounded-xl px-5 py-4 text-[13px] font-black text-[#1E2026] border-none outline-none focus:bg-[#F0B90B]/5 transition-all" />
+                    </div>
+                 </div>
+
+                 <div className="p-8 bg-[#F5F5F5] rounded-2xl border border-[#E6E8EA] relative overflow-hidden group/opt">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#F0B90B]/5 blur-3xl group-hover/opt:scale-150 transition-transform"></div>
+                    <div className="flex items-center justify-between mb-4 relative z-10">
+                       <h4 className="text-[11px] font-black text-[#1E2026] uppercase">Latency Buffer</h4>
+                       <div className="w-10 h-5 bg-[#F0B90B] rounded-full relative shadow-sm">
+                          <div className="w-4 h-4 bg-white rounded-full absolute right-0.5 top-0.5"></div>
+                       </div>
+                    </div>
+                    <p className="text-[10px] font-bold text-[#848E9C] leading-relaxed uppercase tracking-tight italic opacity-80 relative z-10">Allow personnel to clock-in within a defined operational window.</p>
+                 </div>
+              </div>
+           </div>
+        </div>
+
+        {/* Global Access Protocol Shield */}
+        <div className="col-span-12 bg-[#222126] rounded-3xl p-10 relative overflow-hidden group">
+           <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#F6465D]/10 to-transparent rounded-full -mr-48 -mt-48 blur-[80px] group-hover:scale-125 transition-transform duration-[3s]"></div>
+           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-12 text-white text-left">
+              <div className="max-w-3xl">
+                 <h3 className="text-[12px] font-black text-[#F0B90B] uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                    <Shield size={18} />
+                    High-Level Authorization
+                 </h3>
+                 <p className="text-[#848E9C] text-[11px] font-bold leading-relaxed uppercase tracking-widest">
+                    Critical maintenance operations and structural purge protocols. These actions are non-reversible and require verified lead master credentials. Proceed with caution within the secure architectural layer.
                  </p>
               </div>
               <div className="flex gap-4 shrink-0">
-                 <button className="px-8 py-3.5 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all outline-none">Log Interface</button>
-                 <button className="px-8 py-3.5 bg-rose-600/90 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xl shadow-rose-900/40 border border-rose-500/20 hover:scale-[1.05] active:scale-95 transition-all outline-none font-manrope">Purge Architecture</button>
+                 <button className="px-10 py-4 bg-white/5 border border-white/10 rounded-full font-black text-[11px] uppercase tracking-widest hover:bg-white/10 transition-all">Audit Trails</button>
+                 <button className="px-10 py-4 bg-[#F6465D] text-white rounded-full font-black text-[11px] uppercase tracking-widest shadow-lg shadow-[#F6465D]/20 hover:scale-105 active:scale-95 transition-all border border-white/10">Purge Registry</button>
               </div>
            </div>
-        </section>
+        </div>
       </div>
 
-      {/* Final Verification Trace */}
-      <div className="pt-12 text-center opacity-30">
-        <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.6em] leading-loose">
-          Central Configuration Layer: Node 0xA991 <br />
-          <span className="text-[var(--accent-gold)]">Verified Narrative Sync Active</span>
+      {/* FOOTER */}
+      <div className="pt-16 text-center opacity-30 pb-12">
+        <p className="text-[#848E9C] text-[10px] font-black uppercase tracking-[0.6em] leading-loose">
+           Configuration Layer Trace ID: 0x992B-X1 <br />
+           <span className="text-[#F0B90B]">Verified Narrative Sync Active</span>
         </p>
       </div>
     </div>

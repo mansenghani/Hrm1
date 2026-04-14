@@ -23,7 +23,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@shared': path.resolve(__dirname, '../shared'),
-      // 🛰️ Helping Vite map the 'Main Part' dependencies
+      // Helping Vite map dependencies
       'recharts': path.resolve(__dirname, '../../node_modules/recharts'),
       'lucide-react': path.resolve(__dirname, '../../node_modules/lucide-react')
     },

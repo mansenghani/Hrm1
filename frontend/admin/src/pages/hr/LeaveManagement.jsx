@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { ShieldAlert, CheckCircle, XCircle, Calendar, Users, Filter, Search, MoreHorizontal, User, ArrowUpRight } from 'lucide-react';
 
 const LeaveManagement = () => {
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
     fetchLeaves();
@@ -13,15 +15,13 @@ const LeaveManagement = () => {
   const fetchLeaves = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      // 📡 Fetching the Global Leave Matrix via Proxy Tunnel
-      const response = await axios.get('/api/leaves', {
+      const response = await axios.get('http://localhost:5000/api/leaves', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setLeaves(response.data);
+      setLeaves(response.data || []);
     } catch (err) {
-      console.error('🔥 Fetch Error:', err);
-      setError('Unable to sync with the Leave Protocol node.');
+      console.error('Fetch failed:', err);
+      setError('Connection to Leave Protocol node disrupted.');
     } finally {
       setLoading(false);
     }
@@ -29,167 +29,159 @@ const LeaveManagement = () => {
 
   const handleStatusUpdate = async (id, status) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(`/api/leaves/${id}`, { status }, {
+      await axios.put(`http://localhost:5000/api/leaves/${id}`, { status }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      // 🔄 Re-sync the matrix after approval/rejection
       fetchLeaves();
     } catch (err) {
-      console.error('🔥 Update Error:', err);
+      console.error('Status update failed:', err);
     }
   };
 
-  const pendingCount = leaves.filter(l => l.status === 'pending').length;
+  const pendingCount = leaves.filter(l => l.status === 'Pending').length;
 
   return (
-    <div className="space-y-6 pb-12 animate-fade-in text-left">
-      <style>{`
-        .cta-gradient {
-            background: linear-gradient(135deg, #8A5100 0%, #FF9900 100%);
-        }
-        .font-manrope { font-family: 'Manrope', sans-serif; }
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-      `}</style>
-
-      {/* 🏙️ Summary Header Section */}
-      <div className="flex justify-between items-end mb-6">
+    <div className="space-y-12 animate-in fade-in duration-500 pb-20">
+      
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
         <div>
-          <h2 className="text-3xl font-black text-[#1e1e1e] tracking-tight font-manrope leading-none uppercase">Leave Protocol</h2>
-          <p className="text-slate-500 mt-3 font-bold text-[10px] uppercase tracking-widest leading-none">Database Synchronization: Active</p>
+          <h1 className="text-4xl font-black text-[#1E2026] tracking-tight leading-none mb-3">
+            Leave <span className="text-[#F0B90B]">Protocol</span>
+          </h1>
+          <p className="text-[#848E9C] font-bold text-[11px] uppercase tracking-[0.2em] flex items-center gap-3">
+            <span className="w-12 h-[2px] bg-[#F0B90B]"></span>
+            Organizational Leave Management Node
+          </p>
         </div>
-        <button className="cta-gradient text-white px-6 py-3 rounded-2xl flex items-center gap-3 font-black shadow-lg shadow-[#FF9900]/20 hover:scale-[1.02] active:scale-95 transition-all text-[9px] uppercase tracking-widest leading-none">
-          <span className="material-symbols-outlined text-base">add_circle</span>
-          Create New Policy
+        <button className="bg-[#F0B90B] text-[#1E2026] px-10 py-4 rounded-full font-black text-[13px] uppercase tracking-wider shadow-lg hover:bg-[#FFD000] transition-all flex items-center gap-3">
+          <Calendar size={18} />
+          Adjust Policies
         </button>
       </div>
 
-      {/* 🍱 Dynamic Bento Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-        <div className="md:col-span-1 bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 space-y-5">
-          <div className="w-12 h-12 bg-[#FF9900]/10 rounded-2xl flex items-center justify-center text-[#FF9900]">
-            <span className="material-symbols-outlined text-2xl">group</span>
-          </div>
-          <div>
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 leading-none font-manrope">Presence Pulse</p>
-            <h3 className="text-2xl font-black text-[#000229] font-manrope leading-none">Syncing...</h3>
-          </div>
-          <div className="w-full bg-slate-50 rounded-full h-1.5 overflow-hidden">
-            <div className="bg-[#FF9900] h-full rounded-full shadow-sm" style={{ width: '85%' }}></div>
-          </div>
+      {/* SUMMARY GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="md:col-span-1 bg-white border border-[#E6E8EA] rounded-2xl p-8 hover:shadow-[0_8px_24px_rgba(0,0,0,0.02)] transition-all group overflow-hidden relative">
+           <div className="p-3 w-12 h-12 bg-[#F5F5F5] rounded-xl text-[#F0B90B] mb-8 group-hover:bg-[#F0B90B] group-hover:text-white transition-all">
+              <Users size={24} />
+           </div>
+           <h3 className="text-2xl font-black text-[#1E2026] tabular-nums mb-1">98%</h3>
+           <p className="text-[10px] font-black text-[#848E9C] uppercase tracking-[0.1em]">Presence Pulse</p>
+           <div className="mt-6 w-full bg-[#F5F5F5] rounded-full h-1">
+              <div className="bg-[#0ECB81] h-full rounded-full transition-all duration-1000" style={{ width: '98%' }}></div>
+           </div>
         </div>
 
-        <div className="md:col-span-1 bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 space-y-5">
-          <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500">
-            <span className="material-symbols-outlined text-2xl">pending_actions</span>
-          </div>
-          <div>
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 leading-none font-manrope">Pending Nodes</p>
-            <h3 className="text-2xl font-black text-[#000229] font-manrope leading-none">{pendingCount}</h3>
-          </div>
-          <p className={`text-[8px] font-black flex items-center uppercase tracking-widest italic ${pendingCount > 0 ? 'text-rose-600' : 'text-slate-300'}`}>
-            <span className="material-symbols-outlined text-[10px] mr-2">priority_high</span>
-            {pendingCount > 0 ? 'NEEDS ATTENTION' : 'QUEUE EMPTY'}
-          </p>
+        <div className="md:col-span-1 bg-white border border-[#E6E8EA] rounded-2xl p-8 hover:shadow-[0_8px_24px_rgba(0,0,0,0.02)] transition-all group overflow-hidden relative">
+           <div className={`p-3 w-12 h-12 rounded-xl mb-8 transition-all ${pendingCount > 0 ? 'bg-[#F0B90B]/10 text-[#F0B90B]' : 'bg-[#F5F5F5] text-[#848E9C]'}`}>
+              <ShieldAlert size={24} />
+           </div>
+           <h3 className="text-2xl font-black text-[#1E2026] tabular-nums mb-1">{pendingCount}</h3>
+           <p className="text-[10px] font-black text-[#848E9C] uppercase tracking-[0.1em]">Pending Nodes</p>
+           <p className={`mt-6 text-[9px] font-black uppercase tracking-widest ${pendingCount > 0 ? 'text-[#F0B90B] animate-pulse' : 'text-[#848E9C]'}`}>
+              {pendingCount > 0 ? 'Immediate Action' : 'System Synchronized'}
+           </p>
         </div>
 
-        <div className="md:col-span-2 bg-[#000229] p-6 rounded-[32px] shadow-2xl flex items-center justify-between text-white overflow-hidden relative border border-white/5">
-          <div className="relative z-10 space-y-3 text-left">
-            <h3 className="text-xl font-black font-manrope uppercase tracking-tighter">Organizational Quota</h3>
-            <p className="text-slate-400 text-[11px] font-bold max-w-xs leading-relaxed uppercase tracking-tight">The 2026 Leave Protocol is established. All personnel units are entitled to 24 annual synchronization days.</p>
-            <button className="mt-4 text-[#FF9900] font-black text-[10px] flex items-center hover:underline uppercase tracking-widest">
-              Review Protocol Details <span className="material-symbols-outlined ml-2 text-sm">arrow_forward</span>
-            </button>
-          </div>
-          <span className="material-symbols-outlined text-[#FF9900]/10 text-9xl absolute -right-4 -bottom-4">calendar_apps</span>
+        <div className="md:col-span-2 bg-[#222126] text-white p-8 rounded-3xl relative overflow-hidden group shadow-xl">
+           <div className="absolute top-0 right-0 w-40 h-40 bg-[#F0B90B]/10 blur-3xl rounded-full"></div>
+           <div className="relative z-10 flex flex-col justify-between h-full">
+              <div>
+                 <h4 className="text-xl font-black mb-2">Organizational Quota Trace</h4>
+                 <p className="text-[#848E9C] text-[11px] font-bold leading-relaxed uppercase tracking-widest mb-6">Standard cycle set to 24 units per personnel node.</p>
+              </div>
+              <button className="text-[#F0B90B] font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:underline">
+                 Modify Global Protocol <ArrowUpRight size={14} />
+              </button>
+           </div>
+           <Calendar size={120} className="absolute -right-10 -bottom-10 text-white/5 rotate-12" />
         </div>
       </div>
 
-      {/* 📊 Personnel Request Hub */}
-      <div className="lg:col-span-2 bg-white rounded-[48px] shadow-sm border border-slate-50 overflow-hidden">
-        <div className="p-8 flex justify-between items-center bg-[#f7f9fb]/50 border-b border-slate-50">
-          <div>
-             <h2 className="text-sm font-black font-manrope text-[#000229] uppercase tracking-tighter">Personnel Request Matrix</h2>
-             <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mt-2">{leaves.length} Synchronized Requests</p>
-          </div>
-          <button className="p-2.5 bg-white shadow-sm border border-slate-100 rounded-xl transition-colors text-slate-400 hover:text-[#000229]">
-            <span className="material-symbols-outlined text-lg">filter_list</span>
-          </button>
+      {/* REQUEST TABLE */}
+      <div className="bg-white border border-[#E6E8EA] rounded-2xl overflow-hidden shadow-[0_3px_5px_rgba(32,32,37,0.05)]">
+        <div className="p-8 bg-[#F5F5F5]/30 border-b border-[#E6E8EA] flex flex-col md:flex-row justify-between items-center gap-6">
+           <h3 className="text-[12px] font-black uppercase tracking-[0.2em] text-[#1E2026]">Personnel Request Matrix</h3>
+           <div className="flex items-center gap-4 bg-white px-5 py-2 rounded-full border border-[#E6E8EA] focus-within:border-[#F0B90B] transition-all w-72 shadow-sm">
+              <Search size={14} className="text-[#848E9C]" />
+              <input type="text" placeholder="Search trace..." className="bg-transparent border-none focus:outline-none text-[12px] font-bold text-[#1E2026] w-full" />
+           </div>
         </div>
 
         {loading ? (
-          <div className="p-24 flex flex-col items-center justify-center gap-4 text-slate-200">
-             <div className="w-10 h-10 border-4 border-[#ff9900]/20 border-t-[#ff9900] rounded-full animate-spin"></div>
-             <p className="text-[9px] font-black uppercase tracking-[0.3em]">Decoding Matrix...</p>
+          <div className="py-32 flex flex-col items-center justify-center gap-4 opacity-30">
+             <div className="w-10 h-10 border-2 border-t-[#F0B90B] border-[#F5F5F5] rounded-full animate-spin"></div>
+             <p className="text-[10px] font-black uppercase tracking-widest">Tracing Matrix...</p>
           </div>
         ) : error ? (
-           <div className="p-24 text-rose-500 font-black uppercase tracking-widest text-[10px] text-center">{error}</div>
+           <div className="py-32 text-center text-[#F6465D] font-black uppercase tracking-widest text-[11px]">{error}</div>
         ) : leaves.length === 0 ? (
-           <div className="p-24 text-slate-300 font-black uppercase tracking-widest text-[10px] text-center">No active requests in the matrix.</div>
+           <div className="py-32 text-center text-[#848E9C] font-black uppercase tracking-widest text-[11px]">Matrix queue empty</div>
         ) : (
-          <div className="overflow-x-auto scrollbar-hide">
-            <table className="w-full text-left">
-              <thead className="bg-[#f7f9fb]/30 text-[9px] uppercase tracking-[0.2em] text-slate-400 font-black border-b border-slate-50">
-                <tr>
-                  <th className="px-10 py-5">Personnel Node</th>
-                  <th className="px-8 py-5">Type</th>
-                  <th className="px-8 py-5">Deployment Window</th>
-                  <th className="px-8 py-5">Sync State</th>
-                  <th className="px-10 py-5 text-right">Ops</th>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#F5F5F5]/30 border-b border-[#E6E8EA]">
+                  <th className="px-10 py-5 text-[10px] font-black text-[#848E9C] uppercase tracking-widest">Personnel Node</th>
+                  <th className="px-10 py-5 text-[10px] font-black text-[#848E9C] uppercase tracking-widest">Type</th>
+                  <th className="px-10 py-5 text-[10px] font-black text-[#848E9C] uppercase tracking-widest">Cycle Window</th>
+                  <th className="px-10 py-5 text-[10px] font-black text-[#848E9C] uppercase tracking-widest">Status Trace</th>
+                  <th className="px-10 py-5 text-[10px] font-black text-[#848E9C] uppercase tracking-widest text-right">Ops Logic</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
-                {leaves.map((leave) => (
-                  <tr key={leave._id} className="hover:bg-[#f7f9fb]/50 transition-all duration-300 group">
-                    <td className="px-10 py-5">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center text-[10px] font-black text-[#000229]/20 border border-white shadow-sm shrink-0">
-                          {leave.user?.profile?.firstName?.substring(0, 1) || 'N'}{leave.user?.profile?.lastName?.substring(0, 1) || 'A'}
-                        </div>
-                        <div className="overflow-hidden text-left">
-                          <p className="text-[11px] font-black text-[#000229] font-manrope uppercase leading-none truncate">{leave.user?.profile?.firstName} {leave.user?.profile?.lastName}</p>
-                          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-2 leading-none">{leave.user?.email}</p>
-                        </div>
-                      </div>
+              <tbody className="divide-y divide-[#E6E8EA]">
+                {leaves.map((row, i) => (
+                  <tr key={i} className="hover:bg-[#F5F5F5] transition-colors group cursor-default">
+                    <td className="px-10 py-6">
+                       <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-[#F5F5F5] flex items-center justify-center text-[#1E2026] border border-[#E6E8EA] font-black text-xs">
+                             <User size={16} className="text-[#F0B90B]" />
+                          </div>
+                          <div>
+                             <p className="text-[13px] font-black text-[#1E2026] uppercase group-hover:text-[#F0B90B] transition-colors">
+                                {row.employeeId?.profile?.firstName} {row.employeeId?.profile?.lastName}
+                             </p>
+                             <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest mt-1">
+                                {row.employeeId?.email}
+                             </p>
+                          </div>
+                       </div>
                     </td>
-                    <td className="px-8 py-5">
-                      <span className="px-3 py-1.5 bg-[#f7f9fb] rounded-xl text-[9px] font-black text-[#000229] uppercase tracking-widest border border-slate-100">{leave.leaveType}</span>
+                    <td className="px-10 py-6">
+                       <span className="px-4 py-1.5 bg-[#F5F5F5] rounded-full text-[10px] font-black uppercase tracking-widest text-[#1E2026]">
+                          {row.leaveType}
+                       </span>
                     </td>
-                    <td className="px-8 py-5">
-                      <p className="text-[10px] font-black text-[#000229] leading-none uppercase">
-                        {new Date(leave.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(leave.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </p>
-                      <p className="text-[8px] font-black text-[#ff9900] uppercase tracking-widest mt-2 leading-none">
-                        {Math.ceil((new Date(leave.endDate) - new Date(leave.startDate)) / (1000 * 60 * 60 * 24))} Cycles
-                      </p>
+                    <td className="px-10 py-6">
+                       <p className="text-[13px] font-black text-[#1E2026] tabular-nums uppercase">
+                          {new Date(row.startDate).toLocaleDateString()} - {new Date(row.endDate).toLocaleDateString()}
+                       </p>
+                       <p className="text-[10px] font-bold text-[#F0B90B] uppercase tracking-widest mt-1">{row.totalDays} Units</p>
                     </td>
-                    <td className="px-8 py-5">
-                      <span className={`flex items-center text-[9px] font-black uppercase tracking-widest ${leave.status === 'pending' ? 'text-amber-500' : leave.status === 'approved' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full mr-2.5 ${leave.status === 'pending' ? 'bg-amber-500 animate-pulse' : leave.status === 'approved' ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-rose-500'}`}></span>
-                        {leave.status}
-                      </span>
+                    <td className="px-10 py-6">
+                       <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                         row.status === 'Approved' ? 'bg-[#0ECB81]/10 text-[#0ECB81]' : 
+                         row.status === 'Rejected' ? 'bg-[#F6465D]/10 text-[#F6465D]' : 
+                         'bg-[#F0B90B]/10 text-[#D0980B] animate-pulse'
+                       }`}>
+                         {row.status}
+                       </span>
                     </td>
-                    <td className="px-10 py-5 text-right">
-                      {leave.status === 'pending' ? (
-                        <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
-                          <button 
-                            onClick={() => handleStatusUpdate(leave._id, 'rejected')}
-                            className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-all border border-transparent hover:border-rose-100"
-                          >
-                            <span className="material-symbols-outlined text-sm">close</span>
-                          </button>
-                          <button 
-                            onClick={() => handleStatusUpdate(leave._id, 'approved')}
-                            className="p-2 text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all border border-transparent hover:border-emerald-100 shadow-sm shadow-emerald-500/10"
-                          >
-                            <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                          </button>
-                        </div>
-                      ) : (
-                        <button className="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-slate-500 transition-all"><span className="material-symbols-outlined text-sm">history</span></button>
-                      )}
+                    <td className="px-10 py-6 text-right">
+                       <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
+                          {row.status === 'Pending' && (
+                            <>
+                              <button onClick={() => handleStatusUpdate(row._id, 'Approved')} className="p-2.5 rounded-lg bg-[#0ECB81]/10 text-[#0ECB81] hover:bg-[#0ECB81] hover:text-white transition-all shadow-sm shadow-[#0ECB81]/10">
+                                 <CheckCircle size={16} />
+                              </button>
+                              <button onClick={() => handleStatusUpdate(row._id, 'Rejected')} className="p-2.5 rounded-lg bg-[#F6465D]/10 text-[#F6465D] hover:bg-[#F6465D] hover:text-white transition-all shadow-sm shadow-[#F6465D]/10">
+                                 <XCircle size={16} />
+                              </button>
+                            </>
+                          )}
+                          <button className="p-2.5 text-[#848E9C] hover:text-[#1E2026]"><MoreHorizontal size={18} /></button>
+                       </div>
                     </td>
                   </tr>
                 ))}
@@ -197,12 +189,6 @@ const LeaveManagement = () => {
             </table>
           </div>
         )}
-      </div>
-
-      <div className="flex justify-center pt-12">
-         <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] text-center max-w-lg leading-loose opacity-60">
-           CENTRAL LEAVE PROTOCOL ESTABLISHED. DATA INTEGRITY VERIFIED VIA ADMIN NODE.
-         </p>
       </div>
     </div>
   );
