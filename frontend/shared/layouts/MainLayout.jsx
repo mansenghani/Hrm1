@@ -28,6 +28,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
       case 'hr':
         return [
           { name: 'Dashboard', icon: 'monitoring', path: '/hr/dashboard' },
+          { name: 'Mission Hub', icon: 'assignment', path: '/hr/tasks' },
           { name: 'Attendance', icon: 'receipt_long', path: '/hr/attendance' },
           { name: 'Leave Management', icon: 'security', path: '/hr/leave' },
         ];
@@ -40,6 +41,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
       case 'manager':
         return [
           { name: 'Dashboard', icon: 'monitoring', path: '/manager/dashboard' },
+          { name: 'Deployment', icon: 'assignment', path: '/manager/tasks' },
           { name: 'Team Attendance', icon: 'receipt_long', path: '/manager/attendance' },
           { name: 'Review Leaves', icon: 'security', path: '/manager/leave' },
         ];
@@ -48,6 +50,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
         return [
           { name: 'Dashboard', icon: 'monitoring', path: `/${currentRole}/dashboard` },
           { name: 'Employees', icon: 'account_tree', path: `/${currentRole}/employees` },
+          { name: 'Tasks', icon: 'assignment', path: `/${currentRole}/tasks` },
           { name: 'Departments', icon: 'hub', path: `/${currentRole}/departments` },
           { name: 'Leave Management', icon: 'security', path: `/${currentRole}/leave` },
           { name: 'Attendance', icon: 'receipt_long', path: `/${currentRole}/attendance` },
@@ -147,8 +150,8 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
       {/* VIEWPORT */}
       <div className={`flex-1 flex flex-col transition-all duration-300 ${collapsed ? 'ml-20' : 'ml-72'}`}>
 
-        {/* TOPBAR */}
-        <header className="h-16 bg-white flex items-center justify-between px-8 sticky top-0 z-40 border-b border-[#E6E8EA] transition-all">
+        {/* TOPBAR (GLASS PROTOCOL) */}
+        <header className="h-20 bg-white/70 backdrop-blur-md flex items-center justify-between px-10 sticky top-0 z-30 transition-all border-b border-black/[0.03]">
           <div className="flex-1 max-w-xl">
             <div className="relative group">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#848E9C] text-xl">search</span>

@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  applyLeave, 
-  getAllLeaves, 
-  updateLeaveStatus, 
-  getMyLeaves 
+const {
+  applyLeave,
+  getAllLeaves,
+  updateLeaveStatus,
+  getMyLeaves
 } = require('../controllers/leaveController');
 const { protect } = require('../middleware/authMiddleware');
 const authorize = require('../middleware/roleMiddleware');

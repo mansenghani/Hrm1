@@ -5,7 +5,7 @@ const Attendance = require('../models/Attendance');
 exports.clockIn = async (req, res) => {
   try {
     const { date, time, location } = req.body;
-    
+
     // Check if already clocked in today
     const existing = await Attendance.findOne({ user: req.user.id, date });
     if (existing) {
@@ -32,7 +32,7 @@ exports.clockOut = async (req, res) => {
   try {
     const { date, time } = req.body;
     const attendance = await Attendance.findOne({ user: req.user.id, date });
-    
+
     if (!attendance) {
       return res.status(404).json({ message: 'No clock-in record found for today' });
     }

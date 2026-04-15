@@ -1,74 +1,73 @@
-# Fluid HR - KUKII Architecture HRMS
+# 🛡️ FluidHR SaaS Protocol
 
-A complete, full-stack Human Resource Management System with role-based access control.
+> **High-Fidelity Human Resource Management Orchestration**
 
-## 📁 Project Structure
+FluidHR is a state-of-the-art, full-stack HRMS designed with a high-contrast, "Binance-inspired" aesthetic. It leverages a 4-module node architecture to provide specialized interfaces for Admin, HR, Manager, and Employee personnel.
+
+---
+
+## 🏗️ System Architecture
+
+FluidHR operates on a unified cross-linked node structure:
+
+- **Admin Node:** Global system orchestration, user creation, and infrastructure settings.
+- **HR Node:** Talent acquisition, organizational attendance tracking, and leave moderation.
+- **Manager Node:** Team performance telemetry, review management, and pulse monitoring.
+- **Employee Node:** Personal workspace, live time-tracking, and leave justification protocols.
+
+---
+
+## 🎨 Design Ontology (Liquid High-Contrast)
+
+The interface follows the **FluidHR SaaS Aesthetic**:
+- **Palette:** High-Contrast Obsidian (`#222126`), Fluid Gold (`#F0B90B`), and Neutral Zinc (`#848E9C`).
+- **Typography:** Manrope & Inter (Heavy weights for protocol headers).
+- **Interactions:** Hover-reveal sidebars, pulsing sync indicators, and micro-animated data transitions.
+- **UI Logic:** 256-bit look & feel using absolute focus on tabular data and real-time synchronization.
+
+---
+
+## 📁 Repository Map
 
 ```text
 Hrm/
 ├── frontend/
-│   ├── admin/                # Admin Panel (React + Vite + TS)
-│   ├── hr/                   # HR / Manager Panel
-│   ├── employee/             # Employee Panel
-│   └── shared/               # Shared logic & UI components
+│   ├── admin/                # Main React Protocol (Vite + Tailored CSS)
+│   │   ├── src/pages/        # Role-based segment views
+│   │   └── src/App.jsx       # Global Routing & Protection Engine
+│   └── shared/               # Shared Architecture
+│       ├── layouts/          # Topbar & Dynamic Sidebar (Tab Isolated)
+│       └── pages/            # Shared Login, Profile, and Landing logic
 ├── backend/
-│   ├── controllers/          # API logic
-│   ├── models/               # Mongoose schemas (User, Employee, etc)
-│   ├── routes/               # API endpoints
-│   └── index.js              # Server entry point
-└── README.md
+│   ├── controllers/          # API Orchestration
+│   ├── models/               # Multi-collection data schemas
+│   └── index.js              # Central Logic Server
+└── README.md                 # System Manual
 ```
 
-## 🚀 Getting Started
+---
 
-### Prerequisites
+## 🚀 Execution Protocol
 
-- Node.js (v18+)
-- MongoDB (Running locally or MongoDB Atlas)
-
-### 1. Backend Setup
-
+### 1. Backend Core
 ```bash
 cd backend
 npm install
-# Update .env with your MONGODB_URI and JWT_SECRET
+# Update .env with MONGODB_URI & JWT_SECRET
 npm run dev
 ```
 
-### 2. Frontend Setup
-
-Each frontend app needs its own dependencies.
-
+### 2. Frontend Nexus
 ```bash
-# Admin
 cd frontend/admin
 npm install
 npm run dev
 
-# HR
-cd frontend/hr
-npm install
-npm run dev
+## 🛠️ Key Features
+- **Tab Isolation:** Independent role management per browser tab.
+- **Active Protocol Time:** Real-time topbar clock synchronization.
+- **Automatic Sidebar:** Precision hover-based navigation reveal.
+- **Leave justification:** Native transmission protocols for employee time-off.
 
-# Employee
-cd frontend/employee
-npm install
-npm run dev
-```
-
-## 🔐 Authentication & Roles
-
-The system uses JWT authentication. 
-- **Admin**: Full system control.
-- **HR**: Team management and approvals.
-- **Employee**: Personal profile, attendance, and leave applications.
-
-## 🎨 Design System
-
-Shared UI components are located in `frontend/shared/components`.
-Common theme tokens:
-- **Primary**: `#4F7DF3`
-- **Sidebar**: `#F1F3F6`
-- **Background**: `#F7F9FC`
-- **Border Radius**: `12px`
-- **Typography**: Inter / Sans-serif
+---
+© 2026 FluidHR SaaS Protocol | *Securing Personnel Logic*

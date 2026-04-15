@@ -8,12 +8,15 @@ import HRDashboard from './pages/hr/HRDashboard';
 import ManagerDashboard from './pages/manager/ManagerDashboard';
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 import Employees from './pages/admin/Employees';
+import Tasks from './pages/admin/Tasks';
 import Departments from './pages/Departments';
 import Attendance from './pages/hr/Attendance';
+import HRTasks from './pages/hr/HRTasks';
 import LeaveManagement from './pages/hr/LeaveManagement';
 import EmployeeLeave from './pages/employee/LeaveManagement';
 import TimeTracker from './pages/employee/TimeTracker';
 import Payroll from './pages/Payroll';
+import ManagerTasks from './pages/manager/ManagerTasks';
 import Performance from './pages/Performance';
 import Reports from './pages/Reports';
 import Settings from './pages/admin/Settings';
@@ -56,6 +59,7 @@ const App = () => {
         <Route index element={<AdminDashboard />} />
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="employees" element={<Employees />} />
+        <Route path="tasks" element={<Tasks />} />
         <Route path="departments" element={<Departments />} />
         <Route path="leave" element={<LeaveManagement />} />
         <Route path="attendance" element={<Attendance />} />
@@ -76,6 +80,7 @@ const App = () => {
       }>
         <Route index element={<HRDashboard />} />
         <Route path="dashboard" element={<HRDashboard />} />
+        <Route path="tasks" element={<HRTasks />} />
         <Route path="attendance" element={<Attendance />} />
         <Route path="leave" element={<LeaveManagement />} />
         <Route path="profile" element={<Profile />} />
@@ -102,6 +107,7 @@ const App = () => {
       }>
         <Route index element={<ManagerDashboard />} />
         <Route path="dashboard" element={<ManagerDashboard />} />
+        <Route path="tasks" element={<ManagerTasks />} />
         <Route path="attendance" element={<Attendance />} />
         <Route path="leave" element={<LeaveManagement />} />
         <Route path="profile" element={<Profile />} />

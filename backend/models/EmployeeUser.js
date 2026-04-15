@@ -6,6 +6,10 @@ const employeeSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: { type: String, default: 'employee' },
   position: String,
+  managerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Manager',
+  },
   profile: {
     firstName: String,
     lastName: String
