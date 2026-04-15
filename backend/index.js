@@ -10,6 +10,8 @@ const payrollRoutes = require('./routes/payrollRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const personnelRoutes = require('./routes/personnelRoutes');
 const timeTrackRoutes = require('./routes/timeTrackRoutes');
+const departmentRoutes = require('./routes/departmentRoutes');
+const managerRoutes = require('./routes/managerRoutes');
 
 dotenv.config();
 const app = express();
@@ -35,6 +37,8 @@ app.use('/api/payroll', payrollRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/personnel', personnelRoutes);
 app.use('/api/time', timeTrackRoutes);
+app.use('/api/departments', departmentRoutes);
+app.use('/api/managers', managerRoutes);
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'API is running' }));

@@ -1,21 +1,6 @@
-const Admin = require('../models/Admin');
-const HR = require('../models/HR');
-const Manager = require('../models/Manager');
-const EmployeeUser = require('../models/EmployeeUser');
+const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
-
-const getModelByRole = (role) => {
-  // Convert to lowercase to be safe
-  const r = role ? role.toLowerCase() : '';
-  switch (r) {
-    case 'admin': return Admin;
-    case 'hr': return HR;
-    case 'manager': return Manager;
-    case 'employee': return EmployeeUser;
-    default: return null;
-  }
-};
 
 // 🛡️ AUTH: Login Logic
 exports.login = async (req, res) => {
@@ -26,18 +11,24 @@ exports.login = async (req, res) => {
       return res.status(503).json({ message: 'Database connection is initializing. Please try again in a few seconds.' });
     }
 
-    const Model = getModelByRole(role);
-    if (!Model) {
-      console.error(`❌ Invalid login role attempt: ${role}`);
-      return res.status(400).json({ message: `Access Denied: Invalid role (${role})` });
+    const user = await User.findOne({ email });
+
+    // Ensure status is active
+    if (user && user.status === 'inactive') {
+      return res.status(403).json({ message: 'Account is deactivated' });
     }
 
-    const user = await Model.findOne({ email });
-
+    // Role check if provided matching the url
+    // Actually, maybe users only have one role anyway. We verify if user exists.
     if (user && (await user.comparePassword(password))) {
+      // Just check if the role they are logging into matches their actual role or if they are admin
+      if (role && user.role !== role && user.role !== 'admin') {
+         return res.status(403).json({ message: `Access Denied: You are not authorized for role ${role}` });
+      }
+
       const token = jwt.sign(
         { id: user._id, role: user.role },
-        process.env.JWT_SECRET,
+        process.env.JWT_SECRET || 'fallback_secret',
         { expiresIn: '30d' }
       );
 
@@ -56,39 +47,33 @@ exports.login = async (req, res) => {
   }
 };
 
-// 🛠️ ADMIN ONLY: Create New User
+// 🛠️ ADMIN ONLY: Create New User (can be used for initial setup)
 exports.createUser = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, role } = req.body;
-
-    console.log(`📡 Admin creating user: ${email} [${role}]`);
+    const { name, email, password, role, status } = req.body;
 
     if (mongoose.connection.readyState !== 1) {
       return res.status(503).json({ message: 'Database offline' });
     }
 
-    const Model = getModelByRole(role);
-    if (!Model) {
-      return res.status(400).json({ message: `Invalid role selected: ${role}` });
-    }
-
-    const existingUser = await Model.findOne({ email });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists in this role collection.' });
+      return res.status(400).json({ message: 'User already exists' });
     }
 
-    const newUser = new Model({
+    const newUser = new User({
+      name,
       email,
       password,
-      role: role.toLowerCase(),
-      profile: { firstName, lastName }
+      role: role || 'employee',
+      status: status || 'active'
     });
 
     await newUser.save();
-    console.log(`✅ Success: ${email} added to ${role} collection`);
-
+    
     res.status(201).json({
-      message: `${role.toUpperCase()} created successfully`
+      message: `${role} created successfully`,
+      user: { _id: newUser._id, email: newUser.email, role: newUser.role }
     });
 
   } catch (error) {
@@ -99,9 +84,7 @@ exports.createUser = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
-    const role = req.user.role;
-    const Model = getModelByRole(role);
-    const user = await Model.findById(req.user.id).select('-password');
+    const user = await User.findById(req.user.id).select('-password');
     res.json(user);
   } catch (err) {
     res.status(500).json({ message: 'Server Error' });
@@ -112,33 +95,22 @@ exports.getMe = async (req, res) => {
 exports.updatePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    const role = req.user.role;
-
-    console.log(`🔐 [AUTH] Rotation check for role: ${role}, ID: ${req.user.id}`);
-
-    const Model = getModelByRole(role);
-    const user = await Model.findById(req.user.id);
+    const user = await User.findById(req.user.id);
 
     if (!user) {
-      console.error('❌ [AUTH] Personnel node not found');
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Challenge check: Current Password verification
     const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) {
-      console.warn('❌ [AUTH] Credential mismatch for current password challenge');
       return res.status(401).json({ message: 'Verification failed: Incorrect current password' });
     }
 
-    // Protocol Update: Save new hashed password
     user.password = newPassword;
     await user.save();
 
-    console.log('✅ [AUTH] Matrix updated: New password persisted to collection');
     res.json({ message: 'Security protocol updated successfully' });
   } catch (error) {
-    console.error('🔥 [AUTH] System Protocol Error:', error);
     res.status(500).json({ message: `System Error: ${error.message}` });
   }
 };

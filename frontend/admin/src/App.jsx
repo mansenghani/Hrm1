@@ -8,6 +8,8 @@ import HRDashboard from './pages/hr/HRDashboard';
 import ManagerDashboard from './pages/manager/ManagerDashboard';
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 import Employees from './pages/admin/Employees';
+import EmployeeForm from './pages/admin/EmployeeForm';
+import EmployeeDetail from './pages/admin/EmployeeDetail';
 import Tasks from './pages/admin/Tasks';
 import Departments from './pages/Departments';
 import Attendance from './pages/hr/Attendance';
@@ -60,6 +62,9 @@ const App = () => {
         <Route index element={<AdminDashboard />} />
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="employees" element={<Employees />} />
+        <Route path="employees/add" element={<EmployeeForm />} />
+        <Route path="employees/edit/:id" element={<EmployeeForm />} />
+        <Route path="employees/view/:id" element={<EmployeeDetail />} />
         <Route path="tasks" element={<Tasks />} />
         <Route path="departments" element={<Departments />} />
         <Route path="leave" element={<LeaveManagement />} />
