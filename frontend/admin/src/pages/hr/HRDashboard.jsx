@@ -9,7 +9,7 @@ const HRDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         const [empRes, leaveRes] = await Promise.all([
           axios.get('http://localhost:5000/api/employees', { headers: { Authorization: `Bearer ${token}` } }),
           axios.get('http://localhost:5000/api/leaves', { headers: { Authorization: `Bearer ${token}` } })

@@ -15,6 +15,7 @@ import HRTasks from './pages/hr/HRTasks';
 import LeaveManagement from './pages/hr/LeaveManagement';
 import EmployeeLeave from './pages/employee/LeaveManagement';
 import TimeTracker from './pages/employee/TimeTracker';
+import SmartTimeTracker from './pages/SmartTimeTracker';
 import Payroll from './pages/Payroll';
 import ManagerTasks from './pages/manager/ManagerTasks';
 import Performance from './pages/Performance';
@@ -63,7 +64,7 @@ const App = () => {
         <Route path="departments" element={<Departments />} />
         <Route path="leave" element={<LeaveManagement />} />
         <Route path="attendance" element={<Attendance />} />
-        <Route path="time-tracker" element={<TimeTracker />} />
+        <Route path="time-tracker" element={<SmartTimeTracker />} />
         <Route path="payroll" element={<Payroll />} />
         <Route path="performance" element={<Performance />} />
         <Route path="reports" element={<Reports />} />
@@ -84,6 +85,7 @@ const App = () => {
         <Route path="attendance" element={<Attendance />} />
         <Route path="leave" element={<LeaveManagement />} />
         <Route path="profile" element={<Profile />} />
+        <Route path="time-tracker" element={<SmartTimeTracker />} />
       </Route>
 
       {/* EMPLOYEE MODULE */}
@@ -94,7 +96,7 @@ const App = () => {
       }>
         <Route index element={<EmployeeDashboard />} />
         <Route path="dashboard" element={<EmployeeDashboard />} />
-        <Route path="time-tracker" element={<TimeTracker />} />
+        <Route path="time-tracker" element={<SmartTimeTracker />} />
         <Route path="leave" element={<EmployeeLeave />} />
         <Route path="profile" element={<Profile />} />
       </Route>
@@ -111,6 +113,7 @@ const App = () => {
         <Route path="attendance" element={<Attendance />} />
         <Route path="leave" element={<LeaveManagement />} />
         <Route path="profile" element={<Profile />} />
+        <Route path="time-tracker" element={<SmartTimeTracker />} />
       </Route>
 
       {/* FALLBACK */}

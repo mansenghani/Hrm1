@@ -10,7 +10,7 @@ const Attendance = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         const res = await axios.get('http://localhost:5000/api/attendance', {
           headers: { Authorization: `Bearer ${token}` }
         });

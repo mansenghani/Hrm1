@@ -9,7 +9,8 @@ import {
     TrendingUp,
     ShieldCheck,
     User,
-    ArrowRight
+    ArrowRight,
+    Zap
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 

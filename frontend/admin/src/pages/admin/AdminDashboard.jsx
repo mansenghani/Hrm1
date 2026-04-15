@@ -40,7 +40,7 @@ const AdminDashboard = () => {
   });
   const [searchId, setSearchId] = useState('');
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
 
   const fetchData = async () => {
     setLoading(true);

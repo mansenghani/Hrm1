@@ -12,7 +12,7 @@ const Employees = () => {
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         const res = await axios.get('http://localhost:5000/api/employees', {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -38,7 +38,7 @@ const Employees = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Eject this node from the matrix?')) {
       try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         await axios.delete(`http://localhost:5000/api/employees/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });

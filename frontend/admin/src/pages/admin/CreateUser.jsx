@@ -23,7 +23,7 @@ const CreateUser = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       // Database Synchronization
       const response = await axios.post('/api/auth/create-user', formData, {
         headers: { Authorization: `Bearer ${token}` }

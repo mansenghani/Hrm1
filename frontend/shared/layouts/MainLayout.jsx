@@ -29,6 +29,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
         return [
           { name: 'Dashboard', icon: 'monitoring', path: '/hr/dashboard' },
           { name: 'Mission Hub', icon: 'assignment', path: '/hr/tasks' },
+          { name: 'Time Tracker', icon: 'timer', path: '/hr/time-tracker' },
           { name: 'Attendance', icon: 'receipt_long', path: '/hr/attendance' },
           { name: 'Leave Management', icon: 'security', path: '/hr/leave' },
         ];
@@ -42,6 +43,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
         return [
           { name: 'Dashboard', icon: 'monitoring', path: '/manager/dashboard' },
           { name: 'Deployment', icon: 'assignment', path: '/manager/tasks' },
+          { name: 'Time Tracker', icon: 'timer', path: '/manager/time-tracker' },
           { name: 'Team Attendance', icon: 'receipt_long', path: '/manager/attendance' },
           { name: 'Review Leaves', icon: 'security', path: '/manager/leave' },
         ];

@@ -5,7 +5,7 @@ import { Wallet, Play, Download, TrendingUp, CheckCircle, Clock, ShieldCheck, Ac
 const Payroll = () => {
   const [payroll, setPayroll] = useState([]);
   const [loading, setLoading] = useState(true);
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
 
   useEffect(() => {
     const fetchPayroll = async () => {

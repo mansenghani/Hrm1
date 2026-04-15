@@ -5,7 +5,7 @@ import { PlusCircle, Calendar, CheckCircle, XCircle, Clock, AlertTriangle, MoreH
 const Leaves = () => {
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
 
   useEffect(() => {
     const fetchLeaves = async () => {
