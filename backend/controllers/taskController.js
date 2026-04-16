@@ -1,16 +1,19 @@
 const Task = require('../models/Task');
-const HR = require('../models/HR');
-const Manager = require('../models/Manager');
-const EmployeeUser = require('../models/EmployeeUser');
+const User = require('../models/User');
 
 // --- ADMIN ACTIONS ---
 exports.createTask = async (req, res) => {
   try {
     const { title, description, assignedToHR, priority, dueDate } = req.body;
     
-    const hr = await HR.findById(assignedToHR);
-    if (!hr) return res.status(404).json({ message: 'Target HR Node not found.' });
+    // Phase 1: Identity Integrity Guard
+    if (!assignedToHR) return res.status(400).json({ message: 'Assignment Protocol Failed: Target HR Node must be specified.' });
 
+    // Phase 2: Registry Verification
+    const hr = await User.findOne({ _id: assignedToHR, role: 'hr' });
+    if (!hr) return res.status(404).json({ message: 'Mission Targeted at Invalid HR Node: Connection Refused.' });
+
+    console.log(`[TASK CREATION] Title: ${title} | Target HR: ${assignedToHR} | Creator: ${req.user.id}`);
     const task = new Task({
       title,
       description,
@@ -22,6 +25,7 @@ exports.createTask = async (req, res) => {
     });
 
     await task.save();
+    console.log(`[TASK SAVED] Mission ID: ${task._id}`);
     res.status(201).json(task);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -32,8 +36,9 @@ exports.createTask = async (req, res) => {
 exports.getHRTasks = async (req, res) => {
   try {
     const tasks = await Task.find({ assignedToHR: req.user.id })
-      .populate('createdBy', 'profile email')
-      .populate('forwardedToManager', 'profile email');
+      .populate('createdBy', 'name email')
+      .populate('forwardedToManager', 'name email');
+    console.log(`[HR TASK FETCH] User: ${req.user.id} | Name: ${req.user.name} | Tasks Found: ${tasks.length}`);
     res.status(200).json(tasks);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -62,8 +67,8 @@ exports.forwardToManager = async (req, res) => {
 exports.getManagerTasks = async (req, res) => {
   try {
     const tasks = await Task.find({ forwardedToManager: req.user.id })
-      .populate('assignedToHR', 'profile email')
-      .populate('assignedToEmployee', 'profile email');
+      .populate('assignedToHR', 'name email')
+      .populate('assignedToEmployee', 'name email');
     res.status(200).json(tasks);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -92,7 +97,7 @@ exports.assignEmployee = async (req, res) => {
 exports.getMyTasks = async (req, res) => {
   try {
     const tasks = await Task.find({ assignedToEmployee: req.user.id })
-      .populate('forwardedToManager', 'profile email');
+      .populate('forwardedToManager', 'name email');
     res.status(200).json(tasks);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -120,9 +125,9 @@ exports.updateTaskStatus = async (req, res) => {
 exports.getAllTasksAdmin = async (req, res) => {
     try {
       const tasks = await Task.find()
-        .populate('assignedToHR', 'profile email')
-        .populate('forwardedToManager', 'profile email')
-        .populate('assignedToEmployee', 'profile email');
+        .populate('assignedToHR', 'name email')
+        .populate('forwardedToManager', 'name email')
+        .populate('assignedToEmployee', 'name email');
       res.status(200).json(tasks);
     } catch (error) {
       res.status(500).json({ message: error.message });

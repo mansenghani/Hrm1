@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Employee = require('../models/Employee');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
@@ -50,7 +51,8 @@ exports.login = async (req, res) => {
 // 🛠️ ADMIN ONLY: Create New User (can be used for initial setup)
 exports.createUser = async (req, res) => {
   try {
-    const { name, email, password, role, status } = req.body;
+    const { firstName, lastName, email, password, role, status, joinDate } = req.body;
+    const name = `${firstName} ${lastName}`.trim();
 
     if (mongoose.connection.readyState !== 1) {
       return res.status(503).json({ message: 'Database offline' });
@@ -61,32 +63,69 @@ exports.createUser = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
+    const userRole = role || 'employee';
+
     const newUser = new User({
       name,
       email,
       password,
-      role: role || 'employee',
+      role: userRole,
       status: status || 'active'
     });
 
     await newUser.save();
+
+    // 👤 CREATE EMPLOYEE PROFILE AUTOMATICALLY
+    const prefix = userRole === 'admin' ? 'ADM' : userRole === 'hr' ? 'HR' : userRole === 'manager' ? 'MGR' : 'EMP';
+    const count = await Employee.countDocuments();
+    const finalEmployeeId = `${prefix}-${String(count + 1).padStart(3, '0')}`;
+
+    const newEmployee = new Employee({
+      userId: newUser._id,
+      email,
+      fullName: name,
+      role: userRole,
+      employeeId: finalEmployeeId,
+      joinDate: joinDate || new Date()
+    });
+
+    await newEmployee.save();
     
-    res.status(201).json({
-      message: `${role} created successfully`,
-      user: { _id: newUser._id, email: newUser.email, role: newUser.role }
+    return res.status(201).json({
+      message: `${userRole} profile synchronized successfully`,
+      user: { _id: newUser._id, email: newUser.email, role: newUser.role, employeeId: finalEmployeeId }
     });
 
   } catch (error) {
     console.error('🔥 Create User Error:', error);
-    res.status(500).json({ message: `Server Error: ${error.message}` });
+    return res.status(500).json({ message: `Server Error: ${error.message}` });
   }
 };
 
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
-    res.json(user);
+    const user = await User.findById(req.user.id).select('-password').lean();
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // 👤 DYNAMIC SHADOW LOOKUP: Fetch from the role-specific registry
+    let shadowRegistry = 'Employee'; // Default
+    if (user.role === 'hr') shadowRegistry = 'HR';
+    if (user.role === 'manager') shadowRegistry = 'Manager';
+
+    const shadowData = await mongoose.model(shadowRegistry).findOne({ userId: req.user.id }).lean();
+    console.log(`[PROFILE TRACE] User Role: ${user.role} | Shadow Match: ${!!shadowData} | ID: ${shadowData?.employeeId}`);
+    
+    // Merge data - prioritizing User fields but adding all Shadow extra fields
+    const profile = {
+      ...user,
+      ...shadowData, 
+      employeeId: shadowData?.employeeId || user.employeeId || 'PENDING-SYNC', // Forced explicit mapping
+      _id: user._id
+    };
+
+    res.json(profile);
   } catch (err) {
+    console.error('🔥 Error in getMe:', err);
     res.status(500).json({ message: 'Server Error' });
   }
 };

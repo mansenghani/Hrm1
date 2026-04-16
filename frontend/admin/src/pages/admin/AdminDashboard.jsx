@@ -47,10 +47,10 @@ const AdminDashboard = () => {
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const [empRes, attRes, payRes, taskRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/employees', config),
-        axios.get('http://localhost:5000/api/attendance', config),
-        axios.get('http://localhost:5000/api/payroll', config),
-        axios.get('http://localhost:5000/api/tasks', config)
+        axios.get('/api/employees', config),
+        axios.get('/api/attendance', config),
+        axios.get('/api/payroll', config),
+        axios.get('/api/tasks/admin-all', config)
       ]);
 
       const employees = empRes.data || [];

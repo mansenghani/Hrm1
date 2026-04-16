@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Users, UserPlus, Heart, Activity, ArrowUpRight, ShieldCheck, Search, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const HRDashboard = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({ employees: 0, pendingLeaves: 0, attendance: '94%' });
   const [loading, setLoading] = useState(true);
 
@@ -133,7 +135,18 @@ const HRDashboard = () => {
               </div>
            </div>
 
-           <button className="w-full py-6 bg-white border border-[#E6E8EA] rounded-3xl text-[12px] font-black uppercase tracking-[0.2em] text-[#1E2026] hover:border-[#F0B90B] hover:text-[#F0B90B] transition-all flex items-center justify-center gap-3 group">
+           <button 
+              onClick={() => navigate('/hr/tasks')}
+              className="w-full py-6 bg-white border border-[#E6E8EA] rounded-3xl text-[12px] font-black uppercase tracking-[0.2em] text-[#1E2026] hover:border-[#F0B90B] hover:text-[#F0B90B] transition-all flex items-center justify-center gap-3 group"
+           >
+              Deploy Mission Arcs
+              <ArrowUpRight size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+           </button>
+
+           <button 
+             onClick={() => navigate('/admin/employees')}
+             className="w-full py-6 bg-white border border-[#E6E8EA] rounded-3xl text-[12px] font-black uppercase tracking-[0.2em] text-[#1E2026] hover:border-[#F0B90B] hover:text-[#F0B90B] transition-all flex items-center justify-center gap-3 group"
+           >
               Audit Personnel Vault
               <ArrowUpRight size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
            </button>

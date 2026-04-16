@@ -1,40 +1,27 @@
 const TimeTrack = require('../models/TimeTrack');
-const EmployeeUser = require('../models/EmployeeUser');
-const Manager = require('../models/Manager');
-const HR = require('../models/HR');
-const Admin = require('../models/Admin');
+const User = require('../models/User');
+const Employee = require('../models/Employee');
 
 const IDLE_THRESHOLD = 5 * 60; // 5 minutes in seconds
-
-// Helper: Get model name from role
-const getModelName = (role) => {
-  const map = { employee: 'EmployeeUser', manager: 'Manager', hr: 'HR', admin: 'Admin' };
-  return map[role] || 'EmployeeUser';
-};
 
 // Helper: Get today's date string
 const getToday = () => new Date().toISOString().split('T')[0];
 
-// Helper: Populate employee name from the right collection
+// Helper: Populate employee name from unified User collection
 const populateEmployeeInfo = async (sessions) => {
   const populated = [];
   for (const session of sessions) {
     const s = session.toObject ? session.toObject() : { ...session };
     let userInfo = null;
     try {
-      switch (s.employeeModel) {
-        case 'EmployeeUser':
-          userInfo = await EmployeeUser.findById(s.employeeId).select('email profile role').lean();
-          break;
-        case 'Manager':
-          userInfo = await Manager.findById(s.employeeId).select('email profile role').lean();
-          break;
-        case 'HR':
-          userInfo = await HR.findById(s.employeeId).select('email profile role').lean();
-          break;
-        case 'Admin':
-          userInfo = await Admin.findById(s.employeeId).select('email profile role').lean();
-          break;
+      // Find the user and fetch their name/role
+      const user = await User.findById(s.employeeId).select('email name role').lean();
+      if (user) {
+        userInfo = {
+          email: user.email,
+          profile: { firstName: user.name.split(' ')[0], lastName: user.name.split(' ').slice(1).join(' ') },
+          role: user.role
+        };
       }
     } catch (e) { /* skip */ }
     s.employeeInfo = userInfo || { email: 'Unknown', profile: { firstName: 'Unknown', lastName: '' }, role: s.employeeRole };
@@ -67,16 +54,15 @@ exports.startTracking = async (req, res) => {
       });
     }
 
-    // Get managerId for employees
+    // Get managerId for employees from the Employee profile
     let managerId = null;
     if (role === 'employee') {
-      const emp = await EmployeeUser.findById(id).select('managerId');
-      managerId = emp?.managerId || null;
+      const empProfile = await Employee.findOne({ userId: id }).select('managerId');
+      managerId = empProfile?.managerId || null;
     }
 
     const session = await TimeTrack.create({
       employeeId: id,
-      employeeModel: getModelName(role),
       employeeRole: role,
       managerId,
       date: today,

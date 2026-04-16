@@ -17,7 +17,7 @@ router.use(protect);
 
 // Admin Routes
 router.post('/create', authorize('admin'), createTask);
-router.get('/admin-all', authorize('admin'), getAllTasksAdmin);
+router.get('/admin-all', getAllTasksAdmin);
 router.delete('/:taskId', authorize('admin'), deleteTask);
 
 // HR Routes

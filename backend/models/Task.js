@@ -11,20 +11,20 @@ const taskSchema = new mongoose.Schema({
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Admin',
+    ref: 'User',
     required: true,
   },
   assignedToHR: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'HR',
+    ref: 'User',
   },
   forwardedToManager: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Manager',
+    ref: 'User',
   },
   assignedToEmployee: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'EmployeeUser',
+    ref: 'User',
   },
   status: {
     type: String,

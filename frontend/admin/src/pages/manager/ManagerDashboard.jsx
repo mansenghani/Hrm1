@@ -37,6 +37,7 @@ const ManagerDashboard = () => {
                 });
             } catch (error) {
                 console.error('Core dump failed:', error);
+                setStats(prev => ({ ...prev, loading: false }));
             }
         };
         fetchStats();

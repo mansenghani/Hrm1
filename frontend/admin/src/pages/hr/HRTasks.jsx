@@ -161,7 +161,7 @@ const HRTasks = () => {
                                 >
                                     <option value="">Choose Management Tier</option>
                                     {managers.map(mgr => (
-                                        <option key={mgr._id} value={mgr._id}>{mgr.profile?.firstName} {mgr.profile?.lastName}</option>
+                                        <option key={mgr._id} value={mgr._id}>{mgr.name || mgr.fullName}</option>
                                     ))}
                                 </select>
                             </div>

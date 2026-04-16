@@ -10,13 +10,13 @@ const userSchema = new mongoose.Schema({
     enum: ['admin', 'hr', 'manager', 'employee'],
     required: true 
   },
+  employeeId: { type: String, unique: true },
   status: { type: String, enum: ['active', 'inactive'], default: 'active' }
 }, { timestamps: true });
 
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
+userSchema.pre('save', async function() {
+  if (!this.isModified('password')) return;
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 userSchema.methods.comparePassword = async function(candidatePassword) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const CreateUser = () => {
@@ -7,11 +7,47 @@ const CreateUser = () => {
     lastName: '',
     email: '',
     password: '',
-    role: 'employee'
+    role: 'employee',
+    joinDate: new Date().toISOString().split('T')[0]
   });
+  const [nextId, setNextId] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+
+  const token = sessionStorage.getItem('token');
+
+  // 📧 IDENTITY SYNTHESIS: Auto-generate email based on name inputs
+  useEffect(() => {
+    if (formData.firstName || formData.lastName) {
+      const fName = formData.firstName.toLowerCase() || 'user';
+      const lName = formData.lastName.toLowerCase() || '';
+      const emailPulse = lName ? `${fName}.${lName}@fluidhr.com` : `${fName}@fluidhr.com`;
+      setFormData(prev => ({ ...prev, email: emailPulse }));
+    }
+  }, [formData.firstName, formData.lastName]);
+
+  // 🔄 FETCH NEXT ID (Internal Diagnostic Only)
+  useEffect(() => {
+    const fetchNextId = async () => {
+      try {
+        const res = await axios.get(`/api/personnel/next-id/${formData.role}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setNextId(res.data.nextId);
+        
+        // 📧 Suggest ID-based email if names are empty (Requirement: hr-004.hr@fluidhr.com)
+        if (!formData.firstName && !formData.lastName) {
+           const idEmail = `${res.data.nextId}@fluidhr.com`;
+           setFormData(prev => ({ ...prev, email: idEmail }));
+        }
+      } catch (err) {
+        console.warn('ID Registry Sync Delayed');
+      }
+    };
+
+    if (token) fetchNextId();
+  }, [formData.role, token]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -20,22 +56,45 @@ const CreateUser = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage({ type: '', text: '' });
+    setMessage({ type: '', text: '', employeeId: '' });
 
     try {
-      const token = sessionStorage.getItem('token');
-      // Database Synchronization
-      const response = await axios.post('/api/auth/create-user', formData, {
+      // 🏗️ TRANSACTIONAL CREATION PROTOCOL
+      // Format backend request with combined name
+      const payload = {
+        name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+        joinDate: formData.joinDate
+      };
+
+      const response = await axios.post('/api/users/create', payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setMessage({ type: 'success', text: response.data.message });
-      setFormData({ firstName: '', lastName: '', email: '', password: '', role: 'employee' });
-      setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+      const { user, roleData } = response.data;
+
+      setMessage({ 
+        type: 'success', 
+        text: response.data.message,
+        employeeId: user.employeeId,
+        status: user.status
+      });
+
+      // Reset form (Requirement 4)
+      setFormData({ 
+        firstName: '', 
+        lastName: '', 
+        email: '', 
+        password: '', 
+        role: formData.role,
+        joinDate: new Date().toISOString().split('T')[0]
+      });
     } catch (err) {
       setMessage({
         type: 'error',
-        text: err.response?.data?.message || 'Failed to create user.'
+        text: err.response?.data?.message || 'Synchronization Failure: Role record insertion aborted.'
       });
     } finally {
       setLoading(false);
@@ -51,19 +110,37 @@ const CreateUser = () => {
       `}</style>
 
       {/* Success/Error Toast Notification */}
+      {/* 🛎️ SYNC STATUS HUB (Requirement 3 & 4) */}
       {message.text && (
-        <div className={`fixed top-24 right-8 bg-white shadow-[0px_24px_48px_rgba(0,2,41,0.08)] border-l-4 ${message.type === 'success' ? 'border-emerald-500' : 'border-rose-500'} px-6 py-5 rounded-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-6 duration-500 z-[100] ring-1 ring-black/5`}>
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${message.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-500'}`}>
-            <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-              {message.type === 'success' ? 'check_circle' : 'warning'}
+        <div className={`fixed top-24 right-8 bg-white shadow-[0px_32px_64px_rgba(0,0,0,0.12)] border-l-8 ${message.type === 'success' ? 'border-[#0ECB81]' : 'border-rose-500'} px-8 py-6 rounded-3xl flex items-center gap-6 animate-in zoom-in duration-500 z-[100] ring-1 ring-black/5 min-w-[380px]`}>
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${message.type === 'success' ? 'bg-[#0ECB81]/10 text-[#0ECB81]' : 'bg-rose-50 text-rose-500'}`}>
+            <span className="material-symbols-outlined text-3xl font-black">
+              {message.type === 'success' ? 'verified_user' : 'report_problem'}
             </span>
           </div>
-          <div>
-            <p className="text-sm font-black text-slate-800 uppercase tracking-tight">{message.type === 'success' ? 'Personnel Created' : 'Process Halted'}</p>
-            <p className="text-xs font-bold text-slate-500 mt-1">{message.text}</p>
+          <div className="flex-1">
+            <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">{message.type === 'success' ? 'Synchronization Success' : 'Pulse Failure'}</h4>
+            <p className="text-[#1E2026] text-[15px] font-black tracking-tight">{message.text}</p>
+            
+            {message.employeeId && (
+              <div className="mt-4 flex items-center gap-3">
+                 <div className="px-3 py-1.5 bg-[#F0B90B] text-[#1E2026] rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                    <span className="material-symbols-outlined text-xs">fingerprint</span> {message.employeeId}
+                 </div>
+                 <div className="px-3 py-1.5 bg-emerald-50 text-[#0ECB81] rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-emerald-100">
+                    <span className="material-symbols-outlined text-xs">check_circle</span> {message.status || 'ACTIVE'}
+                 </div>
+              </div>
+            )}
+
+            {message.type === 'error' && (
+              <button onClick={() => handleSubmit({ preventDefault: () => {} })} className="mt-3 text-[10px] font-black uppercase tracking-widest text-[#F0B90B] hover:underline flex items-center gap-2">
+                <span className="material-symbols-outlined text-[12px]">replay</span> Retry Transaction
+              </button>
+            )}
           </div>
-          <button onClick={() => setMessage({ type: '', text: '' })} className="ml-4 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-50 transition-all">
-            <span className="material-symbols-outlined text-slate-400 text-lg">close</span>
+          <button onClick={() => setMessage({ type: '', text: '', employeeId: '' })} className="self-start text-slate-300 hover:text-slate-600">
+            <span className="material-symbols-outlined">close</span>
           </button>
         </div>
       )}
@@ -176,6 +253,22 @@ const CreateUser = () => {
                       <option value="employee">Employee</option>
                     </select>
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 pointer-events-none">expand_more</span>
+                  </div>
+                </div>
+
+                {/* Join Date Picker */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold tracking-wider text-secondary uppercase ml-1">Entry Date / Join Date</label>
+                  <div className="relative group">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-focus-within:text-orange-500 transition-colors">calendar_month</span>
+                    <input
+                      required
+                      type="date"
+                      name="joinDate"
+                      value={formData.joinDate}
+                      onChange={handleChange}
+                      className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-xl border-2 border-orange-400/60 focus:ring-2 focus:ring-orange-500/40 focus:bg-white transition-all outline-none text-on-surface font-medium"
+                    />
                   </div>
                 </div>
               </div>

@@ -2,14 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const Profile = () => {
-  const [userData, setUserData] = useState(() => {
-    try {
-      const stored = sessionStorage.getItem('user');
-      return (stored && stored !== 'undefined' && stored !== 'null') ? JSON.parse(stored) : {};
-    } catch {
-      return {};
-    }
-  });
+  const [userData, setUserData] = useState(null);
   const [passwords, setPasswords] = useState({
     currentPassword: '',
     newPassword: '',
@@ -17,31 +10,53 @@ const Profile = () => {
   });
   const [status, setStatus] = useState({ type: '', message: '' });
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(true);
 
   const token = sessionStorage.getItem('token');
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await axios.get('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` }
+        const timestamp = new Date().getTime();
+        const response = await axios.get(`/api/auth/me?t=${timestamp}`, {
+          headers: { Authorization: `Bearer ${token}`, 'Cache-Control': 'no-cache' }
         });
+        console.log('[CLIENT TRACE] Identity Received:', response.data.employeeId);
         if (response.data) {
           setUserData(response.data);
           sessionStorage.setItem('user', JSON.stringify(response.data));
         }
       } catch (err) {
         console.warn('Initial sync failed.');
+      } finally {
+        setSyncing(false);
       }
     };
     if (token) fetchProfile();
   }, [token]);
 
+  if (syncing) {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 animate-pulse">
+            <div className="w-12 h-12 border-4 border-t-orange-500 border-slate-100 rounded-full animate-spin"></div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Verifying Professional Node...</p>
+        </div>
+    );
+  }
+
   const safeUserData = userData || {};
-  const fullName = safeUserData.profile ? `${safeUserData.profile.firstName || ''} ${safeUserData.profile.lastName || ''}`.trim() : 'System Admin';
+  const fullName = safeUserData.name || (safeUserData.profile ? `${safeUserData.profile.firstName || ''} ${safeUserData.profile.lastName || ''}`.trim() : 'System Admin');
   const userEmail = safeUserData.email || 'admin@fluidhr.com';
   const userRole = safeUserData.role || 'Personnel';
-  const userDept = safeUserData.department || 'General Operations';
+  const userDept = (safeUserData.department && typeof safeUserData.department === 'object') ? safeUserData.department.name : (safeUserData.department || 'General Operations');
+  
+  // New Professional Metadata
+  const empId = safeUserData.employeeId || 'PENDING-SYNC';
+  const personalEmail = safeUserData.personalEmail || 'NOT CONFIGURED';
+  const joinDate = safeUserData.joinDate ? new Date(safeUserData.joinDate).toLocaleDateString() : 'NOT SET';
+  const phone = safeUserData.phone || 'DATA MISSING';
+  const empType = safeUserData.employmentType || 'Standard';
+
   const initials = fullName ? fullName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase() || 'NA' : 'NA';
 
   const resetForm = () => {
@@ -140,6 +155,9 @@ const Profile = () => {
             <div className="flex items-center gap-2 bg-[#F5F7FA] px-3 py-1.5 rounded-lg text-slate-500 text-[10px] font-bold uppercase tracking-widest border border-slate-100">
               <span className="material-symbols-outlined text-sm text-[#2E3A59]">badge</span> {userRole}
             </div>
+            <div className="flex items-center gap-2 bg-[#2E3A59] text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg">
+              <span className="material-symbols-outlined text-sm text-[var(--accent-gold)]">fingerprint</span> {empId}
+            </div>
             <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-emerald-100">
               <span className="material-symbols-outlined text-sm">verified</span> Active Node
             </div>
@@ -166,17 +184,34 @@ const Profile = () => {
               <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#1F2937] font-bold text-[13px] border border-slate-200/60">{fullName}</div>
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Communication Channel</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Employee ID</label>
+              <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#2E3A59] font-black text-[13px] border-2 border-orange-400/20">{empId}</div>
+            </div>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Professional Email</label>
               <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#1F2937] font-bold text-[13px] border border-slate-200/60">{userEmail}</div>
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Organizational Level</label>
-              <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#1F2937] font-bold text-[13px] border border-slate-200/60 uppercase">{userRole}</div>
+              <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Personal Contact Vector</label>
+              <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#1F2937] font-bold text-[13px] border border-slate-200/60 italic opacity-60">{personalEmail}</div>
             </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Assigned Department</label>
-              <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#1F2937] font-bold text-[13px] border border-slate-200/60 uppercase">{userDept}</div>
-            </div>
+          </div>
+
+          <div className="pt-8 border-t border-slate-50">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Join Date Protocol</p>
+                   <p className="text-sm font-black text-[#2E3A59]">{joinDate}</p>
+                </div>
+                <div className="space-y-2">
+                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Assignment Branch</p>
+                   <p className="text-sm font-black text-[#2E3A59] uppercase">{userDept}</p>
+                </div>
+                <div className="space-y-2">
+                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Phone Telemetry</p>
+                   <p className="text-sm font-black text-[#2E3A59]">{phone}</p>
+                </div>
+             </div>
           </div>
         </section>
 
@@ -262,9 +297,27 @@ const Profile = () => {
         </section>
       </div>
 
+      {/* 🚀 DEEP DIAGNOSTIC (Admin/HR Only) */}
+      {(userRole === 'admin' || userRole === 'hr') && (
+        <div className="mt-20 p-8 bg-slate-900 rounded-3xl border border-white/5 shadow-2xl">
+           <div className="flex items-center gap-3 mb-6">
+              <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Identity Sync Diagnostic</h4>
+           </div>
+           <pre className="text-[10px] text-emerald-400 font-mono overflow-auto max-h-40 opacity-70">
+              {JSON.stringify({
+                receivedId: safeUserData.employeeId,
+                mappedId: empId,
+                serverSync: !!userData,
+                tokenPresent: !!token
+              }, null, 2)}
+           </pre>
+        </div>
+      )}
+
       <div className="text-center pt-24 pb-12 opacity-30">
         <p className="text-[#2E3A59] text-[10px] font-black uppercase tracking-[0.5em] leading-loose">
-          Narrative HR Central Operations Hub v2.5.1 <br />
+          Narrative HR Central Operations Hub v2.5.5 <br />
           <span className="text-[var(--accent-gold)]">Premium Security Tier Authorized</span>
         </p>
       </div>

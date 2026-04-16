@@ -4,12 +4,7 @@ const timeTrackSchema = new mongoose.Schema({
   employeeId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    refPath: 'employeeModel'
-  },
-  employeeModel: {
-    type: String,
-    required: true,
-    enum: ['EmployeeUser', 'Manager', 'HR', 'Admin']
+    ref: 'User'
   },
   employeeRole: {
     type: String,
@@ -18,7 +13,7 @@ const timeTrackSchema = new mongoose.Schema({
   },
   managerId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Manager',
+    ref: 'User',
     default: null
   },
   date: {

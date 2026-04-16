@@ -169,7 +169,7 @@ const ManagerTasks = () => {
                                     >
                                         <option value="">Operational Nodes Only</option>
                                         {employees.map(emp => (
-                                            <option key={emp._id} value={emp._id}>{emp.profile?.firstName} {emp.profile?.lastName}</option>
+                                            <option key={emp._id} value={emp._id}>{emp.fullName || emp.email}</option>
                                         ))}
                                     </select>
                                 </div>

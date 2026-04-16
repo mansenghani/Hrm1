@@ -7,9 +7,49 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const [userData, setUserData] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem('user');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const role = sessionStorage.getItem('role') || 'admin';
-  const displayRole = userRole || (role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Admin');
-  const displayName = userName || 'Platform Lead';
+  const displayRole = userRole || (role ? role.toUpperCase() : 'ADMIN');
+  const [displayName, setDisplayName] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem('user');
+      const u = (stored && stored !== 'undefined') ? JSON.parse(stored) : null;
+      return u?.name || u?.fullName || userName || 'System Administrator';
+    } catch { return 'System Administrator'; }
+  });
+
+  // Unified Identity Sync Protocol
+  useEffect(() => {
+    const syncIdentity = async () => {
+      const token = sessionStorage.getItem('token');
+      if (token && token !== 'null') {
+        try {
+          const response = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (data) {
+               setUserData(data);
+               setDisplayName(data.name || data.fullName || data.email || 'System Administrator');
+               sessionStorage.setItem('user', JSON.stringify(data));
+            }
+          }
+        } catch (e) { 
+          console.warn('Identity Sync Delayed'); 
+        }
+      }
+    };
+    syncIdentity();
+  }, [role]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -28,10 +68,10 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
       case 'hr':
         return [
           { name: 'Dashboard', icon: 'monitoring', path: '/hr/dashboard' },
-          { name: 'Mission Hub', icon: 'assignment', path: '/hr/tasks' },
-          { name: 'Time Tracker', icon: 'timer', path: '/hr/time-tracker' },
+          { name: 'Tasks', icon: 'assignment', path: '/hr/tasks' },
           { name: 'Attendance', icon: 'receipt_long', path: '/hr/attendance' },
-          { name: 'Leave Management', icon: 'security', path: '/hr/leave' },
+          { name: 'Time Tracker', icon: 'timer', path: '/hr/time-tracker' },
+          { name: 'Leaves', icon: 'security', path: '/hr/leave' },
         ];
       case 'employee':
         return [
@@ -189,7 +229,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                   </div>
                   <div className="text-left hidden md:block">
                     <p className="text-[12px] font-black text-[#1E2026] uppercase leading-none mb-1 group-hover:text-[#F0B90B] transition-colors">{displayName}</p>
-                    <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest leading-none">Security Node</p>
+                    <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest leading-none">SECURITY NODE / {displayRole}</p>
                   </div>
                 </Link>
 
