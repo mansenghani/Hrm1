@@ -1,7 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Landing from '@shared/pages/Landing';
-import RoleSelection from '@shared/pages/RoleSelection';
 import Login from '@shared/pages/Login';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import HRDashboard from './pages/hr/HRDashboard';
@@ -15,9 +14,9 @@ import Departments from './pages/Departments';
 import Attendance from './pages/hr/Attendance';
 import HRTasks from './pages/hr/HRTasks';
 import LeaveManagement from './pages/hr/LeaveManagement';
+import TeamManagement from './pages/hr/TeamManagement';
 import EmployeeLeave from './pages/employee/LeaveManagement';
-import TimeTracker from './pages/employee/TimeTracker';
-import SmartTimeTracker from './pages/SmartTimeTracker';
+import TimeTrackingDashboard from './pages/TimeTrackingDashboard';
 import Payroll from './pages/Payroll';
 import ManagerTasks from './pages/manager/ManagerTasks';
 import Performance from './pages/Performance';
@@ -26,20 +25,22 @@ import Settings from './pages/admin/Settings';
 import CreateUser from './pages/admin/CreateUser';
 import MainLayout from '@shared/layouts/MainLayout';
 import Profile from '@shared/pages/Profile';
+import ProjectManagement from './pages/hr/ProjectManagement';
+import ManagerProjects from './pages/manager/ManagerProjects';
+import EmployeeProjects from './pages/employee/EmployeeProjects';
 
 // ROUTE PROTECTION LOGIC
 const ProtectedRoute = ({ children, allowedRole }) => {
   const token = sessionStorage.getItem('token');
   const role = sessionStorage.getItem('role');
 
-  if (!token) return <Navigate to="/select-role" replace />;
+  if (!token) return <Navigate to="/login" replace />;
 
-  // ADMIN OVERRIDE
+  // ROLE SPECIFIC CHECK (ADMIN OVERRIDE)
   if (role === 'admin') return children;
-
-  // ROLE SPECIFIC CHECK
+  
   if (allowedRole && role !== allowedRole) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={`/${role}/dashboard`} replace />;
   }
 
   return children;
@@ -50,8 +51,11 @@ const App = () => {
     <Routes>
       {/* PUBLIC ROUTES */}
       <Route path="/" element={<Landing />} />
-      <Route path="/select-role" element={<RoleSelection />} />
-      <Route path="/login/:role" element={<Login />} />
+      <Route path="/login" element={<Login />} />
+      
+      {/* REDIRECTS FOR OLD PATHS */}
+      <Route path="/select-role" element={<Navigate to="/login" replace />} />
+      <Route path="/login/:role" element={<Navigate to="/login" replace />} />
 
       {/* ADMIN MODULE */}
       <Route path="/admin" element={
@@ -69,7 +73,7 @@ const App = () => {
         <Route path="departments" element={<Departments />} />
         <Route path="leave" element={<LeaveManagement />} />
         <Route path="attendance" element={<Attendance />} />
-        <Route path="time-tracker" element={<SmartTimeTracker />} />
+        <Route path="time-tracker" element={<TimeTrackingDashboard />} />
         <Route path="payroll" element={<Payroll />} />
         <Route path="performance" element={<Performance />} />
         <Route path="reports" element={<Reports />} />
@@ -89,8 +93,10 @@ const App = () => {
         <Route path="tasks" element={<HRTasks />} />
         <Route path="attendance" element={<Attendance />} />
         <Route path="leave" element={<LeaveManagement />} />
+        <Route path="teams" element={<TeamManagement />} />
+        <Route path="projects" element={<ProjectManagement />} />
+        <Route path="time-tracker" element={<TimeTrackingDashboard />} />
         <Route path="profile" element={<Profile />} />
-        <Route path="time-tracker" element={<SmartTimeTracker />} />
       </Route>
 
       {/* EMPLOYEE MODULE */}
@@ -101,7 +107,8 @@ const App = () => {
       }>
         <Route index element={<EmployeeDashboard />} />
         <Route path="dashboard" element={<EmployeeDashboard />} />
-        <Route path="time-tracker" element={<SmartTimeTracker />} />
+        <Route path="projects" element={<EmployeeProjects />} />
+        <Route path="time-tracker" element={<TimeTrackingDashboard />} />
         <Route path="leave" element={<EmployeeLeave />} />
         <Route path="profile" element={<Profile />} />
       </Route>
@@ -115,10 +122,11 @@ const App = () => {
         <Route index element={<ManagerDashboard />} />
         <Route path="dashboard" element={<ManagerDashboard />} />
         <Route path="tasks" element={<ManagerTasks />} />
+        <Route path="projects" element={<ManagerProjects />} />
         <Route path="attendance" element={<Attendance />} />
         <Route path="leave" element={<LeaveManagement />} />
         <Route path="profile" element={<Profile />} />
-        <Route path="time-tracker" element={<SmartTimeTracker />} />
+        <Route path="time-tracker" element={<TimeTrackingDashboard />} />
       </Route>
 
       {/* FALLBACK */}

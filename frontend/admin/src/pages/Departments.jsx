@@ -1,30 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Layers, Users, Share2, Activity, ArrowUpRight } from 'lucide-react';
+import { Layers, Users, Share2, Activity, ArrowUpRight, RefreshCw } from 'lucide-react';
 
 const Departments = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchEmployees = async () => {
+    try {
+      const token = sessionStorage.getItem('token');
+      // Using relative path for proxy support
+      const res = await axios.get('/api/employees', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setEmployees(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error('Registry Sync Failed:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        const token = sessionStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/employees', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setEmployees(res.data || []);
-      } catch (err) {
-        console.error('Fetch failed:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchEmployees();
   }, []);
 
   const departmentsMap = employees.reduce((acc, emp) => {
-    const dept = emp.department || 'Unassigned';
+    // Handling possible data structures (populated object or direct string)
+    const dept = emp?.department?.name || emp?.department || 'Unassigned';
     if (!acc[dept]) acc[dept] = { name: dept, count: 0, members: [] };
     acc[dept].count += 1;
     acc[dept].members.push(emp);
@@ -34,76 +37,71 @@ const Departments = () => {
   const departments = Object.values(departmentsMap);
 
   return (
-    <div className="space-y-12 animate-in fade-in duration-500 pb-20">
+    <div className="animate-fade-in pb-32">
       
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
+      <div className="mb-16 flex flex-col md:flex-row justify-between items-end border-b border-[#c5c0b1] pb-10">
         <div>
-          <h1 className="text-4xl font-black text-[#1E2026] tracking-tight leading-none mb-3">
-            Unit <span className="text-[#F0B90B]">Architecture</span>
-          </h1>
-          <p className="text-[#848E9C] font-bold text-[11px] uppercase tracking-[0.2em] flex items-center gap-3">
-            <span className="w-12 h-[2px] bg-[#F0B90B]"></span>
-            Structural Node Mapping
-          </p>
+          <p className="zap-caption-upper text-[#ff4f00] mb-4">Structural Node Mapping</p>
+          <h1 className="zap-display-hero">Unit <span className="text-[#ff4f00]">Architecture.</span></h1>
         </div>
-        <button className="bg-[#F0B90B] text-[#1E2026] px-10 py-4 rounded-full font-black text-[13px] uppercase tracking-wider shadow-lg hover:bg-[#FFD000] transition-all flex items-center gap-3">
-          <Layers size={18} />
+        <button className="zap-btn zap-btn-orange h-14 px-8">
+          <Layers size={18} className="mr-3" />
           Initialize Unit
         </button>
       </div>
 
-      {/* GRID MATRIX */}
+      {/* GRID MATRIX - Zapier Style Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {loading ? (
           <div className="col-span-full py-32 text-center">
-             <div className="flex flex-col items-center gap-4 opacity-30">
-                <div className="w-10 h-10 border-4 border-[#F0B90B]/20 border-t-[#F0B90B] rounded-full animate-spin"></div>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em]">Mapping Hub Matrix...</p>
+             <div className="flex flex-col items-center gap-4">
+                <RefreshCw size={24} className="text-[#ff4f00] animate-spin" />
+                <p className="zap-caption-upper text-[#939084]">Mapping Hub Matrix...</p>
              </div>
           </div>
         ) : departments.length === 0 ? (
-          <div className="col-span-full py-32 text-center opacity-30">
-             <p className="text-[11px] font-black uppercase tracking-[0.2em]">No structural units detected in the matrix</p>
+          <div className="col-span-full py-32 text-center zap-card bg-[#fffdf9]">
+             <p className="text-[15px] font-medium text-[#939084]">No structural units detected in the matrix</p>
           </div>
         ) : (
           departments.map((dept, i) => (
-            <div key={i} className="bg-white border border-[#E6E8EA] rounded-2xl p-8 hover:border-[#F0B90B] hover:shadow-[0_8px_24px_rgba(0,0,0,0.05)] transition-all group relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-[#F5F5F5] rounded-full -mr-12 -mt-12 group-hover:bg-[#F0B90B]/5 transition-colors"></div>
+            <div key={i} className="zap-card group hover:border-[#201515] transition-all relative overflow-hidden bg-[#fffdf9]">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-[#eceae3] rounded-full -mr-12 -mt-12 group-hover:bg-[#ff4f00]/5 transition-colors"></div>
               
-              <div className="flex justify-between items-start mb-10 relative z-10">
-                <div className="w-14 h-14 bg-[#F5F5F5] rounded-2xl flex items-center justify-center text-[#1E2026] group-hover:bg-[#F0B90B] transition-all shadow-sm">
-                  <Share2 size={24} strokeWidth={2.5} />
+              <div className="flex justify-between items-start mb-12 relative z-10">
+                <div className="w-14 h-14 bg-[#eceae3] border border-[#c5c0b1] rounded-[8px] flex items-center justify-center text-[#201515] group-hover:bg-[#ff4f00] group-hover:text-white transition-all shadow-sm">
+                  <Share2 size={24} />
                 </div>
                 <div className="flex flex-col items-end">
-                   <p className="text-[9px] font-black text-[#848E9C] uppercase tracking-widest mb-1">Node Integrity</p>
-                   <div className="flex items-center gap-1.5 px-3 py-1 bg-[#0ECB81]/10 rounded-full">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#0ECB81] animate-pulse"></div>
-                      <span className="text-[10px] font-black text-[#0ECB81] uppercase tracking-widest">Active</span>
+                   <p className="text-[11px] font-bold text-[#939084] uppercase tracking-widest mb-2">Node Integrity</p>
+                   <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-[#24a148] rounded-full">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#24a148] animate-pulse"></div>
+                      <span className="text-[10px] font-bold text-[#24a148] uppercase tracking-widest">Active</span>
                    </div>
                 </div>
               </div>
 
-              <h3 className="text-xl font-black text-[#1E2026] tracking-tight mb-2 group-hover:text-[#F0B90B] transition-colors">{dept.name}</h3>
-              <p className="text-[11px] font-bold text-[#848E9C] uppercase tracking-[0.1em] mb-8">SaaS Operational Segment</p>
+              <h3 className="text-[24px] font-medium text-[#201515] mb-2 group-hover:text-[#ff4f00] transition-colors">{dept.name}</h3>
+              <p className="text-[13px] font-bold text-[#939084] uppercase tracking-wider mb-10">SaaS Operational Segment</p>
               
-              <div className="grid grid-cols-2 gap-6 border-t border-[#E6E8EA] pt-8 mt-4">
+              <div className="grid grid-cols-2 gap-6 border-t border-[#c5c0b1] pt-10 mt-6">
                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-[#848E9C] uppercase tracking-widest">Personnel Depth</p>
-                    <p className="text-xl font-black text-[#1E2026] tabular-nums">{dept.count} <span className="text-[10px] text-[#848E9C]">Nodes</span></p>
+                    <p className="text-[11px] font-bold text-[#939084] uppercase tracking-widest">Personnel Depth</p>
+                    <p className="text-[24px] font-medium text-[#201515] tabular-nums">{dept.count} <span className="text-[12px] text-[#939084]">Nodes</span></p>
                  </div>
                  <div className="text-right space-y-1">
-                    <p className="text-[10px] font-black text-[#848E9C] uppercase tracking-widest">Trace Activity</p>
-                    <div className="flex items-center justify-end gap-1.5 text-[#1E2026]">
-                       <Activity size={12} className="text-[#0ECB81]" />
-                       <span className="text-[12px] font-black tabular-nums">High Ops</span>
+                    <p className="text-[11px] font-bold text-[#939084] uppercase tracking-widest">Trace Activity</p>
+                    <div className="flex items-center justify-end gap-1.5 text-[#201515] font-bold">
+                       <Activity size={12} className="text-[#24a148]" />
+                       <span className="text-[13px] tabular-nums">High Ops</span>
                     </div>
                  </div>
               </div>
               
-              <div className="mt-8 flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-[#848E9C] group-hover:text-[#1E2026] transition-colors cursor-pointer">
+              <div className="mt-10 flex items-center justify-between text-[13px] font-bold uppercase tracking-widest text-[#939084] group-hover:text-[#201515] transition-colors cursor-pointer pt-6">
                  <span>View Cluster Map</span>
-                 <ArrowUpRight size={14} />
+                 <ArrowUpRight size={18} className="text-[#c5c0b1] group-hover:text-[#ff4f00]" />
               </div>
             </div>
           ))
@@ -111,10 +109,9 @@ const Departments = () => {
       </div>
 
       {/* FOOTER */}
-      <div className="pt-16 text-center opacity-30 pb-12">
-        <p className="text-[#848E9C] text-[10px] font-black uppercase tracking-[0.6em] leading-loose">
-           Chapter Summary: Architecture Stable <br />
-           <span className="text-[#F0B90B]">Distributed Hub Matrix: Verified</span>
+      <div className="pt-24 text-center border-t border-[#c5c0b1] mt-24">
+        <p className="text-[#939084] text-[11px] font-bold uppercase tracking-[0.4em] leading-loose">
+           Architecture Stable • Distributed Hub Matrix: Verified
         </p>
       </div>
     </div>

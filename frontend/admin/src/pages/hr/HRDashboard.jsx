@@ -1,155 +1,181 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Users, UserPlus, Heart, Activity, ArrowUpRight, ShieldCheck, Search, Clock } from 'lucide-react';
+import { Users, UserPlus, Heart, Activity, ArrowUpRight, ShieldCheck, Search, Clock, ChevronRight, Zap, Plus, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import AnalyticsChart from '../../components/AnalyticsChart';
 
 const HRDashboard = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState({ employees: 0, pendingLeaves: 0, attendance: '94%' });
   const [loading, setLoading] = useState(true);
 
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const token = sessionStorage.getItem('token');
+      // Using relative paths for proxy consistency
+      const [empRes, leaveRes] = await Promise.all([
+        axios.get('/api/employees', { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get('/api/leaves', { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      setStats({
+        employees: empRes.data?.length || 0,
+        pendingLeaves: leaveRes.data?.filter(l => l.status === 'Pending').length || 0,
+        attendance: '94%'
+      });
+    } catch (err) {
+      console.error('HR Sync failed:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = sessionStorage.getItem('token');
-        const [empRes, leaveRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/employees', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('http://localhost:5000/api/leaves', { headers: { Authorization: `Bearer ${token}` } })
-        ]);
-        setStats({
-          employees: empRes.data?.length || 0,
-          pendingLeaves: leaveRes.data?.filter(l => l.status === 'Pending').length || 0,
-          attendance: '94%'
-        });
-      } catch (err) {
-        console.error('HR Sync failed:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
 
   return (
-    <div className="space-y-12 animate-in fade-in duration-500 pb-20">
+    <div className="animate-fade-in pb-32">
       
-      {/* HR HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
-        <div>
-          <h1 className="text-4xl font-black text-[#1E2026] tracking-tight leading-none mb-3">
-            HR <span className="text-[#F0B90B]">Command</span>
+      {/* ZAPIER HERO SECTION */}
+      <div className="mb-24 mt-8">
+        <div className="w-full">
+          <p className="zap-caption-upper mb-8 text-[#ff4f00]">Personnel Automation Hub</p>
+          <h1 className="zap-display-hero mb-12">
+            Automate your people <br/>processes with <span className="text-[#ff4f00]">effortless clarity.</span>
           </h1>
-          <p className="text-[#848E9C] font-bold text-[11px] uppercase tracking-[0.2em] flex items-center gap-3">
-            <span className="w-12 h-[2px] bg-[#F0B90B]"></span>
-            Talent Acquisition & Logistics Node
+          <p className="zap-body-large text-[#36342e] mb-12 max-w-2xl font-medium">
+            The Zapier approach to HR: warm, approachable infrastructure that turns complex personnel logistics into simple workflows.
           </p>
+          <div className="flex gap-4">
+            <button 
+              onClick={() => navigate('/admin/create-user')}
+              className="zap-btn zap-btn-orange h-[56px] px-10 text-[16px] font-bold"
+            >
+              <Plus size={20} className="mr-3" />
+              Register Account
+            </button>
+            <button className="zap-btn zap-btn-light h-[56px] px-8">
+              Explore Workflows
+            </button>
+          </div>
         </div>
-        <button className="bg-[#F0B90B] text-[#1E2026] px-10 py-4 rounded-full font-black text-[13px] uppercase tracking-wider shadow-lg hover:bg-[#FFD000] transition-all flex items-center gap-3">
-          <UserPlus size={18} />
-          Register Personnel
-        </button>
       </div>
 
-      {/* BENTO GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {/* STAT COUNTERS - Zapier Minimalist Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-32">
         {[
-          { label: 'Personnel Units', val: stats.employees, cap: '+4 New Nodes', icon: Users, color: 'text-[#1EAEDB]', bg: 'bg-[#1EAEDB]/10' },
-          { label: 'Pending Protocols', val: stats.pendingLeaves, cap: 'Action Required', icon: ShieldCheck, color: 'text-[#F0B90B]', bg: 'bg-[#F0B90B]/10' },
-          { label: 'Presence Pulse', val: stats.attendance, cap: 'Optimal Logic', icon: Heart, color: 'text-[#0ECB81]', bg: 'bg-[#0ECB81]/10' }
+          { label: 'Personnel Nodes', val: stats.employees, cap: 'Workflow Connected', icon: Users },
+          { label: 'Active Tasks', val: stats.pendingLeaves, cap: 'Pending Sync', icon: Zap },
+          { label: 'Attendance Pulse', val: stats.attendance, cap: 'Automated Status', icon: Heart }
         ].map((stat, i) => (
-          <div key={i} className="bg-white p-8 border border-[#E6E8EA] rounded-2xl group hover:shadow-[0_8px_24px_rgba(32,32,37,0.05)] transition-all overflow-hidden relative">
-             <div className="flex justify-between items-start mb-10">
-                <div className={`p-3 rounded-xl ${stat.bg} ${stat.color} group-hover:scale-110 transition-transform`}>
-                   <stat.icon size={24} />
+          <div key={i} className="zap-card group cursor-pointer hover:border-[#201515] transition-all">
+             <div className="flex justify-between items-start mb-12">
+                <div className="w-12 h-12 rounded-[8px] bg-[#eceae3] flex items-center justify-center text-[#201515] group-hover:bg-[#ff4f00] group-hover:text-[#fffefb] transition-all">
+                   <stat.icon size={20} />
                 </div>
-                <ArrowUpRight size={16} className="text-[#848E9C] opacity-0 group-hover:opacity-100 transition-all" />
+                <ArrowUpRight size={18} className="text-[#c5c0b1] group-hover:text-[#201515]" />
              </div>
-             <div className="relative z-10">
-                <h3 className="text-4xl font-black text-[#1E2026] tabular-nums mb-1">{stat.val}</h3>
-                <p className="text-[11px] font-black text-[#848E9C] uppercase tracking-[0.15em]">{stat.label}</p>
-                <div className="mt-4 flex items-center gap-2 opacity-60">
-                   <div className="w-1 h-1 rounded-full bg-[#848E9C]"></div>
-                   <p className="text-[9px] font-bold text-[#848E9C] uppercase tracking-widest">{stat.cap}</p>
+             <div>
+                <h3 className="text-[48px] font-medium text-[#201515] leading-none mb-4 tabular-nums">{stat.val}</h3>
+                <p className="text-[14px] font-bold text-[#36342e] uppercase tracking-widest">{stat.label}</p>
+                <div className="mt-8 pt-6 border-t border-[#c5c0b1] flex items-center gap-3">
+                   <div className="w-1.5 h-1.5 rounded-full bg-[#ff4f00]"></div>
+                   <p className="text-[12px] font-bold text-[#939084] uppercase">{stat.cap}</p>
                 </div>
              </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-12 gap-8">
-        {/* Operations Hub */}
-        <div className="col-span-12 lg:col-span-8 bg-white border border-[#E6E8EA] rounded-3xl overflow-hidden shadow-[0_3px_5px_rgba(32,32,37,0.05)]">
-           <div className="p-8 bg-[#F5F5F5]/30 border-b border-[#E6E8EA] flex justify-between items-center">
-              <div>
-                 <h3 className="text-[12px] font-black text-[#1E2026] uppercase tracking-[0.2em] mb-1">Queue Management</h3>
-                 <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest">Awaiting administrative validation</p>
-              </div>
-              <div className="flex items-center gap-4 bg-white px-5 py-2 rounded-full border border-[#E6E8EA]">
-                 <Search size={14} className="text-[#848E9C]" />
-                 <input type="text" placeholder="Search trace..." className="bg-transparent border-none focus:outline-none text-[12px] font-bold text-[#1E2026] w-48" />
-              </div>
+      <div className="grid grid-cols-12 gap-12">
+        {/* Main Operational Chart */}
+        <div className="col-span-12 mb-12">
+           <AnalyticsChart title="Organizational Sync Trace" type="area" />
+        </div>
+
+        {/* PIPELINE - Zapier Workflow Style */}
+        <div className="col-span-12 lg:col-span-8">
+           <div className="flex justify-between items-center mb-10 px-2">
+              <h3 className="text-[32px] font-normal text-[#201515] tracking-tight">Active Pipelines</h3>
+              <button onClick={fetchData} className="zap-btn zap-btn-light h-10 w-10 flex items-center justify-center p-0">
+                 <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+              </button>
            </div>
-           <div className="p-4 space-y-4">
+           
+           <div className="space-y-4">
               {[1, 2, 3, 4].map(i => (
-                <div key={i} className="flex items-center justify-between p-6 bg-white hover:bg-[#F5F5F5] rounded-2xl border border-transparent hover:border-[#E6E8EA] transition-all group">
-                   <div className="flex items-center gap-6">
-                      <div className="w-12 h-12 rounded-full bg-[#F5F5F5] flex items-center justify-center text-[#1E2026] font-black text-xs border border-[#E6E8EA]">
-                         P{i}
+                <div key={i} className="zap-card flex items-center justify-between hover:bg-[#fffdf9] py-6">
+                   <div className="flex items-center gap-8">
+                      <div className="flex items-center">
+                         <div className="w-12 h-12 rounded-full bg-[#201515] flex items-center justify-center text-[#fffefb] font-bold z-10 border-2 border-[#fffefb]">
+                            H
+                         </div>
+                         <div className="w-8 h-[2px] bg-[#c5c0b1]"></div>
+                         <div className="w-12 h-12 rounded-full bg-[#ff4f00] flex items-center justify-center text-[#fffefb] font-bold -ml-1 border-2 border-[#fffefb]">
+                            {i}
+                         </div>
                       </div>
                       <div>
-                         <p className="text-[14px] font-black text-[#1E2026] uppercase group-hover:text-[#F0B90B] transition-colors">Personnel Identity Sync: 0x{i}A92</p>
-                         <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-tighter flex items-center gap-3 mt-1">
-                            <Clock size={12} />
-                            Cycle Initiated 2h ago
+                         <p className="text-[18px] font-semibold text-[#201515]">Personnel Sync Logic: Node 0x{i}</p>
+                         <p className="text-[14px] text-[#939084] flex items-center gap-2 mt-1 font-medium">
+                            <Clock size={14} />
+                            Automation active • 2h ago
                          </p>
                       </div>
                    </div>
-                   <button className="px-6 py-2 bg-[#1E2026] text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all">Process Logic</button>
+                   <button className="zap-btn zap-btn-light h-10 px-5 text-[13px] rounded-[4px] border-[#c5c0b1] text-[#36342e] hover:border-[#201515]">
+                    Configure
+                   </button>
                 </div>
               ))}
            </div>
         </div>
 
-        {/* Action Sidebar */}
+        {/* SIDEBAR - Warm Editorial Metrics */}
         <div className="col-span-12 lg:col-span-4 space-y-8">
-           <div className="bg-[#222126] rounded-3xl p-10 text-white relative overflow-hidden group border border-white/5">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#F0B90B]/10 blur-3xl rounded-full"></div>
-              <h4 className="text-[12px] font-black uppercase tracking-[0.2em] mb-10 text-[#848E9C] flex items-center gap-2">
-                 <Activity size={18} className="text-[#F0B90B]" />
-                 Pulse Intelligence
+           <div className="bg-[#fffdf9] border border-[#c5c0b1] rounded-[8px] p-10 relative overflow-hidden group">
+              <h4 className="zap-caption-upper mb-12 text-[#ff4f00] flex items-center gap-3">
+                 <Zap size={18} />
+                 Workflow Pulse
               </h4>
-             <div className="space-y-10">
-                 <div>
-                    <div className="flex justify-between text-[11px] font-black uppercase tracking-widest mb-3">
-                       <span className="text-[#848E9C]">Onboarding Flow</span>
-                       <span className="text-[#F0B90B]">82% SYNC</span>
-                    </div>
-                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                       <div className="h-full bg-[#F0B90B]" style={{ width: '82%' }}></div>
-                    </div>
-                 </div>
-                 <div className="p-6 bg-white/5 rounded-2xl border border-white/5 group-hover:bg-white/10 transition-colors">
-                    <p className="text-[10px] font-black text-[#848E9C] uppercase mb-1">Global Sentiment</p>
-                    <p className="text-xl font-black text-white">Positive Matrix</p>
-                 </div>
+              <div className="space-y-12">
+                   <div>
+                      <div className="flex justify-between text-[11px] font-bold uppercase tracking-[0.2em] mb-4">
+                         <span className="text-[#939084]">System Synergy</span>
+                         <span className="text-[#201515]">92.4%</span>
+                      </div>
+                      <div className="h-[2px] bg-[#eceae3] rounded-full overflow-hidden">
+                         <div className="h-full bg-[#ff4f00]" style={{ width: '92%' }}></div>
+                      </div>
+                   </div>
+                   <div className="p-8 bg-[#fffefb] rounded-[5px] border border-[#c5c0b1]">
+                      <p className="text-[11px] font-bold text-[#939084] uppercase tracking-[0.2em] mb-4">Operational Status</p>
+                      <p className="text-[24px] font-normal text-[#201515] leading-tight">Optimized <span className="text-[#ff4f00]">{"/ "}Running</span></p>
+                   </div>
               </div>
+              <button className="zap-btn zap-btn-dark w-full mt-10">
+                Full Analytics
+              </button>
            </div>
 
-           <button 
-              onClick={() => navigate('/hr/tasks')}
-              className="w-full py-6 bg-white border border-[#E6E8EA] rounded-3xl text-[12px] font-black uppercase tracking-[0.2em] text-[#1E2026] hover:border-[#F0B90B] hover:text-[#F0B90B] transition-all flex items-center justify-center gap-3 group"
-           >
-              Deploy Mission Arcs
-              <ArrowUpRight size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-           </button>
+           <div className="space-y-3">
+              <button 
+                  onClick={() => navigate('/hr/tasks')}
+                  className="zap-btn zap-btn-light w-full h-16 justify-between px-8 bg-transparent hover:bg-[#fffdf9]"
+              >
+                  Review Missions
+                  <ChevronRight size={20} className="text-[#c5c0b1]" />
+              </button>
 
-           <button 
-             onClick={() => navigate('/admin/employees')}
-             className="w-full py-6 bg-white border border-[#E6E8EA] rounded-3xl text-[12px] font-black uppercase tracking-[0.2em] text-[#1E2026] hover:border-[#F0B90B] hover:text-[#F0B90B] transition-all flex items-center justify-center gap-3 group"
-           >
-              Audit Personnel Vault
-              <ArrowUpRight size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-           </button>
+              <button 
+                onClick={() => navigate('/admin/employees')}
+                className="zap-btn zap-btn-light w-full h-16 justify-between px-8 bg-transparent hover:bg-[#fffdf9]"
+              >
+                  Audit Archives
+                  <ChevronRight size={20} className="text-[#c5c0b1]" />
+              </button>
+           </div>
         </div>
       </div>
     </div>

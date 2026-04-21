@@ -26,6 +26,10 @@ const taskSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   },
+  teamId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Team',
+  },
   status: {
     type: String,
     enum: ['created', 'hr_review', 'manager_assigned', 'in_progress', 'completed'],

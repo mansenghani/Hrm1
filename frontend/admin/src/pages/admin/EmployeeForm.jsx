@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Save, ArrowLeft, Loader2 } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, ChevronDown } from 'lucide-react';
 
 const EmployeeForm = () => {
   const { id } = useParams();
@@ -169,28 +169,37 @@ const EmployeeForm = () => {
 
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Role *</label>
-               <select required name="role" value={formData.role} onChange={handleChange} className="w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm">
-                 <option value="employee">Employee</option>
-                 <option value="manager">Manager</option>
-                 <option value="hr">HR</option>
-                 <option value="admin">Admin</option>
-               </select>
+               <div className="relative">
+                 <select required name="role" value={formData.role} onChange={handleChange} className="w-full px-4 pr-10 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm appearance-none cursor-pointer transition-all">
+                   <option value="employee">Employee</option>
+                   <option value="manager">Manager</option>
+                   <option value="hr">HR</option>
+                   <option value="admin">Admin</option>
+                 </select>
+                 <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#848E9C] pointer-events-none" />
+               </div>
              </div>
 
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Department</label>
-               <select name="department" value={formData.department} onChange={handleChange} className="w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm">
-                 <option value="">Select Department</option>
-                 {departments.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
-               </select>
+               <div className="relative">
+                 <select name="department" value={formData.department} onChange={handleChange} className="w-full px-4 pr-10 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm appearance-none cursor-pointer transition-all">
+                   <option value="">Select Department</option>
+                   {departments.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
+                 </select>
+                 <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#848E9C] pointer-events-none" />
+               </div>
              </div>
 
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Direct Manager</label>
-               <select name="managerId" value={formData.managerId} onChange={handleChange} className="w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm">
-                 <option value="">Select Manager</option>
-                 {managers.map(m => <option key={m._id} value={m._id}>{m.name}</option>)}
-               </select>
+               <div className="relative">
+                 <select name="managerId" value={formData.managerId} onChange={handleChange} className="w-full px-4 pr-10 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm appearance-none cursor-pointer transition-all">
+                   <option value="">Select Manager</option>
+                   {managers.map(m => <option key={m._id} value={m._id}>{m.name}</option>)}
+                 </select>
+                 <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#848E9C] pointer-events-none" />
+               </div>
              </div>
 
              <div className="space-y-2">
@@ -200,11 +209,14 @@ const EmployeeForm = () => {
 
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Employment Type</label>
-               <select name="employmentType" value={formData.employmentType} onChange={handleChange} className="w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm">
-                 <option value="Full-time">Full-time</option>
-                 <option value="Part-time">Part-time</option>
-                 <option value="Contract">Contract</option>
-               </select>
+               <div className="relative">
+                 <select name="employmentType" value={formData.employmentType} onChange={handleChange} className="w-full px-4 pr-10 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm appearance-none cursor-pointer transition-all">
+                   <option value="Full-time">Full-time</option>
+                   <option value="Part-time">Part-time</option>
+                   <option value="Contract">Contract</option>
+                 </select>
+                 <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#848E9C] pointer-events-none" />
+               </div>
              </div>
           </div>
 

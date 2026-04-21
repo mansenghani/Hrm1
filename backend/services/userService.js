@@ -47,7 +47,11 @@ exports.createNewUserAtomic = async (userData) => {
         roleData = new Manager({ ...shadowBase });
         break;
       case 'employee':
-        roleData = new Employee({ ...shadowBase, employeeId: generatedId });
+        roleData = new Employee({ 
+            ...shadowBase, 
+            employeeId: generatedId,
+            reportingManager: userData.reportingManager || null 
+        });
         break;
       default:
         // Admin or fallback

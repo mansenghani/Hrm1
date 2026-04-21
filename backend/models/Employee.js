@@ -8,7 +8,13 @@ const employeeSchema = new mongoose.Schema({
     unique: true 
   },
   employeeId: { type: String, unique: true },
+  fullName: String,
+  email: String,
+  role: String,
+  status: { type: String, default: 'active' },
   position: { type: String, default: 'Associate' },
+  department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
+  managerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   reportingManager: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 

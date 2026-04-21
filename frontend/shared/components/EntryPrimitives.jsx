@@ -1,12 +1,12 @@
 import React from 'react';
 
 export const EntryButton = ({ children, variant = 'primary', className = '', ...props }) => {
-  const baseStyles = "w-full py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98] font-black uppercase text-[12px] tracking-widest";
+  const baseStyles = "zap-btn w-full transition-all active:scale-[0.98] tracking-tight";
   const variants = {
-    primary: "bg-[#F0B90B] text-[#1E2026] hover:bg-[#FFD000] shadow-lg shadow-[#F0B90B]/10",
-    secondary: "bg-[#222126] text-white hover:bg-black shadow-lg shadow-black/10",
-    outline: "bg-white border-2 border-[#E6E8EA] text-[#1E2026] hover:border-[#F0B90B] hover:text-[#F0B90B] shadow-sm",
-    ghost: "bg-transparent text-[#848E9C] hover:text-[#1E2026]"
+    primary: "zap-btn-orange",
+    secondary: "zap-btn-dark",
+    outline: "zap-btn-light",
+    ghost: "bg-transparent text-[#ff4f00] hover:bg-[#fffdf9] p-2"
   };
 
   return (
@@ -17,14 +17,37 @@ export const EntryButton = ({ children, variant = 'primary', className = '', ...
 };
 
 export const EntryInput = ({ label, icon, ...props }) => (
-  <div className="space-y-3 text-left w-full">
-    {label && <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C] ml-1">{label}</label>}
+  <div className="flex flex-col gap-3 w-full text-left">
+    {label && <label className="zap-caption-upper text-[#201515] ml-1">{label}</label>}
     <div className="relative group">
-      {icon && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#848E9C] group-focus-within:text-[#F0B90B] transition-colors">{icon}</span>}
+      {icon && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084] group-focus-within:text-[#ff4f00] transition-colors">{icon}</span>}
       <input 
-        className={`w-full ${icon ? 'pl-14' : 'px-6'} pr-6 py-4 bg-[#F5F5F5] rounded-xl border-2 border-transparent focus:border-[#F0B90B] focus:bg-white transition-all duration-300 text-[14px] font-bold text-[#1E2026] placeholder:text-[#848E9C]/50 outline-none`}
+        className={`w-full h-[56px] bg-[#fffefb] border border-[#c5c0b1] rounded-[4px] px-4 text-[16px] font-medium text-[#201515] placeholder-[#939084] focus:outline-none focus:border-[#ff4f00] transition-all ${icon ? 'pl-12' : ''}`}
         {...props}
       />
+    </div>
+  </div>
+);
+
+export const EntrySelect = ({ label, icon, options = [], ...props }) => (
+  <div className="flex flex-col gap-3 w-full text-left">
+    {label && <label className="zap-caption-upper text-[#201515] ml-1">{label}</label>}
+    <div className="relative group">
+      {icon && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084] group-focus-within:text-[#ff4f00] transition-colors">{icon}</span>}
+      <select 
+        className={`w-full h-[56px] bg-[#fffefb] border border-[#c5c0b1] rounded-[4px] px-4 text-[16px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all appearance-none cursor-pointer ${icon ? 'pl-12' : ''}`}
+        {...props}
+      >
+        <option value="" disabled>Select access level</option>
+        {options.map(opt => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#939084]">
+        <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+      </div>
     </div>
   </div>
 );
@@ -32,17 +55,16 @@ export const EntryInput = ({ label, icon, ...props }) => (
 export const RoleCard = ({ title, desc, icon, active, onClick }) => (
   <button 
     onClick={onClick}
-    className={`group relative flex flex-col items-center justify-center p-10 bg-white rounded-[40px] transition-all duration-500 border-2 ${active ? 'border-[#F0B90B] shadow-2xl scale-[1.05]' : 'border-transparent hover:border-[#F0B90B]/20 hover:-translate-y-2 hover:shadow-xl'}`}
+    className={`zap-card group flex flex-col items-start justify-between min-h-[220px] transition-all text-left border-2 ${active ? 'border-[#ff4f00] bg-[#fffdf9]' : 'border-[#c5c0b1] hover:border-[#201515]'}`}
   >
-    <div className={`w-20 h-20 mb-8 flex items-center justify-center rounded-2xl transition-all duration-300 ${active ? 'bg-[#F0B90B]/10 text-[#F0B90B]' : 'bg-[#F5F5F5] text-[#848E9C] group-hover:bg-[#F0B90B]/10 group-hover:text-[#F0B90B]'}`}>
-      {icon}
+    <div className={`w-14 h-14 rounded-[8px] flex items-center justify-center transition-all duration-300 ${active ? 'bg-[#ff4f00] text-[#fffefb]' : 'bg-[#eceae3] text-[#201515] group-hover:bg-[#201515] group-hover:text-[#fffefb]'}`}>
+      {React.cloneElement(icon, { size: 24 })}
     </div>
-    <h3 className={`text-xl font-black uppercase tracking-tighter transition-colors ${active ? 'text-[#F0B90B]' : 'text-[#1E2026] group-hover:text-[#F0B90B]'}`}>{title}</h3>
-    <p className="mt-4 text-[10px] text-[#848E9C] font-black uppercase tracking-[0.2em] opacity-60 leading-none">
-      {desc}
-    </p>
-    <div className={`mt-8 transition-all duration-500 ${active ? 'opacity-100 scale-110' : 'opacity-0 scale-90 group-hover:opacity-60'}`}>
-       <div className="w-8 h-1 bg-[#F0B90B] rounded-full"></div>
+    <div className="w-full">
+      <h3 className="text-[20px] font-bold text-[#201515] mb-2">{title}</h3>
+      <p className="text-[14px] text-[#36342e] leading-relaxed font-medium">
+        {desc}
+      </p>
     </div>
   </button>
 );

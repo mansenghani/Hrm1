@@ -16,6 +16,11 @@ const timeTrackSchema = new mongoose.Schema({
     ref: 'User',
     default: null
   },
+  teamId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Team',
+    default: null
+  },
   date: {
     type: String, // YYYY-MM-DD format for easy querying
     required: true
@@ -40,15 +45,33 @@ const timeTrackSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
+  totalTime: {
+    type: Number, // total session duration in seconds (active + idle)
+    default: 0
+  },
   status: {
     type: String,
-    enum: ['active', 'idle', 'completed'],
+    enum: ['active', 'paused', 'idle', 'completed'],
     default: 'active'
   },
+  isRunning: {
+    type: Boolean,
+    default: false
+  },
+  totalActiveTime: {
+    type: Number, // in seconds, accumulated from previous segments
+    default: 0
+  },
+  sessions: [{
+    start: { type: Date },
+    pause: { type: Date },
+    resume: { type: Date },
+    end: { type: Date }
+  }],
   // Activity log for detailed tracking
   activityLog: [{
     timestamp: { type: Date, default: Date.now },
-    type: { type: String, enum: ['mouse', 'keyboard', 'tab', 'resume', 'idle_start'] }
+    type: { type: String, enum: ['mouse', 'keyboard', 'tab', 'resume', 'pause', 'idle_start'] }
   }]
 }, { timestamps: true });
 

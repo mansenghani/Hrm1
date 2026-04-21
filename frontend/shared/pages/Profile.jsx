@@ -297,23 +297,7 @@ const Profile = () => {
         </section>
       </div>
 
-      {/* 🚀 DEEP DIAGNOSTIC (Admin/HR Only) */}
-      {(userRole === 'admin' || userRole === 'hr') && (
-        <div className="mt-20 p-8 bg-slate-900 rounded-3xl border border-white/5 shadow-2xl">
-           <div className="flex items-center gap-3 mb-6">
-              <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Identity Sync Diagnostic</h4>
-           </div>
-           <pre className="text-[10px] text-emerald-400 font-mono overflow-auto max-h-40 opacity-70">
-              {JSON.stringify({
-                receivedId: safeUserData.employeeId,
-                mappedId: empId,
-                serverSync: !!userData,
-                tokenPresent: !!token
-              }, null, 2)}
-           </pre>
-        </div>
-      )}
+      {/* Deep Diagnostic section removed for production clarity */}
 
       <div className="text-center pt-24 pb-12 opacity-30">
         <p className="text-[#2E3A59] text-[10px] font-black uppercase tracking-[0.5em] leading-loose">

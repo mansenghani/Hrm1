@@ -1,55 +1,67 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { 
+  ShieldCheck, 
+  Search, 
+  Plus, 
+  LayoutDashboard, 
+  Users, 
+  CheckSquare, 
+  Layers, 
+  FileText, 
+  Calendar, 
+  Clock, 
+  Wallet, 
+  TrendingUp, 
+  BarChart3, 
+  Settings,
+  ClipboardList,
+  Briefcase,
+  Menu,
+  X,
+  Target
+} from 'lucide-react';
 
 const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
-  const [collapsed, setCollapsed] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [userData, setUserData] = useState(() => {
-    try {
-      const stored = sessionStorage.getItem('user');
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
-
   const role = sessionStorage.getItem('role') || 'admin';
-  const displayRole = userRole || (role ? role.toUpperCase() : 'ADMIN');
-  const [displayName, setDisplayName] = useState(() => {
-    try {
-      const stored = sessionStorage.getItem('user');
-      const u = (stored && stored !== 'undefined') ? JSON.parse(stored) : null;
-      return u?.name || u?.fullName || userName || 'System Administrator';
-    } catch { return 'System Administrator'; }
-  });
+  const token = sessionStorage.getItem('token');
+  const [userProfile, setUserProfile] = useState(null);
 
-  // Unified Identity Sync Protocol
+  const displayRole = userRole || (role ? role.toUpperCase() : 'ADMIN');
+  
   useEffect(() => {
-    const syncIdentity = async () => {
-      const token = sessionStorage.getItem('token');
-      if (token && token !== 'null') {
-        try {
-          const response = await fetch('/api/auth/me', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (response.ok) {
-            const data = await response.json();
-            if (data) {
-               setUserData(data);
-               setDisplayName(data.name || data.fullName || data.email || 'System Administrator');
-               sessionStorage.setItem('user', JSON.stringify(data));
-            }
-          }
-        } catch (e) { 
-          console.warn('Identity Sync Delayed'); 
+    const fetchLatestProfile = async () => {
+      if (!token) return;
+      try {
+        const response = await axios.get('/api/auth/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.data) {
+          setUserProfile(response.data);
+          sessionStorage.setItem('user', JSON.stringify(response.data));
+        }
+      } catch (err) {
+        const stored = sessionStorage.getItem('user');
+        if (stored && stored !== 'undefined') {
+          setUserProfile(JSON.parse(stored));
         }
       }
     };
-    syncIdentity();
-  }, [role]);
+    fetchLatestProfile();
+  }, [token]);
+
+  const displayName = userProfile?.name || 
+                     (userProfile?.profile ? `${userProfile.profile.firstName || ''} ${userProfile.profile.lastName || ''}`.trim() : null) || 
+                     userName || 
+                     'System Administrator';
+
+  const initials = displayName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'SA';
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -57,62 +69,70 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   }, []);
 
   useEffect(() => {
-    const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
-    document.title = `FluidHR | ${capitalizedRole}`;
-  }, [role]);
-
-
+    const baseTitle = 'Fluid HR';
+    const roleMap = {
+      admin: 'Admin',
+      hr: 'HR',
+      manager: 'Manager',
+      employee: 'Employee'
+    };
+    const pathRole = location.pathname.split('/')[1];
+    const activeRole = roleMap[pathRole] ? pathRole : role;
+    const roleName = roleMap[activeRole] || 'System';
+    document.title = `${baseTitle} | ${roleName}`;
+  }, [role, location.pathname]);
 
   const getMenuItemsByRole = (currentRole) => {
     switch (currentRole) {
       case 'hr':
         return [
-          { name: 'Dashboard', icon: 'monitoring', path: '/hr/dashboard' },
-          { name: 'Tasks', icon: 'assignment', path: '/hr/tasks' },
-          { name: 'Attendance', icon: 'receipt_long', path: '/hr/attendance' },
-          { name: 'Time Tracker', icon: 'timer', path: '/hr/time-tracker' },
-          { name: 'Leaves', icon: 'security', path: '/hr/leave' },
+          { name: 'Dashboard', path: '/hr/dashboard', icon: LayoutDashboard },
+          { name: 'Tasks', path: '/hr/tasks', icon: CheckSquare },
+          { name: 'Attendance', path: '/hr/attendance', icon: Calendar },
+          { name: 'Time Tracker', path: '/hr/time-tracker', icon: Clock },
+          { name: 'Personnel Units', path: '/hr/teams', icon: Users },
+          { name: 'Project Registry', path: '/hr/projects', icon: Briefcase },
+          { name: 'Request For Leave', path: '/hr/leave', icon: FileText },
         ];
       case 'employee':
         return [
-          { name: 'Dashboard', icon: 'monitoring', path: '/employee/dashboard' },
-          { name: 'Time Tracker', icon: 'timer', path: '/employee/time-tracker' },
-          { name: 'Leave Management', icon: 'security', path: '/employee/leave' },
+          { name: 'Dashboard', path: '/employee/dashboard', icon: LayoutDashboard },
+          { name: 'Active Arcs', path: '/employee/projects', icon: Target },
+          { name: 'Time Tracker', path: '/employee/time-tracker', icon: Clock },
+          { name: 'Request For Leave', path: '/employee/leave', icon: FileText },
         ];
       case 'manager':
         return [
-          { name: 'Dashboard', icon: 'monitoring', path: '/manager/dashboard' },
-          { name: 'Deployment', icon: 'assignment', path: '/manager/tasks' },
-          { name: 'Time Tracker', icon: 'timer', path: '/manager/time-tracker' },
-          { name: 'Team Attendance', icon: 'receipt_long', path: '/manager/attendance' },
-          { name: 'Review Leaves', icon: 'security', path: '/manager/leave' },
+          { name: 'Dashboard', path: '/manager/dashboard', icon: LayoutDashboard },
+          { name: 'Deployment', path: '/manager/tasks', icon: ClipboardList },
+          { name: 'Project Hub', path: '/manager/projects', icon: Briefcase },
+          { name: 'Time Tracker', path: '/manager/time-tracker', icon: Clock },
+          { name: 'Team Attendance', path: '/manager/attendance', icon: Calendar },
+          { name: 'Review Leaves', path: '/manager/leave', icon: FileText },
         ];
       case 'admin':
       default:
         return [
-          { name: 'Dashboard', icon: 'monitoring', path: `/${currentRole}/dashboard` },
-          { name: 'Employees', icon: 'account_tree', path: `/${currentRole}/employees` },
-          { name: 'Tasks', icon: 'assignment', path: `/${currentRole}/tasks` },
-          { name: 'Departments', icon: 'hub', path: `/${currentRole}/departments` },
-          { name: 'Leave Management', icon: 'security', path: `/${currentRole}/leave` },
-          { name: 'Attendance', icon: 'receipt_long', path: `/${currentRole}/attendance` },
-          { name: 'Time Tracker', icon: 'timer', path: `/${currentRole}/time-tracker` },
-          { name: 'Payroll', icon: 'payments', path: `/${currentRole}/payroll` },
-          { name: 'Performance', icon: 'trending_up', path: `/${currentRole}/performance` },
-          { name: 'Reports', icon: 'leaderboard', path: `/${currentRole}/reports` },
-          { name: 'Settings', icon: 'settings', path: `/${currentRole}/settings` },
+          { name: 'Dashboard', path: `/${currentRole}/dashboard`, icon: LayoutDashboard },
+          { name: 'Employees', path: `/${currentRole}/employees`, icon: Users },
+          { name: 'Tasks', path: `/${currentRole}/tasks`, icon: CheckSquare },
+          { name: 'Departments', path: `/${currentRole}/departments`, icon: Layers },
+          { name: 'Request For Leave', path: `/${currentRole}/leave`, icon: FileText },
+          { name: 'Attendance', path: `/${currentRole}/attendance`, icon: Calendar },
+          { name: 'Time Tracker', path: `/${currentRole}/time-tracker`, icon: Clock },
+          { name: 'Payroll', path: `/${currentRole}/payroll`, icon: Wallet },
+          { name: 'Performance', path: `/${currentRole}/performance`, icon: TrendingUp },
+          { name: 'Reports', path: `/${currentRole}/reports`, icon: BarChart3 },
+          { name: 'Settings', path: `/${currentRole}/settings`, icon: Settings },
         ];
     }
   };
 
-  const defaultMenuItems = getMenuItemsByRole(role);
-
   const menuItems = navItems ? navItems.map(item => ({
     name: item.label || item.name,
-    icon: typeof item.icon === 'string' ? item.icon : 'analytics',
     path: item.path,
-    lucideIcon: (item.icon && typeof item.icon !== 'string') ? item.icon : null
-  })) : defaultMenuItems;
+    icon: item.icon || LayoutDashboard
+  })) : getMenuItemsByRole(role);
 
   const handleLogout = () => {
     if (onLogout) {
@@ -122,136 +142,112 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
       sessionStorage.removeItem('user');
       sessionStorage.removeItem('role');
       navigate('/login');
-      window.location.reload();
     }
   };
 
+  const toggleSidebar = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
   return (
-    <div className="flex min-h-screen bg-white font-sans text-[#1E2026] selection:bg-[#F0B90B] selection:text-[#1E2026]">
-
-      {/* SIDEBAR */}
-      <aside
-        onMouseEnter={() => setCollapsed(false)}
-        onMouseLeave={() => setCollapsed(true)}
-        className={`fixed left-0 top-0 h-full z-50 bg-[#222126] transition-all duration-300 ease-in-out flex flex-col ${collapsed ? 'w-20' : 'w-72'}`}
-      >
-        <div className="h-16 flex items-center px-6 shrink-0 border-b border-white/5">
-          <Link to={`/${role}/dashboard`} className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#F0B90B] flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-[#1E2026] text-xl font-bold">currency_exchange</span>
-            </div>
-            {!collapsed && (
-              <div className="animate-in fade-in slide-in-from-left-2 duration-300">
-                <h2 className="text-white font-extrabold text-lg tracking-tight leading-none">FluidHR</h2>
-                <p className="text-[#F0B90B] text-[9px] font-bold uppercase tracking-[0.2em] mt-1">SaaS Protocol</p>
+    <div className="flex flex-col min-h-screen bg-[#fffefb]">
+      <header className="sticky top-0 w-full z-50 bg-[#fffefb] border-b border-[#c5c0b1]">
+        <div className="flex items-center h-[72px] w-full px-8">
+          <div className="flex items-center gap-6 mr-12">
+            <Link to={`/${role}/dashboard`} className="flex items-center gap-3 no-underline">
+              <div className="w-8 h-8 bg-[#ff4f00] rounded-[4px] flex items-center justify-center">
+                <ShieldCheck size={20} className="text-[#fffefb]" />
               </div>
-            )}
-          </Link>
-        </div>
-
-        <nav className="flex-1 py-6 space-y-0.5 overflow-y-auto scrollbar-hide">
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
-            return (
+              <span className="text-[24px] font-bold tracking-tight text-[#201515]">FluidHR</span>
+            </Link>
+            <button 
+              onClick={toggleSidebar}
+              className="flex items-center justify-center w-10 h-10 hover:bg-[#eceae3] rounded-[6px] text-[#36342e] transition-all cursor-pointer border-none bg-transparent"
+            >
+              <Menu size={22} />
+            </button>
+          </div>
+          <nav className="hidden lg:flex items-center h-full gap-2">
+            {menuItems.slice(0, 4).map(item => (
               <Link
-                key={item.name}
+                key={item.path}
                 to={item.path}
-                className={`relative flex items-center h-12 px-6 transition-all duration-150 group ${isActive ? 'bg-white/5' : 'hover:bg-white/5'}`}
+                className={`zap-tab ${location.pathname.startsWith(item.path) ? 'zap-tab-active' : ''}`}
               >
-                <div className={`shrink-0 flex items-center justify-center w-6 h-6 ${isActive ? 'text-[#F0B90B]' : 'text-[#848E9C] group-hover:text-white'}`}>
-                  {item.lucideIcon ? item.lucideIcon : (
-                    <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>{item.icon}</span>
-                  )}
-                </div>
-
-                {!collapsed && (
-                  <span className={`ml-4 text-[13px] font-semibold tracking-tight ${isActive ? 'text-white' : 'text-[#848E9C] group-hover:text-white'}`}>
-                    {item.name}
-                  </span>
-                )}
-
-                {isActive && (
-                  <div className="absolute left-0 w-1 h-6 bg-[#F0B90B] rounded-r-full"></div>
-                )}
+                {item.name}
               </Link>
-            );
-          })}
-        </nav>
-
-        <div className="p-6 border-t border-white/5 shrink-0">
-          <button
-            onClick={handleLogout}
-            className={`w-full flex items-center gap-4 p-3 rounded-lg text-[#848E9C] hover:text-[#F6465D] hover:bg-white/5 transition-all group ${collapsed ? 'justify-center' : ''}`}
-          >
-            <span className="material-symbols-outlined text-xl">logout</span>
-            {!collapsed && <span className="text-[12px] font-black tracking-widest uppercase">Eject Hub</span>}
-          </button>
+            ))}
+          </nav>
+          <div className="ml-auto flex items-center h-full gap-4">
+            <button className="w-10 h-10 flex items-center justify-center text-[#36342e] hover:text-[#ff4f00] transition-colors">
+              <Search size={20} />
+            </button>
+            <div 
+              onClick={() => navigate(`/${role}/profile`)}
+              className="hidden md:flex items-center gap-3 px-4 h-12 hover:bg-[#eceae3] rounded-[4px] cursor-pointer transition-all"
+            >
+              <div className="w-8 h-8 bg-[#201515] rounded-full flex items-center justify-center text-[#fffefb] font-bold text-[13px]">
+                {initials}
+              </div>
+              <div className="flex flex-col items-start leading-none">
+                <span className="text-[13px] font-bold text-[#201515] truncate max-w-[150px]">{displayName}</span>
+                <span className="text-[10px] font-bold text-[#939084] uppercase tracking-wider mt-1">{displayRole}</span>
+              </div>
+            </div>
+            <button onClick={handleLogout} className="zap-btn zap-btn-orange">Log out</button>
+          </div>
         </div>
-      </aside>
-
-      {/* VIEWPORT */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${collapsed ? 'ml-20' : 'ml-72'}`}>
-
-        {/* TOPBAR (GLASS PROTOCOL) */}
-        <header className="h-20 bg-white/70 backdrop-blur-md flex items-center justify-between px-10 sticky top-0 z-30 transition-all border-b border-black/[0.03]">
-          <div className="flex-1 max-w-xl">
-            <div className="relative group">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#848E9C] text-xl">search</span>
-              <input
-                type="text"
-                placeholder="Query personnel, markets, or protocol logs..."
-                className="w-full pl-12 pr-6 py-2 bg-slate-50 border-2 border-orange-400/60 focus:ring-2 focus:ring-orange-500/40 rounded-lg text-[13px] font-medium text-[#1E2026] placeholder:text-[#848E9C] focus:outline-none focus:bg-white transition-all"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-6">
-            <div className="hidden lg:flex items-center gap-4 bg-[#F5F5F5] px-6 py-2 rounded-xl border border-[#E6E8EA]">
-              <div className="w-1.5 h-1.5 bg-[#0ECB81] rounded-full animate-pulse shadow-[0_0_8px_#0ECB81]"></div>
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase text-[#848E9C] tracking-[0.2em] leading-none mb-1">Active Protocol Time</span>
-                <span className="text-[14px] font-black text-[#1E2026] tabular-nums tracking-tighter leading-none">
-                  {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-8">
-              <button className="w-10 h-10 rounded-lg flex items-center justify-center text-[#848E9C] hover:bg-[#F5F5F5] transition-all relative">
-                <span className="material-symbols-outlined text-xl">notifications</span>
-                <div className="absolute top-2 right-2 w-2 h-2 bg-[#F6465D] border-2 border-white rounded-full"></div>
-              </button>
-
-              <div className="flex items-center gap-4 border-l border-[#E6E8EA] pl-8">
-                <Link to={`/${role}/profile`} className="flex items-center gap-4 group">
-                  <div className="w-9 h-9 rounded-full bg-[#1E2026] flex items-center justify-center overflow-hidden shrink-0 border-2 border-[#F0B90B] group-hover:scale-105 transition-transform shadow-lg shadow-[#F0B90B]/10">
-                    <img src={`https://ui-avatars.com/api/?name=${displayName}&background=1E2026&color=F0B90B&bold=true`} className="w-full h-full object-cover" alt="User" />
-                  </div>
-                  <div className="text-left hidden md:block">
-                    <p className="text-[12px] font-black text-[#1E2026] uppercase leading-none mb-1 group-hover:text-[#F0B90B] transition-colors">{displayName}</p>
-                    <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest leading-none">SECURITY NODE / {displayRole}</p>
-                  </div>
-                </Link>
-
-                {role === 'admin' && (
-                  <button
-                    onClick={() => navigate(`/${role}/create-user`)}
-                    className="ml-4 px-8 py-2.5 bg-[#F0B90B] text-[#1E2026] rounded-full text-[11px] font-black uppercase tracking-widest hover:bg-[#FFD000] transition-all shadow-md shadow-[#F0B90B]/10 active:scale-95"
+      </header>
+      <div className="flex flex-1 w-full overflow-hidden relative">
+        <aside 
+          className="bg-transparent flex flex-col shrink-0 border-r border-[#c5c0b1] transition-[width] duration-300 ease-in-out overflow-hidden hidden md:flex"
+          style={{ width: isSidebarOpen ? '280px' : '80px' }}
+        >
+          <div className="flex flex-col pb-12 w-full">
+            <nav className="flex-1 space-y-2 pt-[10px] px-3">
+              {menuItems.map((item) => {
+                const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`flex items-center h-12 text-[15px] font-bold no-underline rounded-[6px] transition-all border border-transparent group ${isSidebarOpen ? 'px-4 gap-3 w-full' : 'px-0 justify-center w-full'} ${isActive ? 'text-[#ff4f00] bg-[#fffdf9] !border-[#ff4f00] shadow-sm' : 'text-[#201515] hover:bg-[#eceae3] hover:border-[#c5c0b1]'}`}
+                    title={!isSidebarOpen ? item.name : ""}
                   >
-                    Create Account
-                  </button>
-                )}
-              </div>
-            </div>
+                    <div className={`shrink-0 flex items-center justify-center transition-all ${isSidebarOpen ? 'w-5' : 'w-12'}`}>
+                      <Icon size={20} className={isActive ? 'text-[#ff4f00]' : 'text-[#939084]'} />
+                    </div>
+                    {isSidebarOpen && <span className="truncate whitespace-nowrap overflow-hidden transition-opacity duration-200">{item.name}</span>}
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
-        </header>
-
-        <main className="flex-1 overflow-y-auto bg-white p-10">
-          <div className="max-w-7xl mx-auto">
-            {children || <Outlet />}
+        </aside>
+        <main className="flex-1 overflow-y-auto bg-[#fffefb] relative">
+          <div className="py-12 px-8 lg:px-12 max-w-[1600px] mx-auto animate-fade-in w-full min-h-full flex flex-col">
+            <div className="flex-1">
+              <Outlet />
+              {children}
+            </div>
+            {/* LARGE VERTICAL SPACER */}
+            <div className="h-24 shrink-0"></div>
           </div>
         </main>
       </div>
+      <footer className="py-6 px-12 border-t border-[#c5c0b1] bg-[#fffefb] flex justify-between items-center text-[11px] text-[#939084] font-bold uppercase tracking-widest z-50">
+        <div className="flex gap-10 items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 bg-[#ff4f00] rounded-full animate-pulse"></div>
+            <span className="text-[#201515]">Connected</span>
+          </div>
+          <span>v2.4.0 Automator</span>
+        </div>
+        <span>© 2026 Zapier HR Infrastructure</span>
+      </footer>
     </div>
   );
 };

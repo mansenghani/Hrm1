@@ -93,6 +93,53 @@ exports.assignEmployee = async (req, res) => {
   }
 };
 
+exports.createManagerTask = async (req, res) => {
+  try {
+    const { title, description, assignedToEmployee, priority, dueDate } = req.body;
+    const { id } = req.user;
+
+    // Get manager's teamId
+    const manager = await User.findById(id).select('teamId');
+    if (!manager.teamId) return res.status(403).json({ message: 'Deployment Refused: Node not anchored to a team.' });
+
+    // Validate employee is in the SAME team
+    const employee = await User.findOne({ _id: assignedToEmployee, teamId: manager.teamId });
+    if (!employee) return res.status(403).json({ message: 'Protocol Failure: Target node is outside of tactical zone.' });
+
+    const task = await Task.create({
+      title,
+      description,
+      createdBy: id,
+      forwardedToManager: id,
+      assignedToEmployee,
+      teamId: manager.teamId,
+      priority,
+      status: 'manager_assigned',
+      dueDate
+    });
+
+    res.status(201).json(task);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getTeamTasks = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const user = await User.findById(id).select('teamId');
+    if (!user.teamId) return res.json([]);
+
+    const tasks = await Task.find({ teamId: user.teamId })
+      .populate('assignedToEmployee', 'name email')
+      .populate('forwardedToManager', 'name email');
+    
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // --- EMPLOYEE ACTIONS ---
 exports.getMyTasks = async (req, res) => {
   try {

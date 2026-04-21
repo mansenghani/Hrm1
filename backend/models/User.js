@@ -10,7 +10,9 @@ const userSchema = new mongoose.Schema({
     enum: ['admin', 'hr', 'manager', 'employee'],
     required: true 
   },
-  employeeId: { type: String, unique: true },
+   employeeId: { type: String },
+  teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null },
+  reportingManager: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   status: { type: String, enum: ['active', 'inactive'], default: 'active' }
 }, { timestamps: true });
 

@@ -1,0 +1,187 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700\u0026display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400\u0026display=swap');
+
+:root {
+  /* Primary Palette */
+  --zap-black: #201515;
+  --zap-cream: #fffefb;
+  --zap-off-white: #fffdf9;
+  
+  /* Brand Accent */
+  --zap-orange: #ff4f00;
+  
+  /* Neutrals */
+  --zap-charcoal: #36342e;
+  --zap-warm-gray: #939084;
+  --zap-sand: #c5c0b1;
+  --zap-light-sand: #eceae3;
+  --zap-mid-warm: #b5b2aa;
+  
+  /* Radius Scale */
+  --zap-radius-sm: 4px;
+  --zap-radius-md: 5px;
+  --zap-radius-lg: 8px;
+  --zap-radius-pill: 20px;
+}
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--zap-cream);
+  color: var(--zap-charcoal);
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.25;
+}
+
+/* Typography Classes */
+.zap-display-hero {
+  font-family: 'Inter', sans-serif; /* Fallback for Degular */
+  font-size: 56px;
+  font-weight: 500;
+  line-height: 0.90;
+  color: var(--zap-black);
+  letter-spacing: -0.01em;
+}
+
+.zap-display-xl {
+  font-size: 80px;
+  font-weight: 500;
+  line-height: 0.90;
+}
+
+.zap-section-heading {
+  font-size: 48px;
+  font-weight: 500;
+  line-height: 1.04;
+  color: var(--zap-black);
+}
+
+.zap-editorial {
+  font-family: 'Playfair Display', serif; /* Fallback for GT Alpina */
+  font-weight: 400;
+  letter-spacing: -1.6px;
+}
+
+.zap-body-large {
+  font-size: 20px;
+  line-height: 1.20;
+}
+
+.zap-caption-upper {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--zap-warm-gray);
+}
+
+/* Components */
+
+/* Buttons */
+.zap-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms ease;
+  border: 1px solid transparent;
+  outline: none;
+}
+
+.zap-btn-orange {
+  background-color: var(--zap-orange);
+  color: #ffffff;
+  padding: 12px 32px;
+  border-radius: var(--zap-radius-lg);
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: 0 4px 14px 0 rgba(255, 79, 0, 0.2);
+}
+
+.zap-btn-orange:hover {
+  background-color: var(--zap-orange);
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 79, 0, 0.23);
+}
+
+.zap-btn-dark {
+  background-color: var(--zap-black);
+  color: var(--zap-cream);
+  padding: 20px 24px;
+  border-radius: var(--zap-radius-lg);
+  font-size: 16px;
+}
+
+.zap-btn-dark:hover {
+  background-color: var(--zap-sand);
+  color: var(--zap-black);
+  border-color: var(--zap-sand);
+}
+
+.zap-btn-light {
+  background-color: var(--zap-light-sand);
+  color: var(--zap-charcoal);
+  padding: 20px 24px;
+  border-radius: var(--zap-radius-lg);
+  border: 1px solid var(--zap-sand);
+  font-size: 16px;
+}
+
+.zap-btn-light:hover {
+  background-color: var(--zap-sand);
+  color: var(--zap-black);
+}
+
+/* Cards */
+.zap-card {
+  background-color: var(--zap-cream);
+  border: 1px solid var(--zap-sand);
+  border-radius: var(--zap-radius-md);
+  padding: 24px;
+  transition: border-color 200ms ease;
+}
+
+.zap-card:hover {
+  border-color: var(--zap-charcoal);
+}
+
+/* Tabs with Inset Shadow */
+.zap-tab {
+  padding: 12px 16px;
+  color: var(--zap-black);
+  font-weight: 500;
+  font-size: 16px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition: all 200ms ease;
+}
+
+.zap-tab-active {
+  box-shadow: var(--zap-orange) 0px -4px 0px 0px inset;
+}
+
+.zap-tab:hover:not(.zap-tab-active) {
+  box-shadow: var(--zap-sand) 0px -4px 0px 0px inset;
+}
+
+/* Layout Utils */
+.zap-section-padding {
+  padding: 64px 24px;
+}
+
+@media (min-width: 1024px) {
+  .zap-section-padding {
+    padding: 80px 24px;
+  }
+}

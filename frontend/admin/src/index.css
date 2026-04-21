@@ -1,5 +1,4 @@
-@import '../../shared/styles/theme.css';
-@import '../../shared/styles/global.css';
+@import '../../shared/styles/zapier.css';
 
 /* SLIM SCROLLBAR SYSTEM */
 ::-webkit-scrollbar {
@@ -12,14 +11,14 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--zap-sand);
   border-radius: 20px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--zap-charcoal);
 }
 
 @tailwind base;
@@ -28,35 +27,48 @@
 
 @layer base {
   body {
-    @apply bg-white text-[#1E2026] antialiased;
-    margin: 0;
-    padding: 0;
+    background-color: var(--zap-cream);
+    color: var(--zap-charcoal);
     font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4, .font-headline {
-    font-family: 'Manrope', sans-serif;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', sans-serif;
+    color: var(--zap-black);
   }
 }
 
 .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
 .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
+/* Animations */
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out;
+}
+
+.animate-scale-up {
+  animation: scale-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
 @keyframes scale-up {
   from { transform: scale(0.98); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
 
-.animate-fade-in { animation: fade-in 0.4s ease-out; }
-.animate-scale-up { animation: scale-up 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+/* Zapier Specific Utils */
+.zap-container {
+  width: 100%;
+  margin: 0;
+}

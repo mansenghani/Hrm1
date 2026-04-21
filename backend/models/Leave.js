@@ -4,17 +4,20 @@ const leaveSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    refPath: 'userModel' // 🧬 Dynamic Reference for cross-collection joins
+    ref: 'User'
   },
-  userModel: {
-    type: String,
-    required: true,
-    enum: ['EmployeeUser', 'HR', 'Manager']
+  managerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  hrId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   },
   leaveType: {
     type: String,
     required: true,
-    enum: ['sick', 'vacation', 'casual', 'maternity', 'emergency', 'annual', 'paternity']
+    enum: ['sick', 'casual', 'earned', 'emergency']
   },
   startDate: {
     type: Date,
@@ -30,8 +33,12 @@ const leaveSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'approved', 'rejected'],
+    enum: ['pending', 'approved', 'rejected', 'cancelled'],
     default: 'pending'
+  },
+  totalDays: {
+    type: Number,
+    default: 1
   }
 }, { timestamps: true });
 

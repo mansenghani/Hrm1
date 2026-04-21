@@ -13,9 +13,11 @@ import {
     Zap
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import AnalyticsChart from '../../components/AnalyticsChart';
 
 const ManagerDashboard = () => {
     const [stats, setStats] = useState({
+        teamName: '',
         team: [],
         tasks: [],
         loading: true
@@ -27,12 +29,13 @@ const ManagerDashboard = () => {
         const fetchStats = async () => {
             try {
                 const [teamRes, taskRes] = await Promise.all([
-                    axios.get('/api/personnel/my-team', { headers: { Authorization: `Bearer ${token}` } }),
-                    axios.get('/api/tasks/manager', { headers: { Authorization: `Bearer ${token}` } })
+                    axios.get('/api/teams/my', { headers: { Authorization: `Bearer ${token}` } }),
+                    axios.get('/api/tasks/team', { headers: { Authorization: `Bearer ${token}` } })
                 ]);
                 setStats({
-                    team: teamRes.data,
-                    tasks: taskRes.data,
+                    teamName: teamRes.data?.teamName || 'Unassigned Unit',
+                    team: teamRes.data?.members || [],
+                    tasks: taskRes.data || [],
                     loading: false
                 });
             } catch (error) {
@@ -40,7 +43,7 @@ const ManagerDashboard = () => {
                 setStats(prev => ({ ...prev, loading: false }));
             }
         };
-        fetchStats();
+        if (token) fetchStats();
     }, [token]);
 
     const pendingTasks = Array.isArray(stats.tasks) ? stats.tasks.filter(t => t?.status === 'hr_review' || t?.status === 'manager_assigned').length : 0;
@@ -59,7 +62,7 @@ const ManagerDashboard = () => {
             <div className="flex justify-between items-end">
                 <div>
                     <h1 className="text-5xl font-black text-[#1E2026] tracking-tighter leading-none mb-3 italic">
-                        Manager <span className="text-[#3E74FF]">Command</span>
+                        {stats.teamName} <span className="text-[#3E74FF]">Command</span>
                     </h1>
                     <p className="text-[#848E9C] font-bold text-[11px] uppercase tracking-[0.2em] flex items-center gap-3">
                         <span className="w-12 h-[2px] bg-[#3E74FF]"></span>
@@ -97,7 +100,11 @@ const ManagerDashboard = () => {
                 ))}
             </div>
 
-            <div className="grid grid-cols-12 gap-8">
+            <div className="col-span-12">
+                <AnalyticsChart title="Team Performance Trace" type="bar" />
+            </div>
+
+            <div className="grid grid-cols-12 gap-8 w-full">
                 {/* TEAM SECTION */}
                 <div className="col-span-12 lg:col-span-7 bg-white border border-[#E6E8EA] rounded-[48px] p-12 shadow-sm">
                     <div className="flex justify-between items-center mb-12">
@@ -115,10 +122,10 @@ const ManagerDashboard = () => {
                                 <div key={emp._id} className="flex items-center justify-between p-6 rounded-[32px] bg-[#F9FAFC] border border-[#E6E8EA] hover:border-[#3E74FF] transition-all group">
                                     <div className="flex items-center gap-5">
                                         <div className="w-14 h-14 rounded-full bg-white border border-[#E6E8EA] flex items-center justify-center text-[#1E2026] font-black text-lg group-hover:bg-[#3E74FF] group-hover:text-white transition-all">
-                                            {emp.profile?.firstName?.charAt(0)}
+                                            {emp.name?.charAt(0)}
                                         </div>
                                         <div>
-                                            <p className="text-[16px] font-black text-[#1E2026] uppercase leading-none mb-1">{emp.profile?.firstName} {emp.profile?.lastName}</p>
+                                            <p className="text-[16px] font-black text-[#1E2026] uppercase leading-none mb-1">{emp.name}</p>
                                             <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-[0.2em]">{emp.email}</p>
                                         </div>
                                     </div>
