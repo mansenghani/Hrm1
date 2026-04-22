@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Search, UserPlus, Trash2, Edit3, User, Eye, CheckCircle, XCircle, MoreVertical, RefreshCw } from 'lucide-react';
+import { API_BASE_URL } from '@shared/services/api';
 
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('');
-  const [filterDepartment, setFilterDepartment] = useState('');
   const navigate = useNavigate();
 
   const fetchEmployees = async () => {
@@ -39,9 +39,8 @@ const Employees = () => {
       empId.includes(searchTerm.toLowerCase());
 
     const matchesRole = filterRole ? (emp.role === filterRole || emp.userId?.role === filterRole) : true;
-    const matchesDept = filterDepartment ? (emp.department?.name === filterDepartment || emp.department === filterDepartment) : true;
 
-    return matchesSearch && matchesRole && matchesDept;
+    return matchesSearch && matchesRole;
   });
 
   const handleDelete = async (id) => {
@@ -126,7 +125,6 @@ const Employees = () => {
             <tr className="border-b-2 border-[#201515] text-left">
               <th className="py-4 px-4 text-[12px] font-bold text-[#939084] uppercase tracking-widest">Node ID</th>
               <th className="py-4 px-4 text-[12px] font-bold text-[#939084] uppercase tracking-widest">Personnel Entity</th>
-              <th className="py-4 px-4 text-[12px] font-bold text-[#939084] uppercase tracking-widest">Units / Dept</th>
               <th className="py-4 px-4 text-[12px] font-bold text-[#939084] uppercase tracking-widest">Operational Status</th>
               <th className="py-4 px-4 text-[12px] font-bold text-[#939084] uppercase tracking-widest text-right">Actions</th>
             </tr>
@@ -156,7 +154,7 @@ const Employees = () => {
                   <td className="py-6 px-4">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] flex items-center justify-center overflow-hidden">
-                        {emp.profileImage ? <img src={emp.profileImage} alt="User" className="w-full h-full object-cover" /> : <User size={18} className="text-[#939084]" />}
+                        {emp.profileImage ? <img src={`${API_BASE_URL}${emp.profileImage}`} alt="User" className="w-full h-full object-cover" /> : <User size={18} className="text-[#939084]" />}
                       </div>
                       <div>
                         <p className="text-[15px] font-bold text-[#201515] leading-none mb-2">{emp.fullName || emp.userId?.name || 'Anonymous Node'}</p>
@@ -164,10 +162,7 @@ const Employees = () => {
                       </div>
                     </div>
                   </td>
-                  <td className="py-6 px-4">
-                    <p className="text-[14px] font-bold text-[#201515] mb-1">{emp.department?.name || emp.department || 'GLOBAL'}</p>
-                    <p className="text-[11px] font-bold text-[#939084] uppercase tracking-wider">Manager: {emp.managerId?.name || 'ROOT'}</p>
-                  </td>
+
                   <td className="py-6 px-4">
                     <div className="flex flex-col gap-2">
                       <span className={`w-fit px-3 py-1 rounded-[4px] text-[10px] font-bold uppercase tracking-widest ${emp.role === 'admin' ? 'bg-[#201515] text-white' : 'bg-[#eceae3] text-[#201515]'}`}>

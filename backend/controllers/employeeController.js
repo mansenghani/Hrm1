@@ -17,7 +17,6 @@ exports.getEmployees = async (req, res) => {
 
     const employees = await Employee.find(query)
       .populate('userId', 'name email status role')
-      .populate('department', 'name')
       .populate('managerId', 'name email');
 
     res.json(employees);
@@ -31,10 +30,15 @@ exports.getEmployeeById = async (req, res) => {
   try {
     const employee = await Employee.findById(req.params.id)
       .populate('userId', 'name email status role')
-      .populate('department', 'name')
       .populate('managerId', 'name email');
       
     if (!employee) return res.status(404).json({ message: 'Employee not found' });
+    
+    // 🛡️ ROLE INTEGRITY SYNC: Ensure Employee role matches User role
+    if (employee.userId && employee.userId.role && employee.role !== employee.userId.role) {
+      employee.role = employee.userId.role;
+      await employee.save();
+    }
     
     // Role-based access logic
     if (req.user.role === 'manager' && employee.managerId?.toString() !== req.user.id) {
@@ -113,7 +117,21 @@ exports.updateEmployee = async (req, res) => {
     if (updateData.fullName || updateData.role) {
        const userUpdate = {};
        if (updateData.fullName) userUpdate.name = updateData.fullName;
-       if (updateData.role) userUpdate.role = updateData.role;
+       if (updateData.role) {
+         userUpdate.role = updateData.role;
+         
+         // 🚀 SHADOW MIGRATION: Ensure Manager/HR record exists if role changed
+         const mongoose = require('mongoose');
+         if (updateData.role === 'manager') {
+           const Manager = mongoose.model('Manager');
+           const exists = await Manager.findOne({ userId: employee.userId });
+           if (!exists) await Manager.create({ userId: employee.userId, department: updatedEmployee.department?.name || 'Operations' });
+         } else if (updateData.role === 'hr') {
+           const HR = mongoose.model('HR');
+           const exists = await HR.findOne({ userId: employee.userId });
+           if (!exists) await HR.create({ userId: employee.userId });
+         }
+       }
        await User.findByIdAndUpdate(employee.userId, userUpdate);
     }
     
@@ -166,6 +184,28 @@ exports.getEmployeesByManager = async (req, res) => {
     const employees = await Employee.find({ managerId: req.params.managerId })
       .populate('department', 'name');
     res.json(employees);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+// POST /api/employees/:id/profile-image
+exports.updateEmployeeProfileImage = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No file provided' });
+    
+    const employee = await Employee.findById(req.params.id);
+    if (!employee) return res.status(404).json({ message: 'Employee not found' });
+    
+    const imagePath = `/uploads/${req.file.filename}`;
+    
+    // Update Employee
+    employee.profileImage = imagePath;
+    await employee.save();
+    
+    // Update User
+    await User.findByIdAndUpdate(employee.userId, { profileImage: imagePath });
+    
+    res.json(employee);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

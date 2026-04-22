@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  Zap, Clock, CheckCircle, BarChart3, Search, 
+import {
+  Zap, Clock, CheckCircle, BarChart3, Search,
   RefreshCw, User, Shield, AlertCircle, ArrowUpRight
 } from 'lucide-react';
 import TaskDetail from '../../components/TaskDetail';
@@ -12,7 +12,7 @@ const ManagerTasks = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   const token = sessionStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -94,7 +94,6 @@ const ManagerTasks = () => {
                 <th className="px-8 py-5 text-[11px] font-bold text-[#939084] uppercase tracking-widest">Task</th>
                 <th className="px-8 py-5 text-[11px] font-bold text-[#939084] uppercase tracking-widest text-center">Status</th>
                 <th className="px-8 py-5 text-[11px] font-bold text-[#939084] uppercase tracking-widest text-center">Assign Employee</th>
-                <th className="px-8 py-5 text-[11px] font-bold text-[#939084] uppercase tracking-widest text-center">Done</th>
                 <th className="px-8 py-5 text-[11px] font-bold text-[#939084] uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
@@ -113,11 +112,11 @@ const ManagerTasks = () => {
                   <td className="px-8 py-8 text-center" onClick={(e) => e.stopPropagation()}>
                     {task.assignedEmployee ? (
                       <div className="flex items-center justify-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#eceae3] flex items-center justify-center text-[#939084]"><User size={14}/></div>
+                        <div className="w-8 h-8 rounded-full bg-[#eceae3] flex items-center justify-center text-[#939084]"><User size={14} /></div>
                         <span className="text-[13px] font-bold text-[#201515] uppercase italic">{task.assignedEmployee.name}</span>
                       </div>
                     ) : (
-                      <select 
+                      <select
                         onChange={(e) => handleAssign(task._id, e.target.value)}
                         className="h-10 px-4 bg-white border border-[#c5c0b1] rounded-[4px] text-[11px] font-bold uppercase tracking-widest focus:outline-none focus:border-[#ff4f00] cursor-pointer"
                       >
@@ -128,17 +127,9 @@ const ManagerTasks = () => {
                       </select>
                     )}
                   </td>
-                  <td className="px-8 py-8 text-center">
-                    <div className="flex flex-col items-center gap-1">
-                      <span className="text-[16px] font-black text-[#201515] italic">{task.progress}%</span>
-                      <div className="w-16 h-1 bg-[#eceae3] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#ff4f00]" style={{ width: `${task.progress}%` }}></div>
-                      </div>
-                    </div>
-                  </td>
                   <td className="px-8 py-8 text-right">
                     <button className="w-10 h-10 flex items-center justify-center text-[#939084] hover:bg-[#ff4f00] hover:text-white rounded-[4px] transition-all bg-transparent border-none">
-                      <ArrowUpRight size={18}/>
+                      <ArrowUpRight size={18} />
                     </button>
                   </td>
                 </tr>
@@ -150,7 +141,7 @@ const ManagerTasks = () => {
 
       {/* TASK DETAIL MODAL */}
       {selectedTask && (
-        <TaskDetail 
+        <TaskDetail
           task={tasks.find(t => t._id === selectedTask._id) || selectedTask}
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}

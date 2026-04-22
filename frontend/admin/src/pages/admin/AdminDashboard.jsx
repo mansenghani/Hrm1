@@ -24,7 +24,6 @@ const AdminDashboard = () => {
     attendance: [],
     payroll: [],
     tasks: [],
-    departments: 0,
     activeNodes: 0
   });
   const navigate = useNavigate();
@@ -35,14 +34,14 @@ const AdminDashboard = () => {
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const [empRes, attRes, payRes, taskRes] = await Promise.all([
-        axios.get('/api/employees', config),
-        axios.get('/api/attendance', config),
-        axios.get('/api/payroll', config),
-        axios.get('/api/tasks/admin-all', config)
+        axios.get('/api/employees', config).catch(() => ({ data: [] })),
+        axios.get('/api/attendance', config).catch(() => ({ data: [] })),
+        axios.get('/api/payroll', config).catch(() => ({ data: [] })),
+        axios.get('/api/tasks/all', config).catch(() => ({ data: [] }))
       ]);
 
       const employees = empRes.data || [];
-      const depts = new Set(employees.map(e => e.department?.name || e.department).filter(Boolean));
+
 
       const today = new Date().toISOString().split('T')[0];
       const activeNodes = (attRes.data || []).filter(a => a.date?.startsWith(today)).length;
@@ -52,7 +51,6 @@ const AdminDashboard = () => {
         attendance: attRes.data || [],
         payroll: payRes.data || [],
         tasks: taskRes.data || [],
-        departments: depts.size || 0,
         activeNodes: activeNodes
       });
     } catch (err) {
@@ -100,7 +98,6 @@ const AdminDashboard = () => {
           { label: 'Personnel Nodes', val: stats.employees.length, icon: Users, status: 'Verified' },
           { label: 'Network Operations', val: stats.activeNodes, icon: Activity, status: 'Live' },
           { label: 'Task Velocity', val: `${stats.tasks.length > 0 ? Math.round((stats.tasks.filter(t => t.status === 'completed').length / stats.tasks.length) * 100) : 0}%`, icon: TrendingUp, status: 'Optimal' },
-          { label: 'Organization Units', val: stats.departments, icon: Building2, status: 'Active' },
         ].map((stat, i) => (
           <div key={i} className="zap-card group cursor-pointer hover:border-[#201515] transition-all">
             <div className="flex justify-between items-start mb-10">

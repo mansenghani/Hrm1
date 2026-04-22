@@ -31,15 +31,13 @@ const HRTasks = () => {
         const silent = silentParam === true;
         try {
             if (!silent) setLoading(true);
-            const [tasksRes, managersRes, hrsRes, projectsRes] = await Promise.all([
+            const [tasksRes, allRes, projectsRes] = await Promise.all([
                 axios.get('/api/tasks/all', { headers }).catch(() => ({ data: [] })),
-                axios.get('/api/personnel/managers', { headers }).catch(() => ({ data: [] })),
-                axios.get('/api/personnel/hrs', { headers }).catch(() => ({ data: [] })),
+                axios.get('/api/personnel/all', { headers }).catch(() => ({ data: [] })),
                 axios.get('/api/projects/hr', { headers }).catch(() => ({ data: [] }))
             ]);
-            const combinedLeads = [...(managersRes.data || []), ...(hrsRes.data || [])];
             setTasks(tasksRes.data || []);
-            setLeads(combinedLeads);
+            setLeads(allRes.data || []);
             setProjects(projectsRes.data || []);
         } catch (err) { console.error('Registry offline:', err); }
         finally { if (!silent) setLoading(false); }
@@ -183,7 +181,7 @@ const HRTasks = () => {
                                     <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[#939084] ml-1 italic">Assign Lead</label>
                                     <select required value={formData.assignedManager} onChange={e => setFormData({...formData, assignedManager: e.target.value})} className="w-full h-10 px-4 bg-[#eceae3] rounded-xl text-[12px] font-bold focus:outline-none focus:ring-2 focus:ring-[#ff4f00]/20 transition-all italic appearance-none">
                                         <option value="">Select</option>
-                                        {leads.map(m => <option key={m._id} value={m._id}>{m.name} ({m.role?.toUpperCase() || 'MANAGER'})</option>)}
+                                        {leads?.map(m => <option key={m._id} value={m._id}>{m.name || m.fullName || 'Unknown'} ({m.role?.toUpperCase() || 'N/A'})</option>)}
                                     </select>
                                 </div>
                                 <div className="space-y-1.5">

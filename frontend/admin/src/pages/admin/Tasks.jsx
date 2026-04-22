@@ -29,14 +29,12 @@ const Tasks = () => {
         const silent = silentParam === true;
         try {
             if (!silent) setLoading(true);
-            const [tasksRes, managersRes, hrsRes] = await Promise.all([
-                axios.get('/api/tasks/all', { headers }),
-                axios.get('/api/personnel/managers', { headers }),
-                axios.get('/api/personnel/hrs', { headers })
+            const [tasksRes, allRes] = await Promise.all([
+                axios.get('/api/tasks/all', { headers }).catch(e => ({ data: [] })),
+                axios.get('/api/personnel/all', { headers }).catch(e => ({ data: [] }))
             ]);
-            const combinedLeads = [...(managersRes.data || []), ...(hrsRes.data || [])];
-            setTasks(tasksRes.data);
-            setLeads(combinedLeads);
+            setTasks(tasksRes.data || []);
+            setLeads(Array.isArray(allRes.data) ? allRes.data : []);
         } catch (err) { console.error('Registry offline:', err); }
         finally { if (!silent) setLoading(false); }
     };
@@ -167,7 +165,7 @@ const Tasks = () => {
                                     <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[#939084] ml-1 italic">Lead Personnel</label>
                                     <select required value={formData.assignedManager} onChange={e => setFormData({...formData, assignedManager: e.target.value})} className="w-full h-11 px-4 bg-[#eceae3] rounded-xl text-[12px] font-bold focus:outline-none focus:ring-2 focus:ring-[#ff4f00]/20 transition-all italic appearance-none">
                                         <option value="">Select</option>
-                                        {leads.map(m => <option key={m._id} value={m._id}>{m.name} ({m.role?.toUpperCase() || 'MANAGER'})</option>)}
+                                        {leads?.map(m => <option key={m._id} value={m._id}>{m.name || m.fullName || 'Unknown'} ({m.role?.toUpperCase() || 'N/A'})</option>)}
                                     </select>
                                 </div>
                                 <div className="space-y-1.5">

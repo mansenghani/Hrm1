@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
     required: true 
   },
    employeeId: { type: String },
+  profileImage: { type: String, default: null },
   teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null },
   reportingManager: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   status: { type: String, enum: ['active', 'inactive'], default: 'active' }

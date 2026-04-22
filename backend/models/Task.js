@@ -22,6 +22,10 @@ const taskSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   },
+  assignedEmployees: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }],
   project: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Project',
@@ -56,6 +60,8 @@ const taskSchema = new mongoose.Schema({
   comments: [
     {
       userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      userName: String,
+      profileImage: String,
       role: String,
       message: String,
       createdAt: { type: Date, default: Date.now }

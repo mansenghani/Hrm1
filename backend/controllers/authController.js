@@ -28,7 +28,12 @@ exports.login = async (req, res) => {
       }
 
       const token = jwt.sign(
-        { id: user._id, role: user.role },
+        { 
+          id: user._id, 
+          role: user.role, 
+          name: user.name, 
+          profileImage: user.profileImage 
+        },
         process.env.JWT_SECRET || 'fallback_secret',
         { expiresIn: '30d' }
       );
@@ -151,5 +156,35 @@ exports.updatePassword = async (req, res) => {
     res.json({ message: 'Security protocol updated successfully' });
   } catch (error) {
     res.status(500).json({ message: `System Error: ${error.message}` });
+  }
+};
+
+// 🖼️ PROFILE: Upload Image
+exports.uploadProfileImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const imagePath = `/uploads/${req.file.filename}`;
+    
+    // Update User
+    const user = await User.findByIdAndUpdate(req.user.id, { profileImage: imagePath }, { new: true });
+    
+    // Update Shadow Registry (Employee/HR/Manager)
+    let shadowRegistry = 'Employee';
+    if (user.role === 'hr') shadowRegistry = 'HR';
+    if (user.role === 'manager') shadowRegistry = 'Manager';
+
+    const shadowModel = mongoose.model(shadowRegistry);
+    await shadowModel.findOneAndUpdate({ userId: req.user.id }, { profileImage: imagePath });
+
+    res.json({ 
+      message: 'Profile image updated successfully',
+      profileImage: imagePath 
+    });
+  } catch (error) {
+    console.error('🔥 Upload Error:', error);
+    res.status(500).json({ message: error.message });
   }
 };

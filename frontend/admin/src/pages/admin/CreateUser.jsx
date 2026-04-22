@@ -17,7 +17,8 @@ import {
   Fingerprint,
   RefreshCw,
   Plus,
-  ChevronDown
+  ChevronDown,
+  Camera
 } from 'lucide-react';
 
 const CreateUser = () => {
@@ -35,6 +36,10 @@ const CreateUser = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '', employeeId: '', status: '' });
+  
+  // Image State
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   const token = sessionStorage.getItem('token');
 
@@ -63,11 +68,11 @@ const CreateUser = () => {
 
     const fetchManagers = async () => {
       try {
-        const res = await axios.get('/api/personnel/managers', {
+        const res = await axios.get('/api/personnel/all', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setManagers(Array.isArray(res.data) ? res.data : []);
-      } catch (err) { console.warn('Manager Sync Delayed'); }
+      } catch (err) { console.warn('Personnel Sync Delayed'); }
     };
 
     if (token) {
@@ -78,6 +83,14 @@ const CreateUser = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -92,22 +105,39 @@ const CreateUser = () => {
         password: formData.password,
         role: formData.role,
         joinDate: formData.joinDate,
-        reportingManager: formData.role === 'employee' ? formData.reportingManager : null
+        reportingManager: ['employee', 'manager'].includes(formData.role) ? formData.reportingManager : null
       };
 
+      // 1. Create User Core
       const response = await axios.post('/api/users/create', payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       const { user } = response.data;
+      const profileId = user.profileId; // 🎯 SYNC: Use the actual Profile ID, not User ID
+
+      // 2. Upload Photo if selected (Sequential Linkage)
+      if (selectedFile && profileId) {
+        const uploadData = new FormData();
+        uploadData.append('image', selectedFile);
+        
+        try {
+          await axios.post(`/api/employees/${profileId}/profile-image`, uploadData, {
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+          });
+        } catch (imgErr) {
+          console.warn('Photo upload failed but user was created:', imgErr);
+        }
+      }
 
       setMessage({
         type: 'success',
-        text: response.data.message,
+        text: 'User Node successfully initialized with visual identity.',
         employeeId: user?.employeeId,
         status: user?.status
       });
 
+      // Cleanup
       setFormData({
         firstName: '',
         lastName: '',
@@ -117,6 +147,9 @@ const CreateUser = () => {
         joinDate: new Date().toISOString().split('T')[0],
         reportingManager: ''
       });
+      setSelectedFile(null);
+      setPreviewUrl(null);
+
     } catch (err) {
       setMessage({
         type: 'error',
@@ -166,6 +199,30 @@ const CreateUser = () => {
       <div className="grid grid-cols-12 gap-12">
         {/* FORM SIDE */}
         <div className="col-span-12 lg:col-span-8 zap-card bg-[#fffdf9] p-12">
+          {/* AVATAR UPLOAD SECTION */}
+          <div className="flex flex-col items-center mb-12 border-b border-[#eceae3] pb-12">
+             <div className="relative group">
+                <div className="w-32 h-32 rounded-2xl bg-[#eceae3] border-2 border-dashed border-[#c5c0b1] flex items-center justify-center overflow-hidden transition-all group-hover:border-[#ff4f00]">
+                   {previewUrl ? (
+                     <img src={previewUrl} alt="Preview" className="w-full h-full object-cover shadow-2xl" />
+                   ) : (
+                     <User size={48} className="text-[#939084] opacity-30" />
+                   )}
+                </div>
+                <label htmlFor="user-photo" className="absolute -bottom-3 -right-3 w-10 h-10 bg-[#ff4f00] text-white rounded-xl flex items-center justify-center shadow-xl cursor-pointer hover:scale-110 active:scale-95 transition-all">
+                   <Camera size={18} />
+                   <input 
+                    id="user-photo" 
+                    type="file" 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={handleFileChange}
+                   />
+                </label>
+             </div>
+             <p className="zap-caption-upper !text-[#939084] mt-6">Node Visual Identity</p>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               {/* First Name */}
@@ -236,8 +293,8 @@ const CreateUser = () => {
                     required name="role" value={formData.role} onChange={handleChange}
                     className="w-full h-14 pl-12 pr-12 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] appearance-none cursor-pointer"
                   >
-                    <option value="hr">HR Specialist</option>
-                    <option value="manager">Department Manager</option>
+                    <option value="hr">HR</option>
+                    <option value="manager">Manager</option>
                     <option value="employee">Employee</option>
                     <option value="admin">System Admin</option>
                   </select>
@@ -258,7 +315,7 @@ const CreateUser = () => {
               </div>
 
               {/* Reporting Manager */}
-              {formData.role === 'employee' && (
+              {['employee', 'manager'].includes(formData.role) && (
                 <div className="space-y-4 col-span-full">
                   <label className="zap-caption-upper text-[#201515]">Reporting Manager</label>
                   <div className="relative">

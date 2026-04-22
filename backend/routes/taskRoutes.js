@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  createTask, 
+const {
+  createTask,
   getManagerTasks,
   assignEmployee,
   approveTask,
@@ -12,7 +12,8 @@ const {
   uploadProof,
   addComment,
   getAllTasks,
-  deleteTask
+  deleteTask,
+  unassignEmployee
 } = require('../controllers/taskController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const upload = require('../middleware/upload');
@@ -27,6 +28,7 @@ router.delete('/:taskId', authorize('admin'), deleteTask);
 // --- MANAGER / HR LEAD ---
 router.get('/manager', authorize('manager', 'hr'), getManagerTasks);
 router.put('/assign/:taskId', authorize('manager', 'hr'), assignEmployee);
+router.put('/unassign/:taskId', authorize('manager', 'hr'), unassignEmployee);
 router.put('/approve/:taskId', authorize('manager', 'hr'), approveTask);
 router.put('/reject/:taskId', authorize('manager', 'hr'), rejectTask);
 

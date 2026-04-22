@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '@shared/services/api';
 
 const Profile = () => {
   const [userData, setUserData] = useState(null);
@@ -139,12 +140,47 @@ const Profile = () => {
       {/* HEADER SECTION */}
       <section className="bg-white p-8 rounded-[24px] border border-slate-200/60 shadow-sm mb-8 flex flex-col md:flex-row items-center gap-8">
         <div className="relative group">
-          <div className="w-24 h-24 rounded-2xl bg-[#F5F7FA] flex items-center justify-center border border-slate-100 shadow-inner group-hover:scale-105 transition-transform duration-500">
-            <span className="text-3xl font-black text-[#2E3A59] opacity-20">{initials}</span>
+          <div className="w-24 h-24 rounded-2xl bg-[#F5F7FA] flex items-center justify-center border border-slate-100 shadow-inner group-hover:scale-105 transition-transform duration-500 overflow-hidden">
+            {userData?.profileImage ? (
+              <img src={`${API_BASE_URL}${userData.profileImage}`} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-3xl font-black text-[#2E3A59] opacity-20">{initials}</span>
+            )}
           </div>
-          <button className="absolute -bottom-2 -right-2 bg-[var(--accent-gold)] text-white p-2 rounded-lg shadow-lg hover:scale-110 active:scale-95 transition-all">
-            <span className="material-symbols-outlined text-base">edit</span>
-          </button>
+          {userRole === 'admin' && (
+            <label htmlFor="profile-upload" className="absolute -bottom-2 -right-2 bg-[var(--accent-gold)] text-white p-2 rounded-lg shadow-lg hover:scale-110 active:scale-95 transition-all cursor-pointer">
+              <span className="material-symbols-outlined text-base">edit</span>
+              <input 
+                id="profile-upload"
+                type="file" 
+                className="hidden" 
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+                  
+                  const formData = new FormData();
+                  formData.append('image', file);
+                  
+                  try {
+                    const res = await axios.post('/api/auth/profile-image', formData, {
+                      headers: { 
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
+                      }
+                    });
+                    const updatedUser = { ...userData, profileImage: res.data.profileImage };
+                    setUserData(updatedUser);
+                    sessionStorage.setItem('user', JSON.stringify(updatedUser));
+                    window.dispatchEvent(new Event('profileUpdated'));
+                    setStatus({ type: 'success', message: 'Profile identity image updated successfully' });
+                  } catch (err) {
+                    setStatus({ type: 'error', message: 'Upload failed: System rejected file protocol' });
+                  }
+                }}
+              />
+            </label>
+          )}
         </div>
         <div className="text-center md:text-left flex-1">
           <h1 className="text-3xl font-black text-[#2E3A59] tracking-tighter font-manrope leading-none mb-2">{fullName}</h1>

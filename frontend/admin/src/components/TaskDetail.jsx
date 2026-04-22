@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { 
-  X, Send, Paperclip, CheckCircle2, AlertCircle, 
+import {
+  X, Send, Paperclip, CheckCircle2, AlertCircle,
   MessageSquare, Clock, Shield, User, FileText, Download,
-  RefreshCw
+  RefreshCw, Trash2
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 
@@ -15,8 +15,18 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [employees, setEmployees] = useState([]);
   const [zoomImage, setZoomImage] = useState(null);
+  const [contextMenu, setContextMenu] = useState({ show: false, x: 0, y: 0, employeeId: null });
   const token = sessionStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
+  const chatEndRef = React.useRef(null);
+
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  React.useEffect(() => {
+    scrollToBottom();
+  }, [task?.comments]);
 
   const currentUser = JSON.parse(sessionStorage.getItem('user') || '{}');
   const currentUserId = currentUser._id || currentUser.id;
@@ -42,24 +52,51 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
       }
     });
 
+    socket.on('task_updated', (data) => {
+      console.log('🔄 Task Update Received via Socket:', data);
+      if (data.taskId === task._id) {
+        // Direct state update for instant feedback
+        if (data.updatedFields.progress !== undefined) {
+          setProgress(data.updatedFields.progress);
+        }
+        if (data.updatedFields.feedback !== undefined) {
+          setFeedback(data.updatedFields.feedback);
+        }
+        onUpdate(); // Still call parent update to keep overall state consistent
+      }
+    });
+
     return () => {
       socket.disconnect();
     };
   }, [isOpen, task?._id]);
 
+  // 🔄 Sync Progress with Task Data
   React.useEffect(() => {
-    if (isOpen && (userRole === 'manager' || userRole === 'hr')) {
-      const fetchEmployees = async () => {
+    if (task?.progress !== undefined) {
+      setProgress(task.progress);
+    }
+  }, [task?.progress]);
+
+  React.useEffect(() => {
+    if (isOpen && (userRole === 'manager' || userRole === 'hr' || userRole === 'admin')) {
+      const fetchPersonnel = async () => {
         try {
-          const res = await axios.get('/api/personnel/employees', { headers });
+          // HR/Admin can see all personnel (Managers, HR, Employees)
+          // Managers see only Employees
+          const endpoint = (userRole === 'admin' || userRole === 'hr') ? '/api/personnel/all' : '/api/personnel/employees';
+          const res = await axios.get(endpoint, { headers });
           setEmployees(res.data || []);
-        } catch (err) { console.error('Employee Registry fetch failed'); }
+        } catch (err) { console.error('Personnel Registry fetch failed'); }
       };
-      fetchEmployees();
+      fetchPersonnel();
     }
   }, [isOpen, userRole]);
 
   if (!isOpen || !task) return null;
+
+  const isLead = ['admin', 'hr', 'manager'].includes(userRole);
+  const canEditProgress = isLead || (userRole === 'employee' && !['completed', 'submitted', 'under_review'].includes(task.status));
 
   const handleComment = async (e) => {
     e.preventDefault();
@@ -91,9 +128,9 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
       });
       alert('Upload Successful');
       onUpdate();
-    } catch (err) { 
+    } catch (err) {
       alert(err.response?.data?.message || 'Upload failed. Please check file size (<5MB).');
-      console.error('Upload failed:', err); 
+      console.error('Upload failed:', err);
     }
     finally { setUploading(false); e.target.value = ''; }
   };
@@ -110,10 +147,31 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
     if (!selectedEmployee) return;
     try {
       await axios.put(`/api/tasks/assign/${task._id}`, { employeeId: selectedEmployee }, { headers });
+      setSelectedEmployee('');
       onUpdate();
-      alert('Employee Assigned Successfully');
+      // alert(`Personnel Assigned Successfully`);
     } catch (err) { console.error('Assignment failed:', err); }
   };
+
+  const handleUnassignEmployee = async (employeeId) => {
+    try {
+      await axios.put(`/api/tasks/unassign/${task._id}`, { employeeId }, { headers });
+      setContextMenu({ ...contextMenu, show: false });
+      onUpdate();
+    } catch (err) { console.error('Unassignment failed:', err); }
+  };
+
+  const handleContextMenu = (e, employeeId) => {
+    e.preventDefault();
+    setContextMenu({
+      show: true,
+      x: e.pageX,
+      y: e.pageY,
+      employeeId
+    });
+  };
+
+  const closeContextMenu = () => setContextMenu({ ...contextMenu, show: false });
 
   const statusColors = {
     assigned: 'bg-gray-500 text-white',
@@ -127,7 +185,7 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-[#201515]/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose}>
       <div className="bg-[#fffefb] w-full max-w-4xl h-[85vh] rounded-[24px] overflow-hidden shadow-2xl flex flex-col border border-[#c5c0b1] animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()}>
-        
+
         {/* HEADER */}
         <div className="p-6 border-b border-[#eceae3] bg-[#fffdf9] flex justify-between items-center shrink-0">
           <div>
@@ -138,6 +196,11 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
               <span className="text-[9px] font-black text-[#939084] uppercase tracking-widest flex items-center gap-1.5">
                 <Clock size={12} /> Due: {new Date(task.dueDate).toLocaleDateString()}
               </span>
+              {task.createdBy && (
+                <span className="text-[9px] font-black text-[#ff4f00] uppercase tracking-widest flex items-center gap-1.5 ml-4">
+                  <Shield size={12} /> HR: {task.createdBy.name}
+                </span>
+              )}
             </div>
             <h3 className="text-2xl font-black text-[#201515] uppercase italic tracking-tighter">{task.title}</h3>
           </div>
@@ -149,7 +212,7 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
         <div className="flex-1 flex overflow-hidden">
           {/* LEFT: INFO & FILES */}
           <div className="w-[55%] p-8 overflow-y-auto border-r border-[#eceae3] space-y-6 custom-scrollbar">
-            
+
             <section>
               <h4 className="text-[9px] font-black text-[#939084] uppercase tracking-[0.4em] mb-3 italic">Task Description</h4>
               <p className="text-md font-bold text-[#36342e] leading-relaxed italic">"{task.description}"</p>
@@ -164,79 +227,101 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
               </section>
             )}
 
-            {/* ASSIGN EMPLOYEE (For HR/Manager Lead if not assigned) */}
-            {(userRole === 'manager' || userRole === 'hr') && !task.assignedEmployee && (
-              <section className="p-6 bg-[#eceae3]/20 border border-[#c5c0b1] rounded-[24px] space-y-3">
-                <h4 className="text-[9px] font-black text-[#939084] uppercase tracking-[0.4em] italic">Delegate Mission</h4>
-                <div className="flex gap-3 pt-1">
-                  <select 
-                    className="flex-1 h-11 px-8 bg-white border border-[#c5c0b1] rounded-xl text-[11px] font-black uppercase tracking-widest focus:outline-none focus:border-[#ff4f00] cursor-pointer shadow-sm appearance-none"
-                    value={selectedEmployee}
-                    onChange={(e) => setSelectedEmployee(e.target.value)}
-                  >
-                    <option value="">Select Employee</option>
-                    {employees.map(emp => (
-                      <option key={emp._id} value={emp._id}>{emp.name}</option>
-                    ))}
-                  </select>
-                  <button 
-                    onClick={handleAssignEmployee}
-                    disabled={!selectedEmployee}
-                    className={`px-6 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all italic border-none cursor-pointer ${
-                      selectedEmployee ? 'bg-[#ff4f00] text-white shadow-lg' : 'bg-[#eceae3] text-[#939084]'
-                    }`}
-                  >
-                    Assign
-                  </button>
-                </div>
-              </section>
-            )}
-
-            {/* PROGRESS (Only for Employee, Manager & HR) */}
-            {(userRole === 'employee' || userRole === 'manager' || userRole === 'hr') && (
-              <section className="space-y-5">
-                <div className="flex justify-between items-center">
-                  <h4 className="text-[9px] font-black text-[#939084] uppercase tracking-[0.4em] italic">Completion Pulse</h4>
-                  <div className="flex items-center gap-3">
-                    {userRole === 'employee' && task.status !== 'completed' && progress !== task.progress && (
-                      <button 
-                        onClick={() => handleProgress(progress)}
-                        className="flex items-center gap-2 text-[8px] font-black text-[#24a148] uppercase tracking-widest bg-[#24a148]/5 px-3 py-1.5 rounded-lg hover:bg-[#24a148]/10 transition-all"
-                      >
-                        <RefreshCw size={10} className={uploading ? 'animate-spin' : ''} /> Update
-                      </button>
+            {/* DELEGATION SECTION */}
+            {(userRole === 'manager' || userRole === 'hr' || userRole === 'admin') && (
+              <section className="p-6 bg-[#eceae3]/20 border border-[#c5c0b1] rounded-[24px] space-y-4">
+                <h4 className="text-[9px] font-black text-[#939084] uppercase tracking-[0.4em] italic">
+                  { (userRole === 'admin' || userRole === 'hr') ? 'Lead Assignment' : 'Delegate Mission' }
+                </h4>
+                
+                {/* 1. ADMIN/HR VIEW: Single Lead Assignment */}
+                {(userRole === 'admin' || userRole === 'hr') && (
+                  <div className="flex flex-col gap-3">
+                    {task.assignedManager ? (
+                      <div className="flex items-center gap-3 p-4 bg-white border border-[#c5c0b1] rounded-xl shadow-sm">
+                        <div className="w-8 h-8 rounded-full bg-[#ff4f00] flex items-center justify-center text-[11px] font-black text-white">
+                          {task.assignedManager.name?.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-black text-[#201515] uppercase tracking-wider">{task.assignedManager.name}</p>
+                          <p className="text-[9px] font-bold text-[#939084] uppercase">Lead Manager Assigned</p>
+                        </div>
+                        <button 
+                          onClick={() => handleUnassignEmployee(task.assignedManager._id)}
+                          className="ml-auto w-8 h-8 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-lg transition-all border-none bg-transparent cursor-pointer"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-3">
+                        <select
+                          className="flex-1 h-11 px-8 bg-white border border-[#c5c0b1] rounded-xl text-[11px] font-black uppercase tracking-widest focus:outline-none focus:border-[#ff4f00] cursor-pointer shadow-sm appearance-none"
+                          value={selectedEmployee}
+                          onChange={(e) => setSelectedEmployee(e.target.value)}
+                        >
+                          <option value="">Select Lead Manager</option>
+                          {employees.map(emp => (
+                            <option key={emp._id} value={emp._id}>{emp.name || emp.fullName || 'Unknown'}</option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={handleAssignEmployee}
+                          disabled={!selectedEmployee}
+                          className={`px-6 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all italic border-none cursor-pointer ${selectedEmployee ? 'bg-[#ff4f00] text-white shadow-lg' : 'bg-[#eceae3] text-[#939084] cursor-not-allowed opacity-50'}`}
+                        >
+                          Assign
+                        </button>
+                      </div>
                     )}
-                    {userRole === 'employee' && progress < 100 && progress === task.progress && (
-                      <button 
-                        onClick={() => { setProgress(100); handleProgress(100); }}
-                        className="text-[9px] font-black text-[#ff4f00] uppercase tracking-widest border-b border-[#ff4f00]/30 hover:border-[#ff4f00] transition-all pb-0.5"
-                      >
-                        Set 100%
-                      </button>
-                    )}
-                    <span className="text-xl font-black text-[#201515] italic">{progress}%</span>
                   </div>
-                </div>
-                <div className="relative w-full h-5 bg-[#eceae3] rounded-full overflow-hidden border border-[#c5c0b1]/30 p-1">
-                  <div 
-                    className="h-full bg-[#ff4f00] rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(255,79,0,0.4)]" 
-                    style={{ width: `${progress}%` }}
-                  />
-                  {userRole === 'employee' && task.status !== 'completed' && (
-                    <input 
-                      type="range" min="0" max="100" value={progress}
-                      onChange={(e) => setProgress(parseInt(e.target.value))}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
-                    />
-                  )}
-                  {/* VISIBLE THUMB INDICATOR */}
-                  {userRole === 'employee' && task.status !== 'completed' && (
-                    <div 
-                      className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg border-2 border-[#ff4f00] pointer-events-none z-10 transition-all duration-300"
-                      style={{ left: `calc(${progress}% - 6px)` }}
-                    />
-                  )}
-                </div>
+                )}
+
+                {/* 2. MANAGER VIEW: Multi-Employee Delegation */}
+                {userRole === 'manager' && (
+                  <>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {(task.assignedEmployees || []).length > 0 ? (
+                        (task.assignedEmployees || []).map(emp => (
+                          <div 
+                            key={emp._id} 
+                            onContextMenu={(e) => handleContextMenu(e, emp._id)}
+                            className="flex items-center gap-2 bg-white border border-[#c5c0b1] px-4 py-2 rounded-xl shadow-sm hover:border-[#ff4f00] transition-all cursor-context-menu"
+                          >
+                            <div className="w-5 h-5 rounded-full bg-[#ff4f00]/10 flex items-center justify-center text-[10px] font-black text-[#ff4f00]">
+                              {emp.name?.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="text-[11px] font-black text-[#201515] uppercase tracking-wider">{emp.name}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-[10px] font-bold text-[#939084] uppercase italic">No tactical assets deployed.</p>
+                      )}
+                    </div>
+
+                    <div className="flex gap-3 pt-4 border-t border-[#c5c0b1]/30">
+                      <select
+                        className="flex-1 h-11 px-8 bg-white border border-[#c5c0b1] rounded-xl text-[11px] font-black uppercase tracking-widest focus:outline-none focus:border-[#ff4f00] cursor-pointer shadow-sm appearance-none"
+                        value={selectedEmployee}
+                        onChange={(e) => setSelectedEmployee(e.target.value)}
+                      >
+                        <option value="">Add More Personnel</option>
+                        {employees
+                          .filter(e => !(task.assignedEmployees || []).some(ae => ae._id === e._id))
+                          .map(emp => (
+                            <option key={emp._id} value={emp._id}>{emp.name || emp.fullName || 'Unknown'}</option>
+                          ))}
+                      </select>
+                      <button
+                        onClick={handleAssignEmployee}
+                        disabled={!selectedEmployee}
+                        className={`px-6 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all italic border-none cursor-pointer ${selectedEmployee ? 'bg-[#ff4f00] text-white shadow-lg' : 'bg-[#eceae3] text-[#939084] cursor-not-allowed opacity-50'}`}
+                      >
+                        Assign
+                      </button>
+                    </div>
+                  </>
+                )}
               </section>
             )}
 
@@ -258,7 +343,7 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
                   [...task.attachments].reverse().map((file, i) => {
                     const isImage = file.fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i);
                     const fileUrl = `${window.location.protocol}//${window.location.hostname}:5000${file.fileUrl}`;
-                    
+
                     return (
                       <div key={i} className="p-4 bg-white border border-[#c5c0b1] rounded-2xl space-y-4 group hover:border-[#ff4f00] transition-all shadow-sm">
                         <div className="flex items-center justify-between">
@@ -274,7 +359,7 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
                           </a>
                         </div>
                         {isImage && (
-                          <div 
+                          <div
                             className="w-full rounded-xl overflow-hidden border border-[#c5c0b1] bg-[#eceae3] cursor-zoom-in group/img"
                             onClick={() => setZoomImage(fileUrl)}
                           >
@@ -292,29 +377,50 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
           {/* RIGHT: COMMENTS & ACTIONS */}
           <div className="w-[45%] flex flex-col bg-[#fffdf9]">
             {/* COMMENTS AREA */}
-            <div className="flex-1 p-8 overflow-y-auto space-y-5 custom-scrollbar">
+            <div className="flex-1 p-8 overflow-y-auto space-y-5 custom-scrollbar flex flex-col">
               <h4 className="text-[9px] font-black text-[#939084] uppercase tracking-[0.4em] mb-6 italic flex items-center gap-2">
                 <MessageSquare size={12} /> Tactical Comms
               </h4>
-              {[...(task.comments || [])].reverse().map((c, i) => {
-                const isManager = c.role === 'manager' || c.role === 'admin' || c.role === 'hr';
-                return (
-                  <div key={i} className={`flex flex-col ${isManager ? 'items-end' : 'items-start'}`}>
-                    <div className={`max-w-[85%] p-5 rounded-2xl ${isManager ? 'bg-[#201515] text-white rounded-br-none shadow-lg' : 'bg-white border border-[#c5c0b1] rounded-bl-none'}`}>
-                      <p className="text-[13px] font-bold leading-relaxed italic">{c.message}</p>
+              <div className="flex-1 flex flex-col space-y-2 justify-end">
+                {task.comments?.map((c, i) => {
+                  const senderId = c.userId?._id || c.userId;
+                  const isMe = senderId === currentUserId;
+                  const senderName = c.userId?.name || c.userName || c.role || 'User';
+                  const senderImage = c.profileImage || c.userId?.profileImage;
+                  const initials = senderName.split(' ').map(n => n[0]).join('').toUpperCase() || '?';
+
+                  return (
+                    <div key={i} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                      {/* AVATAR */}
+                      <div className="w-8 h-8 rounded-full bg-[#eceae3] shrink-0 overflow-hidden flex items-center justify-center border-2 border-white shadow-sm mt-1">
+                        {senderImage ? (
+                          <img src={senderImage} alt="" className="w-full h-full object-cover" />
+                        ) : (isMe && currentUser?.profileImage) ? (
+                          <img src={currentUser.profileImage} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-[10px] font-black text-[#939084]">{initials}</span>
+                        )}
+                      </div>
+
+                      <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                        <div className={`max-w-[100%] py-2 px-4 rounded-[18px] ${isMe ? 'bg-[#201515] text-white rounded-br-none shadow-md' : 'bg-white border border-[#c5c0b1] rounded-bl-none'}`}>
+                          <p className="text-[14px] font-medium leading-tight italic">{c.message}</p>
+                        </div>
+                        <span className="text-[7px] font-black uppercase text-[#939084] mt-1 px-2 italic opacity-70">
+                          {senderName} • {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
                     </div>
-                    <span className="text-[8px] font-black uppercase text-[#939084] mt-1.5 px-2 italic">
-                      {c.role} • {new Date(c.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+                <div ref={chatEndRef} />
+              </div>
             </div>
 
             {/* ACTION AREA */}
             <div className="p-8 border-t border-[#eceae3] bg-white space-y-4">
               <form onSubmit={handleComment} className="flex gap-3">
-                <input 
+                <input
                   type="text" placeholder="Type tactical update..."
                   className="flex-1 h-12 px-5 bg-[#eceae3] rounded-xl text-[13px] font-bold focus:outline-none focus:ring-2 focus:ring-[#ff4f00]/20 transition-all italic"
                   value={comment} onChange={(e) => setComment(e.target.value)}
@@ -327,31 +433,23 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
               {/* STATUS SPECIFIC BUTTONS */}
               <div className="flex gap-3 pt-1">
                 {userRole === 'employee' && (task.status === 'in_progress' || task.status === 'rework') && (
-                  <button 
-                    onClick={() => {
-                      if (progress < 100) {
-                        alert('Completion Pulse must be at 100% to submit the mission.');
-                        return;
-                      }
-                      handleStatusAction('submit');
-                    }}
-                    className={`flex-1 h-14 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all italic ${
-                      progress < 100 ? 'bg-[#eceae3] text-[#939084] cursor-not-allowed' : 'bg-[#201515] text-white hover:bg-[#ff4f00] shadow-lg'
-                    }`}
+                  <button
+                    onClick={() => handleStatusAction('submit')}
+                    className="flex-1 h-14 bg-[#201515] text-white rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#ff4f00] shadow-lg transition-all italic"
                   >
                     Submit Task <CheckCircle2 size={16} />
                   </button>
                 )}
 
-                {(userRole === 'manager' || userRole === 'hr') && task.status === 'submitted' && (
+                {(userRole === 'manager' || userRole === 'hr' || userRole === 'admin') && task.status === 'submitted' && (
                   <>
-                    <button 
+                    <button
                       onClick={() => handleStatusAction('approve')}
                       className="flex-1 h-14 bg-[#24a148] text-white rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-[1.02] transition-all italic shadow-lg"
                     >
                       Approve <CheckCircle2 size={16} />
                     </button>
-                    <button 
+                    <button
                       onClick={() => {
                         const fb = prompt('Provide rework instructions:');
                         if (fb) handleStatusAction('reject', { feedback: fb });
@@ -368,9 +466,43 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
         </div>
       </div>
 
+      {/* CONTEXT MENU */}
+      {contextMenu.show && (
+        <div 
+          className="fixed z-[9999] bg-white border border-[#c5c0b1] shadow-2xl rounded-xl overflow-hidden min-w-[180px] animate-in zoom-in-95 duration-200"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-2 border-b border-[#eceae3] bg-[#fffdf9]">
+            <p className="text-[9px] font-black text-[#939084] uppercase tracking-widest px-3 py-1 italic">Asset Protocols</p>
+          </div>
+          <button 
+            onClick={() => handleUnassignEmployee(contextMenu.employeeId)}
+            className="w-full text-left px-5 py-3 text-[11px] font-bold text-[#ff4f00] hover:bg-[#ff4f00] hover:text-white transition-all flex items-center gap-3 border-none bg-transparent cursor-pointer"
+          >
+            <Trash2 size={14} /> Remove from Task
+          </button>
+          <button 
+            onClick={closeContextMenu}
+            className="w-full text-left px-5 py-3 text-[11px] font-bold text-[#201515] hover:bg-[#eceae3] transition-all flex items-center gap-3 border-none bg-transparent cursor-pointer border-t border-[#eceae3]"
+          >
+            <X size={14} /> Cancel Protocol
+          </button>
+        </div>
+      )}
+      
+      {/* OVERLAY TO CLOSE CONTEXT MENU */}
+      {contextMenu.show && (
+        <div 
+          className="fixed inset-0 z-[9998] bg-transparent"
+          onClick={closeContextMenu}
+          onContextMenu={(e) => { e.preventDefault(); closeContextMenu(); }}
+        />
+      )}
+
       {/* IMAGE ZOOM LIGHTBOX */}
       {zoomImage && (
-        <div 
+        <div
           className="fixed inset-0 z-[2000] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-10 animate-in fade-in duration-300 cursor-zoom-out"
           onClick={() => setZoomImage(null)}
         >

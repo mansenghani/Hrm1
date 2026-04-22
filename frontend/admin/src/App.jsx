@@ -10,7 +10,7 @@ import Employees from './pages/admin/Employees';
 import EmployeeForm from './pages/admin/EmployeeForm';
 import EmployeeDetail from './pages/admin/EmployeeDetail';
 import Tasks from './pages/admin/Tasks';
-import Departments from './pages/Departments';
+
 import Attendance from './pages/hr/Attendance';
 import HRTasks from './pages/hr/HRTasks';
 import LeaveManagement from './pages/hr/LeaveManagement';
@@ -70,7 +70,7 @@ const App = () => {
         <Route path="employees/edit/:id" element={<EmployeeForm />} />
         <Route path="employees/view/:id" element={<EmployeeDetail />} />
         <Route path="tasks" element={<Tasks />} />
-        <Route path="departments" element={<Departments />} />
+
         <Route path="leave" element={<LeaveManagement />} />
         <Route path="attendance" element={<Attendance />} />
         <Route path="time-tracker" element={<TimeTrackingDashboard />} />

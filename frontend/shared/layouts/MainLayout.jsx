@@ -23,6 +23,7 @@ import {
   Target,
   Bell
 } from 'lucide-react';
+import { API_BASE_URL } from '@shared/services/api';
 
 const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -88,6 +89,9 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
       }
     };
     fetchLatestProfile();
+
+    window.addEventListener('profileUpdated', fetchLatestProfile);
+    return () => window.removeEventListener('profileUpdated', fetchLatestProfile);
   }, [token]);
 
   const displayName = userProfile?.name || 
@@ -150,7 +154,6 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           { name: 'Dashboard', path: `/${currentRole}/dashboard`, icon: LayoutDashboard },
           { name: 'Employees', path: `/${currentRole}/employees`, icon: Users },
           { name: 'Tasks', path: `/${currentRole}/tasks`, icon: CheckSquare },
-          { name: 'Departments', path: `/${currentRole}/departments`, icon: Layers },
           { name: 'Request For Leave', path: `/${currentRole}/leave`, icon: FileText },
           { name: 'Attendance', path: `/${currentRole}/attendance`, icon: Calendar },
           { name: 'Time Tracker', path: `/${currentRole}/time-tracker`, icon: Clock },
@@ -274,8 +277,12 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
               onClick={() => navigate(`/${role}/profile`)}
               className="hidden md:flex items-center gap-3 px-4 h-12 hover:bg-[#eceae3] rounded-[4px] cursor-pointer transition-all"
             >
-              <div className="w-8 h-8 bg-[#201515] rounded-full flex items-center justify-center text-[#fffefb] font-bold text-[13px]">
-                {initials}
+              <div className="w-8 h-8 bg-[#201515] rounded-full flex items-center justify-center text-[#fffefb] font-bold text-[13px] overflow-hidden">
+                {userProfile?.profileImage ? (
+                  <img src={`${API_BASE_URL}${userProfile.profileImage}`} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  initials
+                )}
               </div>
               <div className="flex flex-col items-start leading-none">
                 <span className="text-[13px] font-bold text-[#201515] truncate max-w-[150px]">{displayName}</span>

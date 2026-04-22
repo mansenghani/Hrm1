@@ -137,10 +137,7 @@ const EmployeeDetail = () => {
              </h3>
              
              <div className="grid grid-cols-2 gap-8">
-               <div>
-                  <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest mb-1">Department Sector</p>
-                  <p className="text-[14px] font-black text-[#1E2026]">{employee.department?.name || 'Unassigned'}</p>
-               </div>
+
                <div>
                   <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest mb-1">Authorization Role</p>
                   <p className="text-[14px] font-black text-[#1E2026] uppercase">{employee.role}</p>

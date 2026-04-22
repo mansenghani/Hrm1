@@ -11,9 +11,16 @@ const employeeSchema = new mongoose.Schema({
   fullName: String,
   email: String,
   role: String,
+  personalEmail: String,
+  phone: String,
+  gender: { type: String, default: 'Male' },
+  dob: Date,
+  address: String,
+  joinDate: Date,
+  employmentType: { type: String, default: 'Full-time' },
+  profileImage: { type: String, default: null },
   status: { type: String, default: 'active' },
   position: { type: String, default: 'Associate' },
-  department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
   managerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   reportingManager: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });

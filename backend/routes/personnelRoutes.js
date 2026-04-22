@@ -17,7 +17,7 @@ router.get('/hrs', async (req, res) => {
 
 router.use(protect);
 
-router.get('/managers', authorize('admin', 'hr'), async (req, res) => {
+router.get('/managers', authorize('admin', 'hr', 'manager'), async (req, res) => {
   const managers = await User.find({ role: 'manager' }, 'name fullName email role');
   res.json(managers);
 });
@@ -25,6 +25,15 @@ router.get('/managers', authorize('admin', 'hr'), async (req, res) => {
 router.get('/employees', authorize('admin', 'hr', 'manager'), async (req, res) => {
   const employees = await User.find({ role: 'employee' }, 'name email role');
   res.json(employees);
+});
+
+router.get('/all', authorize('admin', 'hr', 'manager'), async (req, res) => {
+  try {
+    const all = await User.find({ role: { $ne: 'admin' } }, 'name email role');
+    res.json(all);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // 🔢 SEQUENTIAL IDENTITY ENGINE: Fetch Next ID for Role

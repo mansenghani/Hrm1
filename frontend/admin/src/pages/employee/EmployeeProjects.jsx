@@ -210,10 +210,6 @@ const EmployeeProjects = () => {
 
                                                 {/* PROGRESS & ACTIONS */}
                                                 <div className="flex items-center gap-4">
-                                                    <div className="relative w-14 h-14 shrink-0 rounded-2xl bg-[#201515] flex flex-col items-center justify-center text-white group-hover:bg-[#ff4f00] transition-all overflow-hidden shadow-lg">
-                                                        <span className="text-[14px] font-black italic leading-none">{task.progress}%</span>
-                                                        <div className="absolute bottom-0 left-0 h-1 bg-[#24a148]" style={{ width: `${task.progress}%` }}></div>
-                                                    </div>
                                                     <div className="flex-1 flex flex-col gap-2">
                                                         <button 
                                                             onClick={(e) => { e.stopPropagation(); setSelectedTask(task); setIsTaskModalOpen(true); }}

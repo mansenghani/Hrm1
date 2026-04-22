@@ -26,11 +26,12 @@ exports.createUser = async (req, res) => {
       success: true,
       user: {
         id: result.user._id,
+        profileId: result.employeeProfile?._id, // 🔥 CRITICAL SYNC: Return the profile ID for asset linkage
         name: result.user.name,
         email: result.user.email,
         role: result.user.role,
         employeeId: result.user.employeeId,
-        status: result.user.status.toUpperCase() // Ensure 'ACTIVE' per requirement
+        status: result.user.status.toUpperCase()
       }
     });
 

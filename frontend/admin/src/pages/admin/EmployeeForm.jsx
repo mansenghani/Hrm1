@@ -18,7 +18,6 @@ const EmployeeForm = () => {
     gender: 'Male',
     dob: '',
     address: '',
-    department: '',
     role: 'employee',
     managerId: '',
     joinDate: '',
@@ -34,11 +33,7 @@ const EmployeeForm = () => {
     const fetchData = async () => {
       try {
         const token = sessionStorage.getItem('token');
-        const [deptRes, mgrRes] = await Promise.all([
-          axios.get('/api/departments', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('/api/managers', { headers: { Authorization: `Bearer ${token}` } })
-        ]);
-        setDepartments(deptRes.data);
+        const mgrRes = await axios.get('/api/managers', { headers: { Authorization: `Bearer ${token}` } });
         setManagers(mgrRes.data);
 
         if (isEdit) {
@@ -55,11 +50,12 @@ const EmployeeForm = () => {
             gender: emp.gender || 'Male',
             dob: emp.dob ? emp.dob.split('T')[0] : '',
             address: emp.address || '',
-            department: emp.department?._id || '',
-            role: emp.role || 'employee',
+            address: emp.address || '',
+            role: emp.userId?.role || emp.role || 'employee',
             managerId: emp.managerId?._id || '',
             joinDate: emp.joinDate ? emp.joinDate.split('T')[0] : '',
-            employmentType: emp.employmentType || 'Full-time'
+            employmentType: emp.employmentType || 'Full-time',
+            profileImage: emp.profileImage || ''
           });
         }
       } catch (err) {
@@ -84,7 +80,6 @@ const EmployeeForm = () => {
       const submitData = { ...formData };
       
       // Data cleanup
-      if (!submitData.department) delete submitData.department;
       if (!submitData.managerId) delete submitData.managerId;
       if (isEdit) delete submitData.password; // Optional: separate change password flow
 
@@ -97,6 +92,7 @@ const EmployeeForm = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
       }
+      alert('Personnel Node Updated Successfully');
       navigate('/admin/employees');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save employee');
@@ -122,6 +118,50 @@ const EmployeeForm = () => {
       </div>
 
       <div className="bg-white border border-[#E6E8EA] rounded-2xl p-8 shadow-[0_3px_5px_rgba(32,32,37,0.05)]">
+        {/* AVATAR SECTION */}
+        {isEdit && (
+          <div className="flex justify-center mb-10 border-b border-[#F5F5F5] pb-10">
+            <div className="relative group">
+              <div className="w-32 h-32 rounded-2xl bg-[#F5F5F5] flex items-center justify-center border-2 border-dashed border-[#E6E8EA] overflow-hidden group-hover:border-[#F0B90B] transition-all">
+                {formData.profileImage ? (
+                  <img src={formData.profileImage} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-4xl font-black text-[#1E2026] opacity-10 uppercase">
+                    {formData.fullName?.substring(0, 2) || 'SA'}
+                  </span>
+                )}
+              </div>
+              <label htmlFor="emp-photo" className="absolute -bottom-3 -right-3 w-10 h-10 bg-[#F0B90B] text-white rounded-xl flex items-center justify-center shadow-xl cursor-pointer hover:scale-110 active:scale-95 transition-all">
+                 <span className="material-symbols-outlined text-xl">photo_camera</span>
+                 <input 
+                  id="emp-photo" 
+                  type="file" 
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const token = sessionStorage.getItem('token');
+                    const uploadData = new FormData();
+                    uploadData.append('image', file);
+                    try {
+                      setLoading(true);
+                      const res = await axios.post(`/api/employees/${id}/profile-image`, uploadData, {
+                        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+                      });
+                      setFormData({ ...formData, profileImage: res.data.profileImage });
+                    } catch (err) {
+                      setError('Failed to update node visual identity');
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                 />
+              </label>
+            </div>
+          </div>
+        )}
+
         {error && <div className="mb-6 p-4 bg-[#F6465D]/10 text-[#F6465D] font-bold text-sm rounded-xl uppercase tracking-wider">{error}</div>}
         
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -180,21 +220,18 @@ const EmployeeForm = () => {
                </div>
              </div>
 
-             <div className="space-y-2">
-               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Department</label>
-               <div className="relative">
-                 <select name="department" value={formData.department} onChange={handleChange} className="w-full px-4 pr-10 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm appearance-none cursor-pointer transition-all">
-                   <option value="">Select Department</option>
-                   {departments.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
-                 </select>
-                 <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#848E9C] pointer-events-none" />
-               </div>
-             </div>
+
 
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Direct Manager</label>
                <div className="relative">
-                 <select name="managerId" value={formData.managerId} onChange={handleChange} className="w-full px-4 pr-10 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm appearance-none cursor-pointer transition-all">
+                 <select 
+                  name="managerId" 
+                  value={formData.managerId} 
+                  onChange={handleChange} 
+                  disabled={formData.role === 'manager' || formData.role === 'admin'}
+                  className={`w-full px-4 pr-10 py-3 bg-[#F5F5F5] border-2 border-transparent rounded-xl font-bold text-sm appearance-none cursor-pointer transition-all ${ (formData.role === 'manager' || formData.role === 'admin') ? 'opacity-40 cursor-not-allowed' : 'focus:bg-white focus:border-[#F0B90B]' }`}
+                 >
                    <option value="">Select Manager</option>
                    {managers.map(m => <option key={m._id} value={m._id}>{m.name}</option>)}
                  </select>

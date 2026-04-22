@@ -35,7 +35,20 @@ exports.createNewUserAtomic = async (userData) => {
     });
     await user.save({ session });
 
-    // 4. Role-Based Shadow Insertion (Goal Component b)
+    // 4. Personnel Profile & Role-Based Shadow Insertion
+    // 🛡️ UNIFIED REGISTRY: Everyone gets a base Employee profile for the Personnel Registry
+    const employeeProfile = new Employee({ 
+        userId: user._id,
+        fullName: name,
+        email: email,
+        employeeId: generatedId,
+        role: role.toLowerCase(),
+        joinDate: userData.joinDate || new Date(),
+        reportingManager: userData.reportingManager || null,
+        ...extraData 
+    });
+    await employeeProfile.save({ session });
+
     let roleData = null;
     const shadowBase = { userId: user._id, ...extraData };
 
@@ -47,24 +60,21 @@ exports.createNewUserAtomic = async (userData) => {
         roleData = new Manager({ ...shadowBase });
         break;
       case 'employee':
-        roleData = new Employee({ 
-            ...shadowBase, 
-            employeeId: generatedId,
-            reportingManager: userData.reportingManager || null 
-        });
+        // Profile already created above as base
+        roleData = employeeProfile;
         break;
       default:
         // Admin or fallback
         break;
     }
 
-    if (roleData) {
+    if (roleData && role.toLowerCase() !== 'employee') {
       await roleData.save({ session });
     }
 
     // 5. Atomic Commit Hub
     await session.commitTransaction();
-    return { user, roleData };
+    return { user, roleData, employeeProfile };
 
   } catch (error) {
     // 🔙 Automated Rollback on System Failure
