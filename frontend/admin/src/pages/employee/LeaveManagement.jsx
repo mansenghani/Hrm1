@@ -18,6 +18,7 @@ const LeaveManagement = () => {
   });
 
   const token = sessionStorage.getItem('token');
+  const userRole = sessionStorage.getItem('role');
   const user = JSON.parse(sessionStorage.getItem('user') || '{}');
 
   // Yearly Quotas
@@ -118,14 +119,14 @@ const LeaveManagement = () => {
     <>
       <div className="space-y-10 animate-in fade-in duration-500 pb-20">
         
-        {/* 🏆 LEAVE STATS TOP BAR */}
+            {/* 🏆 LEAVE STATS TOP BAR */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
            {[
              { label: 'Sick Leave', key: 'sick', icon: HeartPulse, color: 'text-[#F6465D]', bg: 'bg-[#F6465D]/5' },
              { label: 'Earned Leave', key: 'earned', icon: Briefcase, color: 'text-[#F0B90B]', bg: 'bg-[#F0B90B]/5' },
              { label: 'Casual Leave', key: 'casual', icon: Zap, color: 'text-[#0ECB81]', bg: 'bg-[#0ECB81]/5' }
            ].map((item, i) => (
-             <div key={i} className={`p-6 rounded-[32px] border border-[#E6E8EA] bg-white shadow-sm relative overflow-hidden group hover:border-[#F0B90B] transition-all`}>
+             <div key={i} className={`p-6 rounded-3xl border border-[#E6E8EA] bg-white shadow-sm relative overflow-hidden group hover:border-[#F0B90B] transition-all`}>
                 <div className={`absolute top-0 right-0 w-20 h-20 ${item.bg} rounded-bl-[40px] -mr-4 -mt-4 group-hover:scale-110 transition-transform`}></div>
                 
                 <div className="flex items-center gap-4 mb-6">
@@ -169,93 +170,103 @@ const LeaveManagement = () => {
         </div>
 
         <div className="grid grid-cols-12 gap-10">
-          {/* REQUEST FORM */}
-          <div className="col-span-12 lg:col-span-5 bg-[#1E2026] rounded-[40px] p-10 text-white relative overflow-hidden shadow-2xl border-none">
-             <div className="absolute top-0 right-0 w-80 h-80 bg-[#F0B90B]/5 blur-[100px] -mr-40 -mt-40"></div>
-             
-             <div className="relative z-10 mb-10 pb-6 border-b border-white/5">
-                <h3 className="text-[14px] font-black uppercase tracking-[0.3em] flex items-center gap-4 italic">
-                   <Send size={18} className="text-[#F0B90B]" />
-                   Transmit Protocol
-                </h3>
-             </div>
+          {userRole !== 'admin' ? (
+            <div className="col-span-12 lg:col-span-5 bg-[#1E2026] rounded-3xl p-10 text-white relative overflow-hidden shadow-2xl border-none">
+               <div className="absolute top-0 right-0 w-80 h-80 bg-[#F0B90B]/5 blur-[100px] -mr-40 -mt-40"></div>
+               
+               <div className="relative z-10 mb-10 pb-6 border-b border-white/5">
+                  <h3 className="text-[14px] font-black uppercase tracking-[0.3em] flex items-center gap-4 italic">
+                     <Send size={18} className="text-[#F0B90B]" />
+                     Transmit Protocol
+                  </h3>
+               </div>
 
-             <form onSubmit={handleSubmit} className="relative z-10 space-y-6">
-                <div className="space-y-3">
-                   <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[#848E9C] ml-1">Leave Designation</label>
-                   <div className="relative">
-                      <select 
-                        required
-                        value={formData.leaveType}
-                        onChange={e => setFormData({...formData, leaveType: e.target.value})}
-                        className="w-full px-8 py-5 rounded-2xl bg-white/5 border border-white/10 text-white text-[14px] font-black focus:outline-none focus:border-[#F0B90B] transition-all appearance-none cursor-pointer pr-16 italic uppercase"
-                      >
-                         <option value="" disabled className="bg-[#1E2026]">Choose Strategy</option>
-                         <option value="sick" className="bg-[#1E2026]">Sick Protocol</option>
-                         <option value="casual" className="bg-[#1E2026]">Casual Protocol</option>
-                         <option value="earned" className="bg-[#1E2026]">Earned Entitlement</option>
-                         <option value="emergency" className="bg-[#1E2026]">Emergency Breach</option>
-                      </select>
-                      <ChevronDown size={20} className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-[#848E9C]" />
-                   </div>
-                </div>
+               <form onSubmit={handleSubmit} className="relative z-10 space-y-6">
+                  <div className="space-y-3">
+                     <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[#848E9C] ml-1">Leave Designation</label>
+                     <div className="relative">
+                        <select 
+                          required
+                          value={formData.leaveType}
+                          onChange={e => setFormData({...formData, leaveType: e.target.value})}
+                          className="w-full px-8 py-5 rounded-2xl bg-white/5 border border-white/10 text-white text-[14px] font-black focus:outline-none focus:border-[#F0B90B] transition-all appearance-none cursor-pointer pr-16 italic uppercase"
+                        >
+                           <option value="" disabled className="bg-[#1E2026]">Choose Strategy</option>
+                           <option value="sick" className="bg-[#1E2026]">Sick Protocol</option>
+                           <option value="casual" className="bg-[#1E2026]">Casual Protocol</option>
+                           <option value="earned" className="bg-[#1E2026]">Earned Entitlement</option>
+                           <option value="emergency" className="bg-[#1E2026]">Emergency Breach</option>
+                        </select>
+                        <ChevronDown size={20} className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-[#848E9C]" />
+                     </div>
+                  </div>
 
-                <div className="grid grid-cols-2 gap-6">
-                   <div className="space-y-3">
-                      <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[#848E9C] ml-1">Start Cycle</label>
-                      <input 
-                        type="date" 
-                        required
-                        value={formData.startDate}
-                        onChange={e => setFormData({...formData, startDate: e.target.value})}
-                        className="w-full p-5 rounded-2xl bg-white/5 border border-white/10 text-white text-[13px] font-black focus:outline-none focus:border-[#F0B90B] italic"
-                      />
-                   </div>
-                   <div className="space-y-3">
-                      <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[#848E9C] ml-1">End Cycle</label>
-                      <input 
-                        type="date" 
-                        required
-                        value={formData.endDate}
-                        onChange={e => setFormData({...formData, endDate: e.target.value})}
-                        className="w-full p-5 rounded-2xl bg-white/5 border border-white/10 text-white text-[13px] font-black focus:outline-none focus:border-[#F0B90B] italic"
-                      />
-                   </div>
-                </div>
+                  <div className="grid grid-cols-2 gap-6">
+                     <div className="space-y-3">
+                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[#848E9C] ml-1">Start Cycle</label>
+                        <input 
+                          type="date" 
+                          required
+                          value={formData.startDate}
+                          onChange={e => setFormData({...formData, startDate: e.target.value})}
+                          className="w-full p-5 rounded-2xl bg-white/5 border border-white/10 text-white text-[13px] font-black focus:outline-none focus:border-[#F0B90B] italic"
+                        />
+                     </div>
+                     <div className="space-y-3">
+                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[#848E9C] ml-1">End Cycle</label>
+                        <input 
+                          type="date" 
+                          required
+                          value={formData.endDate}
+                          onChange={e => setFormData({...formData, endDate: e.target.value})}
+                          className="w-full p-5 rounded-2xl bg-white/5 border border-white/10 text-white text-[13px] font-black focus:outline-none focus:border-[#F0B90B] italic"
+                        />
+                     </div>
+                  </div>
 
-                <div className="space-y-3">
-                   <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[#848E9C] ml-1">Justification Matrix</label>
-                   <textarea 
-                     required
-                     value={formData.reason}
-                     onChange={e => setFormData({...formData, reason: e.target.value})}
-                     placeholder="State operational deficiency..."
-                     className="w-full p-6 rounded-2xl bg-white/5 border border-white/10 text-white text-[13px] font-bold focus:outline-none focus:border-[#F0B90B] min-h-[120px] resize-none italic"
-                   />
-                </div>
+                  <div className="space-y-3">
+                     <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[#848E9C] ml-1">Justification Matrix</label>
+                     <textarea 
+                       required
+                       value={formData.reason}
+                       onChange={e => setFormData({...formData, reason: e.target.value})}
+                       placeholder="State operational deficiency..."
+                       className="w-full p-6 rounded-2xl bg-white/5 border border-white/10 text-white text-[13px] font-bold focus:outline-none focus:border-[#F0B90B] min-h-[120px] resize-none italic"
+                     />
+                  </div>
 
-                <button type="submit" className="w-full py-5 mt-6 bg-[#F0B90B] text-[#1E2026] rounded-2xl font-black text-[13px] uppercase tracking-[0.3em] hover:bg-white active:scale-95 transition-all italic shadow-2xl border-none cursor-pointer">
-                   Apply For Leave
-                </button>
-             </form>
-          </div>
+                  <button type="submit" className="w-full py-5 mt-6 bg-[#F0B90B] text-[#1E2026] rounded-2xl font-black text-[13px] uppercase tracking-[0.3em] hover:bg-white active:scale-95 transition-all italic shadow-2xl border-none cursor-pointer">
+                     Apply For Leave
+                  </button>
+               </form>
+            </div>
+          ) : (
+            <div className="col-span-12 lg:col-span-5 bg-[#1E2026] rounded-3xl p-10 text-white relative overflow-hidden shadow-2xl border-none flex flex-col items-center justify-center text-center">
+               <div className="absolute top-0 right-0 w-80 h-80 bg-[#F0B90B]/5 blur-[100px] -mr-40 -mt-40"></div>
+               <ShieldAlert size={60} className="text-[#F0B90B] mb-6 opacity-40" />
+               <h3 className="text-[18px] font-black uppercase tracking-[0.3em] italic mb-4">Admin Override</h3>
+               <p className="text-[#848E9C] text-[12px] font-bold italic max-w-xs leading-relaxed">
+                  System Administration nodes are exempt from standard leave protocols. Personal time-off is managed via global board directives.
+               </p>
+            </div>
+          )}
 
           {/* LOG HISTORY */}
           <div className="col-span-12 lg:col-span-7 space-y-10 flex flex-col">
              <div className="grid grid-cols-2 gap-8">
-                <div className="bg-white p-10 border border-[#E6E8EA] rounded-[40px] relative overflow-hidden group shadow-sm">
+                <div className="bg-white p-10 border border-[#E6E8EA] rounded-3xl relative overflow-hidden group shadow-sm">
                    <div className="absolute top-0 right-0 w-24 h-24 bg-[#F0B90B]/5 rounded-bl-[40px] -mt-4 -mr-4"></div>
                    <h3 className="text-5xl font-black text-[#1E2026] tabular-nums italic tracking-tighter">{pendingLeaves}</h3>
                    <p className="text-[10px] font-black text-[#848E9C] uppercase tracking-[0.2em] mt-2 italic">Pending Sync</p>
                 </div>
-                <div className="bg-white p-10 border border-[#E6E8EA] rounded-[40px] relative overflow-hidden group shadow-sm">
+                <div className="bg-white p-10 border border-[#E6E8EA] rounded-3xl relative overflow-hidden group shadow-sm">
                    <div className="absolute top-0 right-0 w-24 h-24 bg-[#0ECB81]/5 rounded-bl-[40px] -mt-4 -mr-4"></div>
                    <h3 className="text-5xl font-black text-[#1E2026] tabular-nums italic tracking-tighter">{approvedCount}</h3>
                    <p className="text-[10px] font-black text-[#848E9C] uppercase tracking-[0.2em] mt-2 italic">Finalized Trace</p>
                 </div>
              </div>
 
-             <div className="bg-white border border-[#E6E8EA] rounded-[40px] flex-1 flex flex-col overflow-hidden shadow-sm">
+             <div className="bg-white border border-[#E6E8EA] rounded-3xl flex-1 flex flex-col overflow-hidden shadow-sm">
                 <div className="p-10 bg-[#F5F5F5]/30 border-b border-[#E6E8EA]">
                    <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-[#1E2026] italic">Personal Trace History</h3>
                 </div>
@@ -273,7 +284,7 @@ const LeaveManagement = () => {
                             <tr><td colSpan="3" className="py-20 text-center text-[11px] text-[#848E9C] font-black uppercase italic animate-pulse">Synchronizing Telemetry...</td></tr>
                           ) : leaves.length === 0 ? (
                             <tr><td colSpan="3" className="py-20 text-center text-[11px] text-[#848E9C] font-black uppercase italic opacity-40">No historical traces detected</td></tr>
-                          ) : leaves.map((lv, i) => (
+                          ) : [...leaves].reverse().map((lv, i) => (
                             <tr key={i} onClick={() => { setSelectedLeave(lv); setIsModalOpen(true); }} className="hover:bg-[#F5F5F5] transition-colors cursor-pointer group">
                                <td className="px-10 py-8">
                                   <div className="flex items-center gap-5">
@@ -306,7 +317,7 @@ const LeaveManagement = () => {
       {/* DETAILS MODAL */}
       {isModalOpen && selectedLeave && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#1E2026]/90 backdrop-blur-xl animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-2xl rounded-[40px] overflow-hidden shadow-2xl border-none animate-in zoom-in-95 duration-300">
+          <div className="bg-white w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl border-none animate-in zoom-in-95 duration-300">
             <div className="p-10 border-b border-[#E6E8EA] bg-[#F5F5F5]/30 flex justify-between items-center">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#848E9C] mb-2 italic">Trace Identification</p>

@@ -15,12 +15,16 @@ const HRDashboard = () => {
       const token = sessionStorage.getItem('token');
       // Using relative paths for proxy consistency
       const [empRes, leaveRes] = await Promise.all([
-        axios.get('/api/employees', { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get('/api/leaves', { headers: { Authorization: `Bearer ${token}` } })
+        axios.get('/api/employees', { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] })),
+        axios.get('/api/leaves', { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] }))
       ]);
+
+      const employees = Array.isArray(empRes.data) ? empRes.data : [];
+      const leaves = Array.isArray(leaveRes.data) ? leaveRes.data : [];
+
       setStats({
-        employees: empRes.data?.length || 0,
-        pendingLeaves: leaveRes.data?.filter(l => l.status === 'Pending').length || 0,
+        employees: employees.length,
+        pendingLeaves: leaves.filter(l => l.status === 'Pending').length,
         attendance: '94%'
       });
     } catch (err) {

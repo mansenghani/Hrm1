@@ -2,36 +2,41 @@ const express = require('express');
 const router = express.Router();
 const { 
   createTask, 
-  getHRTasks,
-  forwardToManager,
   getManagerTasks,
   assignEmployee,
+  approveTask,
+  rejectTask,
   getMyTasks,
-  updateTaskStatus,
-  getAllTasksAdmin,
+  updateProgress,
+  submitTask,
+  uploadProof,
+  addComment,
+  getAllTasks,
   deleteTask
 } = require('../controllers/taskController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const upload = require('../middleware/upload');
 
 router.use(protect);
 
-// Admin Routes
-router.post('/create', authorize('admin'), createTask);
-router.get('/admin-all', getAllTasksAdmin);
+// --- HR / ADMIN ---
+router.post('/create', authorize('hr', 'admin'), upload.single('file'), createTask);
+router.get('/all', authorize('hr', 'admin'), getAllTasks);
 router.delete('/:taskId', authorize('admin'), deleteTask);
 
-// HR Routes
-router.get('/hr', authorize('hr'), getHRTasks);
-router.put('/forward-to-manager/:taskId', authorize('hr'), forwardToManager);
+// --- MANAGER / HR LEAD ---
+router.get('/manager', authorize('manager', 'hr'), getManagerTasks);
+router.put('/assign/:taskId', authorize('manager', 'hr'), assignEmployee);
+router.put('/approve/:taskId', authorize('manager', 'hr'), approveTask);
+router.put('/reject/:taskId', authorize('manager', 'hr'), rejectTask);
 
-// Manager Routes
-router.get('/manager', authorize('manager'), getManagerTasks);
-router.post('/manager-create', authorize('manager'), require('../controllers/taskController').createManagerTask);
-router.get('/team', authorize('manager', 'employee', 'hr', 'admin'), require('../controllers/taskController').getTeamTasks);
-router.put('/assign-employee/:taskId', authorize('manager'), assignEmployee);
-
-// Employee Routes
+// --- EMPLOYEE ---
 router.get('/my', authorize('employee'), getMyTasks);
-router.put('/update-status/:taskId', authorize('employee'), updateTaskStatus);
+router.put('/progress/:taskId', authorize('employee'), updateProgress);
+router.put('/submit/:taskId', authorize('employee'), submitTask);
+router.post('/upload-proof/:taskId', authorize('employee', 'manager', 'hr'), upload.single('file'), uploadProof);
+
+// --- COMMON ---
+router.post('/comment/:taskId', authorize('manager', 'employee', 'hr', 'admin'), addComment);
 
 module.exports = router;

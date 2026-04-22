@@ -96,13 +96,15 @@ const LeaveManagement = () => {
           <p className="zap-caption-upper text-[#ff4f00] mb-4">Personnel Logistics</p>
           <h1 className="zap-display-hero">Leave <span className="text-[#ff4f00]">Protocol.</span></h1>
         </div>
-        <button 
-          onClick={() => setIsCreateModalOpen(true)}
-          className="zap-btn zap-btn-orange h-14 px-8"
-        >
-          <Calendar size={18} className="mr-3" />
-          Request For Leave
-        </button>
+        {userRole !== 'admin' && (
+          <button 
+            onClick={() => setIsCreateModalOpen(true)}
+            className="zap-btn zap-btn-orange h-14 px-8"
+          >
+            <Calendar size={18} className="mr-3" />
+            Request For Leave
+          </button>
+        )}
       </div>
 
       {/* SUMMARY GRID */}

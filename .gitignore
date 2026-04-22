@@ -37,3 +37,6 @@ frontend/employee/node_modules/
 frontend/admin/dist/
 frontend/hr/dist/
 frontend/employee/dist/
+
+# Uploads
+backend/uploads/

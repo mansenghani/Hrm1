@@ -20,18 +20,52 @@ import {
   Briefcase,
   Menu,
   X,
-  Target
+  Target,
+  Bell
 } from 'lucide-react';
 
 const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [liveNotifications, setLiveNotifications] = useState([]);
+  const notificationRef = React.useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
 
   const role = sessionStorage.getItem('role') || 'admin';
   const token = sessionStorage.getItem('token');
   const [userProfile, setUserProfile] = useState(null);
+
+  // 🛡️ SYNC LIVE NOTIFICATIONS
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!token || role !== 'employee') return;
+      try {
+        const res = await axios.get('/api/tasks/my', { headers: { Authorization: `Bearer ${token}` } });
+        const tasks = res.data || [];
+        const alerts = tasks.filter(t => t.status === 'rework' || t.status === 'submitted').map(t => ({
+          type: t.status === 'rework' ? 'rework' : 'task',
+          text: t.status === 'rework' ? `Rework Needed: ${t.title}` : `Status Update: ${t.title}`,
+          time: 'Active Now',
+          path: `/employee/projects?taskId=${t._id}`
+        }));
+        setLiveNotifications(alerts.slice(0, 5));
+      } catch (err) { console.error('Alert Sync Failed:', err); }
+    };
+    fetchNotifications();
+  }, [token, role]);
+
+  // 🛡️ CLICK OUTSIDE HANDLER
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setIsNotificationsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const displayRole = userRole || (role ? role.toUpperCase() : 'ADMIN');
   
@@ -97,14 +131,14 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
       case 'employee':
         return [
           { name: 'Dashboard', path: '/employee/dashboard', icon: LayoutDashboard },
-          { name: 'Active Arcs', path: '/employee/projects', icon: Target },
+          { name: 'Active Tasks', path: '/employee/projects', icon: Target },
           { name: 'Time Tracker', path: '/employee/time-tracker', icon: Clock },
           { name: 'Request For Leave', path: '/employee/leave', icon: FileText },
         ];
       case 'manager':
         return [
           { name: 'Dashboard', path: '/manager/dashboard', icon: LayoutDashboard },
-          { name: 'Deployment', path: '/manager/tasks', icon: ClipboardList },
+          { name: 'Manage Task', path: '/manager/tasks', icon: ClipboardList },
           { name: 'Project Hub', path: '/manager/projects', icon: Briefcase },
           { name: 'Time Tracker', path: '/manager/time-tracker', icon: Clock },
           { name: 'Team Attendance', path: '/manager/attendance', icon: Calendar },
@@ -181,9 +215,61 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
             ))}
           </nav>
           <div className="ml-auto flex items-center h-full gap-4">
-            <button className="w-10 h-10 flex items-center justify-center text-[#36342e] hover:text-[#ff4f00] transition-colors">
+            <button className="w-10 h-10 flex items-center justify-center text-[#36342e] hover:text-[#ff4f00] transition-colors relative group">
               <Search size={20} />
             </button>
+            
+            <div className="relative" ref={notificationRef}>
+              <button 
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all relative ${isNotificationsOpen ? 'bg-[#ff4f00] text-white shadow-lg' : 'text-[#36342e] hover:bg-[#eceae3]'}`}
+              >
+                <Bell size={20} />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-[#ff4f00] border-2 border-[#fffefb] rounded-full"></span>
+              </button>
+
+              {isNotificationsOpen && (
+                <div className="absolute top-14 right-0 w-80 bg-white border border-[#c5c0b1] rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[100]">
+                  <div className="p-4 border-b border-[#eceae3] bg-[#fffdf9] flex justify-between items-center">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-[#201515]">Intelligence Alerts</span>
+                    <span className="px-2 py-0.5 bg-[#ff4f00]/10 text-[#ff4f00] text-[8px] font-black rounded-full uppercase">3 New</span>
+                  </div>
+                  <div className="max-h-[320px] overflow-y-auto">
+                    {liveNotifications.length === 0 ? (
+                      <div className="p-8 text-center opacity-40">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[#939084]">No Active Alerts</p>
+                      </div>
+                    ) : (
+                      liveNotifications.map((n, i) => (
+                        <div 
+                          key={i} 
+                          onClick={() => {
+                            navigate(n.path);
+                            setIsNotificationsOpen(false);
+                          }}
+                          className="p-4 border-b border-[#eceae3] hover:bg-[#fffdf9] transition-all cursor-pointer group"
+                        >
+                          <div className="flex gap-3">
+                            <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${n.type === 'rework' ? 'bg-red-500' : 'bg-[#ff4f00]'}`}></div>
+                            <div>
+                              <p className="text-[12px] font-bold text-[#201515] leading-tight group-hover:text-[#ff4f00] transition-colors">{n.text}</p>
+                              <p className="text-[9px] font-black text-[#939084] uppercase tracking-widest mt-1">{n.time}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <button 
+                    onClick={() => { navigate(`/${role}/dashboard`); setIsNotificationsOpen(false); }}
+                    className="w-full py-3 bg-[#eceae3] text-[10px] font-black text-[#201515] uppercase tracking-[0.2em] hover:bg-[#c5c0b1] transition-all border-none"
+                  >
+                    View All Activity
+                  </button>
+                </div>
+              )}
+            </div>
+
             <div 
               onClick={() => navigate(`/${role}/profile`)}
               className="hidden md:flex items-center gap-3 px-4 h-12 hover:bg-[#eceae3] rounded-[4px] cursor-pointer transition-all"

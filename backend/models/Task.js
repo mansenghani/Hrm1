@@ -9,37 +9,58 @@ const taskSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  createdBy: {
+  createdBy: { // Usually HR or Admin
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
   },
-  assignedToHR: {
+  assignedManager: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   },
-  forwardedToManager: {
+  assignedEmployee: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   },
-  assignedToEmployee: {
+  project: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
-  teamId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Team',
+    ref: 'Project',
   },
   status: {
     type: String,
-    enum: ['created', 'hr_review', 'manager_assigned', 'in_progress', 'completed'],
-    default: 'created',
+    enum: ['assigned', 'in_progress', 'submitted', 'under_review', 'completed', 'rework'],
+    default: 'assigned',
   },
   priority: {
     type: String,
     enum: ['low', 'medium', 'high'],
     default: 'medium',
   },
+  progress: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
+  },
+  feedback: {
+    type: String,
+    default: ''
+  },
+  attachments: [
+    {
+      fileName: String,
+      fileUrl: String,
+      uploadedAt: { type: Date, default: Date.now }
+    }
+  ],
+  comments: [
+    {
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      role: String,
+      message: String,
+      createdAt: { type: Date, default: Date.now }
+    }
+  ],
   dueDate: {
     type: Date,
     required: true,

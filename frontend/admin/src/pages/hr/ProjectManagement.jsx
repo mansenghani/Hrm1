@@ -150,15 +150,14 @@ const ProjectManagement = () => {
         ))}
       </div>
 
-      {/* CREATE MODAL */}
       {isModalOpen && createPortal(
         <div 
           onClick={() => setIsModalOpen(false)}
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-white/[0.01] backdrop-blur-xl animate-in fade-in duration-300 cursor-pointer"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-[#1e2026]/40 backdrop-blur-md animate-in fade-in duration-300"
         >
           <div 
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xl bg-white/95 backdrop-blur-3xl rounded-[48px] shadow-[0_40px_120px_rgba(0,0,0,0.15)] border border-white/20 p-14 relative cursor-default"
+            className="w-full max-w-xl bg-white/95 backdrop-blur-3xl rounded-[48px] shadow-[0_40px_120px_rgba(0,0,0,0.15)] border border-white/20 p-14 relative"
           >
              <button onClick={() => setIsModalOpen(false)} className="absolute top-10 right-10 text-slate-400 hover:text-black hover:rotate-90 transition-all">
                 <Trash2 size={24} />

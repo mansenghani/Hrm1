@@ -2,39 +2,72 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
     Target, Clock, CheckCircle2, Zap, ArrowUpRight, 
-    MoreVertical, ExternalLink, Activity, Shield
+    MoreVertical, ExternalLink, Activity, Shield, AlertCircle,
+    Briefcase, X, Calendar, User
 } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { useLocation } from 'react-router-dom';
+import TaskDetail from '../../components/TaskDetail';
 
 const EmployeeProjects = () => {
+    const location = useLocation();
     const [tasks, setTasks] = useState([]);
+    const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedTask, setSelectedTask] = useState(null);
+    const [selectedProject, setSelectedProject] = useState(null);
+    const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+    const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
 
     const token = sessionStorage.getItem('token');
     const headers = { Authorization: `Bearer ${token}` };
 
-    const fetchMissions = async () => {
+    const fetchData = async (silentParam = false) => {
+        const silent = silentParam === true;
         try {
-            setLoading(true);
-            const res = await axios.get('/api/tasks/my', { headers });
-            setTasks(res.data);
+            if (!silent) setLoading(true);
+            const [tasksRes, projectsRes] = await Promise.all([
+                axios.get('/api/tasks/my', { headers }),
+                axios.get('/api/projects/my', { headers })
+            ]);
+            const fetchedTasks = tasksRes.data || [];
+            setTasks(fetchedTasks);
+            setProjects(projectsRes.data || []);
         } catch (error) {
-            console.error('Mission Sync Failure:', error);
+            console.error('Data Sync Failure:', error);
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchMissions();
+        fetchData();
     }, []);
 
-    const handleStatusUpdate = async (taskId, nextStatus) => {
-        try {
-            await axios.put(`/api/tasks/update-status/${taskId}`, { status: nextStatus }, { headers });
-            fetchMissions();
-        } catch (error) {
-            console.error('Update failed:', error);
+    // 🎯 DEEP LINKING OBSERVER: Watch for taskId in URL changes
+    useEffect(() => {
+        if (!loading && tasks.length > 0) {
+            const params = new URLSearchParams(location.search);
+            const taskId = params.get('taskId');
+            if (taskId) {
+                const targetTask = tasks.find(t => t._id === taskId);
+                if (targetTask) {
+                    setSelectedTask(targetTask);
+                    setIsTaskModalOpen(true);
+                }
+            }
         }
+    }, [location.search, tasks, loading]);
+
+    const statusColors = {
+        assigned: 'bg-gray-500',
+        in_progress: 'bg-blue-500',
+        submitted: 'bg-orange-500',
+        under_review: 'bg-purple-500',
+        completed: 'bg-green-500',
+        rework: 'bg-red-500',
+        active: 'bg-green-500',
+        pending: 'bg-orange-500'
     };
 
     if (loading) return (
@@ -44,111 +77,248 @@ const EmployeeProjects = () => {
         </div>
     );
 
-    return (
-        <div className="space-y-12 animate-in fade-in duration-700 pb-20 max-w-[1600px] mx-auto">
-            {/* HEADER */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
-                <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#ff4f00] mb-2 italic">Assignment Terminal V4.2</p>
-                    <h1 className="text-6xl font-black text-[#201515] tracking-tighter leading-none mb-3 italic uppercase">
-                        Active <span className="text-[#ff4f00]">Arcs.</span>
-                    </h1>
-                    <p className="text-[#939084] font-bold text-[11px] uppercase tracking-[0.2em] flex items-center gap-3">
-                        <span className="w-12 h-[2px] bg-[#ff4f00]"></span>
-                        Strategic Mission Hub & Operational Quotas
-                    </p>
-                </div>
-                <div className="flex items-center gap-4 bg-[#eceae3]/50 p-2 rounded-2xl border border-[#c5c0b1]">
-                    <div className="px-6 py-3 bg-white rounded-xl shadow-sm">
-                        <p className="text-[9px] font-black text-[#939084] uppercase tracking-widest mb-1">Total Payload</p>
-                        <p className="text-xl font-black text-[#201515]">{tasks.length}</p>
-                    </div>
-                    <div className="px-6 py-3 bg-white rounded-xl shadow-sm">
-                        <p className="text-[9px] font-black text-[#939084] uppercase tracking-widest mb-1">In Execution</p>
-                        <p className="text-xl font-black text-[#ff4f00]">{tasks.filter(t => t.status !== 'completed').length}</p>
-                    </div>
-                </div>
-            </div>
+    const hasAssignments = tasks.length > 0 || projects.length > 0;
 
-            {/* MISSION GRID */}
-            <div className="grid grid-cols-1 gap-8">
-                {tasks.length === 0 ? (
+    return (
+        <>
+            <div className="space-y-12 animate-in fade-in duration-700 pb-20 max-w-[1600px] mx-auto">
+                {/* HEADER */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#ff4f00] mb-2 italic">My Work Hub V4.2</p>
+                        <h1 className="text-6xl font-black text-[#201515] tracking-tighter leading-none mb-3 italic uppercase">
+                            My <span className="text-[#ff4f00]">Tasks.</span>
+                        </h1>
+                        <p className="text-[#939084] font-bold text-[11px] uppercase tracking-[0.2em] flex items-center gap-3">
+                            <span className="w-12 h-[2px] bg-[#ff4f00]"></span>
+                            See all your assigned work here
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-4 bg-[#eceae3]/50 p-2 rounded-2xl border border-[#c5c0b1]">
+                        <div className="px-6 py-3 bg-white rounded-xl shadow-sm">
+                            <p className="text-[9px] font-black text-[#939084] uppercase tracking-widest mb-1">Total Work</p>
+                            <p className="text-xl font-black text-[#201515]">{tasks.length + projects.length}</p>
+                        </div>
+                        <div className="px-6 py-3 bg-white rounded-xl shadow-sm">
+                            <p className="text-[9px] font-black text-[#939084] uppercase tracking-widest mb-1">Active Now</p>
+                            <p className="text-xl font-black text-[#ff4f00]">{tasks.filter(t => t.status !== 'completed').length + projects.filter(p => p.status !== 'completed').length}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {!hasAssignments ? (
                     <div className="p-32 bg-white border border-[#c5c0b1] rounded-[48px] flex flex-col items-center text-center shadow-sm">
                         <div className="w-24 h-24 bg-[#eceae3] rounded-3xl flex items-center justify-center text-[#939084] mb-8">
                             <Target size={48} />
                         </div>
-                        <h3 className="text-3xl font-black text-[#201515] uppercase italic tracking-tighter">No Active Arcs Detected</h3>
-                        <p className="text-[#939084] font-bold text-[12px] mt-4 uppercase tracking-[0.3em]">Command awaiting tactical allocation</p>
+                        <h3 className="text-3xl font-black text-[#201515] uppercase italic tracking-tighter">No Work Assigned Yet</h3>
+                        <p className="text-[#939084] font-bold text-[12px] mt-4 uppercase tracking-[0.3em]">Waiting for your manager to assign work</p>
                     </div>
                 ) : (
-                    tasks.map((task) => (
-                        <div 
-                            key={task._id} 
-                            className="bg-white border border-[#c5c0b1] rounded-[48px] p-12 hover:border-[#ff4f00] transition-all group relative overflow-hidden shadow-sm hover:shadow-xl"
-                        >
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-[#eceae3] rounded-full -mr-32 -mt-32 opacity-20 group-hover:bg-[#ff4f00]/5 transition-all duration-700"></div>
-                            
-                            <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-12">
-                                <div className="flex-1 space-y-6">
-                                    <div className="flex items-center gap-5">
-                                        <div className={`w-4 h-4 rounded-full ${task.status === 'completed' ? 'bg-[#24a148] shadow-[0_0_12px_#24a148]' : 'bg-[#ff4f00] animate-pulse shadow-[0_0_12px_#ff4f00]'}`}></div>
-                                        <div>
-                                            <h3 className="text-4xl font-black text-[#201515] uppercase tracking-tighter leading-none italic group-hover:text-[#ff4f00] transition-colors">{task.title}</h3>
-                                            <div className="flex items-center gap-4 mt-3">
-                                                <span className="text-[10px] font-black text-[#939084] uppercase tracking-widest flex items-center gap-2">
-                                                    <Activity size={14} /> ID: {task._id.substring(18)}
-                                                </span>
-                                                <span className="w-1 h-1 bg-[#c5c0b1] rounded-full"></span>
-                                                <span className="text-[10px] font-black text-[#939084] uppercase tracking-widest flex items-center gap-2">
-                                                    <Shield size={14} /> Criticality: Optimal
+                    <div className="space-y-16">
+                        {/* PROJECTS SECTION */}
+                        {projects.length > 0 && (
+                            <div className="space-y-8">
+                                <div className="flex items-center gap-4">
+                                    <h2 className="text-[14px] font-black uppercase tracking-[0.4em] text-[#201515]">My Projects</h2>
+                                    <div className="h-[1px] bg-[#c5c0b1] flex-1"></div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                    {projects.map((project) => (
+                                        <div key={project._id} className="bg-white border border-[#c5c0b1] rounded-[40px] p-8 hover:border-[#ff4f00] transition-all group relative overflow-hidden shadow-sm flex flex-col min-h-[320px]">
+                                            <div className="flex justify-between items-start mb-6">
+                                                <div className="p-3 rounded-2xl bg-[#eceae3] text-[#201515] group-hover:bg-[#ff4f00] group-hover:text-white transition-all">
+                                                    <Briefcase size={20} />
+                                                </div>
+                                                <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest text-white ${statusColors[project.status] || 'bg-gray-400'}`}>
+                                                    {project.status}
                                                 </span>
                                             </div>
+                                            <h3 className="text-xl font-black text-[#201515] uppercase tracking-tighter italic mb-2">{project.projectName}</h3>
+                                            <p className="text-[12px] font-bold text-[#939084] mb-6 line-clamp-2 italic">"{project.description}"</p>
+                                            
+                                            <div className="mt-auto space-y-4">
+                                                <div className="pt-4 border-t border-[#eceae3] flex justify-between items-center mb-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-6 h-6 rounded-full bg-[#201515] flex items-center justify-center text-[10px] text-white font-bold">
+                                                            {project.assignedManager?.name?.charAt(0)}
+                                                        </div>
+                                                        <span className="text-[10px] font-black text-[#201515] uppercase italic">{project.assignedManager?.name}</span>
+                                                    </div>
+                                                    <span className="text-[10px] font-black text-[#939084] uppercase tracking-widest">
+                                                        {new Date(project.startDate).toLocaleDateString()}
+                                                    </span>
+                                                </div>
+                                                <div className="flex gap-3">
+                                                    <button 
+                                                        onClick={() => { setSelectedProject(project); setIsProjectModalOpen(true); }}
+                                                        className="flex-1 h-10 bg-[#eceae3] text-[#201515] rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#c5c0b1] transition-all"
+                                                    >
+                                                        Details
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => { setSelectedProject(project); setIsProjectModalOpen(true); }}
+                                                        className="flex-1 h-10 bg-[#201515] text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#ff4f00] transition-all"
+                                                    >
+                                                        Start Work
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <p className="text-xl font-bold text-[#36342e] leading-relaxed max-w-4xl italic">
-                                        "{task.description}"
-                                    </p>
-                                </div>
-
-                                <div className="flex flex-col md:flex-row items-center gap-6 shrink-0">
-                                    <div className="text-right hidden md:block mr-6">
-                                        <p className="text-[10px] font-black text-[#939084] uppercase tracking-widest mb-1">Sync Status</p>
-                                        <p className={`text-[12px] font-black uppercase ${task.status === 'completed' ? 'text-[#24a148]' : 'text-[#ff4f00]'}`}>
-                                            {task.status.replace('_', ' ')}
-                                        </p>
-                                    </div>
-                                    <button 
-                                        onClick={() => handleStatusUpdate(task._id, task.status === 'completed' ? 'in_progress' : 'completed')}
-                                        className={`px-12 py-6 rounded-2xl text-[12px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center gap-4 ${
-                                            task.status === 'completed' 
-                                            ? 'bg-[#24a148] text-white' 
-                                            : 'bg-[#201515] text-white hover:bg-[#ff4f00]'
-                                        }`}
-                                    >
-                                        {task.status === 'completed' ? (
-                                            <>Verified <CheckCircle2 size={18} /></>
-                                        ) : (
-                                            <>Update Sync <Zap size={18} fill="white" /></>
-                                        )}
-                                    </button>
-                                    <button className="w-14 h-14 rounded-2xl bg-[#eceae3] flex items-center justify-center text-[#201515] hover:bg-[#201515] hover:text-white transition-all">
-                                        <MoreVertical size={20} />
-                                    </button>
+                                    ))}
                                 </div>
                             </div>
+                        )}
 
-                            {/* PROGRESS BAR */}
-                            <div className="mt-12 h-1 bg-[#eceae3] rounded-full overflow-hidden">
-                                <div 
-                                    className={`h-full transition-all duration-1000 ${task.status === 'completed' ? 'bg-[#24a148]' : 'bg-[#ff4f00]'}`}
-                                    style={{ width: task.status === 'completed' ? '100%' : '65%' }}
-                                ></div>
+                        {/* TASKS SECTION */}
+                        {tasks.length > 0 && (
+                            <div className="space-y-8">
+                                <div className="flex items-center gap-4">
+                                    <h2 className="text-[14px] font-black uppercase tracking-[0.4em] text-[#201515]">Specific Tasks</h2>
+                                    <div className="h-[1px] bg-[#c5c0b1] flex-1"></div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                    {tasks.map((task) => (
+                                        <div key={task._id} className="bg-white border border-[#c5c0b1] rounded-[40px] p-8 hover:border-[#ff4f00] transition-all group relative overflow-hidden shadow-sm flex flex-col min-h-[400px]">
+                                            <div className="flex justify-between items-start mb-6">
+                                                <div className="p-3 rounded-2xl bg-[#eceae3] text-[#201515] group-hover:bg-[#ff4f00] group-hover:text-white transition-all">
+                                                    <Target size={20} />
+                                                </div>
+                                                <div className="flex flex-col items-end gap-2">
+                                                    <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest text-white ${statusColors[task.status] || 'bg-gray-400'}`}>
+                                                        {task.status.replace('_', ' ')}
+                                                    </span>
+                                                    <span className="text-[8px] font-black text-[#939084] uppercase tracking-widest">ID: {task._id.substring(18)}</span>
+                                                </div>
+                                            </div>
+
+                                            <h3 className="text-xl font-black text-[#201515] uppercase tracking-tighter italic mb-2 group-hover:text-[#ff4f00] transition-colors">{task.title}</h3>
+                                            <p className="text-[12px] font-bold text-[#939084] mb-6 line-clamp-3 italic">"{task.description}"</p>
+                                            
+                                            <div className="mt-auto space-y-6">
+                                                {/* METADATA */}
+                                                <div className="pt-4 border-t border-[#eceae3] grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <p className="text-[8px] font-black text-[#939084] uppercase tracking-widest mb-1">Priority</p>
+                                                        <p className="text-[10px] font-black text-[#201515] uppercase italic">{task.priority}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-[8px] font-black text-[#939084] uppercase tracking-widest mb-1">Deadline</p>
+                                                        <p className="text-[10px] font-black text-[#ff4f00] uppercase italic">{new Date(task.dueDate).toLocaleDateString()}</p>
+                                                    </div>
+                                                </div>
+
+                                                {/* PROGRESS & ACTIONS */}
+                                                <div className="flex items-center gap-4">
+                                                    <div className="relative w-14 h-14 shrink-0 rounded-2xl bg-[#201515] flex flex-col items-center justify-center text-white group-hover:bg-[#ff4f00] transition-all overflow-hidden shadow-lg">
+                                                        <span className="text-[14px] font-black italic leading-none">{task.progress}%</span>
+                                                        <div className="absolute bottom-0 left-0 h-1 bg-[#24a148]" style={{ width: `${task.progress}%` }}></div>
+                                                    </div>
+                                                    <div className="flex-1 flex flex-col gap-2">
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); setSelectedTask(task); setIsTaskModalOpen(true); }}
+                                                            className="w-full h-9 bg-[#eceae3] text-[#201515] rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#c5c0b1] transition-all flex items-center justify-center gap-2"
+                                                        >
+                                                            Details <ArrowUpRight size={12} />
+                                                        </button>
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); setSelectedTask(task); setIsTaskModalOpen(true); }}
+                                                            className="w-full h-9 bg-[#201515] text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#ff4f00] transition-all flex items-center justify-center gap-2 shadow-sm"
+                                                        >
+                                                            Execute <Zap size={12} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {task.status === 'rework' && (
+                                                <div className="absolute top-0 left-0 w-full h-1 bg-red-500 animate-pulse"></div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))
+                        )}
+                    </div>
                 )}
             </div>
-        </div>
+
+            {/* TASK DETAIL MODAL */}
+            {selectedTask && (
+                <TaskDetail 
+                    task={tasks.find(t => t._id === selectedTask._id) || selectedTask}
+                    isOpen={isTaskModalOpen}
+                    onClose={() => setIsTaskModalOpen(false)}
+                    onUpdate={() => { fetchData(true); }}
+                    userRole="employee"
+                />
+            )}
+
+            {/* PROJECT DETAIL MODAL */}
+            {isProjectModalOpen && selectedProject && createPortal(
+                <div 
+                    onClick={() => setIsProjectModalOpen(false)}
+                    className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-white/10 backdrop-blur-xl animate-in fade-in duration-300 cursor-pointer"
+                >
+                    <div 
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full max-w-xl bg-white border border-[#c5c0b1] rounded-3xl shadow-[0_40px_120px_rgba(0,0,0,0.1)] p-12 relative cursor-default overflow-hidden"
+                    >
+                        <div className="absolute top-0 right-0 w-40 h-40 bg-[#eceae3]/30 rounded-full -mr-20 -mt-20"></div>
+                        
+                        <button onClick={() => setIsProjectModalOpen(false)} className="absolute top-8 right-8 text-[#939084] hover:text-[#201515] transition-all">
+                            <X size={24} />
+                        </button>
+
+                        <div className="mb-10 relative z-10">
+                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4f00] mb-2 italic">Project Details</p>
+                            <h2 className="text-4xl font-black text-[#201515] uppercase tracking-tighter italic leading-none">{selectedProject.projectName}</h2>
+                        </div>
+
+                        <div className="space-y-8 relative z-10">
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="p-6 bg-[#eceae3]/50 rounded-[24px] border border-[#c5c0b1]/30">
+                                    <p className="text-[9px] font-black text-[#939084] uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        <User size={12} /> Manager
+                                    </p>
+                                    <p className="text-[13px] font-black text-[#201515] uppercase italic">{selectedProject.assignedManager?.name}</p>
+                                    <p className="text-[10px] font-bold text-[#939084] lowercase">{selectedProject.assignedManager?.email}</p>
+                                </div>
+                                <div className="p-6 bg-[#eceae3]/50 rounded-[24px] border border-[#c5c0b1]/30">
+                                    <p className="text-[9px] font-black text-[#939084] uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        <Calendar size={12} /> Work Dates
+                                    </p>
+                                    <p className="text-[11px] font-black text-[#201515] uppercase tracking-widest">{new Date(selectedProject.startDate).toLocaleDateString()} — {selectedProject.endDate ? new Date(selectedProject.endDate).toLocaleDateString() : 'Continuous'}</p>
+                                </div>
+                            </div>
+
+                            <div className="p-8 bg-white border border-[#c5c0b1] rounded-[32px] shadow-sm">
+                                <p className="text-[9px] font-black text-[#939084] uppercase tracking-widest mb-4">Project Description</p>
+                                <p className="text-[15px] font-bold text-[#36342e] leading-relaxed italic">
+                                    "{selectedProject.description}"
+                                </p>
+                            </div>
+
+                            <div className="flex gap-4">
+                                <button 
+                                    onClick={() => setIsProjectModalOpen(false)}
+                                    className="flex-1 py-5 bg-[#eceae3] text-[#201515] rounded-[20px] font-black text-[11px] uppercase tracking-widest hover:bg-[#c5c0b1] transition-all active:scale-95"
+                                >
+                                    Close
+                                </button>
+                                <button 
+                                    onClick={() => setIsProjectModalOpen(false)}
+                                    className="flex-1 py-5 bg-[#201515] text-white rounded-[20px] font-black text-[11px] uppercase tracking-widest hover:bg-[#ff4f00] shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3"
+                                >
+                                    Start Working <Zap size={16} fill="white" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>,
+                document.getElementById('modal-root')
+            )}
+        </>
     );
 };
 

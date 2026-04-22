@@ -13,9 +13,21 @@ const timeTrackRoutes = require('./routes/timeTrackRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
 const managerRoutes = require('./routes/managerRoutes');
 const userRoutes = require('./routes/userRoutes');
+const path = require('path');
+
+const http = require('http');
+const { Server } = require('socket.io');
 
 dotenv.config();
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: true,
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
 
 // ⚙️ Middleware
 app.use(cors({
@@ -25,6 +37,24 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Attach io to app for use in controllers
+app.set('io', io);
+
+// 🔌 Socket.io Logic
+io.on('connection', (socket) => {
+  console.log('⚡ User connected:', socket.id);
+
+  socket.on('join_task', (taskId) => {
+    socket.join(taskId);
+    console.log(`📡 User joined task room: ${taskId}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('❌ User disconnected');
+  });
+});
 
 // 🌍 Routes
 app.use('/api/auth', authRoutes);
@@ -53,6 +83,6 @@ mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ MongoDB Connected Successfully'))
   .catch((err) => console.error('❌ DB Connection Error:', err.message));
 
-app.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server running on port ${PORT}`);
 });

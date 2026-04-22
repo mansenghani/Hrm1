@@ -10,7 +10,7 @@ const LeaveBalanceWidget = () => {
         const fetchBalance = async () => {
             try {
                 const token = sessionStorage.getItem('token');
-                const res = await axios.get('http://localhost:5000/api/leaves/balance', {
+                const res = await axios.get('/api/leaves/balance', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setBalance(res.data);

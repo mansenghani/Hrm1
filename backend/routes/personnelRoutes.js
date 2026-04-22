@@ -8,7 +8,7 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 router.get('/hrs', async (req, res) => {
   console.log(`[NETWORK TRACE] Personnel Hub Pinged | STATE: OPEN ACCESS`);
   try {
-    const hrs = await User.find({ role: 'hr' }, 'name fullName email');
+    const hrs = await User.find({ role: 'hr' }, 'name fullName email role');
     res.json(hrs);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -18,12 +18,12 @@ router.get('/hrs', async (req, res) => {
 router.use(protect);
 
 router.get('/managers', authorize('admin', 'hr'), async (req, res) => {
-  const managers = await User.find({ role: 'manager' }, 'name fullName email');
+  const managers = await User.find({ role: 'manager' }, 'name fullName email role');
   res.json(managers);
 });
 
 router.get('/employees', authorize('admin', 'hr', 'manager'), async (req, res) => {
-  const employees = await User.find({ role: 'employee' }, 'name email');
+  const employees = await User.find({ role: 'employee' }, 'name email role');
   res.json(employees);
 });
 

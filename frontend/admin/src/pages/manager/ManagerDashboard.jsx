@@ -80,9 +80,9 @@ const ManagerDashboard = () => {
             {/* TELEMETRY CARDS */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {[
-                    { label: 'Total Team Nodes', val: String(stats.team?.length || 0).padStart(2, '0'), icon: Users, color: 'text-[#3E74FF]' },
-                    { label: 'Pending Missions', val: String(pendingTasks).padStart(2, '0'), icon: Target, color: 'text-[#F0B90B]' },
-                    { label: 'Completed Arcs', val: String(completedTasks).padStart(2, '0'), icon: CheckCircle, color: 'text-[#0ECB81]' }
+                    { label: 'Total Team', val: String(stats.team?.length || 0).padStart(2, '0'), icon: Users, color: 'text-[#3E74FF]' },
+                    { label: 'Pending Tasks', val: String(pendingTasks).padStart(2, '0'), icon: Target, color: 'text-[#F0B90B]' },
+                    { label: 'Completed', val: String(completedTasks).padStart(2, '0'), icon: CheckCircle, color: 'text-[#0ECB81]' }
                 ].map((card, i) => (
                     <div key={i} className="bg-white p-10 border border-[#E6E8EA] rounded-[40px] hover:shadow-2xl transition-all group relative overflow-hidden active:scale-95 cursor-default">
                         <div className="absolute top-0 right-0 w-24 h-24 bg-[#F5F5F5] rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-all opacity-40"></div>

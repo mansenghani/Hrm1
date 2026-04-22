@@ -1,63 +1,37 @@
 const Task = require('../models/Task');
 const User = require('../models/User');
+const { createNotification } = require('../utils/notifications');
 
-// --- ADMIN ACTIONS ---
+// --- HR ACTIONS ---
 exports.createTask = async (req, res) => {
   try {
-    const { title, description, assignedToHR, priority, dueDate } = req.body;
+    const { title, description, assignedManager, priority, dueDate } = req.body;
     
-    // Phase 1: Identity Integrity Guard
-    if (!assignedToHR) return res.status(400).json({ message: 'Assignment Protocol Failed: Target HR Node must be specified.' });
+    if (!assignedManager) return res.status(400).json({ message: 'Target Manager must be specified.' });
 
-    // Phase 2: Registry Verification
-    const hr = await User.findOne({ _id: assignedToHR, role: 'hr' });
-    if (!hr) return res.status(404).json({ message: 'Mission Targeted at Invalid HR Node: Connection Refused.' });
+    const manager = await User.findOne({ _id: assignedManager, role: { $in: ['manager', 'hr'] } });
+    if (!manager) return res.status(404).json({ message: 'Invalid Personnel node.' });
 
-    console.log(`[TASK CREATION] Title: ${title} | Target HR: ${assignedToHR} | Creator: ${req.user.id}`);
     const task = new Task({
       title,
       description,
-      assignedToHR,
+      assignedManager,
       createdBy: req.user.id,
       priority,
       dueDate,
-      status: 'created'
+      status: 'assigned',
+      attachments: req.file ? [{
+        fileName: req.file.originalname,
+        fileUrl: `/uploads/${req.file.filename}`
+      }] : []
     });
 
     await task.save();
-    console.log(`[TASK SAVED] Mission ID: ${task._id}`);
+    
+    // Notify Manager
+    await createNotification(assignedManager, `You have been assigned a new mission: ${title}`);
+
     res.status(201).json(task);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// --- HR ACTIONS ---
-exports.getHRTasks = async (req, res) => {
-  try {
-    const tasks = await Task.find({ assignedToHR: req.user.id })
-      .populate('createdBy', 'name email')
-      .populate('forwardedToManager', 'name email');
-    console.log(`[HR TASK FETCH] User: ${req.user.id} | Name: ${req.user.name} | Tasks Found: ${tasks.length}`);
-    res.status(200).json(tasks);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-exports.forwardToManager = async (req, res) => {
-  try {
-    const { managerId } = req.body;
-    const task = await Task.findById(req.params.taskId);
-    
-    if (!task) return res.status(404).json({ message: 'Task not found' });
-    if (task.assignedToHR.toString() !== req.user.id) return res.status(403).json({ message: 'Unauthorized' });
-
-    task.forwardedToManager = managerId;
-    task.status = 'hr_review';
-    await task.save();
-    
-    res.status(200).json(task);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -66,9 +40,9 @@ exports.forwardToManager = async (req, res) => {
 // --- MANAGER ACTIONS ---
 exports.getManagerTasks = async (req, res) => {
   try {
-    const tasks = await Task.find({ forwardedToManager: req.user.id })
-      .populate('assignedToHR', 'name email')
-      .populate('assignedToEmployee', 'name email');
+    const tasks = await Task.find({ assignedManager: req.user.id })
+      .populate('createdBy', 'name email')
+      .populate('assignedEmployee', 'name email');
     res.status(200).json(tasks);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -81,11 +55,14 @@ exports.assignEmployee = async (req, res) => {
     const task = await Task.findById(req.params.taskId);
 
     if (!task) return res.status(404).json({ message: 'Task not found' });
-    if (task.forwardedToManager.toString() !== req.user.id) return res.status(403).json({ message: 'Unauthorized' });
+    if (task.assignedManager.toString() !== req.user.id) return res.status(403).json({ message: 'Unauthorized' });
 
-    task.assignedToEmployee = employeeId;
-    task.status = 'manager_assigned';
+    task.assignedEmployee = employeeId;
+    task.status = 'in_progress';
     await task.save();
+
+    // Notify Employee
+    await createNotification(employeeId, `Strategic assignment received: ${task.title}. Report to your station.`);
 
     res.status(200).json(task);
   } catch (error) {
@@ -93,48 +70,38 @@ exports.assignEmployee = async (req, res) => {
   }
 };
 
-exports.createManagerTask = async (req, res) => {
+exports.approveTask = async (req, res) => {
   try {
-    const { title, description, assignedToEmployee, priority, dueDate } = req.body;
-    const { id } = req.user;
+    const task = await Task.findById(req.params.taskId);
+    if (!task || task.assignedManager.toString() !== req.user.id) return res.status(403).json({ message: 'Unauthorized' });
 
-    // Get manager's teamId
-    const manager = await User.findById(id).select('teamId');
-    if (!manager.teamId) return res.status(403).json({ message: 'Deployment Refused: Node not anchored to a team.' });
+    task.status = 'completed';
+    task.progress = 100;
+    await task.save();
 
-    // Validate employee is in the SAME team
-    const employee = await User.findOne({ _id: assignedToEmployee, teamId: manager.teamId });
-    if (!employee) return res.status(403).json({ message: 'Protocol Failure: Target node is outside of tactical zone.' });
+    // Notify Employee
+    await createNotification(task.assignedEmployee, `Mission Success: ${task.title} has been verified and closed.`);
 
-    const task = await Task.create({
-      title,
-      description,
-      createdBy: id,
-      forwardedToManager: id,
-      assignedToEmployee,
-      teamId: manager.teamId,
-      priority,
-      status: 'manager_assigned',
-      dueDate
-    });
-
-    res.status(201).json(task);
+    res.status(200).json(task);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-exports.getTeamTasks = async (req, res) => {
+exports.rejectTask = async (req, res) => {
   try {
-    const { id } = req.user;
-    const user = await User.findById(id).select('teamId');
-    if (!user.teamId) return res.json([]);
+    const { feedback } = req.body;
+    const task = await Task.findById(req.params.taskId);
+    if (!task || task.assignedManager.toString() !== req.user.id) return res.status(403).json({ message: 'Unauthorized' });
 
-    const tasks = await Task.find({ teamId: user.teamId })
-      .populate('assignedToEmployee', 'name email')
-      .populate('forwardedToManager', 'name email');
-    
-    res.json(tasks);
+    task.status = 'rework';
+    task.feedback = feedback;
+    await task.save();
+
+    // Notify Employee
+    await createNotification(task.assignedEmployee, `Task Rejected: ${task.title}. Feedback: ${feedback}`);
+
+    res.status(200).json(task);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -143,23 +110,23 @@ exports.getTeamTasks = async (req, res) => {
 // --- EMPLOYEE ACTIONS ---
 exports.getMyTasks = async (req, res) => {
   try {
-    const tasks = await Task.find({ assignedToEmployee: req.user.id })
-      .populate('forwardedToManager', 'name email');
+    const tasks = await Task.find({ assignedEmployee: req.user.id })
+      .populate('assignedManager', 'name email');
     res.status(200).json(tasks);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-exports.updateTaskStatus = async (req, res) => {
+exports.updateProgress = async (req, res) => {
   try {
-    const { status } = req.body; // 'in_progress' or 'completed'
+    const { progress } = req.body;
     const task = await Task.findById(req.params.taskId);
-
     if (!task) return res.status(404).json({ message: 'Task not found' });
-    if (task.assignedToEmployee.toString() !== req.user.id) return res.status(403).json({ message: 'Unauthorized' });
+    if (task.assignedEmployee?.toString() !== req.user.id) return res.status(403).json({ message: 'Unauthorized' });
 
-    task.status = status;
+    task.progress = progress;
+    if (progress > 0 && task.status === 'rework') task.status = 'in_progress';
     await task.save();
 
     res.status(200).json(task);
@@ -168,23 +135,108 @@ exports.updateTaskStatus = async (req, res) => {
   }
 };
 
-// --- ADMIN UTILS ---
-exports.getAllTasksAdmin = async (req, res) => {
-    try {
-      const tasks = await Task.find()
-        .populate('assignedToHR', 'name email')
-        .populate('forwardedToManager', 'name email')
-        .populate('assignedToEmployee', 'name email');
-      res.status(200).json(tasks);
-    } catch (error) {
-      res.status(500).json({ message: error.message });
+exports.submitTask = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.taskId);
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+    if (task.assignedEmployee?.toString() !== req.user.id) return res.status(403).json({ message: 'Unauthorized' });
+
+    task.status = 'submitted';
+    await task.save();
+
+    // Notify Manager
+    await createNotification(task.assignedManager, `Task telemetry received: ${task.title} submitted for review.`);
+
+    res.status(200).json(task);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.uploadProof = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.taskId);
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+
+    const isLead = task.assignedManager?.toString() === req.user.id;
+    const isAssignee = task.assignedEmployee?.toString() === req.user.id;
+
+    if (!isLead && !isAssignee) return res.status(403).json({ message: 'Unauthorized' });
+
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+
+    task.attachments.push({
+      fileName: req.file.originalname,
+      fileUrl: `/uploads/${req.file.filename}`
+    });
+
+    await task.save();
+
+    // Notify Manager
+    await createNotification(task.assignedManager, `New attachment uploaded for task: ${task.title}`);
+
+    res.status(200).json(task);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// --- COMMON ACTIONS ---
+exports.addComment = async (req, res) => {
+  try {
+    const { message } = req.body;
+    const task = await Task.findById(req.params.taskId);
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+
+    const newComment = {
+      userId: req.user.id,
+      role: req.user.role,
+      message,
+      createdAt: new Date()
+    };
+
+    task.comments.push(newComment);
+    await task.save();
+
+    // 📡 Socket.io Real-time Broadcast
+    const io = req.app.get('io');
+    if (io) {
+      console.log(`📤 Emitting comment to room ${task._id}:`, message);
+      io.to(task._id.toString()).emit('new_comment', {
+        taskId: task._id,
+        comment: newComment
+      });
     }
+
+    // Notify other party
+    const recipientId = req.user.role === 'employee' ? task.assignedManager : task.assignedEmployee;
+    if (recipientId) {
+      await createNotification(recipientId, `New communication on task ${task.title}: ${message.substring(0, 30)}...`);
+    }
+
+    res.status(200).json(task);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// --- ADMIN / UTILS ---
+exports.getAllTasks = async (req, res) => {
+  try {
+    const tasks = await Task.find()
+      .populate('createdBy', 'name email')
+      .populate('assignedManager', 'name email')
+      .populate('assignedEmployee', 'name email');
+    res.status(200).json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 exports.deleteTask = async (req, res) => {
     try {
       await Task.findByIdAndDelete(req.params.taskId);
-      res.status(200).json({ message: 'Ejected' });
+      res.status(200).json({ message: 'Protocol Ejected' });
     } catch (error) {
       res.status(500).json({ message: error.message });
     }

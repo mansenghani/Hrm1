@@ -10,7 +10,7 @@ const Leaves = () => {
   useEffect(() => {
     const fetchLeaves = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/leaves', {
+        const res = await axios.get('/api/leaves', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setLeaves(res.data || []);
@@ -25,7 +25,7 @@ const Leaves = () => {
 
   const handleAction = async (id, status) => {
     try {
-      await axios.put(`http://localhost:5000/api/leaves/${id}`, { status }, {
+      await axios.put(`/api/leaves/${id}`, { status }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setLeaves(leaves.map(l => l._id === id ? { ...l, status } : l));
@@ -99,7 +99,7 @@ const Leaves = () => {
               ) : leaves.length === 0 ? (
                 <tr><td colSpan="5" className="text-center py-32 opacity-30 text-[11px] font-black uppercase tracking-[0.2em]">No scheduling logs detected</td></tr>
               ) : (
-                leaves.map((row, i) => (
+                [...leaves].reverse().map((row, i) => (
                   <tr key={i} className="hover:bg-[#F5F5F5] transition-colors group">
                     <td className="px-10 py-6">
                       <div className="flex items-center gap-4">

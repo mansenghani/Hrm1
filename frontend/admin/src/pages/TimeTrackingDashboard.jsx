@@ -139,6 +139,18 @@ const TimeTrackingDashboard = () => {
   const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
   const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
 
+  const HOLIDAYS = {
+    '2026-01-01': 'New Year',
+    '2026-01-26': 'Republic Day',
+    '2026-03-25': 'Holi',
+    '2026-04-10': 'Good Friday',
+    '2026-04-14': 'Ambedkar Jayanti',
+    '2026-05-01': 'Labour Day',
+    '2026-08-15': 'Independence Day',
+    '2026-10-02': 'Gandhi Jayanti',
+    '2026-12-25': 'Christmas'
+  };
+
   const renderCalendarDays = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -155,18 +167,23 @@ const TimeTrackingDashboard = () => {
       const isSelected = viewDate === dateStr;
       const isFuture = dateStr > todayISO;
       const isToday = i === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear();
+      const holidayName = HOLIDAYS[dateStr];
       
       days.push(
         <div 
           key={i} 
           onClick={() => !isFuture && handleDateClick(dateStr)} 
-          className={`h-8 w-8 flex items-center justify-center rounded-lg text-[10px] font-black transition-all z-30 relative ${
+          title={holidayName || ''}
+          className={`h-8 w-8 flex flex-col items-center justify-center rounded-lg text-[10px] font-black transition-all z-30 relative ${
             isFuture ? 'text-white/10 cursor-not-allowed' : 'cursor-pointer'
           } ${
             isSelected ? 'bg-[#ff4f00] text-white shadow-lg' : (isToday ? 'border border-[#ff4f00]/40 text-white' : (isFuture ? '' : 'hover:bg-white/10'))
           }`}
         >
-          {i}
+          <span>{i}</span>
+          {holidayName && (
+             <div className="absolute bottom-1 w-1 h-1 bg-[#ff4f00] rounded-full shadow-[0_0_5px_#ff4f00]"></div>
+          )}
         </div>
       );
     }
