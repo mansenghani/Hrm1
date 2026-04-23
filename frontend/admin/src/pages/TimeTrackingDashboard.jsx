@@ -40,6 +40,8 @@ const TimeTrackingDashboard = () => {
   // State
   const [timer, setTimer] = useState(0);
   const [session, setSession] = useState(null);
+  const [lastActivity, setLastActivity] = useState(Date.now());
+  const [isIdle, setIsIdle] = useState(false);
   const [summary, setSummary] = useState({
     stats: { active: 0, idle: 0, total: 0, productivity: 0 },
     chartData: [],
@@ -52,6 +54,16 @@ const TimeTrackingDashboard = () => {
   // Calendar State
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewDate, setViewDate] = useState(todayISO);
+  
+  const IDLE_LIMIT = 1 * 60 * 1000; // 1 Minute (Testing)
+  const audioRef = useRef(null);
+
+  // 🔔 NOTIFICATION PERMISSION
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
 
   const getAuth = () => {
     const token = sessionStorage.getItem('token');
@@ -64,6 +76,13 @@ const TimeTrackingDashboard = () => {
       if (!auth) { navigate('/login'); return; }
       setSyncing(true);
 
+      // Check if day shifted (Midnight Reset)
+      const currentToday = new Date().toISOString().split('T')[0];
+      if (currentToday !== todayISO) {
+        window.location.reload(); // Force full system reset for new day
+        return;
+      }
+
       const [statusRes, summaryRes, logsRes] = await Promise.all([
         axios.get(`${API_BASE}/status`, auth).catch(() => ({ data: { hasActiveSession: false } })),
         axios.get(`${API_BASE}/summary`, auth).catch(() => ({ data: null })),
@@ -74,12 +93,21 @@ const TimeTrackingDashboard = () => {
         const s = statusRes.data;
         const isRunning = s.isRunning !== undefined ? s.isRunning : (s.status === 'active');
         const totalActive = s.totalActiveTime || s.activeTime || 0;
+        
         setSession({ ...s, isRunning, totalActiveTime: totalActive });
+        setIsIdle(s.status === 'idle');
+
         if (isRunning && s.startTime) {
           const elapsed = Math.floor((new Date() - new Date(s.startTime)) / 1000);
           setTimer(elapsed + totalActive);
-        } else { setTimer(totalActive); }
-      } else { setSession(null); setTimer(0); }
+        } else { 
+          setTimer(totalActive); 
+        }
+      } else { 
+        setSession(null); 
+        setTimer(0); 
+        setIsIdle(false);
+      }
 
       if (summaryRes.data) setSummary(summaryRes.data);
       setFullLogs(Array.isArray(logsRes.data) ? logsRes.data : []);
@@ -88,19 +116,179 @@ const TimeTrackingDashboard = () => {
     finally { setLoading(false); setSyncing(false); }
   };
 
+  // 🔄 ACTIVITY TRACKER
+  useEffect(() => {
+    if (!session?.hasActiveSession || session?.status === 'paused') return;
+
+    const handleActivity = () => {
+      const now = Date.now();
+      setLastActivity(now);
+      
+      if (isIdle) {
+        console.log('[TERMINAL] ACTIVITY DETECTED - RESUMING...');
+        setIsIdle(false);
+        syncActivity('resume');
+      }
+    };
+
+    // Browser-level listeners
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+    window.addEventListener('mousedown', handleActivity);
+    window.addEventListener('focus', handleActivity);
+
+    // 🖥️ SYSTEM-LEVEL IDLE DETECTION (Chrome/Edge)
+    let controller;
+    const startSystemIdleDetection = async () => {
+      if ('IdleDetector' in window) {
+        try {
+          const status = await IdleDetector.requestPermission();
+          if (status === 'granted') {
+            controller = new AbortController();
+            const detector = new IdleDetector();
+            detector.addEventListener('change', () => {
+              const { userState, screenState } = detector;
+              console.log(`[SYSTEM] State changed: ${userState}, ${screenState}`);
+              if (userState === 'active') {
+                 handleActivity();
+              } else {
+                 // System went idle (even outside browser)
+                 triggerIdle();
+              }
+            });
+            await detector.start({
+              threshold: IDLE_LIMIT,
+              signal: controller.signal,
+            });
+            console.log('[SYSTEM] Idle Detection Active');
+          }
+        } catch (err) { console.error('IdleDetector Error:', err); }
+      }
+    };
+    startSystemIdleDetection();
+
+    return () => {
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('mousedown', handleActivity);
+      window.removeEventListener('focus', handleActivity);
+      if (controller) controller.abort();
+    };
+  }, [session, isIdle]);
+
+  // 💓 HEARTBEAT SYNC
+  useEffect(() => {
+    if (!session?.isRunning || isIdle) return;
+
+    const interval = setInterval(() => {
+      // Midnight Reset Check
+      const now = new Date().toISOString().split('T')[0];
+      if (now !== todayISO) {
+         console.log('[SYSTEM] MIDNIGHT DETECTED - RELOADING...');
+         window.location.reload();
+         return;
+      }
+      syncActivity('heartbeat');
+    }, 30000); // 30s heartbeat
+
+    return () => clearInterval(interval);
+  }, [session, isIdle, todayISO]);
+
+  // ⏱️ IDLE CHECKER ENGINE
+  useEffect(() => {
+    if (!session?.isRunning || isIdle) return;
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const diff = now - lastActivity;
+      if (diff >= IDLE_LIMIT) {
+        console.log(`[TERMINAL] IDLE THRESHOLD REACHED: ${diff}ms`);
+        triggerIdle();
+      }
+    }, 5000); // Check every 5s for testing
+
+    return () => clearInterval(interval);
+  }, [lastActivity, session, isIdle]);
+
+  const triggerIdle = async () => {
+    console.log('[TERMINAL] SWITCHING TO IDLE STATE - CUTTING IDLE TIME');
+    setIsIdle(true);
+    
+    // ✂️ CUT THE IDLE TIME FROM DISPLAY
+    setTimer(prev => Math.max(0, prev - (IDLE_LIMIT / 1000)));
+    
+    // Notification
+    if (Notification.permission === "granted") {
+      new Notification("Inactivity Detected", {
+        body: "No activity for 1 minute. Time tracking paused.",
+        icon: "/favicon.ico"
+      });
+    } else {
+      console.warn('Notification permission not granted. Using fallback alert.');
+      // Using a non-blocking way to alert if possible, but alert() is standard for "STOP THE TIME" visible feedback
+      // alert("Inactivity Detected: Time tracking paused."); 
+    }
+
+    // Audio Alert (Optional)
+    try {
+      const beep = new AudioContext();
+      const osc = beep.createOscillator();
+      const gain = beep.createGain();
+      osc.connect(gain);
+      gain.connect(beep.destination);
+      osc.type = 'sine';
+      osc.frequency.value = 440;
+      gain.gain.setValueAtTime(0, beep.currentTime);
+      gain.gain.linearRampToValueAtTime(0.1, beep.currentTime + 0.01);
+      osc.start(beep.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, beep.currentTime + 0.5);
+      osc.stop(beep.currentTime + 0.5);
+    } catch (e) { console.log('Audio blocked'); }
+
+    await syncActivity('idle');
+  };
+
+  const syncActivity = async (type) => {
+    try {
+      const auth = getAuth();
+      if (!auth) return;
+      const res = await axios.post(`${API_BASE}/activity`, { type }, auth);
+      
+      if (res.data) {
+        if (res.data.status === 'reload') {
+           window.location.reload();
+           return;
+        }
+        setSession(prev => ({
+          ...prev,
+          status: res.data.status,
+          isRunning: res.data.isRunning,
+          totalActiveTime: res.data.activeTime
+        }));
+        
+        // If we just resumed or heartbeated, sync the main timer to the truth from the server
+        if (type === 'resume' || type === 'heartbeat') {
+           setTimer(res.data.activeTime);
+        }
+      }
+    } catch (err) { console.error('Activity sync failed:', err); }
+  };
+
   useEffect(() => { fetchData(todayISO); }, []);
 
   // Timer Engine
   useEffect(() => {
     let interval;
-    if (session?.isRunning && session?.startTime) {
+    if (session?.isRunning && session?.startTime && !isIdle) {
       interval = setInterval(() => {
         const elapsedSinceStart = Math.floor((new Date() - new Date(session.startTime)) / 1000);
         setTimer(elapsedSinceStart + (session.totalActiveTime || 0));
       }, 1000);
-    } else if (session) { setTimer(session.totalActiveTime || 0); }
+    } else if (session) { 
+      setTimer(session.totalActiveTime || 0); 
+    }
     return () => clearInterval(interval);
-  }, [session]);
+  }, [session, isIdle]);
 
   const handleDateClick = async (dateStr) => {
     if (dateStr > todayISO) return;
@@ -110,13 +298,10 @@ const TimeTrackingDashboard = () => {
 
   const handleAction = async (action) => {
     try {
-      console.log(`--- INITIATING ${action.toUpperCase()} ---`);
       const auth = getAuth();
       if (!auth) return;
       setSyncing(true);
       const res = await axios.post(`${API_BASE}/${action}`, {}, { ...auth, timeout: 10000 });
-      console.log(`${action} Success:`, res.data);
-      // Wait a tiny bit for DB to catch up before refresh
       setTimeout(() => fetchData(), 500);
     } catch (err) { 
       console.error(`${action} Error:`, err);
@@ -224,11 +409,47 @@ const TimeTrackingDashboard = () => {
              <div className="relative z-10 flex flex-col xl:flex-row items-center justify-between gap-8">
                 <div className="text-center xl:text-left">
                   <div className="flex items-center gap-2 mb-4 justify-center xl:justify-start">
-                     <div className={`w-2 h-2 rounded-full ${session?.isRunning ? 'bg-[#24a148] animate-pulse shadow-[0_0_8px_#24a148]' : 'bg-[#939084]'}`}></div>
-                     <span className={`text-[10px] font-black uppercase tracking-[0.3em] italic ${session?.isRunning ? 'text-[#201515]' : 'text-white/60'}`}>{session?.isRunning ? 'Sync Active' : 'Sync Suspended'}</span>
+                     <div className={`w-2 h-2 rounded-full ${isIdle ? 'bg-[#ff4f00] animate-pulse shadow-[0_0_8px_#ff4f00]' : (session?.isRunning ? 'bg-[#24a148] animate-pulse shadow-[0_0_8px_#24a148]' : 'bg-[#939084]')}`}></div>
+                     <span className={`text-[10px] font-black uppercase tracking-[0.3em] italic ${isIdle ? 'text-[#ff4f00]' : (session?.isRunning ? 'text-[#201515]' : 'text-white/60')}`}>
+                        {isIdle ? 'Inactivity Detected' : (session?.isRunning ? 'Sync Active' : 'Sync Suspended')}
+                     </span>
                   </div>
-                  <h2 className={`text-[64px] md:text-[84px] font-black tabular-nums leading-none tracking-tighter italic ${session?.isRunning ? 'text-[#201515]' : 'text-white'}`}>{formatTime(timer)}</h2>
-                  <p className={`text-[10px] font-black mt-4 uppercase tracking-[0.3em] italic ${session?.isRunning ? 'text-[#939084]' : 'text-white/40'}`}>Operational Yield</p>
+                  <h2 className={`text-[64px] md:text-[84px] font-black tabular-nums leading-none tracking-tighter italic ${isIdle ? 'text-[#ff4f00]' : (session?.isRunning ? 'text-[#201515]' : 'text-white/60')}`}>
+                    {formatTime(timer)}
+                  </h2>
+                  <div className="flex flex-col items-start gap-2 mt-4">
+                    {isIdle ? (
+                      <div className="flex flex-col gap-2 p-4 bg-[#ff4f00]/5 border border-[#ff4f00]/30 rounded-2xl w-full max-w-[400px]">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                             <div className="w-2 h-2 rounded-full bg-[#ff4f00] animate-ping"></div>
+                             <span className="text-[11px] font-black text-[#ff4f00] uppercase tracking-widest">Inactivity Detected</span>
+                          </div>
+                          <span className="text-[11px] font-black text-[#ff4f00] uppercase tracking-widest bg-[#ff4f00] text-white px-2 py-0.5 rounded">Deducting</span>
+                        </div>
+                        <div className="flex justify-between items-end mt-2">
+                           <div className="flex flex-col">
+                              <span className="text-[9px] font-bold text-[#939084] uppercase tracking-widest">Activity Ceased at</span>
+                              <span className="text-[16px] font-black text-[#201515] italic">{new Date(lastActivity).toLocaleTimeString()}</span>
+                           </div>
+                           <div className="flex flex-col items-end">
+                              <span className="text-[9px] font-bold text-[#939084] uppercase tracking-widest">Duration</span>
+                              <span className="text-[20px] font-black text-[#ff4f00] tabular-nums italic">-{formatTime(Math.floor((Date.now() - lastActivity) / 1000))}</span>
+                           </div>
+                        </div>
+                      </div>
+                    ) : (
+                      session?.isRunning && (
+                        <div className="flex items-center gap-3 px-4 py-2 bg-[#24a148]/10 border border-[#24a148] rounded-full">
+                           <Activity size={14} className="text-[#24a148]" />
+                           <span className="text-[12px] font-black text-[#24a148] uppercase tracking-widest">
+                             Operational Pulse Active (Tracking Work)
+                           </span>
+                        </div>
+                      )
+                    )}
+                  </div>
+                  <p className={`text-[10px] font-black mt-4 uppercase tracking-[0.3em] italic ${session?.isRunning && !isIdle ? 'text-[#939084]' : 'text-white/40'}`}>Operational Yield</p>
                 </div>
                 <div className="flex flex-row gap-4">
                    {!session ? (

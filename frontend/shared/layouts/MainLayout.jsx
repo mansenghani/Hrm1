@@ -188,6 +188,30 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const [lastActivity, setLastActivity] = useState(Date.now());
+  const [idleDisplay, setIdleDisplay] = useState(0);
+
+  // 🔄 GLOBAL ACTIVITY TRACKER
+  useEffect(() => {
+    const handleGlobalActivity = () => setLastActivity(Date.now());
+    window.addEventListener('mousemove', handleGlobalActivity);
+    window.addEventListener('keydown', handleGlobalActivity);
+    window.addEventListener('mousedown', handleGlobalActivity);
+    window.addEventListener('focus', handleGlobalActivity);
+
+    const interval = setInterval(() => {
+      setIdleDisplay(Math.floor((Date.now() - lastActivity) / 1000));
+    }, 1000);
+
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalActivity);
+      window.removeEventListener('keydown', handleGlobalActivity);
+      window.removeEventListener('mousedown', handleGlobalActivity);
+      window.removeEventListener('focus', handleGlobalActivity);
+      clearInterval(interval);
+    };
+  }, [lastActivity]);
+
   return (
     <div className="flex flex-col min-h-screen bg-[#fffefb]">
       <header className="sticky top-0 w-full z-50 bg-[#fffefb] border-b border-[#c5c0b1]">
@@ -218,6 +242,14 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
             ))}
           </nav>
           <div className="ml-auto flex items-center h-full gap-4">
+            {/* ⏱️ GLOBAL INACTIVITY TRACKER */}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#eceae3] rounded-lg border border-[#c5c0b1]">
+              <div className={`w-1.5 h-1.5 rounded-full ${idleDisplay > 60 ? 'bg-[#ff4f00] animate-pulse' : 'bg-[#24a148]'}`}></div>
+              <span className="text-[10px] font-black text-[#201515] uppercase tracking-widest tabular-nums">
+                {idleDisplay > 0 ? `${idleDisplay}s Inactive` : 'Active'}
+              </span>
+            </div>
+
             <button className="w-10 h-10 flex items-center justify-center text-[#36342e] hover:text-[#ff4f00] transition-colors relative group">
               <Search size={20} />
             </button>
@@ -228,14 +260,20 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                 className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all relative ${isNotificationsOpen ? 'bg-[#ff4f00] text-white shadow-lg' : 'text-[#36342e] hover:bg-[#eceae3]'}`}
               >
                 <Bell size={20} />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-[#ff4f00] border-2 border-[#fffefb] rounded-full"></span>
+                {liveNotifications.length > 0 && (
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-[#ff4f00] border-2 border-[#fffefb] rounded-full"></span>
+                )}
               </button>
 
               {isNotificationsOpen && (
-                <div className="absolute top-14 right-0 w-80 bg-white border border-[#c5c0b1] rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[100]">
+                <div className="absolute top-[80px] right-0 w-80 bg-white border border-[#c5c0b1] rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[100]">
                   <div className="p-4 border-b border-[#eceae3] bg-[#fffdf9] flex justify-between items-center">
                     <span className="text-[11px] font-black uppercase tracking-widest text-[#201515]">Intelligence Alerts</span>
-                    <span className="px-2 py-0.5 bg-[#ff4f00]/10 text-[#ff4f00] text-[8px] font-black rounded-full uppercase">3 New</span>
+                    {liveNotifications.length > 0 && (
+                      <span className="px-2 py-0.5 bg-[#ff4f00]/10 text-[#ff4f00] text-[8px] font-black rounded-full uppercase">
+                        {liveNotifications.length} New
+                      </span>
+                    )}
                   </div>
                   <div className="max-h-[320px] overflow-y-auto">
                     {liveNotifications.length === 0 ? (

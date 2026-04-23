@@ -2,8 +2,7 @@ const TimeTrack = require('../models/TimeTrack');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 
-const IDLE_THRESHOLD = 300; 
-
+const IDLE_THRESHOLD = 60; // 1 Minute (Testing)
 // 🧠 IN-MEMORY MOCK STORE
 let mockStore = {
     hasActiveSession: true,
@@ -13,7 +12,7 @@ let mockStore = {
     totalActiveTime: 3600,
     activeTime: 3600,
     idleTime: 120,
-    lastActivityAt: new Date().toISOString()
+    lastActiveTime: new Date().toISOString()
 };
 
 const getToday = () => new Date().toISOString().split('T')[0];
@@ -24,18 +23,18 @@ const updateMock = (action) => {
     if (action === 'start') {
         mockStore = {
             hasActiveSession: true, status: 'active', isRunning: true, startTime: now.toISOString(),
-            totalActiveTime: 0, activeTime: 0, idleTime: 0, lastActivityAt: now.toISOString()
+            totalActiveTime: 0, activeTime: 0, idleTime: 0, lastActiveTime: now.toISOString()
         };
     } else if (action === 'pause') {
         const elapsed = Math.floor((now - new Date(mockStore.startTime)) / 1000);
         mockStore.totalActiveTime += elapsed;
         mockStore.activeTime = mockStore.totalActiveTime;
         mockStore.status = 'paused'; mockStore.isRunning = false;
-        mockStore.lastActivityAt = now.toISOString();
+        mockStore.lastActiveTime = now.toISOString();
     } else if (action === 'resume') {
         mockStore.startTime = now.toISOString();
         mockStore.status = 'active'; mockStore.isRunning = true;
-        mockStore.lastActivityAt = now.toISOString();
+        mockStore.lastActiveTime = now.toISOString();
     } else if (action === 'stop') {
         const elapsed = mockStore.isRunning ? Math.floor((now - new Date(mockStore.startTime)) / 1000) : 0;
         mockStore.totalActiveTime += elapsed;
@@ -69,7 +68,7 @@ exports.startTracking = async (req, res) => {
     const userNode = await User.findById(id).select('reportingManager teamId');
     session = await TimeTrack.create({
       employeeId: id, employeeRole: role, managerId: userNode?.reportingManager || null,
-      teamId: userNode?.teamId || null, date: today, startTime: now, lastActivityAt: now,
+      teamId: userNode?.teamId || null, date: today, startTime: now, lastActiveTime: now,
       status: 'active', isRunning: true, totalActiveTime: 0, sessions: [{ start: now }],
       activityLog: [{ timestamp: now, type: 'resume' }]
     });
@@ -103,7 +102,7 @@ exports.pauseTracking = async (req, res) => {
     session.activeTime = session.totalActiveTime;
     session.status = 'paused'; 
     session.isRunning = false; 
-    session.lastActivityAt = now;
+    session.lastActiveTime = now;
     
     await session.save();
     res.json({ message: 'Tracking paused', session });
@@ -134,7 +133,7 @@ exports.resumeTracking = async (req, res) => {
     session.startTime = now; 
     session.status = 'active'; 
     session.isRunning = true; 
-    session.lastActivityAt = now;
+    session.lastActiveTime = now;
     
     await session.save();
     res.json({ message: 'Tracking resumed', session });
@@ -190,20 +189,53 @@ exports.updateActivity = async (req, res) => {
     const { type } = req.body;
     const now = new Date();
     const session = await TimeTrack.findOne({ employeeId: id, date: getToday(), status: { $in: ['active', 'idle'] } });
-    if (!session) return res.status(404).json({ message: 'No active session' });
-    const sinceLast = Math.floor((now - new Date(session.lastActivityAt)) / 1000);
-    if (type && type !== 'idle') {
-      if (session.status === 'idle') {
-        session.idleTime += sinceLast;
-        session.status = 'active'; session.isRunning = true;
-      } else { session.activeTime += sinceLast; }
-      session.lastActivityAt = now;
-    } else if (session.status === 'active' && sinceLast >= IDLE_THRESHOLD) {
-      session.activeTime += IDLE_THRESHOLD; session.idleTime += (sinceLast - IDLE_THRESHOLD);
-      session.status = 'idle'; session.isRunning = false; session.lastActivityAt = now;
+    
+    // Day Shift Check
+    if (!session) {
+       const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+       const oldSession = await TimeTrack.findOne({ employeeId: id, date: yesterday, status: { $in: ['active', 'idle'] } });
+       if (oldSession) {
+          oldSession.status = 'completed';
+          oldSession.isRunning = false;
+          oldSession.endTime = now;
+          await oldSession.save();
+          return res.json({ status: 'reload', message: 'Day shifted.' });
+       }
+       return res.status(404).json({ message: 'No active session' });
     }
+
+    const sinceLast = Math.floor((now - new Date(session.lastActiveTime)) / 1000);
+
+    if (type && type !== 'idle') {
+      // USER IS ACTIVE
+      if (session.status === 'idle') {
+        // Just came back from idle
+        session.idleTime += sinceLast;
+        session.status = 'active';
+        session.isRunning = true;
+        session.startTime = now; // 🚀 RESET START TIME FOR FRONTEND SYNC
+        
+        // Log the return
+        session.activityLog.push({ timestamp: now, type: 'resume' });
+      } else {
+        // Still active, accumulate time
+        session.activeTime += sinceLast;
+      }
+      session.lastActiveTime = now;
+    } else if (session.status === 'active' && sinceLast >= IDLE_THRESHOLD) {
+      // USER JUST HIT IDLE THRESHOLD
+      // Move the threshold duration to idle time as they've been inactive for that long
+      session.idleTime += sinceLast;
+      session.status = 'idle';
+      session.isRunning = false;
+      session.lastActiveTime = now;
+      
+      // Log idle start
+      session.activityLog.push({ timestamp: now, type: 'idle_start' });
+    }
+
     await session.save();
-    res.json({ status: session.status, isRunning: session.isRunning });
+    res.json({ status: session.status, isRunning: session.isRunning, activeTime: session.activeTime, idleTime: session.idleTime });
   } catch (error) { res.status(500).json({ message: 'Heartbeat failed', error: error.message }); }
 };
 
@@ -242,10 +274,11 @@ exports.getTimeSummary = async (req, res) => {
         const stats = {
             active: todayData.reduce((acc, s) => acc + (s.activeTime || 0), 0),
             idle: todayData.reduce((acc, s) => acc + (s.idleTime || 0), 0),
-            total: todayData.reduce((acc, s) => acc + (s.totalTime || (s.activeTime + s.idleTime) || 0), 0),
+            total: todayData.reduce((acc, s) => acc + (s.activeTime || 0), 0), // 'Total' reflects working hours as requested
             productivity: 0
         };
-        if (stats.total > 0) stats.productivity = Math.round((stats.active / stats.total) * 100);
+        const totalSessionTime = stats.active + stats.idle;
+        if (totalSessionTime > 0) stats.productivity = Math.round((stats.active / totalSessionTime) * 100);
 
         // 2. Chart Data (Group by date)
         const chartMap = {};

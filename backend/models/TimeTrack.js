@@ -41,7 +41,7 @@ const timeTrackSchema = new mongoose.Schema({
     type: Number, // in seconds
     default: 0
   },
-  lastActivityAt: {
+  lastActiveTime: {
     type: Date,
     default: Date.now
   },
