@@ -210,3 +210,23 @@ exports.updateEmployeeProfileImage = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// POST /api/employees/:id/document (Generic for Adhar/Docs)
+exports.updateEmployeeDocument = async (req, res, field) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No file provided' });
+    
+    const employee = await Employee.findById(req.params.id);
+    if (!employee) return res.status(404).json({ message: 'Employee not found' });
+    
+    const filePath = `/uploads/${req.file.filename}`;
+    
+    // Update the specific field (adharCard or additionalDoc)
+    employee[field] = filePath;
+    await employee.save();
+    
+    res.json(employee);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

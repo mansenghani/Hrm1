@@ -22,6 +22,18 @@ router.post('/:id/profile-image', protect, authorize('admin', 'hr'), upload.sing
   const { updateEmployeeProfileImage } = require('../controllers/employeeController');
   updateEmployeeProfileImage(req, res);
 });
+router.post('/:id/adhar-card', protect, authorize('admin', 'hr'), upload.single('document'), (req, res) => {
+  const { updateEmployeeDocument } = require('../controllers/employeeController');
+  updateEmployeeDocument(req, res, 'adharCard');
+});
+router.post('/:id/bank-details', protect, authorize('admin', 'hr'), upload.single('document'), (req, res) => {
+  const { updateEmployeeDocument } = require('../controllers/employeeController');
+  updateEmployeeDocument(req, res, 'bankDetails');
+});
+router.post('/:id/pan-card', protect, authorize('admin', 'hr'), upload.single('document'), (req, res) => {
+  const { updateEmployeeDocument } = require('../controllers/employeeController');
+  updateEmployeeDocument(req, res, 'panCard');
+});
 router.delete('/:id', protect, authorize('admin'), deleteEmployee);
 router.patch('/:id/status', protect, authorize('admin', 'hr'), updateEmployeeStatus);
 router.get('/manager/:managerId', protect, authorize('admin', 'hr', 'manager'), getEmployeesByManager);

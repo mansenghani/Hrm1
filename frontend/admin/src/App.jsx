@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import Landing from '@shared/pages/Landing';
 import Login from '@shared/pages/Login';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -15,6 +16,7 @@ import Attendance from './pages/hr/Attendance';
 import HRTasks from './pages/hr/HRTasks';
 import LeaveManagement from './pages/hr/LeaveManagement';
 import TeamManagement from './pages/hr/TeamManagement';
+import HREmployees from './pages/hr/HREmployees';
 import EmployeeLeave from './pages/employee/LeaveManagement';
 import TimeTrackingDashboard from './pages/TimeTrackingDashboard';
 import Payroll from './pages/Payroll';
@@ -38,7 +40,7 @@ const ProtectedRoute = ({ children, allowedRole }) => {
 
   // ROLE SPECIFIC CHECK (ADMIN OVERRIDE)
   if (role === 'admin') return children;
-  
+
   if (allowedRole && role !== allowedRole) {
     return <Navigate to={`/${role}/dashboard`} replace />;
   }
@@ -48,90 +50,97 @@ const ProtectedRoute = ({ children, allowedRole }) => {
 
 const App = () => {
   return (
-    <Routes>
-      {/* PUBLIC ROUTES */}
-      <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
-      
-      {/* REDIRECTS FOR OLD PATHS */}
-      <Route path="/select-role" element={<Navigate to="/login" replace />} />
-      <Route path="/login/:role" element={<Navigate to="/login" replace />} />
+    <>
+      <Toaster position="top-right" reverseOrder={false} />
+      <Routes>
+        {/* PUBLIC ROUTES */}
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
 
-      {/* ADMIN MODULE */}
-      <Route path="/admin" element={
-        <ProtectedRoute allowedRole="admin">
-          <MainLayout />
-        </ProtectedRoute>
-      }>
-        <Route index element={<AdminDashboard />} />
-        <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="employees" element={<Employees />} />
-        <Route path="employees/add" element={<EmployeeForm />} />
-        <Route path="employees/edit/:id" element={<EmployeeForm />} />
-        <Route path="employees/view/:id" element={<EmployeeDetail />} />
-        <Route path="tasks" element={<Tasks />} />
+        {/* REDIRECTS FOR OLD PATHS */}
+        <Route path="/select-role" element={<Navigate to="/login" replace />} />
+        <Route path="/login/:role" element={<Navigate to="/login" replace />} />
 
-        <Route path="leave" element={<LeaveManagement />} />
-        <Route path="attendance" element={<Attendance />} />
-        <Route path="time-tracker" element={<TimeTrackingDashboard />} />
-        <Route path="payroll" element={<Payroll />} />
-        <Route path="performance" element={<Performance />} />
-        <Route path="reports" element={<Reports />} />
-        <Route path="settings" element={<Settings />} />
-        <Route path="create-user" element={<CreateUser />} />
-        <Route path="profile" element={<Profile />} />
-      </Route>
+        {/* ADMIN MODULE */}
+        <Route path="/admin" element={
+          <ProtectedRoute allowedRole="admin">
+            <MainLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<AdminDashboard />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="employees" element={<Employees />} />
+          <Route path="employees/add" element={<EmployeeForm />} />
+          <Route path="employees/edit/:id" element={<EmployeeForm />} />
+          <Route path="employees/view/:id" element={<EmployeeDetail />} />
+          <Route path="tasks" element={<Tasks />} />
 
-      {/* HR MODULE */}
-      <Route path="/hr" element={
-        <ProtectedRoute allowedRole="hr">
-          <MainLayout />
-        </ProtectedRoute>
-      }>
-        <Route index element={<HRDashboard />} />
-        <Route path="dashboard" element={<HRDashboard />} />
-        <Route path="tasks" element={<HRTasks />} />
-        <Route path="attendance" element={<Attendance />} />
-        <Route path="leave" element={<LeaveManagement />} />
-        <Route path="teams" element={<TeamManagement />} />
-        <Route path="projects" element={<ProjectManagement />} />
-        <Route path="time-tracker" element={<TimeTrackingDashboard />} />
-        <Route path="profile" element={<Profile />} />
-      </Route>
+          <Route path="leave" element={<LeaveManagement />} />
+          <Route path="attendance" element={<Attendance />} />
+          <Route path="time-tracker" element={<TimeTrackingDashboard />} />
+          <Route path="payroll" element={<Payroll />} />
+          <Route path="performance" element={<Performance />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="create-user" element={<CreateUser />} />
+          <Route path="profile" element={<Profile />} />
+        </Route>
 
-      {/* EMPLOYEE MODULE */}
-      <Route path="/employee" element={
-        <ProtectedRoute allowedRole="employee">
-          <MainLayout />
-        </ProtectedRoute>
-      }>
-        <Route index element={<EmployeeDashboard />} />
-        <Route path="dashboard" element={<EmployeeDashboard />} />
-        <Route path="projects" element={<EmployeeProjects />} />
-        <Route path="time-tracker" element={<TimeTrackingDashboard />} />
-        <Route path="leave" element={<EmployeeLeave />} />
-        <Route path="profile" element={<Profile />} />
-      </Route>
+        {/* HR MODULE */}
+        <Route path="/hr" element={
+          <ProtectedRoute allowedRole="hr">
+            <MainLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<HRDashboard />} />
+          <Route path="dashboard" element={<HRDashboard />} />
+          <Route path="tasks" element={<HRTasks />} />
+          <Route path="attendance" element={<Attendance />} />
+          <Route path="leave" element={<LeaveManagement />} />
+          <Route path="employees" element={<HREmployees />} />
+          <Route path="employees/view/:id" element={<EmployeeDetail />} />
+          <Route path="employees/edit/:id" element={<EmployeeForm />} />
+          <Route path="create-user" element={<CreateUser />} />
+          <Route path="teams" element={<TeamManagement />} />
+          <Route path="projects" element={<ProjectManagement />} />
+          <Route path="time-tracker" element={<TimeTrackingDashboard />} />
+          <Route path="profile" element={<Profile />} />
+        </Route>
 
-      {/* MANAGER MODULE */}
-      <Route path="/manager" element={
-        <ProtectedRoute allowedRole="manager">
-          <MainLayout />
-        </ProtectedRoute>
-      }>
-        <Route index element={<ManagerDashboard />} />
-        <Route path="dashboard" element={<ManagerDashboard />} />
-        <Route path="tasks" element={<ManagerTasks />} />
-        <Route path="projects" element={<ManagerProjects />} />
-        <Route path="attendance" element={<Attendance />} />
-        <Route path="leave" element={<LeaveManagement />} />
-        <Route path="profile" element={<Profile />} />
-        <Route path="time-tracker" element={<TimeTrackingDashboard />} />
-      </Route>
+        {/* EMPLOYEE MODULE */}
+        <Route path="/employee" element={
+          <ProtectedRoute allowedRole="employee">
+            <MainLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<EmployeeDashboard />} />
+          <Route path="dashboard" element={<EmployeeDashboard />} />
+          <Route path="projects" element={<EmployeeProjects />} />
+          <Route path="time-tracker" element={<TimeTrackingDashboard />} />
+          <Route path="leave" element={<EmployeeLeave />} />
+          <Route path="profile" element={<Profile />} />
+        </Route>
 
-      {/* FALLBACK */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* MANAGER MODULE */}
+        <Route path="/manager" element={
+          <ProtectedRoute allowedRole="manager">
+            <MainLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<ManagerDashboard />} />
+          <Route path="dashboard" element={<ManagerDashboard />} />
+          <Route path="tasks" element={<ManagerTasks />} />
+          <Route path="projects" element={<ManagerProjects />} />
+          <Route path="attendance" element={<Attendance />} />
+          <Route path="leave" element={<LeaveManagement />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="time-tracker" element={<TimeTrackingDashboard />} />
+        </Route>
+
+        {/* FALLBACK */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 };
 

@@ -8,7 +8,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 const HEARTBEAT_INTERVAL = 15000; // 15 seconds
-const IDLE_THRESHOLD = 300; // 5 minutes in seconds
+const IDLE_THRESHOLD = 60; // 1 minute in seconds
+const STATUS_POLL_INTERVAL = 10000; // 10 seconds for cross-app sync
 const API_BASE = '/api/time';
 
 const formatTime = (seconds) => {
@@ -32,11 +33,19 @@ const SmartTimeTracker = () => {
   const [session, setSession] = useState(null);
   const [timer, setTimer] = useState(0);
   const [idleTime, setIdleTime] = useState(0);
-  
+
   const [todaySessions, setTodaySessions] = useState([]);
   const [teamData, setTeamData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [viewDate, setViewDate] = useState(new Date().toISOString().split('T')[0]);
+  const getLocalDate = (date) => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const [viewDate, setViewDate] = useState(getLocalDate(new Date()));
   const [searchTerm, setSearchTerm] = useState('');
 
   // Refs
@@ -64,20 +73,33 @@ const SmartTimeTracker = () => {
         axios.get(`${API_BASE}/my?date=${viewDate}`, auth).catch(() => ({ data: [] })),
         axios.get(`${API_BASE}/team?date=${viewDate}`, auth).catch(() => ({ data: [] }))
       ]);
-      
+
       if (statusRes.data && statusRes.data.hasActiveSession) {
         const s = statusRes.data;
         const isRunning = s.isRunning !== undefined ? s.isRunning : (s.status === 'active');
         const totalActive = s.totalActiveTime || s.activeTime || 0;
-        
+
         setSession({ ...s, isRunning, totalActiveTime: totalActive });
         setIdleTime(s.idleTime || 0);
 
-        if (isRunning && s.startTime) {
+        if (isRunning) {
+          lastActivityRef.current = Date.now();
+          
+          let calculatedTimer = totalActive;
+          if (s.startTime) {
             const elapsed = Math.floor((new Date() - new Date(s.startTime)) / 1000);
-            setTimer(elapsed + totalActive);
+            calculatedTimer = Math.max(0, elapsed + totalActive);
+          }
+
+          // 🛡️ SOFT SYNC: Only jump if difference > 2s to avoid jitter
+          setTimer(prev => {
+            if (Math.abs(prev - calculatedTimer) > 2 || prev === 0) {
+              return calculatedTimer;
+            }
+            return prev;
+          });
         } else {
-            setTimer(totalActive);
+          setTimer(totalActive);
         }
       } else {
         setSession(null);
@@ -88,34 +110,29 @@ const SmartTimeTracker = () => {
       setTodaySessions(Array.isArray(myRes.data) ? myRes.data : []);
       setTeamData(Array.isArray(teamRes.data) ? teamRes.data : []);
 
-    } catch (err) { 
-      console.error('Data pull disrupted:', err.message); 
-    } finally { 
-      setLoading(false); 
+    } catch (err) {
+      console.error('Data pull disrupted:', err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchData();
+    const interval = setInterval(() => fetchData(), STATUS_POLL_INTERVAL);
+    return () => clearInterval(interval);
   }, [viewDate]);
 
   // 🛡️ HARDENED TIMER ENGINE
   useEffect(() => {
-    let interval;
-    if (session && session.isRunning && session.startTime) {
-        interval = setInterval(() => {
-            const now = new Date();
-            const start = new Date(session.startTime);
-            const elapsedSinceStart = Math.floor((now - start) / 1000);
-            setTimer(elapsedSinceStart + (session.totalActiveTime || 0));
-        }, 1000);
-    } else if (session) {
-        setTimer(session.totalActiveTime || 0);
-    } else {
-        setTimer(0);
-    }
+    if (!session?.isRunning) return;
+
+    const interval = setInterval(() => {
+      setTimer(prev => prev + 1);
+    }, 1000);
+
     return () => clearInterval(interval);
-  }, [session]);
+  }, [session?.isRunning]);
 
   const handleAction = async (action) => {
     try {
@@ -127,21 +144,34 @@ const SmartTimeTracker = () => {
       const config = { ...auth, timeout: 5000 };
       await axios.post(`${API_BASE}/${action}`, {}, config);
       fetchData();
-    } catch (err) { 
+    } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Action Interrupted';
       alert(`Tracker Error: ${msg}`);
     }
   };
 
   // Activity Tracking
+  const normalizeActivityType = (eventType) => {
+    switch (eventType) {
+      case 'keydown': return 'keyboard';
+      case 'mousemove':
+      case 'mousedown': return 'mouse';
+      case 'click': return 'click';
+      case 'scroll': return 'scroll';
+      case 'focus': return 'focus';
+      case 'touchstart': return 'touch';
+      default: return 'active';
+    }
+  };
+
   const handleUserActivity = useCallback((type) => {
     if (session?.status === 'paused') return;
     lastActivityRef.current = Date.now();
-    activityTypeRef.current = type;
+    activityTypeRef.current = normalizeActivityType(type);
   }, [session]);
 
   useEffect(() => {
-    const events = ['mousemove', 'keydown', 'focus', 'click', 'scroll'];
+    const events = ['mousemove', 'keydown', 'focus', 'click', 'scroll', 'touchstart', 'mousedown'];
     const handler = (e) => handleUserActivity(e.type);
     if (session?.isRunning) {
       events.forEach(e => window.addEventListener(e, handler));
@@ -195,7 +225,7 @@ const SmartTimeTracker = () => {
               className="pl-12 pr-6 h-12 bg-white border border-[#c5c0b1] rounded-[4px] text-[14px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] w-64 shadow-sm"
             />
           </div>
-          <button 
+          <button
             onClick={fetchData}
             className="h-12 px-6 bg-[#201515] text-[#fffefb] rounded-[4px] text-[12px] font-black uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-[#ff4f00] transition-all shadow-lg cursor-pointer border-none"
           >
@@ -213,9 +243,8 @@ const SmartTimeTracker = () => {
 
       {/* TRACKER PANEL */}
       <div className="grid grid-cols-12 gap-8 mb-12">
-        <div className={`col-span-12 lg:col-span-8 zap-card p-10 transition-all duration-700 relative overflow-hidden shadow-xl ${
-          session?.isRunning ? (session.status === 'idle' ? 'bg-[#fffdf9] border-[#ff4f00]' : 'bg-[#fffdf9] border-[#24a148]') : 'bg-[#201515] text-[#fffefb]'
-        }`}>
+        <div className={`col-span-12 lg:col-span-8 zap-card p-10 transition-all duration-700 relative overflow-hidden shadow-xl ${session?.isRunning ? (session.status === 'idle' ? 'bg-[#fffdf9] border-[#ff4f00]' : 'bg-[#fffdf9] border-[#24a148]') : 'bg-[#201515] text-[#fffefb]'
+          }`}>
           <div className="relative z-10 flex flex-col h-full justify-between">
             <div className="flex justify-between items-start mb-12">
               <div className="flex items-center gap-4">
@@ -255,8 +284,8 @@ const SmartTimeTracker = () => {
 
             <div className="flex flex-col md:flex-row gap-4">
               {!session ? (
-                <button 
-                  onClick={() => handleAction('start')} 
+                <button
+                  onClick={() => handleAction('start')}
                   className="bg-[#ff4f00] text-white h-16 flex-1 rounded-xl font-black text-[16px] uppercase tracking-widest flex items-center justify-center gap-3 hover:opacity-90 active:scale-95 transition-all cursor-pointer border-none"
                 >
                   <Play size={20} fill="white" /> START
@@ -264,22 +293,22 @@ const SmartTimeTracker = () => {
               ) : (
                 <>
                   {!session.isRunning ? (
-                    <button 
-                      onClick={() => handleAction('resume')} 
+                    <button
+                      onClick={() => handleAction('resume')}
                       className="bg-[#24a148] text-white h-16 flex-1 rounded-xl font-black text-[16px] uppercase tracking-widest flex items-center justify-center gap-3 hover:opacity-90 active:scale-95 transition-all cursor-pointer border-none"
                     >
                       <Play size={20} fill="white" /> RESUME
                     </button>
                   ) : (
-                    <button 
-                      onClick={() => handleAction('pause')} 
+                    <button
+                      onClick={() => handleAction('pause')}
                       className="bg-[#fffefb] text-[#201515] h-16 flex-1 rounded-xl font-black text-[16px] uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-[#eceae3] transition-all cursor-pointer border-none"
                     >
                       <Pause size={20} /> PAUSE
                     </button>
                   )}
-                  <button 
-                    onClick={() => handleAction('stop')} 
+                  <button
+                    onClick={() => handleAction('stop')}
                     className="bg-[#ff4f00] text-white h-16 flex-1 rounded-xl font-black text-[16px] uppercase tracking-widest flex items-center justify-center gap-3 hover:opacity-90 active:scale-95 transition-all cursor-pointer border-none"
                   >
                     <Square size={20} fill="white" /> STOP
@@ -292,43 +321,43 @@ const SmartTimeTracker = () => {
 
         {/* SIDE ACTIVITY */}
         <div className="col-span-12 lg:col-span-4 space-y-8">
-           <div className="bg-[#fffdf9] border border-[#c5c0b1] p-8 rounded-3xl">
-              <h3 className="text-[12px] font-black text-[#201515] uppercase tracking-widest mb-8 flex items-center gap-3 italic">
-                 <Monitor size={18} />
-                 Node Sensor Stream
-              </h3>
-              <div className="space-y-4">
-                 {[
-                   { icon: MousePointer, label: 'Mouse Movement', active: session?.isRunning && session.status === 'active' },
-                   { icon: Keyboard, label: 'Keyboard Input', active: session?.isRunning && session.status === 'active' },
-                   { icon: Monitor, label: 'Tab Focus', active: session?.isRunning },
-                 ].map((item, i) => (
-                   <div key={i} className="flex items-center justify-between p-4 bg-white border border-[#c5c0b1] rounded-xl">
-                      <div className="flex items-center gap-4 text-[#201515]">
-                         <item.icon size={16} />
-                         <span className="text-[11px] font-black uppercase tracking-wider">{item.label}</span>
-                      </div>
-                      <div className={`w-2 h-2 rounded-full ${item.active ? 'bg-[#24a148] animate-pulse' : 'bg-[#c5c0b1]'}`}></div>
-                   </div>
-                 ))}
-              </div>
-           </div>
+          <div className="bg-[#fffdf9] border border-[#c5c0b1] p-8 rounded-3xl">
+            <h3 className="text-[12px] font-black text-[#201515] uppercase tracking-widest mb-8 flex items-center gap-3 italic">
+              <Monitor size={18} />
+              Node Sensor Stream
+            </h3>
+            <div className="space-y-4">
+              {[
+                { icon: MousePointer, label: 'Mouse Movement', active: session?.isRunning && session.status === 'active' },
+                { icon: Keyboard, label: 'Keyboard Input', active: session?.isRunning && session.status === 'active' },
+                { icon: Monitor, label: 'Tab Focus', active: session?.isRunning },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center justify-between p-4 bg-white border border-[#c5c0b1] rounded-xl">
+                  <div className="flex items-center gap-4 text-[#201515]">
+                    <item.icon size={16} />
+                    <span className="text-[11px] font-black uppercase tracking-wider">{item.label}</span>
+                  </div>
+                  <div className={`w-2 h-2 rounded-full ${item.active ? 'bg-[#24a148] animate-pulse' : 'bg-[#c5c0b1]'}`}></div>
+                </div>
+              ))}
+            </div>
+          </div>
 
-           <div className="bg-[#201515] p-8 rounded-3xl text-white shadow-2xl">
-              <h3 className="text-[12px] font-black text-[#ff4f00] uppercase tracking-widest mb-8 italic">Historical Pulse</h3>
-              <div className="space-y-4">
-                {todaySessions.length === 0 ? (
-                    <p className="text-[10px] text-white/40 uppercase font-black tracking-widest">No previous segments</p>
-                ) : (
-                    todaySessions.slice(0, 4).map((s, i) => (
-                        <div key={i} className="flex justify-between items-center border-b border-white/5 pb-4">
-                            <span className="text-[10px] font-black text-white/40 uppercase tracking-tighter">Segment {todaySessions.length - i}</span>
-                            <span className="text-[16px] font-black text-[#ff4f00]">{formatTime(s.activeTime)}</span>
-                        </div>
-                    ))
-                )}
-              </div>
-           </div>
+          <div className="bg-[#201515] p-8 rounded-3xl text-white shadow-2xl">
+            <h3 className="text-[12px] font-black text-[#ff4f00] uppercase tracking-widest mb-8 italic">Historical Pulse</h3>
+            <div className="space-y-4">
+              {todaySessions.length === 0 ? (
+                <p className="text-[10px] text-white/40 uppercase font-black tracking-widest">No previous segments</p>
+              ) : (
+                todaySessions.slice(0, 4).map((s, i) => (
+                  <div key={i} className="flex justify-between items-center border-b border-white/5 pb-4">
+                    <span className="text-[10px] font-black text-white/40 uppercase tracking-tighter">Segment {todaySessions.length - i}</span>
+                    <span className="text-[16px] font-black text-[#ff4f00]">{formatTime(s.activeTime)}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -336,7 +365,7 @@ const SmartTimeTracker = () => {
       {teamData.length > 0 && (
         <div className="bg-white border border-[#c5c0b1] rounded-3xl overflow-hidden shadow-xl">
           <div className="p-8 bg-[#eceae3] border-b border-[#c5c0b1] flex justify-between items-center">
-             <h3 className="text-[12px] font-black uppercase tracking-widest text-[#201515]">Personnel Time Registry</h3>
+            <h3 className="text-[12px] font-black uppercase tracking-widest text-[#201515]">Personnel Time Registry</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -351,24 +380,24 @@ const SmartTimeTracker = () => {
                 {teamData.map((s, i) => (
                   <tr key={i} className="hover:bg-[#fffdf9] transition-colors group">
                     <td className="px-8 py-6">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-lg bg-[#eceae3] flex items-center justify-center text-[#201515] font-black">
-                              {s.employeeRole?.charAt(0) || 'U'}
-                          </div>
-                          <div>
-                              <p className="text-[14px] font-black text-[#201515] uppercase tracking-tight">
-                                {s.employeeRole || 'Unknown Node'}
-                              </p>
-                              <p className="text-[9px] font-black text-[#939084] uppercase">Node ID: {String(s.employeeId || '').slice(-6)}</p>
-                          </div>
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-[#eceae3] flex items-center justify-center text-[#201515] font-black">
+                          {s.employeeRole?.charAt(0) || 'U'}
                         </div>
+                        <div>
+                          <p className="text-[14px] font-black text-[#201515] uppercase tracking-tight">
+                            {s.employeeRole || 'Unknown Node'}
+                          </p>
+                          <p className="text-[9px] font-black text-[#939084] uppercase">Node ID: {String(s.employeeId || '').slice(-6)}</p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-8 py-6 text-[18px] font-black text-[#24a148] tabular-nums tracking-tighter">{formatTime(s.activeTime)}</td>
                     <td className="px-8 py-6 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <div className={`w-2 h-2 rounded-full ${s.isRunning ? 'bg-[#24a148] animate-pulse' : 'bg-[#c5c0b1]'}`}></div>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-[#201515]">{s.status}</span>
-                        </div>
+                      <div className="flex items-center justify-end gap-2">
+                        <div className={`w-2 h-2 rounded-full ${s.isRunning ? 'bg-[#24a148] animate-pulse' : 'bg-[#c5c0b1]'}`}></div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#201515]">{s.status}</span>
+                      </div>
                     </td>
                   </tr>
                 ))}

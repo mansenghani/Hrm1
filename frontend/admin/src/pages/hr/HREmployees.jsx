@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Search, UserPlus, Trash2, Edit3, User, Eye, CheckCircle, XCircle, MoreVertical, RefreshCw } from 'lucide-react';
+import { Search, UserPlus, Trash2, Edit3, User, Eye, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { API_BASE_URL } from '@shared/services/api';
 
-const Employees = () => {
+const HREmployees = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -57,34 +57,21 @@ const Employees = () => {
     }
   };
 
-  const toggleStatus = async (id, currentStatus) => {
-    try {
-      const token = sessionStorage.getItem('token');
-      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-      await axios.patch(`/api/employees/${id}/status`, { status: newStatus }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      fetchEmployees();
-    } catch (err) {
-      console.error('Status update failed', err);
-    }
-  };
-
   const handleRejectAll = async () => {
     const pendingNodes = employees.filter(e => e.status !== 'active' && e.userId?.status !== 'active');
     if (pendingNodes.length === 0) {
-      alert('No unverified personnel nodes detected in current matrix.');
+      alert('No unverified personnel nodes detected in HR matrix.');
       return;
     }
 
-    if (window.confirm(`⚠️ REGISTRY ALERT: You are about to mass-reject/deactivate ${pendingNodes.length} personnel nodes. This action is final. Proceed?`)) {
+    if (window.confirm(`⚠️ HR AUTHORITY ALERT: You are about to mass-reject/deactivate ${pendingNodes.length} personnel nodes. This action is final. Proceed?`)) {
       setLoading(true);
       try {
         const token = sessionStorage.getItem('token');
         await Promise.all(
           pendingNodes.map(e => axios.delete(`/api/employees/${e._id}`, { headers: { Authorization: `Bearer ${token}` } }))
         );
-        alert(`Institutional Veto Complete: ${pendingNodes.length} personnel nodes successfully ejected from registry.`);
+        alert(`Institutional Veto Complete: ${pendingNodes.length} personnel nodes successfully ejected from matrix.`);
         fetchEmployees();
       } catch (err) {
         console.error('Mass veto failed:', err);
@@ -100,7 +87,7 @@ const Employees = () => {
       {/* HEADER SECTION */}
       <div className="mb-12 flex flex-col md:flex-row justify-between items-end border-b border-[#c5c0b1] pb-8">
         <div>
-          <h1 className="zap-display-hero">All <span className="text-[#ff4f00]">Employees</span></h1>
+          <h1 className="zap-display-hero">Employee <span className="text-[#ff4f00]">Registry</span></h1>
         </div>
         <div className="flex gap-4">
           <button
@@ -111,7 +98,7 @@ const Employees = () => {
             Reject All Pending
           </button>
           <button
-            onClick={() => navigate('/admin/create-user')}
+            onClick={() => navigate('/hr/create-user')}
             className="zap-btn zap-btn-orange h-14 px-8"
           >
             <UserPlus size={18} className="mr-3" />
@@ -120,13 +107,13 @@ const Employees = () => {
         </div>
       </div>
 
-      {/* FILTER BAR - Zapier Style */}
+      {/* FILTER BAR */}
       <div className="bg-[#fffdf9] p-6 border border-[#c5c0b1] rounded-[8px] flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
         <div className="relative w-full md:w-96 flex items-center">
           <Search size={18} className="absolute left-4 text-[#939084]" />
           <input
             type="text"
-            placeholder="Filter by name, email, or employee ID..."
+            placeholder="Filter by name, email, or ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full h-12 bg-white border border-[#c5c0b1] rounded-[4px] pl-12 pr-4 text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all"
@@ -137,10 +124,9 @@ const Employees = () => {
           <select
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
-            className="h-12 bg-white border border-[#c5c0b1] rounded-[4px] px-4 text-[14px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] cursor-pointer"
+            className="h-12 bg-white border border-[#c5c0b1] rounded-[4px] pl-4 pr-10 text-[14px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%23201515%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22m19%209-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.75rem_center] bg-no-repeat"
           >
             <option value="">All Roles</option>
-            <option value="admin">Admin</option>
             <option value="hr">HR</option>
             <option value="manager">Manager</option>
             <option value="employee">Employee</option>
@@ -151,21 +137,21 @@ const Employees = () => {
         </div>
       </div>
 
-      {/* DATA TABLE - Zapier Border Forward */}
+      {/* DATA TABLE */}
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b-2 border-[#201515] text-left">
-              <th className="py-4 px-4 text-[12px] font-bold text-[#939084] uppercase tracking-widest">Employee ID</th>
+              <th className="py-4 px-4 text-[12px] font-bold text-[#939084] uppercase tracking-widest">ID</th>
               <th className="py-4 px-4 text-[12px] font-bold text-[#939084] uppercase tracking-widest">Employee</th>
-              <th className="py-4 px-4 text-[12px] font-bold text-[#939084] uppercase tracking-widest">Operational Status</th>
+              <th className="py-4 px-4 text-[12px] font-bold text-[#939084] uppercase tracking-widest">Role/Status</th>
               <th className="py-4 px-4 text-[12px] font-bold text-[#939084] uppercase tracking-widest text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="5" className="text-center py-24">
+                <td colSpan="4" className="text-center py-24">
                   <div className="flex flex-col items-center gap-4">
                     <RefreshCw size={24} className="text-[#ff4f00] animate-spin" />
                     <p className="zap-caption-upper text-[#939084]">Synchronizing Registry...</p>
@@ -174,7 +160,7 @@ const Employees = () => {
               </tr>
             ) : filteredEmployees.length === 0 ? (
               <tr>
-                <td colSpan="5" className="text-center py-24 border border-[#c5c0b1] bg-[#fffdf9] rounded-[8px]">
+                <td colSpan="4" className="text-center py-24 border border-[#c5c0b1] bg-[#fffdf9] rounded-[8px]">
                   <p className="text-[16px] font-medium text-[#939084]">No active personnel nodes matching filter.</p>
                 </td>
               </tr>
@@ -210,14 +196,14 @@ const Employees = () => {
                   <td className="py-6 px-4 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
                       <button
-                        onClick={() => navigate(`/admin/employees/view/${emp._id}`)}
+                        onClick={() => navigate(`/hr/employees/view/${emp._id}`)}
                         className="w-10 h-10 flex items-center justify-center text-[#201515] hover:bg-[#201515] hover:text-[#fffefb] rounded-[4px] transition-all bg-transparent border-none cursor-pointer"
                         title="View Node"
                       >
                         <Eye size={18} />
                       </button>
                       <button
-                        onClick={() => navigate(`/admin/employees/edit/${emp._id}`)}
+                        onClick={() => navigate(`/hr/employees/edit/${emp._id}`)}
                         className="w-10 h-10 flex items-center justify-center text-[#201515] hover:bg-[#201515] hover:text-[#fffefb] rounded-[4px] transition-all bg-transparent border-none cursor-pointer"
                         title="Edit Node"
                       >
@@ -238,20 +224,8 @@ const Employees = () => {
           </tbody>
         </table>
       </div>
-
-      {/* FOOTER STRIP */}
-      <div className="mt-12 flex items-center justify-between py-8 border-t border-[#c5c0b1]">
-        <div className="flex items-center gap-6">
-           <span className="text-[13px] font-bold text-[#939084] uppercase tracking-widest">Active Archives</span>
-           <span className="text-[13px] font-medium text-[#201515]">Showing {filteredEmployees.length} registered nodes</span>
-        </div>
-        <div className="flex gap-4">
-           <button className="zap-btn zap-btn-light h-10 px-6 opacity-50 cursor-not-allowed">Previous</button>
-           <button className="zap-btn zap-btn-light h-10 px-6">Next Page</button>
-        </div>
-      </div>
     </div>
   );
 };
 
-export default Employees;
+export default HREmployees;

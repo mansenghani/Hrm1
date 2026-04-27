@@ -53,11 +53,35 @@ const LeaveManagement = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      alert(`Protocol ${status === 'approved' ? 'authorized' : 'declined'} successfully.`);
-      fetchLeaves();
+      return true;
     } catch (err) {
       console.error('Status update failed:', err);
       alert('Action failed: ' + (err.response?.data?.message || err.message));
+      return false;
+    }
+  };
+
+  const handleRejectAll = async () => {
+    const pendingRequests = leaves.filter(l => l.status === 'pending');
+    if (pendingRequests.length === 0) {
+      alert('No pending leave protocols detected in current matrix.');
+      return;
+    }
+
+    if (window.confirm(`⚠️ AUTHORITY ALERT: You are about to mass-reject ${pendingRequests.length} leave requests. This action cannot be reversed. Proceed?`)) {
+      setLoading(true);
+      try {
+        const results = await Promise.all(
+          pendingRequests.map(l => handleStatusUpdate(l._id, 'rejected'))
+        );
+        alert(`Institutional Veto Complete: ${results.filter(r => r).length} protocols successfully declined.`);
+        fetchLeaves();
+      } catch (err) {
+        console.error('Mass veto failed:', err);
+        alert('Institutional Veto disrupted. Check connection node.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -96,15 +120,26 @@ const LeaveManagement = () => {
           <p className="zap-caption-upper text-[#ff4f00] mb-4">Personnel Logistics</p>
           <h1 className="zap-display-hero">Leave <span className="text-[#ff4f00]">Protocol.</span></h1>
         </div>
-        {userRole !== 'admin' && (
-          <button 
-            onClick={() => setIsCreateModalOpen(true)}
-            className="zap-btn zap-btn-orange h-14 px-8"
-          >
-            <Calendar size={18} className="mr-3" />
-            Request For Leave
-          </button>
-        )}
+        <div className="flex gap-4">
+          {(userRole === 'manager' || userRole === 'hr') && (
+            <button 
+              onClick={handleRejectAll}
+              className="zap-btn zap-btn-orange h-14 px-8 flex items-center gap-2"
+            >
+              <XCircle size={18} />
+              Reject All Pending
+            </button>
+          )}
+          {userRole !== 'admin' && (
+            <button 
+              onClick={() => setIsCreateModalOpen(true)}
+              className="zap-btn zap-btn-orange h-14 px-8"
+            >
+              <Calendar size={18} className="mr-3" />
+              Request For Leave
+            </button>
+          )}
+        </div>
       </div>
 
       {/* SUMMARY GRID */}

@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { 
-  ShieldCheck, 
-  Search, 
-  Plus, 
-  LayoutDashboard, 
-  Users, 
-  CheckSquare, 
-  Layers, 
-  FileText, 
-  Calendar, 
-  Clock, 
-  Wallet, 
-  TrendingUp, 
-  BarChart3, 
+import {
+  ShieldCheck,
+  Search,
+  Plus,
+  LayoutDashboard,
+  Users,
+  CheckSquare,
+  Layers,
+  FileText,
+  Calendar,
+  Clock,
+  Wallet,
+  TrendingUp,
+  BarChart3,
   Settings,
   ClipboardList,
   Briefcase,
@@ -69,7 +69,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   }, []);
 
   const displayRole = userRole || (role ? role.toUpperCase() : 'ADMIN');
-  
+
   useEffect(() => {
     const fetchLatestProfile = async () => {
       if (!token) return;
@@ -94,10 +94,10 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     return () => window.removeEventListener('profileUpdated', fetchLatestProfile);
   }, [token]);
 
-  const displayName = userProfile?.name || 
-                     (userProfile?.profile ? `${userProfile.profile.firstName || ''} ${userProfile.profile.lastName || ''}`.trim() : null) || 
-                     userName || 
-                     'System Administrator';
+  const displayName = userProfile?.name ||
+    (userProfile?.profile ? `${userProfile.profile.firstName || ''} ${userProfile.profile.lastName || ''}`.trim() : null) ||
+    userName ||
+    'System Administrator';
 
   const initials = displayName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'SA';
 
@@ -125,10 +125,10 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
       case 'hr':
         return [
           { name: 'Dashboard', path: '/hr/dashboard', icon: LayoutDashboard },
+          { name: 'Employees', path: '/hr/employees', icon: Users },
           { name: 'Tasks', path: '/hr/tasks', icon: CheckSquare },
           { name: 'Attendance', path: '/hr/attendance', icon: Calendar },
           { name: 'Time Tracker', path: '/hr/time-tracker', icon: Clock },
-          { name: 'Personnel Units', path: '/hr/teams', icon: Users },
           { name: 'Project Registry', path: '/hr/projects', icon: Briefcase },
           { name: 'Request For Leave', path: '/hr/leave', icon: FileText },
         ];
@@ -165,11 +165,16 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     }
   };
 
+  // 🛡️ DYNAMIC ROLE DERIVATION (URL-FIRST)
+  const pathRole = location.pathname.split('/')[1];
+  const roleMap = { admin: 'admin', hr: 'hr', manager: 'manager', employee: 'employee' };
+  const activeRole = roleMap[pathRole] ? pathRole : role;
+
   const menuItems = navItems ? navItems.map(item => ({
     name: item.label || item.name,
     path: item.path,
     icon: item.icon || LayoutDashboard
-  })) : getMenuItemsByRole(role);
+  })) : getMenuItemsByRole(activeRole);
 
   const handleLogout = () => {
     if (onLogout) {
@@ -217,13 +222,13 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
       <header className="sticky top-0 w-full z-50 bg-[#fffefb] border-b border-[#c5c0b1]">
         <div className="flex items-center h-[72px] w-full px-8">
           <div className="flex items-center gap-6 mr-12">
-            <Link to={`/${role}/dashboard`} className="flex items-center gap-3 no-underline">
+            <Link to={`/${activeRole}/dashboard`} className="flex items-center gap-3 no-underline">
               <div className="w-8 h-8 bg-[#ff4f00] rounded-[4px] flex items-center justify-center">
                 <ShieldCheck size={20} className="text-[#fffefb]" />
               </div>
               <span className="text-[24px] font-bold tracking-tight text-[#201515]">FluidHR</span>
             </Link>
-            <button 
+            <button
               onClick={toggleSidebar}
               className="flex items-center justify-center w-10 h-10 hover:bg-[#eceae3] rounded-[6px] text-[#36342e] transition-all cursor-pointer border-none bg-transparent"
             >
@@ -253,9 +258,9 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
             <button className="w-10 h-10 flex items-center justify-center text-[#36342e] hover:text-[#ff4f00] transition-colors relative group">
               <Search size={20} />
             </button>
-            
+
             <div className="relative" ref={notificationRef}>
-              <button 
+              <button
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
                 className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all relative ${isNotificationsOpen ? 'bg-[#ff4f00] text-white shadow-lg' : 'text-[#36342e] hover:bg-[#eceae3]'}`}
               >
@@ -282,8 +287,8 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                       </div>
                     ) : (
                       liveNotifications.map((n, i) => (
-                        <div 
-                          key={i} 
+                        <div
+                          key={i}
                           onClick={() => {
                             navigate(n.path);
                             setIsNotificationsOpen(false);
@@ -301,7 +306,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                       ))
                     )}
                   </div>
-                  <button 
+                  <button
                     onClick={() => { navigate(`/${role}/dashboard`); setIsNotificationsOpen(false); }}
                     className="w-full py-3 bg-[#eceae3] text-[10px] font-black text-[#201515] uppercase tracking-[0.2em] hover:bg-[#c5c0b1] transition-all border-none"
                   >
@@ -311,7 +316,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
               )}
             </div>
 
-            <div 
+            <div
               onClick={() => navigate(`/${role}/profile`)}
               className="hidden md:flex items-center gap-3 px-4 h-12 hover:bg-[#eceae3] rounded-[4px] cursor-pointer transition-all"
             >
@@ -332,7 +337,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
         </div>
       </header>
       <div className="flex flex-1 w-full overflow-hidden relative">
-        <aside 
+        <aside
           className="bg-transparent flex flex-col shrink-0 border-r border-[#c5c0b1] transition-[width] duration-300 ease-in-out overflow-hidden hidden md:flex"
           style={{ width: isSidebarOpen ? '280px' : '80px' }}
         >

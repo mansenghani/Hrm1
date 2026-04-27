@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>FluidHR Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+</head>
+<body>
+    <div class="tracker-window">
+        <div class="title-bar">
+            <div class="brand">
+                <span class="material-symbols-outlined text-orange">bolt</span>
+                <span class="brand-text">FLUID<span class="text-orange">HR</span> TRACKER</span>
+            </div>
+            <div class="window-controls">
+                <button id="minimize-btn" class="win-ctrl"><span class="material-symbols-outlined">remove</span></button>
+                <button id="close-btn" class="win-ctrl"><span class="material-symbols-outlined">close</span></button>
+            </div>
+        </div>
+
+        <div class="status-header">
+            <div class="status-badge" id="status-display">OFFLINE</div>
+            <div class="sync-pulse" id="sync-indicator"></div>
+        </div>
+
+        <div class="desktop-alert" id="desktop-alert" style="display: none;">
+            <span class="alert-dot"></span>
+            <div>
+                <p class="alert-title">Inactivity Detected</p>
+                <p class="alert-text">No activity for 5 minutes. Time tracking paused.</p>
+            </div>
+        </div>
+
+        <div class="user-profile-lite" id="user-profile-display">
+            <p class="user-role-lite" id="display-role">ROLE</p>
+            <p class="user-name-lite" id="display-name">Identity Pending...</p>
+        </div>
+
+        <div class="timer-display">
+            <h1 id="active-timer">00:00:00</h1>
+            <p class="timer-label">ACTIVE WORK TIME</p>
+        </div>
+
+        <div class="control-matrix">
+            <button id="start-btn" class="ctrl-btn primary">
+                <span class="material-symbols-outlined">play_arrow</span>
+                START SESSION
+            </button>
+            <div class="binary-controls" style="display: none;">
+                <button id="pause-btn" class="ctrl-btn secondary">
+                    <span class="material-symbols-outlined">pause</span>
+                    PAUSE
+                </button>
+                <button id="resume-btn" class="ctrl-btn accent" style="display: none;">
+                    <span class="material-symbols-outlined">play_circle</span>
+                    RESUME
+                </button>
+                <button id="stop-btn" class="ctrl-btn danger">
+                    <span class="material-symbols-outlined">stop</span>
+                    STOP
+                </button>
+            </div>
+            <button id="logout-btn" class="ctrl-btn secondary" style="margin-top: 16px;">
+                <span class="material-symbols-outlined">logout</span>
+                LOGOUT
+            </button>
+        </div>
+
+        <div class="analytics-footer">
+            <div class="footer-node">
+                <p class="node-label">INACTIVE TIME</p>
+                <p class="node-value" id="inactive-timer">00:00:00</p>
+            </div>
+            <div class="footer-node text-right">
+                <p class="node-label">PROTOCOL VERSION</p>
+                <p class="node-value">V1.0.4 PRO</p>
+            </div>
+        </div>
+
+        <div class="auth-overlay" id="auth-section">
+            <div class="auth-card">
+                <h3>ACCESS AUTHORIZATION</h3>
+                <input type="text" id="email-input" placeholder="Email address">
+                <input type="password" id="password-input" placeholder="Password">
+                <button id="auth-btn" class="ctrl-btn primary">LOGIN</button>
+                <p class="auth-hint">Use your HR account email and password</p>
+            </div>
+        </div>
+    </div>
+    <script src="renderer.js"></script>
+</body>
+</html>

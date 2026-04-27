@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  Users, Target, Send, CheckCircle2, X, Plus, 
-  ArrowRight, Shield, Activity, TrendingUp, AlertTriangle
+import {
+    Users, Target, Send, CheckCircle2, X, Plus,
+    ArrowRight, Shield, Activity, TrendingUp, AlertTriangle
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
@@ -93,7 +93,7 @@ const ManagerProjects = () => {
                     {projects.map((project) => (
                         <div key={project._id} className="bg-white border border-[#E6E8EA] rounded-[32px] p-8 hover:shadow-xl transition-all group relative overflow-hidden flex flex-col min-h-[380px]">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-[#F5F5F5] rounded-full -mr-16 -mt-16 opacity-30 group-hover:scale-125 transition-all duration-700"></div>
-                            
+
                             <div className="flex justify-between items-start mb-6 relative z-10">
                                 <div>
                                     <h3 className="text-xl font-black text-[#1E2026] uppercase tracking-tighter leading-none mb-1.5 italic">{project.projectName}</h3>
@@ -102,9 +102,8 @@ const ManagerProjects = () => {
                                         {project.department}
                                     </p>
                                 </div>
-                                <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${
-                                    project.status === 'active' ? 'bg-[#0ECB81]/10 text-[#0ECB81] border-[#0ECB81]/20' : 'bg-[#F0B90B]/10 text-[#F0B90B] border-[#F0B90B]/20'
-                                }`}>
+                                <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${project.status === 'active' ? 'bg-[#0ECB81]/10 text-[#0ECB81] border-[#0ECB81]/20' : 'bg-[#F0B90B]/10 text-[#F0B90B] border-[#F0B90B]/20'
+                                    }`}>
                                     {project.status}
                                 </span>
                             </div>
@@ -112,19 +111,19 @@ const ManagerProjects = () => {
                             <p className="text-[13px] font-bold text-[#848E9C] mb-8 leading-relaxed italic font-mono flex-grow line-clamp-3">"{project.description}"</p>
 
                             <div className="space-y-6">
-                               <div className="flex items-center gap-3">
-                                  <div className="flex -space-x-2 overflow-hidden">
-                                     {project.assignedEmployees?.slice(0, 3).map((emp, i) => (
-                                        <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center font-black text-[8px] text-[#3E74FF]">
-                                           {emp.name?.charAt(0)}
-                                        </div>
-                                     ))}
-                                  </div>
-                                  <span className="text-[9px] font-black text-[#848E9C] uppercase tracking-widest">{project.assignedEmployees?.length || 0} Assets</span>
-                               </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="flex -space-x-2 overflow-hidden">
+                                        {project.assignedEmployees?.slice(0, 3).map((emp, i) => (
+                                            <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center font-black text-[8px] text-[#3E74FF]">
+                                                {emp.name?.charAt(0)}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <span className="text-[9px] font-black text-[#848E9C] uppercase tracking-widest">{project.assignedEmployees?.length || 0} Assets</span>
+                                </div>
                             </div>
 
-                            <button 
+                            <button
                                 onClick={() => setActiveProject(project)}
                                 className="mt-8 py-4 bg-[#1E2026] text-white rounded-[20px] flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-widest hover:bg-[#3E74FF] transition-all group/btn active:scale-95 shadow-lg"
                             >
@@ -138,13 +137,13 @@ const ManagerProjects = () => {
 
             {/* ASSIGNMENT MODAL */}
             {activeProject && createPortal(
-                <div 
-                  onClick={() => setActiveProject(null)}
-                  className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-[#000000]/60 backdrop-blur-sm animate-in fade-in duration-300 cursor-pointer"
+                <div
+                    onClick={() => setActiveProject(null)}
+                    className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-[#000000]/60 backdrop-blur-sm animate-in fade-in duration-300 cursor-pointer"
                 >
-                    <div 
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-full max-w-2xl bg-white rounded-[24px] shadow-[0_32px_128px_rgba(0,0,0,0.18)] border border-slate-200 overflow-hidden flex flex-col max-h-[80vh] cursor-default"
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full max-w-2xl bg-white rounded-[24px] shadow-[0_32px_128px_rgba(0,0,0,0.18)] border border-slate-200 overflow-hidden flex flex-col max-h-[80vh] cursor-default"
                     >
                         {/* SOPHISTICATED HEADER */}
                         <div className="bg-[#0F172A] p-10 text-white flex justify-between items-center relative overflow-hidden">
@@ -159,18 +158,18 @@ const ManagerProjects = () => {
                                 <X size={20} />
                             </button>
                         </div>
-                        
+
                         <div className="flex-1 overflow-y-auto bg-slate-50/50">
                             {/* SEARCH/STATS BAR */}
                             <div className="p-6 border-b border-slate-200 bg-white flex justify-between items-center px-8">
                                 <div className="flex items-center gap-4">
-                                   <div className="flex items-center gap-2">
-                                      <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>
-                                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{teamMembers.length} Active Nodes</span>
-                                   </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>
+                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{teamMembers.length} Active Nodes</span>
+                                    </div>
                                 </div>
                                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                   Tier 1 Verification <Shield size={10} />
+                                    Tier 1 Verification <Shield size={10} />
                                 </div>
                             </div>
 
@@ -184,42 +183,40 @@ const ManagerProjects = () => {
                                     const isAlreadyAssigned = activeProject.assignedEmployees?.some(ae => ae._id === emp._id);
                                     const isSelected = selectedNodes.includes(emp._id);
                                     return (
-                                        <div 
-                                          key={emp._id} 
-                                          onClick={() => {
-                                            if (isAlreadyAssigned) return;
-                                            setSelectedNodes(prev => prev.includes(emp._id) ? prev.filter(id => id !== emp._id) : [...prev, emp._id]);
-                                          }}
-                                          className={`group flex items-center justify-between p-4 px-6 rounded-2xl border transition-all duration-200 ${
-                                            isAlreadyAssigned ? 'bg-slate-50/50 border-slate-100 opacity-40 grayscale cursor-not-allowed' :
-                                            isSelected ? 'bg-white border-indigo-600 shadow-sm ring-1 ring-indigo-600/10' :
-                                            'bg-white border-slate-200 hover:border-indigo-400 cursor-pointer shadow-sm hover:translate-x-1'
-                                          }`}
+                                        <div
+                                            key={emp._id}
+                                            onClick={() => {
+                                                if (isAlreadyAssigned) return;
+                                                setSelectedNodes(prev => prev.includes(emp._id) ? prev.filter(id => id !== emp._id) : [...prev, emp._id]);
+                                            }}
+                                            className={`group flex items-center justify-between p-4 px-6 rounded-2xl border transition-all duration-200 ${isAlreadyAssigned ? 'bg-slate-50/50 border-slate-100 opacity-40 grayscale cursor-not-allowed' :
+                                                    isSelected ? 'bg-white border-indigo-600 shadow-sm ring-1 ring-indigo-600/10' :
+                                                        'bg-white border-slate-200 hover:border-indigo-400 cursor-pointer shadow-sm hover:translate-x-1'
+                                                }`}
                                         >
                                             <div className="flex items-center gap-5">
-                                               <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg transition-all ${
-                                                  isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-slate-100'
-                                               }`}>
-                                                  {emp.name?.charAt(0)}
-                                               </div>
-                                               <div>
-                                                  <p className="text-[14px] font-bold text-slate-800 leading-none mb-1">{emp.name}</p>
-                                                  <p className="text-[11px] font-medium text-slate-500">{emp.email}</p>
-                                               </div>
+                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg transition-all ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-slate-100'
+                                                    }`}>
+                                                    {emp.name?.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <p className="text-[14px] font-bold text-slate-800 leading-none mb-1">{emp.name}</p>
+                                                    <p className="text-[11px] font-medium text-slate-500">{emp.email}</p>
+                                                </div>
                                             </div>
-                                            
+
                                             {isAlreadyAssigned ? (
-                                               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border border-slate-200 px-3 py-1 rounded-full bg-slate-100">
-                                                  Assigned
-                                               </div>
+                                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border border-slate-200 px-3 py-1 rounded-full bg-slate-100">
+                                                    Assigned
+                                                </div>
                                             ) : isSelected ? (
-                                               <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg">
-                                                  <CheckCircle2 size={18} />
-                                               </div>
+                                                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg">
+                                                    <CheckCircle2 size={18} />
+                                                </div>
                                             ) : (
-                                               <div className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all">
-                                                  <Plus size={20} />
-                                               </div>
+                                                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all">
+                                                    <Plus size={20} />
+                                                </div>
                                             )}
                                         </div>
                                     );
@@ -231,23 +228,23 @@ const ManagerProjects = () => {
                         <div className="p-8 px-10 border-t border-slate-200 bg-white flex justify-between items-center">
                             <div>
                                 <div className="flex items-baseline gap-2">
-                                  <span className="text-3xl font-bold text-slate-900 tabular-nums">{selectedNodes.length}</span>
-                                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Nodes Selected</span>
+                                    <span className="text-3xl font-bold text-slate-900 tabular-nums">{selectedNodes.length}</span>
+                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Nodes Selected</span>
                                 </div>
                             </div>
                             <div className="flex gap-4">
                                 <button
-                                  onClick={() => setActiveProject(null)}
-                                  className="px-6 py-3.5 text-[12px] font-bold text-slate-600 hover:text-slate-900 transition-colors uppercase tracking-widest"
+                                    onClick={() => setActiveProject(null)}
+                                    className="px-6 py-3.5 text-[12px] font-bold text-slate-600 hover:text-slate-900 transition-colors uppercase tracking-widest"
                                 >
-                                  Cancel
+                                    Cancel
                                 </button>
-                                <button 
+                                <button
                                     disabled={selectedNodes.length === 0 || assigning}
                                     onClick={handleAssignNodes}
                                     className="px-10 py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-[12px] uppercase tracking-widest shadow-[0_8px_20px_rgba(79,70,229,0.3)] hover:bg-slate-950 hover:shadow-none hover:translate-y-[-2px] active:translate-y-0 disabled:opacity-30 disabled:translate-y-0 transition-all flex items-center gap-3"
                                 >
-                                    {assigning ? 'Scheduling...' : 'Confirm Deployment'} 
+                                    {assigning ? 'Scheduling...' : 'Confirm Deployment'}
                                     <ArrowRight size={16} />
                                 </button>
                             </div>

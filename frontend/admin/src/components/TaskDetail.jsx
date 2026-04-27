@@ -98,14 +98,33 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
   const isLead = ['admin', 'hr', 'manager'].includes(userRole);
   const canEditProgress = isLead || (userRole === 'employee' && !['completed', 'submitted', 'under_review'].includes(task.status));
 
-  const handleComment = async (e) => {
+    const handleComment = async (e) => {
     e.preventDefault();
     if (!comment.trim()) return;
+    
+    // 🛡️ PRE-FLIGHT IDENTITY CHECK
+    const activeToken = sessionStorage.getItem('token');
+    if (!activeToken) {
+      alert('Session Expired. Please re-authenticate.');
+      return;
+    }
+
     try {
-      await axios.post(`/api/tasks/comment/${task._id}`, { message: comment }, { headers });
-      setComment('');
-      onUpdate();
-    } catch (err) { console.error('Comms failure:', err); }
+      const res = await axios.post(`/api/tasks/comment/${task._id}`, 
+        { message: comment }, 
+        { headers: { Authorization: `Bearer ${activeToken}` } }
+      );
+      
+      if (res.status === 200) {
+        setComment(''); // 🚀 Definitively clear UI
+        onUpdate();     // 📡 Trigger real-time refresh
+      }
+    } catch (err) { 
+      console.error('--- COMMS FAILURE ---');
+      console.error('Status:', err.response?.status);
+      console.error('Message:', err.response?.data?.message);
+      alert(`Transmission Failed: ${err.response?.data?.message || 'Server Offline'}`);
+    }
   };
 
   const handleProgress = async (val) => {
@@ -383,32 +402,37 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
               </h4>
               <div className="flex-1 flex flex-col space-y-2 justify-end">
                 {task.comments?.map((c, i) => {
-                  const senderId = c.userId?._id || c.userId;
-                  const isMe = senderId === currentUserId;
-                  const senderName = c.userId?.name || c.userName || c.role || 'User';
+                  const senderId = (c.userId?._id || c.userId || '').toString();
+                  const currentId = (currentUserId || '').toString();
+                  const senderName = (c.userName || c.userId?.name || 'Personnel').toUpperCase().trim();
+                  const myName = (currentUser?.name || '').toUpperCase().trim();
+                  
+                  // 🛡️ TRIPLE-CHECK IDENTITY (ID or NAME)
+                  const isMe = (senderId === currentId && currentId !== '') || (senderName === myName && myName !== '');
+                  
                   const senderImage = c.profileImage || c.userId?.profileImage;
                   const initials = senderName.split(' ').map(n => n[0]).join('').toUpperCase() || '?';
 
                   return (
-                    <div key={i} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                      {/* AVATAR */}
-                      <div className="w-8 h-8 rounded-full bg-[#eceae3] shrink-0 overflow-hidden flex items-center justify-center border-2 border-white shadow-sm mt-1">
-                        {senderImage ? (
-                          <img src={senderImage} alt="" className="w-full h-full object-cover" />
-                        ) : (isMe && currentUser?.profileImage) ? (
-                          <img src={currentUser.profileImage} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-[10px] font-black text-[#939084]">{initials}</span>
-                        )}
-                      </div>
-
-                      <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                        <div className={`max-w-[100%] py-2 px-4 rounded-[18px] ${isMe ? 'bg-[#201515] text-white rounded-br-none shadow-md' : 'bg-white border border-[#c5c0b1] rounded-bl-none'}`}>
-                          <p className="text-[14px] font-medium leading-tight italic">{c.message}</p>
+                    <div key={i} className={`flex w-full mb-4 ${isMe ? 'justify-end' : 'justify-start animate-in slide-in-from-left-2 duration-300'}`}>
+                      <div className={`flex max-w-[85%] gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                        {/* 👤 AVATAR */}
+                        <div className="w-8 h-8 rounded-full bg-[#eceae3] shrink-0 overflow-hidden flex items-center justify-center border-2 border-white shadow-sm mt-1">
+                          {senderImage ? (
+                            <img src={senderImage.startsWith('/uploads') ? `${window.location.protocol}//${window.location.hostname}:5000${senderImage}` : senderImage} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[10px] font-black text-[#939084]">{initials}</span>
+                          )}
                         </div>
-                        <span className="text-[7px] font-black uppercase text-[#939084] mt-1 px-2 italic opacity-70">
-                          {senderName} • {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
+
+                        <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                          <div className={`py-3 px-5 rounded-[22px] shadow-sm ${isMe ? 'bg-[#201515] text-white rounded-tr-none' : 'bg-white border border-[#eceae3] text-[#201515] rounded-tl-none'}`}>
+                            <p className="text-[14px] font-medium leading-relaxed italic">{c.message}</p>
+                          </div>
+                          <span className="text-[8px] font-black uppercase text-[#939084] mt-1.5 px-2 tracking-widest opacity-60">
+                            {isMe ? 'YOU' : senderName} • {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   );

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  Plus, Search, Calendar, Clock, CheckCircle, 
-  Trash2, User, Zap, BarChart3, RefreshCw, X
+import {
+    Plus, Search, Calendar, Clock, CheckCircle,
+    Trash2, User, Zap, BarChart3, RefreshCw, X
 } from 'lucide-react';
 import TaskDetail from '../../components/TaskDetail';
 
@@ -13,7 +13,7 @@ const Tasks = () => {
     const [showModal, setShowModal] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
-    
+
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -52,11 +52,35 @@ const Tasks = () => {
     };
 
     const handleDelete = async (id) => {
-        if(!window.confirm('Eject Mission Trace?')) return;
+        if (!window.confirm('Eject Mission Trace?')) return;
         try {
             await axios.delete(`/api/tasks/${id}`, { headers });
             fetchData();
         } catch (err) { console.error('Delete error:', err); }
+    };
+
+    const handleRejectAll = async () => {
+        const pendingTasks = tasks.filter(t => t.status !== 'completed' && t.status !== 'rejected');
+        if (pendingTasks.length === 0) {
+            alert('No organization-wide actionable task arcs detected.');
+            return;
+        }
+
+        if (window.confirm(`⚠️ GLOBAL AUTHORITY ALERT: You are about to mass-reject ${pendingTasks.length} active tasks across the entire organization. This action is final. Proceed?`)) {
+            setLoading(true);
+            try {
+                await Promise.all(
+                    pendingTasks.map(t => axios.put(`/api/tasks/status/${t._id}`, { status: 'rejected' }, { headers }))
+                );
+                alert(`Institutional Veto Complete: ${pendingTasks.length} organization-wide task arcs successfully declined.`);
+                fetchData();
+            } catch (err) {
+                console.error('Mass veto failed:', err);
+                alert('Institutional Veto disrupted. Check connection node.');
+            } finally {
+                setLoading(false);
+            }
+        }
     };
 
     const stats = {
@@ -74,9 +98,18 @@ const Tasks = () => {
                     <p className="zap-caption-upper text-[#ff4f00] mb-4">Task Management</p>
                     <h1 className="zap-display-hero">Create <span className="text-[#ff4f00]">Task.</span></h1>
                 </div>
-                <button onClick={() => setShowModal(true)} className="zap-btn zap-btn-orange h-14 px-8">
-                    <Plus size={18} className="mr-3" /> Create Task
-                </button>
+                <div className="flex gap-4">
+                    <button
+                        onClick={handleRejectAll}
+                        className="border border-[#ff4f00] text-[#ff4f00] hover:bg-[#ff4f00] hover:text-white px-8 py-4 rounded-[12px] font-black text-[11px] uppercase tracking-wider transition-all flex items-center gap-2"
+                    >
+                        <X size={18} />
+                        Reject All Pending
+                    </button>
+                    <button onClick={() => setShowModal(true)} className="zap-btn zap-btn-orange h-14 px-8">
+                        <Plus size={18} className="mr-3" /> Create Task
+                    </button>
+                </div>
             </div>
 
             {/* ANALYTICS */}
@@ -120,7 +153,7 @@ const Tasks = () => {
                                     </td>
                                     <td className="px-8 py-6">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-[#eceae3] flex items-center justify-center text-[#939084]"><User size={14}/></div>
+                                            <div className="w-8 h-8 rounded-full bg-[#eceae3] flex items-center justify-center text-[#939084]"><User size={14} /></div>
                                             <span className="text-[13px] font-bold text-[#201515] uppercase italic">{task.assignedManager?.name || 'Unassigned'}</span>
                                         </div>
                                     </td>
@@ -131,7 +164,7 @@ const Tasks = () => {
                                     </td>
                                     <td className="px-8 py-6 text-right" onClick={(e) => e.stopPropagation()}>
                                         <button onClick={() => handleDelete(task._id)} className="w-10 h-10 flex items-center justify-center text-[#ff4f00] hover:bg-[#ff4f00] hover:text-white rounded-[4px] transition-all bg-transparent border-none">
-                                            <Trash2 size={18}/>
+                                            <Trash2 size={18} />
                                         </button>
                                     </td>
                                 </tr>
@@ -143,39 +176,39 @@ const Tasks = () => {
 
             {/* CREATE MODAL */}
             {showModal && (
-                <div 
+                <div
                     className="fixed inset-0 z-[999] flex items-center justify-center p-6 bg-[#201515]/60 backdrop-blur-sm animate-in fade-in duration-300"
                     onClick={() => setShowModal(false)}
                 >
-                    <div 
+                    <div
                         className="bg-white w-full max-w-md rounded-[24px] overflow-hidden shadow-2xl border border-[#c5c0b1] animate-in zoom-in-95 duration-300"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="p-6 border-b border-[#eceae3] bg-[#fffdf9] flex justify-between items-center">
                             <h3 className="text-xl font-black text-[#201515] uppercase italic tracking-tighter">Create <span className="text-[#ff4f00]">Task.</span></h3>
-                            <button onClick={() => setShowModal(false)} className="text-[#939084] hover:text-[#ff4f00] bg-transparent border-none cursor-pointer"><X size={20}/></button>
+                            <button onClick={() => setShowModal(false)} className="text-[#939084] hover:text-[#ff4f00] bg-transparent border-none cursor-pointer"><X size={20} /></button>
                         </div>
                         <form onSubmit={handleCreateTask} className="p-6 space-y-5">
                             <div className="space-y-1.5">
                                 <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[#939084] ml-1 italic">Task Title</label>
-                                <input type="text" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full h-11 px-4 bg-[#eceae3] rounded-xl text-[12px] font-bold focus:outline-none focus:ring-2 focus:ring-[#ff4f00]/20 transition-all italic" placeholder="Enter task title..." />
+                                <input type="text" required value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full h-11 px-4 bg-[#eceae3] rounded-xl text-[12px] font-bold focus:outline-none focus:ring-2 focus:ring-[#ff4f00]/20 transition-all italic" placeholder="Enter task title..." />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[#939084] ml-1 italic">Lead Personnel</label>
-                                    <select required value={formData.assignedManager} onChange={e => setFormData({...formData, assignedManager: e.target.value})} className="w-full h-11 px-4 bg-[#eceae3] rounded-xl text-[12px] font-bold focus:outline-none focus:ring-2 focus:ring-[#ff4f00]/20 transition-all italic appearance-none">
+                                    <select required value={formData.assignedManager} onChange={e => setFormData({ ...formData, assignedManager: e.target.value })} className="w-full h-11 px-4 bg-[#eceae3] rounded-xl text-[12px] font-bold focus:outline-none focus:ring-2 focus:ring-[#ff4f00]/20 transition-all italic appearance-none">
                                         <option value="">Select</option>
-                                        {leads?.map(m => <option key={m._id} value={m._id}>{m.name || m.fullName || 'Unknown'} ({m.role?.toUpperCase() || 'N/A'})</option>)}
+                                        {leads?.filter(m => m.role?.toLowerCase() === 'hr').map(m => <option key={m._id} value={m._id}>{m.name || m.fullName || 'Unknown'} ({m.role?.toUpperCase() || 'N/A'})</option>)}
                                     </select>
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[#939084] ml-1 italic">Due Date</label>
-                                    <input type="date" required value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: e.target.value})} className="w-full h-11 px-4 bg-[#eceae3] rounded-xl text-[12px] font-bold focus:outline-none focus:ring-2 focus:ring-[#ff4f00]/20 transition-all italic" />
+                                    <input type="date" required value={formData.dueDate} onChange={e => setFormData({ ...formData, dueDate: e.target.value })} className="w-full h-11 px-4 bg-[#eceae3] rounded-xl text-[12px] font-bold focus:outline-none focus:ring-2 focus:ring-[#ff4f00]/20 transition-all italic" />
                                 </div>
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[#939084] ml-1 italic">Task Description</label>
-                                <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full p-4 bg-[#eceae3] rounded-2xl text-[12px] font-medium focus:outline-none focus:ring-2 focus:ring-[#ff4f00]/20 transition-all italic h-24 resize-none" placeholder="Provide details..." />
+                                <textarea required value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="w-full p-4 bg-[#eceae3] rounded-2xl text-[12px] font-medium focus:outline-none focus:ring-2 focus:ring-[#ff4f00]/20 transition-all italic h-24 resize-none" placeholder="Provide details..." />
                             </div>
                             <button type="submit" className="w-full h-12 bg-[#201515] text-white rounded-xl font-black text-[11px] uppercase tracking-[0.3em] hover:bg-[#ff4f00] transition-all italic shadow-lg">Create New Task</button>
                         </form>
@@ -185,7 +218,7 @@ const Tasks = () => {
 
             {/* DETAIL MODAL */}
             {selectedTask && (
-                <TaskDetail 
+                <TaskDetail
                     task={tasks.find(t => t._id === selectedTask._id) || selectedTask}
                     isOpen={isDetailOpen}
                     onClose={() => setIsDetailOpen(false)}

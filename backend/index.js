@@ -13,6 +13,7 @@ const timeTrackRoutes = require('./routes/timeTrackRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
 const managerRoutes = require('./routes/managerRoutes');
 const userRoutes = require('./routes/userRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const path = require('path');
 
 const http = require('http');
@@ -51,6 +52,13 @@ io.on('connection', (socket) => {
     console.log(`📡 User joined task room: ${taskId}`);
   });
 
+  socket.on('join_notifications', ({ userId, role }) => {
+    if (!userId) return;
+    socket.join(`user_${userId}`);
+    if (role) socket.join(`role_${role}`);
+    console.log(`🔔 User joined notification rooms: user_${userId} ${role ? `role_${role}` : ''}`);
+  });
+
   socket.on('disconnect', () => {
     console.log('❌ User disconnected');
   });
@@ -66,8 +74,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/personnel', require('./routes/personnelRoutes'));
 app.use('/api/teams', require('./routes/teamRoutes'));
 app.use('/api/projects', require('./routes/projectRoutes'));
-app.use('/api/time', require('./routes/timeTrackRoutes'));
-app.use('/api/departments', departmentRoutes);
+app.use('/api/time', require('./routes/timeTrackRoutes'));app.use('/api/notifications', notificationRoutes);app.use('/api/departments', departmentRoutes);
 app.use('/api/managers', managerRoutes);
 app.use('/api/users', userRoutes);
 

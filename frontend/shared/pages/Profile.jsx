@@ -57,6 +57,12 @@ const Profile = () => {
   const joinDate = safeUserData.joinDate ? new Date(safeUserData.joinDate).toLocaleDateString() : 'NOT SET';
   const phone = safeUserData.phone || 'DATA MISSING';
   const empType = safeUserData.employmentType || 'Standard';
+  const gender = safeUserData.gender || 'NOT SPECIFIED';
+  const address = safeUserData.address || 'LOCATOR DATA MISSING';
+  const birthdate = safeUserData.dob ? new Date(safeUserData.dob).toLocaleDateString() : 'NOT CONFIGURED';
+  const adharCard = safeUserData.adharCard || null;
+  const bankDetails = safeUserData.bankDetails || null;
+  const panCard = safeUserData.panCard || null;
 
   const initials = fullName ? fullName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase() || 'NA' : 'NA';
 
@@ -231,10 +237,18 @@ const Profile = () => {
               <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Personal Contact Vector</label>
               <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#1F2937] font-bold text-[13px] border border-slate-200/60 italic opacity-60">{personalEmail}</div>
             </div>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Gender Identity</label>
+              <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#1F2937] font-bold text-[13px] border border-slate-200/60 uppercase">{gender}</div>
+            </div>
+            <div className="space-y-3 col-span-full">
+              <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Location Node (Address)</label>
+              <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#1F2937] font-bold text-[13px] border border-slate-200/60">{address}</div>
+            </div>
           </div>
 
           <div className="pt-8 border-t border-slate-50">
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="space-y-2">
                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Join Date Protocol</p>
                    <p className="text-sm font-black text-[#2E3A59]">{joinDate}</p>
@@ -242,6 +256,10 @@ const Profile = () => {
                 <div className="space-y-2">
                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Assignment Branch</p>
                    <p className="text-sm font-black text-[#2E3A59] uppercase">{userDept}</p>
+                </div>
+                <div className="space-y-2">
+                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Birthdate Protocol</p>
+                   <p className="text-sm font-black text-[#2E3A59]">{birthdate}</p>
                 </div>
                 <div className="space-y-2">
                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Phone Telemetry</p>
@@ -283,6 +301,106 @@ const Profile = () => {
           <p className="mt-12 text-[10px] text-white/40 italic font-medium uppercase tracking-tight leading-relaxed">
             "Identity is the bedrock of secure architecture."
           </p>
+        </section>
+
+        {/* VERIFIED DOCUMENTS VAULT */}
+        <section className="lg:col-span-3 bg-white p-10 rounded-[32px] shadow-sm border border-slate-200/60">
+           <div className="flex justify-between items-center mb-10 pb-6 border-b border-slate-50">
+              <div>
+                 <h3 className="text-[12px] font-black text-[#2E3A59] font-manrope tracking-[0.2em] uppercase">Verified Documents Vault</h3>
+                 <p className="text-slate-400 text-[9px] mt-1 font-medium">Secured identity and professional assets</p>
+              </div>
+              <span className="material-symbols-outlined text-[#2E3A59]/5 text-5xl">folder_shared</span>
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Adharcard Display */}
+              <div className="flex flex-col items-center gap-6 p-8 bg-[#fcfcfc] rounded-[24px] border border-slate-200/60 group hover:border-[var(--accent-gold)] transition-all">
+                 <div className="w-full aspect-square max-w-[140px] rounded-2xl bg-white flex items-center justify-center text-[var(--accent-gold)] shadow-lg border border-slate-100 group-hover:scale-[1.03] transition-all overflow-hidden">
+                    {adharCard ? (
+                      <img src={`${API_BASE_URL}${adharCard}`} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="flex flex-col items-center gap-2">
+                         <span className="material-symbols-outlined text-4xl opacity-10">fingerprint</span>
+                         <p className="text-[9px] font-black uppercase tracking-widest opacity-20">Identity Missing</p>
+                      </div>
+                    )}
+                 </div>
+                 <div className="text-center flex-1">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">National ID</p>
+                    <p className="text-[14px] font-black text-[#2E3A59]">Adharcard Registry</p>
+                 </div>
+                 {adharCard ? (
+                    <a 
+                      href={`${API_BASE_URL}${adharCard}`} 
+                      target="_blank" rel="noopener noreferrer"
+                      className="w-full text-center py-3.5 bg-[#2E3A59] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95"
+                    >
+                      View Asset
+                    </a>
+                 ) : (
+                    <span className="text-[10px] font-bold text-slate-300 uppercase italic">Not Registered</span>
+                 )}
+              </div>
+
+              {/* Bank Details Display */}
+              <div className="flex flex-col items-center gap-6 p-8 bg-[#fcfcfc] rounded-[24px] border border-slate-200/60 group hover:border-[var(--accent-gold)] transition-all">
+                 <div className="w-full aspect-square max-w-[140px] rounded-2xl bg-white flex items-center justify-center text-[#2E3A59] shadow-lg border border-slate-100 group-hover:scale-[1.03] transition-all overflow-hidden">
+                    {bankDetails ? (
+                      <img src={`${API_BASE_URL}${bankDetails}`} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="flex flex-col items-center gap-2">
+                         <span className="material-symbols-outlined text-4xl opacity-10">credit_card</span>
+                         <p className="text-[9px] font-black uppercase tracking-widest opacity-20">Banking Missing</p>
+                      </div>
+                    )}
+                 </div>
+                 <div className="text-center flex-1">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Financial ID</p>
+                    <p className="text-[14px] font-black text-[#2E3A59]">Bank Details Registry</p>
+                 </div>
+                 {bankDetails ? (
+                    <a 
+                      href={`${API_BASE_URL}${bankDetails}`} 
+                      target="_blank" rel="noopener noreferrer"
+                      className="w-full text-center py-3.5 bg-[#2E3A59] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95"
+                    >
+                      View Asset
+                    </a>
+                 ) : (
+                    <span className="text-[10px] font-bold text-slate-300 uppercase italic">Not Registered</span>
+                 )}
+              </div>
+
+              {/* PAN Card Display */}
+              <div className="flex flex-col items-center gap-6 p-8 bg-[#fcfcfc] rounded-[24px] border border-slate-200/60 group hover:border-[var(--accent-gold)] transition-all">
+                 <div className="w-full aspect-square max-w-[140px] rounded-2xl bg-white flex items-center justify-center text-[#2E3A59] shadow-lg border border-slate-100 group-hover:scale-[1.03] transition-all overflow-hidden">
+                    {panCard ? (
+                      <img src={`${API_BASE_URL}${panCard}`} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="flex flex-col items-center gap-2">
+                         <span className="material-symbols-outlined text-4xl opacity-10">badge</span>
+                         <p className="text-[9px] font-black uppercase tracking-widest opacity-20">PAN Missing</p>
+                      </div>
+                    )}
+                 </div>
+                 <div className="text-center flex-1">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Identity Node</p>
+                    <p className="text-[14px] font-black text-[#2E3A59]">PAN Card Registry</p>
+                 </div>
+                 {panCard ? (
+                    <a 
+                      href={`${API_BASE_URL}${panCard}`} 
+                      target="_blank" rel="noopener noreferrer"
+                      className="w-full text-center py-3.5 bg-[#2E3A59] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95"
+                    >
+                      View Asset
+                    </a>
+                 ) : (
+                    <span className="text-[10px] font-bold text-slate-300 uppercase italic">Not Registered</span>
+                 )}
+              </div>
+           </div>
         </section>
 
         {/* SECURITY REGISTRY */}

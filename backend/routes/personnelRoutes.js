@@ -39,10 +39,8 @@ router.get('/all', authorize('admin', 'hr', 'manager'), async (req, res) => {
 // 🔢 SEQUENTIAL IDENTITY ENGINE: Fetch Next ID for Role
 router.get('/next-id/:role', authorize('admin'), async (req, res) => {
   try {
-    const roleMatch = req.params.role.toLowerCase();
-    const count = await User.countDocuments({ role: roleMatch });
-    // Pattern: {role}-{number}.{role} (e.g., hr-004.hr)
-    const nextId = `${roleMatch}-${String(count + 1).padStart(3, '0')}.${roleMatch}`;
+    const count = await User.countDocuments({});
+    const nextId = `AT_EMP_${count + 1}`;
     res.json({ nextId });
   } catch (e) {
     res.status(500).json({ error: e.message });

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Mail, Phone, Calendar, Briefcase, MapPin, Building, Activity, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Calendar, Briefcase, MapPin, Building, Activity, ShieldCheck, Fingerprint, CreditCard, IdCard, Eye } from 'lucide-react';
 
 const EmployeeDetail = () => {
   const { id } = useParams();
@@ -36,7 +36,10 @@ const EmployeeDetail = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => navigate('/admin/employees')}
+            onClick={() => {
+              const pathRole = window.location.pathname.split('/')[1];
+              navigate(`/${pathRole}/employees`);
+            }}
             className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#848E9C] hover:text-[#1E2026] shadow-sm border border-[#E6E8EA] transition-all"
           >
             <ArrowLeft size={18} />
@@ -55,7 +58,10 @@ const EmployeeDetail = () => {
              Status: {employee.status}
           </span>
           <button 
-             onClick={() => navigate(`/admin/employees/edit/${employee._id}`)}
+             onClick={() => {
+               const pathRole = window.location.pathname.split('/')[1];
+               navigate(`/${pathRole}/employees/edit/${employee._id}`);
+             }}
              className="px-6 py-2 bg-[#F5F5F5] border border-[#E6E8EA] hover:bg-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
           >
             Edit Profile
@@ -131,31 +137,114 @@ const EmployeeDetail = () => {
         {/* Right Column: details */}
         <div className="md:col-span-2 space-y-8">
            
-           <div className="bg-white rounded-3xl p-8 border border-[#E6E8EA] shadow-sm">
-             <h3 className="text-[14px] font-black text-[#1E2026] uppercase tracking-widest mb-6 flex items-center gap-3">
-               <Briefcase size={18} className="text-[#F0B90B]" /> Corporate Designation
-             </h3>
-             
-             <div className="grid grid-cols-2 gap-8">
+            <div className="bg-white rounded-3xl p-8 border border-[#E6E8EA] shadow-sm">
+              <h3 className="text-[14px] font-black text-[#1E2026] uppercase tracking-widest mb-6 flex items-center gap-3">
+                <Briefcase size={18} className="text-[#F0B90B]" /> Corporate Designation
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-8">
+                <div>
+                   <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest mb-1">Authorization Role</p>
+                   <p className="text-[14px] font-black text-[#1E2026] uppercase">{employee.role}</p>
+                </div>
+                <div>
+                   <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest mb-1">Hierarchy Manager</p>
+                   <p className="text-[14px] font-black text-[#1E2026]">{employee.managerId?.name || 'Core Root'}</p>
+                </div>
+                <div>
+                   <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest mb-1">Employment Type</p>
+                   <p className="text-[14px] font-black text-[#1E2026]">{employee.employmentType}</p>
+                </div>
+                <div>
+                   <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest mb-1">Induction Date</p>
+                   <p className="text-[14px] font-black text-[#1E2026]">{employee.joinDate ? new Date(employee.joinDate).toLocaleDateString() : 'N/A'}</p>
+                </div>
+              </div>
+            </div>
 
-               <div>
-                  <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest mb-1">Authorization Role</p>
-                  <p className="text-[14px] font-black text-[#1E2026] uppercase">{employee.role}</p>
-               </div>
-               <div>
-                  <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest mb-1">Hierarchy Manager</p>
-                  <p className="text-[14px] font-black text-[#1E2026]">{employee.managerId?.name || 'Core Root'}</p>
-               </div>
-               <div>
-                  <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest mb-1">Employment Type</p>
-                  <p className="text-[14px] font-black text-[#1E2026]">{employee.employmentType}</p>
-               </div>
-               <div>
-                  <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest mb-1">Induction Date</p>
-                  <p className="text-[14px] font-black text-[#1E2026]">{employee.joinDate ? new Date(employee.joinDate).toLocaleDateString() : 'N/A'}</p>
-               </div>
-             </div>
-           </div>
+            {/* VERIFIED DOCUMENTS VAULT */}
+            <div className="bg-white rounded-3xl p-8 border border-[#E6E8EA] shadow-sm">
+              <h3 className="text-[14px] font-black text-[#1E2026] uppercase tracking-widest mb-6 flex items-center gap-3">
+                 <ShieldCheck size={18} className="text-[#F0B90B]" /> Verified Documents Vault
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                 {/* Adharcard */}
+                 <div className="flex flex-col items-center gap-5 p-6 bg-[#F5F5F5] rounded-2xl border border-[#E6E8EA] group hover:border-[#F0B90B] transition-all">
+                    <div className="w-full aspect-square max-w-[120px] rounded-xl bg-white flex items-center justify-center text-[#F0B90B] shadow-md border border-[#E6E8EA] group-hover:scale-[1.03] transition-all overflow-hidden">
+                       {employee.adharCard ? (
+                         <img src={employee.adharCard} alt="" className="w-full h-full object-cover" />
+                       ) : (
+                         <div className="flex flex-col items-center gap-2">
+                            <Fingerprint size={32} className="opacity-10" />
+                            <p className="text-[8px] font-black uppercase tracking-widest opacity-20">Missing</p>
+                         </div>
+                       )}
+                    </div>
+                    <div className="text-center">
+                       <p className="text-[9px] font-black uppercase tracking-widest text-[#848E9C]">National ID</p>
+                       <p className="text-[12px] font-black text-[#1E2026]">Adharcard</p>
+                    </div>
+                    {employee.adharCard ? (
+                      <a href={employee.adharCard} target="_blank" rel="noopener noreferrer" className="w-full text-center py-2.5 bg-[#1E2026] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95">
+                        <Eye size={12} /> View Asset
+                      </a>
+                    ) : (
+                      <span className="text-[9px] font-bold text-[#848E9C] uppercase italic">Not Linked</span>
+                    )}
+                 </div>
+
+                 {/* Bank Details */}
+                 <div className="flex flex-col items-center gap-5 p-6 bg-[#F5F5F5] rounded-2xl border border-[#E6E8EA] group hover:border-[#F0B90B] transition-all">
+                    <div className="w-full aspect-square max-w-[120px] rounded-xl bg-white flex items-center justify-center text-[#F0B90B] shadow-md border border-[#E6E8EA] group-hover:scale-[1.03] transition-all overflow-hidden">
+                       {employee.bankDetails ? (
+                         <img src={employee.bankDetails} alt="" className="w-full h-full object-cover" />
+                       ) : (
+                         <div className="flex flex-col items-center gap-2">
+                            <CreditCard size={32} className="opacity-10" />
+                            <p className="text-[8px] font-black uppercase tracking-widest opacity-20">Missing</p>
+                         </div>
+                       )}
+                    </div>
+                    <div className="text-center">
+                       <p className="text-[9px] font-black uppercase tracking-widest text-[#848E9C]">Financial ID</p>
+                       <p className="text-[12px] font-black text-[#1E2026]">Bank Details</p>
+                    </div>
+                    {employee.bankDetails ? (
+                      <a href={employee.bankDetails} target="_blank" rel="noopener noreferrer" className="w-full text-center py-2.5 bg-[#1E2026] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95">
+                        <Eye size={12} /> View Asset
+                      </a>
+                    ) : (
+                      <span className="text-[9px] font-bold text-[#848E9C] uppercase italic">Not Linked</span>
+                    )}
+                 </div>
+
+                 {/* PAN Card */}
+                 <div className="flex flex-col items-center gap-5 p-6 bg-[#F5F5F5] rounded-2xl border border-[#E6E8EA] group hover:border-[#F0B90B] transition-all">
+                    <div className="w-full aspect-square max-w-[120px] rounded-xl bg-white flex items-center justify-center text-[#F0B90B] shadow-md border border-[#E6E8EA] group-hover:scale-[1.03] transition-all overflow-hidden">
+                       {employee.panCard ? (
+                         <img src={employee.panCard} alt="" className="w-full h-full object-cover" />
+                       ) : (
+                         <div className="flex flex-col items-center gap-2">
+                            <IdCard size={32} className="opacity-10" />
+                            <p className="text-[8px] font-black uppercase tracking-widest opacity-20">Missing</p>
+                         </div>
+                       )}
+                    </div>
+                    <div className="text-center">
+                       <p className="text-[9px] font-black uppercase tracking-widest text-[#848E9C]">Identity Node</p>
+                       <p className="text-[12px] font-black text-[#1E2026]">PAN Card</p>
+                    </div>
+                    {employee.panCard ? (
+                      <a href={employee.panCard} target="_blank" rel="noopener noreferrer" className="w-full text-center py-2.5 bg-[#1E2026] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95">
+                        <Eye size={12} /> View Asset
+                      </a>
+                    ) : (
+                      <span className="text-[9px] font-bold text-[#848E9C] uppercase italic">Not Linked</span>
+                    )}
+                 </div>
+              </div>
+            </div>
 
            <div className="bg-[#1E2026] rounded-3xl p-8 shadow-2xl relative overflow-hidden">
              <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl"></div>

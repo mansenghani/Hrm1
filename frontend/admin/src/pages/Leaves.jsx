@@ -28,15 +28,45 @@ const Leaves = () => {
       await axios.put(`/api/leaves/${id}`, { status }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setLeaves(leaves.map(l => l._id === id ? { ...l, status } : l));
+      return true;
     } catch (err) {
       console.error('Action failed:', err);
+      return false;
+    }
+  };
+
+  const handleRejectAll = async () => {
+    const pendingRequests = leaves.filter(l => l.status === 'Pending');
+    if (pendingRequests.length === 0) {
+      alert('No organization-wide pending leave protocols detected.');
+      return;
+    }
+
+    if (window.confirm(`⚠️ GLOBAL AUTHORITY ALERT: You are about to mass-reject ${pendingRequests.length} leave requests across the entire organization. This action is final. Proceed?`)) {
+      setLoading(true);
+      try {
+        await Promise.all(
+          pendingRequests.map(l => handleAction(l._id, 'Rejected'))
+        );
+        alert(`Institutional Veto Complete: ${pendingRequests.length} organization-wide protocols successfully declined.`);
+
+        // Refresh local state
+        const res = await axios.get('/api/leaves', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setLeaves(res.data || []);
+      } catch (err) {
+        console.error('Mass veto failed:', err);
+        alert('Institutional Veto disrupted. Check connection node.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
   return (
     <div className="space-y-12 animate-in fade-in duration-500 pb-20">
-      
+
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
         <div>
@@ -48,10 +78,19 @@ const Leaves = () => {
             Protocol Scheduling Node
           </p>
         </div>
-        <button className="bg-[#F0B90B] text-[#1E2026] px-10 py-4 rounded-full font-black text-[13px] uppercase tracking-wider shadow-lg hover:bg-[#FFD000] transition-all flex items-center gap-2">
-          <Calendar size={18} />
-          Adjust Policies
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={handleRejectAll}
+            className="border border-[#F6465D] text-[#F6465D] hover:bg-[#F6465D] hover:text-white px-8 py-4 rounded-full font-black text-[12px] uppercase tracking-wider transition-all flex items-center gap-2"
+          >
+            <XCircle size={18} />
+            Reject All Pending
+          </button>
+          <button className="bg-[#F0B90B] text-[#1E2026] px-10 py-4 rounded-full font-black text-[13px] uppercase tracking-wider shadow-lg hover:bg-[#FFD000] transition-all flex items-center gap-2">
+            <Calendar size={18} />
+            Adjust Policies
+          </button>
+        </div>
       </div>
 
       {/* SUMMARY STATS */}
@@ -62,24 +101,24 @@ const Leaves = () => {
           { label: 'System Denials', val: leaves.filter(l => l.status === 'Rejected').length, cap: 'Policy Constraints', color: 'text-[#F6465D]', bg: 'bg-[#F6465D]/10' }
         ].map((stat, i) => (
           <div key={i} className="bg-white p-8 border border-[#E6E8EA] rounded-xl hover:shadow-[0_8px_24px_rgba(0,0,0,0.05)] transition-all">
-             <div className="flex justify-between items-start mb-10">
-                <span className={`text-[10px] font-black uppercase tracking-widest ${stat.color} px-4 py-1.5 rounded-full ${stat.bg}`}>{stat.label}</span>
-                <Clock size={18} className="text-[#848E9C]" />
-             </div>
-             <div className="text-left">
-                <h3 className="text-4xl font-black text-[#1E2026] tabular-nums mb-1">{stat.val}</h3>
-                <p className="text-[11px] font-bold text-[#848E9C] uppercase tracking-[0.1em]">{stat.cap}</p>
-             </div>
+            <div className="flex justify-between items-start mb-10">
+              <span className={`text-[10px] font-black uppercase tracking-widest ${stat.color} px-4 py-1.5 rounded-full ${stat.bg}`}>{stat.label}</span>
+              <Clock size={18} className="text-[#848E9C]" />
+            </div>
+            <div className="text-left">
+              <h3 className="text-4xl font-black text-[#1E2026] tabular-nums mb-1">{stat.val}</h3>
+              <p className="text-[11px] font-bold text-[#848E9C] uppercase tracking-[0.1em]">{stat.cap}</p>
+            </div>
           </div>
         ))}
       </div>
 
       <div className="bg-white border border-[#E6E8EA] rounded-2xl overflow-hidden shadow-[0_3px_5px_rgba(32,32,37,0.05)]">
         <div className="p-8 border-b border-[#E6E8EA] bg-[#F5F5F5]/30 flex justify-between items-center">
-           <h3 className="text-[14px] font-black uppercase tracking-widest text-[#1E2026]">Protocol Request History</h3>
-           <div className="flex gap-4">
-              <span className="text-[11px] font-black text-[#848E9C] uppercase tracking-widest bg-white px-4 py-2 rounded-full border border-[#E6E8EA]">All Segments</span>
-           </div>
+          <h3 className="text-[14px] font-black uppercase tracking-widest text-[#1E2026]">Protocol Request History</h3>
+          <div className="flex gap-4">
+            <span className="text-[11px] font-black text-[#848E9C] uppercase tracking-widest bg-white px-4 py-2 rounded-full border border-[#E6E8EA]">All Segments</span>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -104,37 +143,36 @@ const Leaves = () => {
                     <td className="px-10 py-6">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#1E2026] border border-[#E6E8EA] font-black text-xs">
-                           <User size={16} className="text-[#F0B90B]" />
+                          <User size={16} className="text-[#F0B90B]" />
                         </div>
                         <span className="text-[13px] font-black text-[#1E2026]">
-                           {row.employeeId?.profile?.firstName} {row.employeeId?.profile?.lastName}
+                          {row.employeeId?.profile?.firstName} {row.employeeId?.profile?.lastName}
                         </span>
                       </div>
                     </td>
                     <td className="px-10 py-6 text-[12px] font-bold text-[#1E2026] uppercase tracking-widest">{row.leaveType}</td>
                     <td className="px-10 py-6">
-                       <p className="text-[13px] font-black text-[#1E2026] tabular-nums">{row.startDate} - {row.endDate}</p>
-                       <p className="text-[11px] font-bold text-[#848E9C]">{row.totalDays} Days</p>
+                      <p className="text-[13px] font-black text-[#1E2026] tabular-nums">{row.startDate} - {row.endDate}</p>
+                      <p className="text-[11px] font-bold text-[#848E9C]">{row.totalDays} Days</p>
                     </td>
                     <td className="px-10 py-6">
-                       <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                         row.status === 'Approved' ? 'bg-[#0ECB81]/10 text-[#0ECB81]' : 
-                         row.status === 'Rejected' ? 'bg-[#F6465D]/10 text-[#F6465D]' : 
-                         'bg-[#F0B90B]/10 text-[#D0980B]'
-                       }`}>
-                         {row.status}
-                       </span>
+                      <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${row.status === 'Approved' ? 'bg-[#0ECB81]/10 text-[#0ECB81]' :
+                          row.status === 'Rejected' ? 'bg-[#F6465D]/10 text-[#F6465D]' :
+                            'bg-[#F0B90B]/10 text-[#D0980B]'
+                        }`}>
+                        {row.status}
+                      </span>
                     </td>
                     <td className="px-10 py-6 text-right">
-                       <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
-                          {row.status === 'Pending' && (
-                            <>
-                              <button onClick={() => handleAction(row._id, 'Approved')} className="p-2.5 rounded-lg bg-[#0ECB81]/10 text-[#0ECB81] hover:bg-[#0ECB81] hover:text-white transition-all"><CheckCircle size={16} /></button>
-                              <button onClick={() => handleAction(row._id, 'Rejected')} className="p-2.5 rounded-lg bg-[#F6465D]/10 text-[#F6465D] hover:bg-[#F6465D] hover:text-white transition-all"><XCircle size={16} /></button>
-                            </>
-                          )}
-                          <button className="p-2.5 text-[#848E9C] hover:text-[#1E2026]"><MoreHorizontal size={18} /></button>
-                       </div>
+                      <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
+                        {row.status === 'Pending' && (
+                          <>
+                            <button onClick={() => handleAction(row._id, 'Approved')} className="p-2.5 rounded-lg bg-[#0ECB81]/10 text-[#0ECB81] hover:bg-[#0ECB81] hover:text-white transition-all"><CheckCircle size={16} /></button>
+                            <button onClick={() => handleAction(row._id, 'Rejected')} className="p-2.5 rounded-lg bg-[#F6465D]/10 text-[#F6465D] hover:bg-[#F6465D] hover:text-white transition-all"><XCircle size={16} /></button>
+                          </>
+                        )}
+                        <button className="p-2.5 text-[#848E9C] hover:text-[#1E2026]"><MoreHorizontal size={18} /></button>
+                      </div>
                     </td>
                   </tr>
                 ))

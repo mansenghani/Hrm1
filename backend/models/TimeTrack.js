@@ -71,7 +71,13 @@ const timeTrackSchema = new mongoose.Schema({
   // Activity log for detailed tracking
   activityLog: [{
     timestamp: { type: Date, default: Date.now },
-    type: { type: String, enum: ['mouse', 'keyboard', 'tab', 'resume', 'pause', 'idle_start'] }
+    type: {
+      type: String,
+      enum: [
+        'mouse', 'keyboard', 'click', 'scroll', 'touch', 'focus', 'tab',
+        'resume', 'pause', 'idle_start', 'idle', 'heartbeat', 'active'
+      ]
+    }
   }]
 }, { timestamps: true });
 

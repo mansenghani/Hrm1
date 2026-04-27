@@ -57,13 +57,50 @@ const HRTasks = () => {
             data.append('dueDate', formData.dueDate);
             if (formData.file) data.append('file', formData.file);
 
+            setLoading(true);
             await axios.post('/api/tasks/create', data, { 
                 headers: { ...headers, 'Content-Type': 'multipart/form-data' } 
             });
+            setFormData({
+                title: '',
+                description: '',
+                assignedManager: '',
+                project: '',
+                priority: 'medium',
+                dueDate: ''
+            });
             setShowModal(false);
-            setFormData({ title: '', description: '', assignedManager: '', project: '', priority: 'medium', dueDate: '', file: null });
-            fetchData();
-        } catch (err) { alert(err.response?.data?.message || 'Transmission Failed'); }
+            await fetchData();
+        } catch (err) {
+            console.error('Create task failed:', err);
+            alert(err.response?.data?.message || 'Unable to create task.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRejectAll = async () => {
+        const pendingTasks = tasks.filter(t => t.status !== 'completed' && t.status !== 'rejected');
+        if (pendingTasks.length === 0) {
+            alert('No actionable task arcs detected in current matrix.');
+            return;
+        }
+
+        if (window.confirm(`⚠️ AUTHORITY ALERT: You are about to mass-reject ${pendingTasks.length} active tasks. This action is final. Proceed?`)) {
+            setLoading(true);
+            try {
+                await Promise.all(
+                    pendingTasks.map(t => axios.put(`/api/tasks/status/${t._id}`, { status: 'rejected' }, { headers }))
+                );
+                alert(`Institutional Veto Complete: ${pendingTasks.length} task arcs successfully declined.`);
+                fetchData();
+            } catch (err) {
+                console.error('Mass veto failed:', err);
+                alert('Institutional Veto disrupted. Check connection node.');
+            } finally {
+                setLoading(false);
+            }
+        }
     };
 
     const stats = {
@@ -88,9 +125,14 @@ const HRTasks = () => {
                     <p className="zap-caption-upper text-[#ff4f00] mb-4">Task Management</p>
                     <h1 className="zap-display-hero">Create <span className="text-[#ff4f00]">Task.</span></h1>
                 </div>
-                <button onClick={() => setShowModal(true)} className="zap-btn zap-btn-orange h-14 px-8">
-                    <Plus size={18} className="mr-3" /> Create Task
-                </button>
+                <div className="flex gap-4">
+                    <button onClick={handleRejectAll} className="zap-btn zap-btn-orange h-14 px-8 flex items-center gap-2">
+                        <X size={18} /> Reject All Pending
+                    </button>
+                    <button onClick={() => setShowModal(true)} className="zap-btn zap-btn-orange h-14 px-8">
+                        <Plus size={18} className="mr-3" /> Create Task
+                    </button>
+                </div>
             </div>
 
             {/* ANALYTICS */}
@@ -181,7 +223,7 @@ const HRTasks = () => {
                                     <label className="text-[9px] font-black uppercase tracking-[0.3em] text-[#939084] ml-1 italic">Assign Lead</label>
                                     <select required value={formData.assignedManager} onChange={e => setFormData({...formData, assignedManager: e.target.value})} className="w-full h-10 px-4 bg-[#eceae3] rounded-xl text-[12px] font-bold focus:outline-none focus:ring-2 focus:ring-[#ff4f00]/20 transition-all italic appearance-none">
                                         <option value="">Select</option>
-                                        {leads?.map(m => <option key={m._id} value={m._id}>{m.name || m.fullName || 'Unknown'} ({m.role?.toUpperCase() || 'N/A'})</option>)}
+                                        {leads?.filter(m => m.role?.toLowerCase() === 'hr').map(m => <option key={m._id} value={m._id}>{m.name || m.fullName || 'Unknown'} ({m.role?.toUpperCase() || 'N/A'})</option>)}
                                     </select>
                                 </div>
                                 <div className="space-y-1.5">

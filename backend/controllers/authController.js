@@ -112,19 +112,26 @@ exports.getMe = async (req, res) => {
     const user = await User.findById(req.user.id).select('-password').lean();
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // 👤 DYNAMIC SHADOW LOOKUP: Fetch from the role-specific registry
-    let shadowRegistry = 'Employee'; // Default
-    if (user.role === 'hr') shadowRegistry = 'HR';
-    if (user.role === 'manager') shadowRegistry = 'Manager';
-
-    const shadowData = await mongoose.model(shadowRegistry).findOne({ userId: req.user.id }).lean();
-    console.log(`[PROFILE TRACE] User Role: ${user.role} | Shadow Match: ${!!shadowData} | ID: ${shadowData?.employeeId}`);
+    // 👤 MASTER REGISTRY BRIDGE: Always fetch from the Employee model for personnel details
+    const employeeData = await Employee.findOne({ userId: req.user.id }).lean();
     
-    // Merge data - prioritizing User fields but adding all Shadow extra fields
+    // 🛰️ DYNAMIC SHADOW LOOKUP: Fetch role-specific metadata if needed
+    let roleMetadata = {};
+    if (user.role === 'hr') {
+      roleMetadata = await mongoose.model('HR').findOne({ userId: req.user.id }).lean() || {};
+    } else if (user.role === 'manager') {
+      roleMetadata = await mongoose.model('Manager').findOne({ userId: req.user.id }).lean() || {};
+    }
+
+    console.log(`[PROFILE TRACE] User Role: ${user.role} | Master Registry: ${!!employeeData} | Shadow: ${!!roleMetadata}`);
+    
+    // Merge data - preserve the master User role and use registry data only for identity fields.
     const profile = {
+      ...employeeData,
       ...user,
-      ...shadowData, 
-      employeeId: shadowData?.employeeId || user.employeeId || 'PENDING-SYNC', // Forced explicit mapping
+      ...roleMetadata,
+      role: user.role,
+      employeeId: employeeData?.employeeId || user.employeeId || 'PENDING-SYNC',
       _id: user._id
     };
 

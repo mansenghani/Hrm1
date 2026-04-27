@@ -57,7 +57,7 @@ const HRDashboard = () => {
               className="zap-btn zap-btn-orange h-[56px] px-10 text-[16px] font-bold"
             >
               <Plus size={20} className="mr-3" />
-              Register Account
+              Create User
             </button>
             <button className="zap-btn zap-btn-light h-[56px] px-8">
               Explore Workflows
@@ -69,7 +69,7 @@ const HRDashboard = () => {
       {/* STAT COUNTERS - Zapier Minimalist Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-32">
         {[
-          { label: 'Personnel Nodes', val: stats.employees, cap: 'Workflow Connected', icon: Users },
+          { label: 'All Employees', val: stats.employees, cap: 'Workflow Connected', icon: Users },
           { label: 'Active Tasks', val: stats.pendingLeaves, cap: 'Pending Sync', icon: Zap },
           { label: 'Attendance Pulse', val: stats.attendance, cap: 'Automated Status', icon: Heart }
         ].map((stat, i) => (

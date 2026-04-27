@@ -21,8 +21,8 @@ exports.createNewUserAtomic = async (userData) => {
 
     // 2. Strict ID Generation (Format: hr-004.hr)
     const roleMatch = role.toLowerCase();
-    const count = await User.countDocuments({ role: roleMatch }).session(session);
-    const generatedId = `${roleMatch}-${String(count + 1).padStart(3, '0')}.${roleMatch}`;
+    const count = await User.countDocuments({}).session(session);
+    const generatedId = `AT_EMP_${count + 1}`;
 
     // 3. Root User Creation (Goal Component c)
     const user = new User({ 

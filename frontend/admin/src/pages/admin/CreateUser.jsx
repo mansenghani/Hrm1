@@ -18,8 +18,10 @@ import {
   RefreshCw,
   Plus,
   ChevronDown,
-  Camera
+  Camera,
+  MapPin
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const CreateUser = () => {
   const [formData, setFormData] = useState({
@@ -28,6 +30,9 @@ const CreateUser = () => {
     email: '',
     password: '',
     role: 'employee',
+    gender: 'Male',
+    address: '',
+    dob: '',
     joinDate: new Date().toISOString().split('T')[0],
     reportingManager: ''
   });
@@ -40,6 +45,10 @@ const CreateUser = () => {
   // Image State
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  
+  // Document State
+  const [adharFile, setAdharFile] = useState(null);
+  const [bankFile, setBankFile] = useState(null);
 
   const token = sessionStorage.getItem('token');
 
@@ -104,8 +113,11 @@ const CreateUser = () => {
         email: formData.email,
         password: formData.password,
         role: formData.role,
+        gender: formData.gender,
+        address: formData.address,
+        dob: formData.dob,
         joinDate: formData.joinDate,
-        reportingManager: ['employee', 'manager'].includes(formData.role) ? formData.reportingManager : null
+        reportingManager: formData.role === 'employee' ? formData.reportingManager : null
       };
 
       // 1. Create User Core
@@ -130,11 +142,45 @@ const CreateUser = () => {
         }
       }
 
+      // 3. Upload Documents if selected
+      if (adharFile && profileId) {
+        const adharData = new FormData();
+        adharData.append('document', adharFile);
+        try {
+          await axios.post(`/api/employees/${profileId}/adhar-card`, adharData, {
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+          });
+        } catch (err) { console.warn('Adhar upload failed:', err); }
+      }
+
+      if (bankFile && profileId) {
+        const bankData = new FormData();
+        bankData.append('document', bankFile);
+        try {
+          await axios.post(`/api/employees/${profileId}/bank-details`, bankData, {
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+          });
+        } catch (err) { console.warn('Bank detail upload failed:', err); }
+      }
+
       setMessage({
         type: 'success',
         text: 'User Node successfully initialized with visual identity.',
         employeeId: user?.employeeId,
         status: user?.status
+      });
+
+      toast.success('Professional Node Initialized Successfully', {
+        style: {
+          background: '#ff4f00',
+          color: '#fff',
+          fontWeight: 'bold',
+          borderRadius: '4px',
+        },
+        iconTheme: {
+          primary: '#fff',
+          secondary: '#ff4f00',
+        }
       });
 
       // Cleanup
@@ -144,11 +190,16 @@ const CreateUser = () => {
         email: '',
         password: '',
         role: formData.role,
+        gender: 'Male',
+        address: '',
+        dob: '',
         joinDate: new Date().toISOString().split('T')[0],
         reportingManager: ''
       });
       setSelectedFile(null);
       setPreviewUrl(null);
+      setAdharFile(null);
+      setBankFile(null);
 
     } catch (err) {
       setMessage({
@@ -302,6 +353,23 @@ const CreateUser = () => {
                 </div>
               </div>
 
+              {/* Gender */}
+              <div className="space-y-4">
+                <label className="zap-caption-upper text-[#201515]">Gender Identity</label>
+                <div className="relative">
+                  <Users size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
+                  <select
+                    required name="gender" value={formData.gender} onChange={handleChange}
+                    className="w-full h-14 pl-12 pr-12 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] appearance-none cursor-pointer"
+                  >
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#939084] pointer-events-none" />
+                </div>
+              </div>
+
               {/* Join Date */}
               <div className="space-y-4">
                 <label className="zap-caption-upper text-[#201515]">Entry Date</label>
@@ -314,8 +382,20 @@ const CreateUser = () => {
                 </div>
               </div>
 
+              {/* Birth Date */}
+              <div className="space-y-4">
+                <label className="zap-caption-upper text-[#201515]">Birthdate Protocol</label>
+                <div className="relative">
+                  <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
+                  <input
+                    required type="date" name="dob" value={formData.dob} onChange={handleChange}
+                    className="w-full h-14 pl-12 pr-4 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00]"
+                  />
+                </div>
+              </div>
+
               {/* Reporting Manager */}
-              {['employee', 'manager'].includes(formData.role) && (
+              {!['hr', 'manager', 'admin'].includes(formData.role) && (
                 <div className="space-y-4 col-span-full">
                   <label className="zap-caption-upper text-[#201515]">Reporting Manager</label>
                   <div className="relative">
@@ -325,14 +405,89 @@ const CreateUser = () => {
                       className="w-full h-14 pl-12 pr-12 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] appearance-none cursor-pointer"
                     >
                       <option value="">Select Reporting Manager</option>
-                      {managers.map(m => (
-                        <option key={m._id} value={m._id}>{m.name || m.fullName}</option>
-                      ))}
+                      {managers
+                        .filter(m => ['manager', 'admin'].includes(m.role?.toLowerCase()))
+                        .map(m => (
+                          <option key={m._id} value={m._id}>{m.name || m.fullName} ({m.role?.toUpperCase()})</option>
+                        ))}
                     </select>
                     <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#939084] pointer-events-none" />
                   </div>
                 </div>
               )}
+
+              {/* Address */}
+              <div className="space-y-4 col-span-full">
+                <label className="zap-caption-upper text-[#201515]">Location Node (Address)</label>
+                <div className="relative">
+                  <MapPin size={18} className="absolute left-4 top-4 text-[#939084]" />
+                  <textarea
+                    name="address" value={formData.address} onChange={handleChange}
+                    className="w-full h-32 pl-12 pr-4 pt-4 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all resize-none"
+                    placeholder="Enter physical location address..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* DOCUMENT VAULT SECTION */}
+            <div className="pt-10 border-t border-[#eceae3] space-y-8">
+               <h3 className="zap-caption-upper !text-[#201515]">Identity Verification Vault</h3>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Adharcard */}
+                  <div className={`p-6 rounded-[8px] border-2 border-dashed transition-all ${adharFile ? 'bg-[#24a148]/5 border-[#24a148]' : 'bg-white border-[#c5c0b1] hover:border-[#ff4f00]'}`}>
+                     <div className="flex items-center justify-between mb-4">
+                        <div 
+                          className={`w-16 h-12 rounded-[4px] flex items-center justify-center overflow-hidden border border-[#eceae3] transition-all ${adharFile ? 'bg-white cursor-pointer hover:scale-105 active:scale-95' : 'bg-[#eceae3] text-[#939084]'}`}
+                          onClick={() => adharFile && window.open(URL.createObjectURL(adharFile), '_blank')}
+                        >
+                           {adharFile ? (
+                             <img src={URL.createObjectURL(adharFile)} alt="" className="w-full h-full object-cover" />
+                           ) : (
+                             <Info size={20} />
+                           )}
+                        </div>
+                        {adharFile && <span className="text-[10px] font-black text-[#24a148] uppercase tracking-widest">Asset Ready</span>}
+                     </div>
+                     <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                           <p className="text-[14px] font-bold text-[#201515] mb-1">Adharcard Registry</p>
+                           {!adharFile && <p className="text-[11px] text-[#939084]">Identity Verification Protocol</p>}
+                        </div>
+                        <label className="zap-btn !h-10 !text-[11px] !bg-[#201515] !text-white px-6 cursor-pointer whitespace-nowrap">
+                           {adharFile ? 'Change' : 'Upload'}
+                           <input type="file" className="hidden" onChange={(e) => setAdharFile(e.target.files[0])} />
+                        </label>
+                     </div>
+                  </div>
+
+                  {/* Bank Details */}
+                  <div className={`p-6 rounded-[8px] border-2 border-dashed transition-all ${bankFile ? 'bg-[#24a148]/5 border-[#24a148]' : 'bg-white border-[#c5c0b1] hover:border-[#ff4f00]'}`}>
+                     <div className="flex items-center justify-between mb-4">
+                        <div 
+                          className={`w-16 h-12 rounded-[4px] flex items-center justify-center overflow-hidden border border-[#eceae3] transition-all ${bankFile ? 'bg-white cursor-pointer hover:scale-105 active:scale-95' : 'bg-[#eceae3] text-[#939084]'}`}
+                          onClick={() => bankFile && window.open(URL.createObjectURL(bankFile), '_blank')}
+                        >
+                           {bankFile ? (
+                             <img src={URL.createObjectURL(bankFile)} alt="" className="w-full h-full object-cover" />
+                           ) : (
+                             <span className="material-symbols-outlined text-xl">credit_card</span>
+                           )}
+                        </div>
+                        {bankFile && <span className="text-[10px] font-black text-[#24a148] uppercase tracking-widest">Asset Ready</span>}
+                     </div>
+                     <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                           <p className="text-[14px] font-bold text-[#201515] mb-1">Bank Details Registry</p>
+                           {!bankFile && <p className="text-[11px] text-[#939084]">Banking Verification Protocol</p>}
+                        </div>
+                        <label className="zap-btn !h-10 !text-[11px] !bg-[#201515] !text-white px-6 cursor-pointer whitespace-nowrap">
+                           {bankFile ? 'Change' : 'Upload'}
+                           <input type="file" className="hidden" onChange={(e) => setBankFile(e.target.files[0])} />
+                        </label>
+                     </div>
+                  </div>
+               </div>
             </div>
 
             <div className="pt-10 border-t border-[#c5c0b1] flex flex-col md:flex-row items-center justify-between gap-6">

@@ -42,6 +42,30 @@ const ManagerTasks = () => {
     } catch (err) { console.error('Assignment failed:', err); }
   };
 
+  const handleRejectAll = async () => {
+    const pendingTasks = tasks.filter(t => t.status === 'submitted' || t.status === 'under_review');
+    if (pendingTasks.length === 0) {
+      alert('No pending task submissions detected in your direct matrix.');
+      return;
+    }
+
+    if (window.confirm(`⚠️ AUTHORITY ALERT: You are about to mass-reject ${pendingTasks.length} task submissions. This action is final. Proceed?`)) {
+      setLoading(true);
+      try {
+        await Promise.all(
+          pendingTasks.map(t => axios.put(`/api/tasks/status/${t._id}`, { status: 'rework' }, { headers }))
+        );
+        alert(`Institutional Veto Complete: ${pendingTasks.length} task submissions successfully returned for rework.`);
+        fetchData();
+      } catch (err) {
+        console.error('Mass veto failed:', err);
+        alert('Institutional Veto disrupted. Check connection node.');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   const statusColors = {
     assigned: 'bg-gray-500',
     in_progress: 'bg-blue-500',
@@ -59,9 +83,18 @@ const ManagerTasks = () => {
           <p className="zap-caption-upper text-[#ff4f00] mb-4">Task Management</p>
           <h1 className="zap-display-hero">Manage <span className="text-[#ff4f00]">Task.</span></h1>
         </div>
-        <button onClick={fetchData} className="zap-btn zap-btn-orange h-14 px-8">
-          <RefreshCw size={18} className={`mr-3 ${loading ? 'animate-spin' : ''}`} /> Sync Registry
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={handleRejectAll}
+            className="border border-[#ff4f00] text-[#ff4f00] hover:bg-[#ff4f00] hover:text-white px-8 py-4 rounded-[12px] font-black text-[11px] uppercase tracking-wider transition-all flex items-center gap-2"
+          >
+            <Shield size={18} />
+            Reject All Pending
+          </button>
+          <button onClick={fetchData} className="zap-btn zap-btn-orange h-14 px-8">
+            <RefreshCw size={18} className={`mr-3 ${loading ? 'animate-spin' : ''}`} /> Sync Registry
+          </button>
+        </div>
       </div>
 
       {/* STATS */}
