@@ -195,6 +195,29 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
 
   const [lastActivity, setLastActivity] = useState(Date.now());
   const [idleDisplay, setIdleDisplay] = useState(0);
+  const [isTrackingActive, setIsTrackingActive] = useState(false);
+
+  // 🛡️ POLL SESSION STATUS FOR HEADER PILL
+  useEffect(() => {
+    const checkStatus = async () => {
+      if (!token) return;
+      try {
+        const res = await axios.get('/api/time/status', { headers: { Authorization: `Bearer ${token}` } });
+        setIsTrackingActive(!!res.data?.isRunning);
+        
+        // 🔄 SYNC SERVER ACTIVITY TIME
+        if (res.data?.lastActiveTime) {
+          const serverTs = Date.parse(res.data.lastActiveTime);
+          if (!isNaN(serverTs) && serverTs > lastActivity) {
+            setLastActivity(serverTs);
+          }
+        }
+      } catch (err) { console.error('Status sync failed:', err); }
+    };
+    checkStatus();
+    const interval = setInterval(checkStatus, 3000); // 3s poll for parity
+    return () => clearInterval(interval);
+  }, [token, lastActivity]);
 
   // 🔄 GLOBAL ACTIVITY TRACKER
   useEffect(() => {
@@ -217,10 +240,17 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     };
   }, [lastActivity]);
 
+  const getImageUrl = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
+    const normalized = path.replace(/\\/g, '/');
+    return normalized.startsWith('/') ? normalized : `/${normalized}`;
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-[#fffefb]">
       <header className="sticky top-0 w-full z-50 bg-[#fffefb] border-b border-[#c5c0b1]">
-        <div className="flex items-center h-[72px] w-full px-8">
+        <div className="flex items-center h-[56px] w-full px-6">
           <div className="flex items-center gap-6 mr-12">
             <Link to={`/${activeRole}/dashboard`} className="flex items-center gap-3 no-underline">
               <div className="w-8 h-8 bg-[#ff4f00] rounded-[4px] flex items-center justify-center">
@@ -248,12 +278,14 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           </nav>
           <div className="ml-auto flex items-center h-full gap-4">
             {/* ⏱️ GLOBAL INACTIVITY TRACKER */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#eceae3] rounded-lg border border-[#c5c0b1]">
-              <div className={`w-1.5 h-1.5 rounded-full ${idleDisplay > 60 ? 'bg-[#ff4f00] animate-pulse' : 'bg-[#24a148]'}`}></div>
-              <span className="text-[10px] font-black text-[#201515] uppercase tracking-widest tabular-nums">
-                {idleDisplay > 0 ? `${idleDisplay}s Inactive` : 'Active'}
-              </span>
-            </div>
+            {isTrackingActive && (
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#eceae3] rounded-lg border border-[#c5c0b1]">
+                <div className={`w-1.5 h-1.5 rounded-full ${idleDisplay > 60 ? 'bg-[#ff4f00] animate-pulse' : 'bg-[#24a148]'}`}></div>
+                <span className="text-[10px] font-black text-[#201515] uppercase tracking-widest tabular-nums">
+                  {idleDisplay > 0 ? `${idleDisplay}s Inactive` : 'Active'}
+                </span>
+              </div>
+            )}
 
             <button className="w-10 h-10 flex items-center justify-center text-[#36342e] hover:text-[#ff4f00] transition-colors relative group">
               <Search size={20} />
@@ -322,7 +354,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
             >
               <div className="w-8 h-8 bg-[#201515] rounded-full flex items-center justify-center text-[#fffefb] font-bold text-[13px] overflow-hidden">
                 {userProfile?.profileImage ? (
-                  <img src={`${API_BASE_URL}${userProfile.profileImage}`} alt="" className="w-full h-full object-cover" />
+                  <img src={getImageUrl(userProfile.profileImage)} alt="" className="w-full h-full object-cover" />
                 ) : (
                   initials
                 )}
@@ -339,7 +371,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
       <div className="flex flex-1 w-full overflow-hidden relative">
         <aside
           className="bg-transparent flex flex-col shrink-0 border-r border-[#c5c0b1] transition-[width] duration-300 ease-in-out overflow-hidden hidden md:flex"
-          style={{ width: isSidebarOpen ? '280px' : '80px' }}
+          style={{ width: isSidebarOpen ? '220px' : '64px' }}
         >
           <div className="flex flex-col pb-12 w-full">
             <nav className="flex-1 space-y-2 pt-[10px] px-3">
@@ -364,7 +396,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           </div>
         </aside>
         <main className="flex-1 overflow-y-auto bg-[#fffefb] relative">
-          <div className="py-12 px-8 lg:px-12 max-w-[1600px] mx-auto animate-fade-in w-full min-h-full flex flex-col">
+          <div className="py-6 px-6 lg:px-8 max-w-[1600px] mx-auto animate-fade-in w-full min-h-full flex flex-col">
             <div className="flex-1">
               <Outlet />
               {children}

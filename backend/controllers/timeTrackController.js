@@ -369,3 +369,80 @@ exports.getAllTime = async (req, res) => {
     res.json(logs);
   } catch (error) { res.status(500).json({ message: 'All logs failed', error: error.message }); }
 };
+
+// ==========================================
+// 🚀 UNIFIED DASHBOARD API
+// ==========================================
+exports.getDashboardData = async (req, res) => {
+  try {
+    const { timeRange, userFilter, roleFilter } = req.query;
+    
+    // 1. Base Role Filter
+    let filter = getRoleFilter(req.user);
+
+    // 2. Apply Custom Filters
+    if (userFilter) filter.employeeId = userFilter;
+    if (roleFilter) filter.employeeRole = roleFilter;
+
+    // 3. Date Range Logic
+    const now = new Date();
+    const today = getToday();
+    let startDate = new Date();
+    
+    if (timeRange === 'weekly') {
+      startDate.setDate(now.getDate() - 7);
+      filter.date = { $gte: startDate.toISOString().split('T')[0] };
+    } else if (timeRange === 'monthly') {
+      startDate.setMonth(now.getMonth() - 1);
+      filter.date = { $gte: startDate.toISOString().split('T')[0] };
+    } else {
+      // Default to Today
+      filter.date = today;
+    }
+
+    const sessions = await TimeTrack.find(filter)
+      .sort({ date: -1, createdAt: -1 })
+      .populate('employeeId', 'fullName email role');
+
+    // 4. Calculate Stats
+    const stats = {
+      totalTime: sessions.reduce((acc, s) => acc + ((s.activeTime || 0) + (s.idleTime || 0)), 0),
+      activeTime: sessions.reduce((acc, s) => acc + (s.activeTime || 0), 0),
+      idleTime: sessions.reduce((acc, s) => acc + (s.idleTime || 0), 0),
+      sessions: sessions.length
+    };
+
+    // 5. Chart Data (Daily Work Hours, Active vs Idle)
+    const chartMap = {};
+    sessions.forEach(s => {
+      if (!chartMap[s.date]) chartMap[s.date] = { date: s.date, active: 0, idle: 0, total: 0 };
+      chartMap[s.date].active += (s.activeTime || 0) / 3600;
+      chartMap[s.date].idle += (s.idleTime || 0) / 3600;
+      chartMap[s.date].total += ((s.activeTime || 0) + (s.idleTime || 0)) / 3600;
+    });
+    const chartData = Object.values(chartMap).sort((a, b) => a.date.localeCompare(b.date));
+
+    // 6. Table Data (Reusable Data Table format)
+    const tableData = sessions.map(s => ({
+      id: s._id,
+      name: s.employeeId?.fullName || 'Unknown',
+      role: s.employeeId?.role || s.employeeRole || 'N/A',
+      status: s.status,
+      todayHours: s.activeTime,
+      lastActivity: s.lastActiveTime
+    }));
+
+    // 7. Activity Logs
+    const activityLogs = sessions.slice(0, 10).map(s => ({
+      name: s.employeeId?.fullName || 'Unknown',
+      date: s.date,
+      activeTime: s.activeTime,
+      status: s.status
+    }));
+
+    res.json({ stats, chartData, tableData, activityLogs });
+  } catch (error) {
+    console.error('Dashboard Data Error:', error);
+    res.status(500).json({ message: 'Dashboard data fetch failed', error: error.message });
+  }
+};

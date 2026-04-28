@@ -6,6 +6,7 @@ import {
     LayoutDashboard, User, Shield, RefreshCw
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import UnifiedDashboardPanel from '@shared/components/UnifiedDashboardPanel';
 
 const EmployeeDashboard = () => {
     const navigate = useNavigate();
@@ -282,6 +283,9 @@ const EmployeeDashboard = () => {
                     </div>
                 </div>
             </div>
+
+            {/* UNIFIED ROLE-BASED DASHBOARD COMPONENT */}
+            <UnifiedDashboardPanel />
         </div>
     );
 };

@@ -247,9 +247,9 @@ const CreateUser = () => {
         <p className="text-[18px] font-medium text-[#939084] mt-4">Register a new personnel entity into the organizational matrix.</p>
       </div>
 
-      <div className="grid grid-cols-12 gap-12">
+      <div className="max-w-4xl mx-auto">
         {/* FORM SIDE */}
-        <div className="col-span-12 lg:col-span-8 zap-card bg-[#fffdf9] p-12">
+        <div className="zap-card bg-[#fffdf9] p-12">
           {/* AVATAR UPLOAD SECTION */}
           <div className="flex flex-col items-center mb-12 border-b border-[#eceae3] pb-12">
              <div className="relative group">
@@ -507,39 +507,6 @@ const CreateUser = () => {
               </div>
             </div>
           </form>
-        </div>
-
-        {/* PREVIEW SIDE */}
-        <div className="col-span-12 lg:col-span-4 space-y-8">
-           <div className="zap-card bg-[#201515] text-[#fffefb] p-10 relative overflow-hidden group">
-              <div className="relative z-10">
-                 <User size={48} className="text-[#ff4f00] mb-8" />
-                 <h3 className="text-[24px] font-medium mb-4">Identity Preview</h3>
-                 <p className="text-[14px] text-[#939084] leading-relaxed mb-10">Preview how the personnel entity will be represented across the global architecture.</p>
-                 <div className="flex flex-wrap gap-3">
-                    <span className="px-4 py-2 bg-white/5 border border-white/10 rounded-full text-[11px] font-bold uppercase tracking-widest text-[#939084]">Global Registry</span>
-                    <span className="px-4 py-2 bg-white/5 border border-white/10 rounded-full text-[11px] font-bold uppercase tracking-widest text-[#939084]">Org Chart Node</span>
-                 </div>
-              </div>
-              <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-[#ff4f00]/10 blur-3xl rounded-full transition-transform duration-700 group-hover:scale-150"></div>
-           </div>
-
-           <div className="zap-card p-10 bg-[#fffdf9]">
-              <div className="flex items-center gap-3 text-[#201515] mb-8">
-                 <Shield size={20} className="text-[#ff4f00]" />
-                 <h3 className="zap-caption-upper !text-[#201515]">Security Protocol</h3>
-              </div>
-              <ul className="space-y-6">
-                 <li className="flex items-start gap-4">
-                    <CheckCircle size={16} className="text-[#24a148] mt-1" />
-                    <p className="text-[13px] font-medium text-[#939084] leading-normal">Data isolation is enforced across role-specific organizational clusters.</p>
-                 </li>
-                 <li className="flex items-start gap-4">
-                    <CheckCircle size={16} className="text-[#24a148] mt-1" />
-                    <p className="text-[13px] font-medium text-[#939084] leading-normal">Asymmetric encryption (Bcrypt) is utilized for all credential storage.</p>
-                 </li>
-              </ul>
-           </div>
         </div>
       </div>
     </div>

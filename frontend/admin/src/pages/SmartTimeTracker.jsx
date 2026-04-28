@@ -84,7 +84,7 @@ const SmartTimeTracker = () => {
 
         if (isRunning) {
           lastActivityRef.current = Date.now();
-          
+
           let calculatedTimer = totalActive;
           if (s.startTime) {
             const elapsed = Math.floor((new Date() - new Date(s.startTime)) / 1000);
@@ -267,20 +267,22 @@ const SmartTimeTracker = () => {
               <p className={`text-[11px] font-black uppercase tracking-widest ${!session?.isRunning ? 'text-white/60' : 'text-[#939084]'}`}>Active Workspace Participation</p>
             </div>
 
-            <div className="grid grid-cols-3 gap-6 mb-12">
-              <div className="bg-white/5 border border-white/10 p-6 rounded-xl">
-                <p className="text-[10px] font-black text-[#939084] uppercase tracking-widest mb-2">Active</p>
-                <p className="text-[20px] font-black text-[#24a148] tracking-tighter">{formatMinutes(timer)}</p>
+            {session?.isRunning && (
+              <div className="grid grid-cols-3 gap-6 mb-12">
+                <div className="bg-white/5 border border-white/10 p-6 rounded-xl text-center">
+                  <p className="text-[10px] font-black text-[#939084] uppercase tracking-widest mb-2">Active</p>
+                  <p className="text-[20px] font-black text-[#24a148] tracking-tighter">{formatMinutes(timer)}</p>
+                </div>
+                <div className="bg-white/5 border border-white/10 p-6 rounded-xl text-center">
+                  <p className="text-[10px] font-black text-[#939084] uppercase tracking-widest mb-2">Idle</p>
+                  <p className="text-[20px] font-black text-[#ff4f00] tracking-tighter">{formatMinutes(idleTime)}</p>
+                </div>
+                <div className="bg-white/5 border border-white/10 p-6 rounded-xl text-center">
+                  <p className="text-[10px] font-black text-[#939084] uppercase tracking-widest mb-2">Yield</p>
+                  <p className="text-[20px] font-black text-white tracking-tighter">{activePercent}%</p>
+                </div>
               </div>
-              <div className="bg-white/5 border border-white/10 p-6 rounded-xl">
-                <p className="text-[10px] font-black text-[#939084] uppercase tracking-widest mb-2">Idle</p>
-                <p className="text-[20px] font-black text-[#ff4f00] tracking-tighter">{formatMinutes(idleTime)}</p>
-              </div>
-              <div className="bg-white/5 border border-white/10 p-6 rounded-xl">
-                <p className="text-[10px] font-black text-[#939084] uppercase tracking-widest mb-2">Yield</p>
-                <p className="text-[20px] font-black text-white tracking-tighter">{activePercent}%</p>
-              </div>
-            </div>
+            )}
 
             <div className="flex flex-col md:flex-row gap-4">
               {!session ? (

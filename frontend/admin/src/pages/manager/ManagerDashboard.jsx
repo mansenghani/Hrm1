@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AnalyticsChart from '../../components/AnalyticsChart';
+import UnifiedDashboardPanel from '@shared/components/UnifiedDashboardPanel';
 
 const ManagerDashboard = () => {
     const [stats, setStats] = useState({
@@ -175,6 +176,9 @@ const ManagerDashboard = () => {
                     </button>
                 </div>
             </div>
+
+            {/* UNIFIED ROLE-BASED DASHBOARD COMPONENT */}
+            <UnifiedDashboardPanel />
         </div>
     );
 };

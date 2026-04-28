@@ -14,7 +14,8 @@ const {
   getSessionStatus,
   getTimeSummary,
   getLogs,
-  getTimeByDate
+  getTimeByDate,
+  getDashboardData
 } = require('../controllers/timeTrackController');
 
 // 🟢 Session Control
@@ -32,6 +33,9 @@ router.get('/my', protect, getMyTime);
 router.get('/summary', protect, getTimeSummary);
 router.get('/logs', protect, getLogs);
 router.get('/date/:date', protect, getTimeByDate);
+
+// 🚀 UNIFIED DASHBOARD
+router.get('/dashboard', protect, getDashboardData);
 
 // 👨‍💼 Role-Based Views
 router.get('/team', protect, authorize('manager', 'admin'), getTeamTime);

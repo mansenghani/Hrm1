@@ -62,7 +62,7 @@ const Attendance = () => {
     <div className="animate-fade-in pb-32">
 
       {/* HEADER */}
-      <div className="mb-16 flex flex-col md:flex-row justify-between items-end border-b border-[#c5c0b1] pb-10">
+      <div className="mb-6 flex flex-col md:flex-row justify-between items-end border-b border-[#c5c0b1] pb-4">
         <div>
           <p className="zap-caption-upper text-[#ff4f00] mb-4">Workforce Synchronization</p>
           <h1 className="zap-display-hero">Real-time <span className="text-[#ff4f00]">Presence.</span></h1>
@@ -70,40 +70,40 @@ const Attendance = () => {
         <div className="flex gap-4">
           <button
             onClick={handleRejectAll}
-            className="border border-[#ff4f00] text-[#ff4f00] hover:bg-[#ff4f00] hover:text-white h-14 px-8 rounded-[8px] font-black text-[11px] uppercase tracking-widest transition-all flex items-center gap-2"
+            className="border border-[#ff4f00] text-[#ff4f00] hover:bg-[#ff4f00] hover:text-white h-11 px-6 rounded-[8px] font-black text-[11px] uppercase tracking-widest transition-all flex items-center gap-2"
           >
-            <XCircle size={18} />
+            <XCircle size={16} />
             Reject All Pending
           </button>
-          <button className="zap-btn zap-btn-light h-14 px-8">
-            <Download size={18} className="mr-3" />
+          <button className="zap-btn zap-btn-light h-11 px-6">
+            <Download size={16} className="mr-2" />
             Export Protocol
           </button>
-          <button className="zap-btn zap-btn-orange h-14 px-8">
-            <Calendar size={18} className="mr-3" />
+          <button className="zap-btn zap-btn-orange h-11 px-6">
+            <Calendar size={16} className="mr-2" />
             Presence Report
           </button>
         </div>
       </div>
 
       {/* DATA HUB - Zapier Style Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-16">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         {[
           { label: 'Currently Active', val: attendance.filter(a => !a?.clockOut).length, status: 'Success', icon: CheckCircle, color: 'text-[#24a148]' },
           { label: 'Late Syncs', val: '12', status: 'Warning', icon: Clock, color: 'text-[#ff4f00]' },
           { label: 'Ejected Nodes', val: '8', status: 'Offline', icon: XCircle, color: 'text-[#201515]' },
           { label: 'Avg Pulse', val: '08:42', status: 'Optimal', icon: TrendingUp, color: 'text-[#ff4f00]' }
         ].map((stat, i) => (
-          <div key={i} className="zap-card group hover:border-[#201515] transition-all">
-            <div className="flex justify-between items-start mb-10">
-              <div className={`w-12 h-12 rounded-[8px] bg-[#eceae3] flex items-center justify-center ${stat.color} transition-all`}>
-                <stat.icon size={20} />
+          <div key={i} className="zap-card group hover:border-[#201515] transition-all p-4">
+            <div className="flex justify-between items-start mb-6">
+              <div className={`w-10 h-10 rounded-[8px] bg-[#eceae3] flex items-center justify-center ${stat.color} transition-all`}>
+                <stat.icon size={18} />
               </div>
-              <span className="text-[11px] font-bold text-[#ff4f00] uppercase tracking-widest">{stat.status}</span>
+              <span className="text-[10px] font-bold text-[#ff4f00] uppercase tracking-widest">{stat.status}</span>
             </div>
             <div className="text-left">
-              <h3 className="text-[32px] font-medium text-[#201515] tabular-nums leading-none mb-2">{stat.val}</h3>
-              <p className="text-[13px] font-bold text-[#939084] uppercase tracking-wider">{stat.label}</p>
+              <h3 className="text-[28px] font-medium text-[#201515] tabular-nums leading-none mb-1">{stat.val}</h3>
+              <p className="text-[11px] font-bold text-[#939084] uppercase tracking-wider">{stat.label}</p>
             </div>
           </div>
         ))}

@@ -74,11 +74,10 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#eceae3] flex items-center justify-center p-6 selection:bg-[#ff4f00] selection:text-white font-sans">
-      <div className="w-full max-w-[1000px] min-h-[700px] grid grid-cols-1 lg:grid-cols-12 bg-[#fffefb] rounded-[8px] overflow-hidden border border-[#c5c0b1] shadow-sm">
-        
+    <div className="h-screen overflow-hidden bg-[#eceae3] flex items-center justify-center p-4 selection:bg-[#ff4f00] selection:text-white font-sans">
+      <div className="w-full max-w-[760px] h-full max-h-[calc(100vh-2rem)] grid grid-cols-1 lg:grid-cols-12 bg-[#fffefb] rounded-[8px] border border-[#c5c0b1] shadow-sm overflow-hidden">
         {/* BRAND SIDEBAR - Zapier Dark Warm Style */}
-        <div className="hidden lg:flex lg:col-span-5 bg-[#201515] p-16 flex-col justify-between relative overflow-hidden">
+        <div className="hidden lg:flex lg:col-span-5 bg-[#201515] p-6 flex-col justify-between relative overflow-hidden">
            <div className="absolute -top-24 -left-24 w-80 h-80 bg-[#ff4f00] opacity-10 blur-[100px] rounded-full"></div>
            
            <div className="relative z-10 flex items-center gap-3">
@@ -89,10 +88,10 @@ const Login = () => {
            </div>
 
            <div className="relative z-10">
-              <h2 className="text-[44px] font-medium text-[#fffefb] mb-10 leading-[0.95] tracking-tight">
+              <h2 className="text-[30px] font-medium text-[#fffefb] mb-5 leading-[1.1] tracking-tight">
                  Single <br/><span className="text-[#ff4f00]">Identity</span> <br/>Protocol.
               </h2>
-              <p className="text-[18px] text-[#c5c0b1] max-w-sm leading-relaxed font-medium">
+              <p className="text-[15px] text-[#c5c0b1] max-w-[260px] leading-relaxed font-medium">
                  One unified portal to manage your entire organizational lifecycle with military-grade precision.
               </p>
            </div>
@@ -106,19 +105,19 @@ const Login = () => {
         </div>
 
         {/* AUTH FORM - Unified Login */}
-        <div className="lg:col-span-7 p-12 md:p-20 flex flex-col justify-center bg-[#fffefb]">
+        <div className="lg:col-span-7 p-6 md:p-10 flex flex-col justify-center bg-[#fffefb]">
            <div className="max-w-[400px] w-full mx-auto">
-              <div className="mb-12">
-                 <p className="zap-caption-upper mb-6 text-[#ff4f00]">Enterprise Access</p>
-                 <h1 className="text-[48px] font-medium text-[#201515] tracking-tight mb-6 leading-[0.95]">
+              <div className="mb-6">
+                 <p className="zap-caption-upper mb-3 text-[#ff4f00]">Enterprise Access</p>
+                 <h1 className="text-[34px] font-medium text-[#201515] tracking-tight mb-3 leading-[1.0]">
                     HRMS Login
                  </h1>
-                 <p className="text-[16px] text-[#36342e] font-medium leading-relaxed">
+                 <p className="text-[13px] text-[#36342e] font-medium leading-relaxed">
                     Select your system role and enter credentials to continue to your workspace.
                  </p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
                  <EntrySelect 
                     label="System Role"
                     required
@@ -148,19 +147,23 @@ const Login = () => {
                     icon={<Lock size={20} />}
                   />
 
-                 {error && (
-                    <div className="bg-[#fff8f6] border border-[#ff4f00] p-5 rounded-[4px] flex items-start gap-4 animate-fade-in mb-4">
+                 <div className="min-h-[60px] mb-3 flex items-center">
+                   {error ? (
+                     <div className="w-full bg-[#fff8f6] border border-[#ff4f00] p-3 rounded-[4px] flex items-start gap-3 animate-fade-in">
                        <AlertCircle size={20} className="text-[#ff4f00] shrink-0" />
                        <span className="text-[14px] text-[#ff4f00] font-bold">{error}</span>
-                    </div>
-                 )}
+                     </div>
+                   ) : (
+                     <div className="w-full h-full"></div>
+                   )}
+                 </div>
 
                  <div className="pt-4">
                     <EntryButton 
                       type="submit" 
                       disabled={loading}
                       variant="primary"
-                      className="h-[56px] text-[18px] font-bold bg-[#ff4f00] text-[#fffefb] hover:bg-[#201515]"
+                      className="h-[48px] text-[15px] font-bold bg-[#ff4f00] text-[#fffefb] hover:bg-[#201515]"
                     >
                        {loading ? 'Validating credentials...' : 'Login'}
                        {!loading && <ArrowRight size={20} className="ml-4" />}

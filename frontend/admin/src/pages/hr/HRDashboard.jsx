@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Users, UserPlus, Heart, Activity, ArrowUpRight, ShieldCheck, Search, Clock, ChevronRight, Zap, Plus, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AnalyticsChart from '../../components/AnalyticsChart';
+import UnifiedDashboardPanel from '@shared/components/UnifiedDashboardPanel';
 
 const HRDashboard = () => {
   const navigate = useNavigate();
@@ -182,6 +183,9 @@ const HRDashboard = () => {
            </div>
         </div>
       </div>
+
+      {/* UNIFIED ROLE-BASED DASHBOARD COMPONENT */}
+      <UnifiedDashboardPanel />
     </div>
   );
 };

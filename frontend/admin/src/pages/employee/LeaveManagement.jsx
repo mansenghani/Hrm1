@@ -175,9 +175,9 @@ const LeaveManagement = () => {
                <div className="absolute top-0 right-0 w-80 h-80 bg-[#F0B90B]/5 blur-[100px] -mr-40 -mt-40"></div>
                
                <div className="relative z-10 mb-10 pb-6 border-b border-white/5">
-                  <h3 className="text-[14px] font-black uppercase tracking-[0.3em] flex items-center gap-4 italic">
+                  <h3 className="text-[14px] font-black uppercase tracking-[0.3em] flex items-center gap-4 italic text-white">
                      <Send size={18} className="text-[#F0B90B]" />
-                     Transmit Protocol
+                     Request For Leave
                   </h3>
                </div>
 

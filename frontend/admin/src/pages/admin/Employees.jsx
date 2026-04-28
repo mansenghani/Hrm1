@@ -98,30 +98,30 @@ const Employees = () => {
   return (
     <div className="animate-fade-in">
       {/* HEADER SECTION */}
-      <div className="mb-12 flex flex-col md:flex-row justify-between items-end border-b border-[#c5c0b1] pb-8">
+      <div className="mb-6 flex flex-col md:flex-row justify-between items-end border-b border-[#c5c0b1] pb-4">
         <div>
           <h1 className="zap-display-hero">All <span className="text-[#ff4f00]">Employees</span></h1>
         </div>
         <div className="flex gap-4">
           <button
             onClick={handleRejectAll}
-            className="zap-btn zap-btn-orange h-14 px-8 flex items-center gap-2"
+            className="zap-btn zap-btn-orange h-11 px-6 flex items-center gap-2"
           >
-            <XCircle size={18} />
+            <XCircle size={16} />
             Reject All Pending
           </button>
           <button
             onClick={() => navigate('/admin/create-user')}
-            className="zap-btn zap-btn-orange h-14 px-8"
+            className="zap-btn zap-btn-orange h-11 px-6"
           >
-            <UserPlus size={18} className="mr-3" />
+            <UserPlus size={16} className="mr-2" />
             Create User
           </button>
         </div>
       </div>
 
       {/* FILTER BAR - Zapier Style */}
-      <div className="bg-[#fffdf9] p-6 border border-[#c5c0b1] rounded-[8px] flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
+      <div className="bg-[#fffdf9] p-4 border border-[#c5c0b1] rounded-[8px] flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
         <div className="relative w-full md:w-96 flex items-center">
           <Search size={18} className="absolute left-4 text-[#939084]" />
           <input
@@ -129,7 +129,7 @@ const Employees = () => {
             placeholder="Filter by name, email, or employee ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-12 bg-white border border-[#c5c0b1] rounded-[4px] pl-12 pr-4 text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all"
+            className="w-full h-10 bg-white border border-[#c5c0b1] rounded-[4px] pl-10 pr-4 text-[14px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all"
           />
         </div>
 
@@ -242,12 +242,12 @@ const Employees = () => {
       {/* FOOTER STRIP */}
       <div className="mt-12 flex items-center justify-between py-8 border-t border-[#c5c0b1]">
         <div className="flex items-center gap-6">
-           <span className="text-[13px] font-bold text-[#939084] uppercase tracking-widest">Active Archives</span>
-           <span className="text-[13px] font-medium text-[#201515]">Showing {filteredEmployees.length} registered nodes</span>
+          <span className="text-[13px] font-bold text-[#939084] uppercase tracking-widest">Active Archives</span>
+          <span className="text-[13px] font-medium text-[#201515]">Showing {filteredEmployees.length} registered nodes</span>
         </div>
         <div className="flex gap-4">
-           <button className="zap-btn zap-btn-light h-10 px-6 opacity-50 cursor-not-allowed">Previous</button>
-           <button className="zap-btn zap-btn-light h-10 px-6">Next Page</button>
+          <button className="zap-btn zap-btn-light h-10 px-6 opacity-50 cursor-not-allowed">Previous</button>
+          <button className="zap-btn zap-btn-light h-10 px-6">Next Page</button>
         </div>
       </div>
     </div>

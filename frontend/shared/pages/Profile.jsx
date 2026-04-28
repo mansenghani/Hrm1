@@ -103,6 +103,13 @@ const Profile = () => {
     setLoading(false);
   };
 
+  const getImageUrl = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
+    const normalized = path.replace(/\\/g, '/');
+    return normalized.startsWith('/') ? normalized : `/${normalized}`;
+  };
+
   return (
     <div className="animate-fade-in text-left overflow-hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <style>{`
@@ -148,7 +155,7 @@ const Profile = () => {
         <div className="relative group">
           <div className="w-24 h-24 rounded-2xl bg-[#F5F7FA] flex items-center justify-center border border-slate-100 shadow-inner group-hover:scale-105 transition-transform duration-500 overflow-hidden">
             {userData?.profileImage ? (
-              <img src={`${API_BASE_URL}${userData.profileImage}`} alt="" className="w-full h-full object-cover" />
+              <img src={getImageUrl(userData.profileImage)} alt="" className="w-full h-full object-cover" />
             ) : (
               <span className="text-3xl font-black text-[#2E3A59] opacity-20">{initials}</span>
             )}
@@ -214,7 +221,7 @@ const Profile = () => {
         <section className="lg:col-span-2 bg-white p-10 rounded-[24px] shadow-sm border border-slate-200/60 space-y-10">
           <div className="flex justify-between items-center pb-6 border-b border-slate-50">
             <div>
-              <h3 className="text-[12px] font-black text-[#2E3A59] font-manrope tracking-[0.2em] uppercase">Identity Registry</h3>
+              <h3 className="text-[12px] font-black text-[#2E3A59] font-manrope tracking-[0.2em] uppercase">Personal Details</h3>
               <p className="text-slate-400 text-[9px] mt-1 font-medium">Core system profile identifiers</p>
             </div>
             <span className="material-symbols-outlined text-[#2E3A59]/5 text-5xl">fingerprint</span>
@@ -234,7 +241,7 @@ const Profile = () => {
               <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#1F2937] font-bold text-[13px] border border-slate-200/60">{userEmail}</div>
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Personal Contact Vector</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Personal Email ID</label>
               <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#1F2937] font-bold text-[13px] border border-slate-200/60 italic opacity-60">{personalEmail}</div>
             </div>
             <div className="space-y-3">
@@ -242,7 +249,7 @@ const Profile = () => {
               <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#1F2937] font-bold text-[13px] border border-slate-200/60 uppercase">{gender}</div>
             </div>
             <div className="space-y-3 col-span-full">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Location Node (Address)</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Local Address</label>
               <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#1F2937] font-bold text-[13px] border border-slate-200/60">{address}</div>
             </div>
           </div>
@@ -250,7 +257,7 @@ const Profile = () => {
           <div className="pt-8 border-t border-slate-50">
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="space-y-2">
-                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Join Date Protocol</p>
+                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Join Date</p>
                    <p className="text-sm font-black text-[#2E3A59]">{joinDate}</p>
                 </div>
                 <div className="space-y-2">
@@ -258,11 +265,11 @@ const Profile = () => {
                    <p className="text-sm font-black text-[#2E3A59] uppercase">{userDept}</p>
                 </div>
                 <div className="space-y-2">
-                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Birthdate Protocol</p>
+                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Birthdate</p>
                    <p className="text-sm font-black text-[#2E3A59]">{birthdate}</p>
                 </div>
                 <div className="space-y-2">
-                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Phone Telemetry</p>
+                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Phone No.</p>
                    <p className="text-sm font-black text-[#2E3A59]">{phone}</p>
                 </div>
              </div>
@@ -318,7 +325,7 @@ const Profile = () => {
               <div className="flex flex-col items-center gap-6 p-8 bg-[#fcfcfc] rounded-[24px] border border-slate-200/60 group hover:border-[var(--accent-gold)] transition-all">
                  <div className="w-full aspect-square max-w-[140px] rounded-2xl bg-white flex items-center justify-center text-[var(--accent-gold)] shadow-lg border border-slate-100 group-hover:scale-[1.03] transition-all overflow-hidden">
                     {adharCard ? (
-                      <img src={`${API_BASE_URL}${adharCard}`} alt="" className="w-full h-full object-cover" />
+                      <img src={getImageUrl(adharCard)} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <div className="flex flex-col items-center gap-2">
                          <span className="material-symbols-outlined text-4xl opacity-10">fingerprint</span>
@@ -328,15 +335,15 @@ const Profile = () => {
                  </div>
                  <div className="text-center flex-1">
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">National ID</p>
-                    <p className="text-[14px] font-black text-[#2E3A59]">Adharcard Registry</p>
+                    <p className="text-[14px] font-black text-[#2E3A59]">Adharcard</p>
                  </div>
                  {adharCard ? (
                     <a 
-                      href={`${API_BASE_URL}${adharCard}`} 
+                      href={getImageUrl(adharCard)} 
                       target="_blank" rel="noopener noreferrer"
                       className="w-full text-center py-3.5 bg-[#2E3A59] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95"
                     >
-                      View Asset
+                      View Document
                     </a>
                  ) : (
                     <span className="text-[10px] font-bold text-slate-300 uppercase italic">Not Registered</span>
@@ -347,7 +354,7 @@ const Profile = () => {
               <div className="flex flex-col items-center gap-6 p-8 bg-[#fcfcfc] rounded-[24px] border border-slate-200/60 group hover:border-[var(--accent-gold)] transition-all">
                  <div className="w-full aspect-square max-w-[140px] rounded-2xl bg-white flex items-center justify-center text-[#2E3A59] shadow-lg border border-slate-100 group-hover:scale-[1.03] transition-all overflow-hidden">
                     {bankDetails ? (
-                      <img src={`${API_BASE_URL}${bankDetails}`} alt="" className="w-full h-full object-cover" />
+                      <img src={getImageUrl(bankDetails)} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <div className="flex flex-col items-center gap-2">
                          <span className="material-symbols-outlined text-4xl opacity-10">credit_card</span>
@@ -357,15 +364,15 @@ const Profile = () => {
                  </div>
                  <div className="text-center flex-1">
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Financial ID</p>
-                    <p className="text-[14px] font-black text-[#2E3A59]">Bank Details Registry</p>
+                    <p className="text-[14px] font-black text-[#2E3A59]">Bank Details</p>
                  </div>
                  {bankDetails ? (
                     <a 
-                      href={`${API_BASE_URL}${bankDetails}`} 
+                      href={getImageUrl(bankDetails)} 
                       target="_blank" rel="noopener noreferrer"
                       className="w-full text-center py-3.5 bg-[#2E3A59] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95"
                     >
-                      View Asset
+                      View Document
                     </a>
                  ) : (
                     <span className="text-[10px] font-bold text-slate-300 uppercase italic">Not Registered</span>
@@ -376,7 +383,7 @@ const Profile = () => {
               <div className="flex flex-col items-center gap-6 p-8 bg-[#fcfcfc] rounded-[24px] border border-slate-200/60 group hover:border-[var(--accent-gold)] transition-all">
                  <div className="w-full aspect-square max-w-[140px] rounded-2xl bg-white flex items-center justify-center text-[#2E3A59] shadow-lg border border-slate-100 group-hover:scale-[1.03] transition-all overflow-hidden">
                     {panCard ? (
-                      <img src={`${API_BASE_URL}${panCard}`} alt="" className="w-full h-full object-cover" />
+                      <img src={getImageUrl(panCard)} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <div className="flex flex-col items-center gap-2">
                          <span className="material-symbols-outlined text-4xl opacity-10">badge</span>
@@ -386,15 +393,15 @@ const Profile = () => {
                  </div>
                  <div className="text-center flex-1">
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Identity Node</p>
-                    <p className="text-[14px] font-black text-[#2E3A59]">PAN Card Registry</p>
+                    <p className="text-[14px] font-black text-[#2E3A59]">Pancard</p>
                  </div>
                  {panCard ? (
                     <a 
-                      href={`${API_BASE_URL}${panCard}`} 
+                      href={getImageUrl(panCard)} 
                       target="_blank" rel="noopener noreferrer"
                       className="w-full text-center py-3.5 bg-[#2E3A59] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95"
                     >
-                      View Asset
+                      View Document
                     </a>
                  ) : (
                     <span className="text-[10px] font-bold text-slate-300 uppercase italic">Not Registered</span>
@@ -409,7 +416,7 @@ const Profile = () => {
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 pb-8 border-b border-slate-50 gap-4">
             <div>
-              <h3 className="text-2xl font-black text-[#2E3A59] font-manrope uppercase tracking-tighter">Security Registry</h3>
+              <h3 className="text-2xl font-black text-[#2E3A59] font-manrope uppercase tracking-tighter">Change The Password</h3>
               <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-2 italic">Official Access Management Hub</p>
             </div>
             <div className="flex items-center gap-3">
@@ -422,15 +429,15 @@ const Profile = () => {
           <form onSubmit={handleUpdatePassword} className="space-y-12">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
               <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-4">Current Authorization Key</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-4">Old Password</label>
                 <input className="compact-input w-full" placeholder="********" type="password" required value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} />
               </div>
               <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-4">New Access Credentials</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-4">New Password</label>
                 <input className="compact-input w-full" placeholder="********" type="password" required value={passwords.newPassword} onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} />
               </div>
               <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-4">Verification Matrix</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-4">Confirm New Password</label>
                 <input className="compact-input w-full" placeholder="********" type="password" required value={passwords.confirmPassword} onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })} />
               </div>
             </div>
@@ -439,7 +446,7 @@ const Profile = () => {
             <div className="pt-10 flex flex-wrap gap-4 border-t border-slate-50">
               <button type="submit" disabled={loading} className="px-12 bg-[#2E3A59] text-white py-4 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-slate-900/10 hover:bg-[#1f2a44] hover:scale-[1.03] active:scale-95 transition-all disabled:opacity-50 flex items-center gap-3">
                 <span className="material-symbols-outlined text-base">lock_reset</span>
-                {loading ? 'Processing...' : 'Sync Security Keys'}
+                {loading ? 'Processing...' : 'Update The Password'}
               </button>
 
               <button type="button" onClick={resetForm} className="px-12 bg-slate-50 text-slate-400 py-4 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-slate-100 hover:text-slate-600 border border-slate-100 transition-all flex items-center gap-3">

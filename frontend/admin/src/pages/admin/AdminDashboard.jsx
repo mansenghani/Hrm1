@@ -14,9 +14,9 @@ import {
   Zap,
   ShieldCheck,
   Clock,
-  ChevronRight
 } from 'lucide-react';
 import AnalyticsChart from '../../components/AnalyticsChart';
+import UnifiedDashboardPanel from '@shared/components/UnifiedDashboardPanel';
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -228,6 +228,9 @@ const AdminDashboard = () => {
            </div>
         </div>
       </div>
+
+      {/* UNIFIED ROLE-BASED DASHBOARD COMPONENT */}
+      <UnifiedDashboardPanel />
     </div>
   );
 };

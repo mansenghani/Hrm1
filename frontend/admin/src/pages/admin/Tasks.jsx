@@ -93,7 +93,7 @@ const Tasks = () => {
     return (
         <div className="animate-fade-in pb-32">
             {/* HEADER */}
-            <div className="mb-16 flex flex-col md:flex-row justify-between items-end border-b border-[#c5c0b1] pb-10">
+            <div className="mb-6 flex flex-col md:flex-row justify-between items-end border-b border-[#c5c0b1] pb-4">
                 <div>
                     <p className="zap-caption-upper text-[#ff4f00] mb-4">Task Management</p>
                     <h1 className="zap-display-hero">Create <span className="text-[#ff4f00]">Task.</span></h1>
@@ -101,19 +101,19 @@ const Tasks = () => {
                 <div className="flex gap-4">
                     <button
                         onClick={handleRejectAll}
-                        className="border border-[#ff4f00] text-[#ff4f00] hover:bg-[#ff4f00] hover:text-white px-8 py-4 rounded-[12px] font-black text-[11px] uppercase tracking-wider transition-all flex items-center gap-2"
+                        className="border border-[#ff4f00] text-[#ff4f00] hover:bg-[#ff4f00] hover:text-white px-6 py-2 rounded-[8px] font-black text-[11px] uppercase tracking-wider transition-all flex items-center gap-2"
                     >
-                        <X size={18} />
+                        <X size={16} />
                         Reject All Pending
                     </button>
-                    <button onClick={() => setShowModal(true)} className="zap-btn zap-btn-orange h-14 px-8">
-                        <Plus size={18} className="mr-3" /> Create Task
+                    <button onClick={() => setShowModal(true)} className="zap-btn zap-btn-orange h-11 px-6">
+                        <Plus size={16} className="mr-2" /> Create Task
                     </button>
                 </div>
             </div>
 
             {/* ANALYTICS */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-16">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 {[
                     { label: 'Total Tasks', val: stats.total, icon: Zap },
                     { label: 'Active Tasks', val: stats.pending, icon: Clock },
@@ -132,7 +132,7 @@ const Tasks = () => {
 
             {/* LIST */}
             <div className="zap-card p-0 overflow-hidden">
-                <div className="p-8 bg-[#fffdf9] border-b border-[#c5c0b1] flex justify-between items-center">
+                <div className="p-4 bg-[#fffdf9] border-b border-[#c5c0b1] flex justify-between items-center">
                     <h3 className="text-[14px] font-black uppercase tracking-widest text-[#201515]">Task Registry</h3>
                 </div>
                 <div className="overflow-x-auto">
@@ -148,23 +148,23 @@ const Tasks = () => {
                         <tbody className="divide-y divide-[#c5c0b1]">
                             {tasks.map(task => (
                                 <tr key={task._id} onClick={() => { setSelectedTask(task); setIsDetailOpen(true); }} className="hover:bg-[#fffdf9] transition-colors group cursor-pointer">
-                                    <td className="px-8 py-6">
-                                        <span className="text-[15px] font-bold text-[#201515] uppercase italic">{task.title}</span>
+                                    <td className="px-8 py-3">
+                                        <span className="text-[14px] font-bold text-[#201515] uppercase italic">{task.title}</span>
                                     </td>
-                                    <td className="px-8 py-6">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-[#eceae3] flex items-center justify-center text-[#939084]"><User size={14} /></div>
-                                            <span className="text-[13px] font-bold text-[#201515] uppercase italic">{task.assignedManager?.name || 'Unassigned'}</span>
+                                    <td className="px-8 py-3">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-7 h-7 rounded-full bg-[#eceae3] flex items-center justify-center text-[#939084]"><User size={12} /></div>
+                                            <span className="text-[12px] font-bold text-[#201515] uppercase italic">{task.assignedManager?.name || 'Unassigned'}</span>
                                         </div>
                                     </td>
-                                    <td className="px-8 py-6">
-                                        <span className={`px-3 py-1 rounded-[4px] text-[10px] font-bold uppercase tracking-widest ${task.status === 'completed' ? 'bg-[#24a148] text-white' : 'bg-[#201515] text-white'}`}>
+                                    <td className="px-8 py-3">
+                                        <span className={`px-2 py-0.5 rounded-[4px] text-[9px] font-bold uppercase tracking-widest ${task.status === 'completed' ? 'bg-[#24a148] text-white' : 'bg-[#201515] text-white'}`}>
                                             {task.status.replace('_', ' ')}
                                         </span>
                                     </td>
-                                    <td className="px-8 py-6 text-right" onClick={(e) => e.stopPropagation()}>
-                                        <button onClick={() => handleDelete(task._id)} className="w-10 h-10 flex items-center justify-center text-[#ff4f00] hover:bg-[#ff4f00] hover:text-white rounded-[4px] transition-all bg-transparent border-none">
-                                            <Trash2 size={18} />
+                                    <td className="px-8 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                                        <button onClick={() => handleDelete(task._id)} className="w-8 h-8 flex items-center justify-center text-[#ff4f00] hover:bg-[#ff4f00] hover:text-white rounded-[4px] transition-all bg-transparent border-none">
+                                            <Trash2 size={16} />
                                         </button>
                                     </td>
                                 </tr>

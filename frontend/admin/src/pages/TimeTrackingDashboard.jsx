@@ -14,7 +14,7 @@ import {
 } from 'recharts';
 
 const API_BASE = '/api/time';
-const STATUS_POLL_INTERVAL = 10000;
+const STATUS_POLL_INTERVAL = 3000; // 3 seconds for near-instant parity
 
 const formatTime = (seconds) => {
   const totalSecs = Math.max(0, parseInt(seconds) || 0);
@@ -149,10 +149,10 @@ const TimeTrackingDashboard = () => {
             const elapsed = Math.floor((new Date() - new Date(s.startTime)) / 1000);
             calculatedTimer = Math.max(0, elapsed + totalActive);
           }
-          
-          // 🛡️ SOFT SYNC: Only jump if difference > 2s to avoid jitter
+
           setTimer(prev => {
-            if (Math.abs(prev - calculatedTimer) > 2 || prev === 0) {
+            // 🛡️ SOFT SYNC: Only jump if difference > 1s (tighter sync)
+            if (Math.abs(prev - calculatedTimer) > 1 || prev === 0) {
               return calculatedTimer;
             }
             return prev;
@@ -166,7 +166,14 @@ const TimeTrackingDashboard = () => {
         setIsIdle(false);
       }
 
-      if (summaryRes.data) setSummary(summaryRes.data);
+      if (summaryRes.data) {
+        const s = summaryRes.data;
+        // Ensure idle time from status endpoint takes priority for the high-density box
+        if (statusRes.data?.hasActiveSession) {
+          s.stats.idle = statusRes.data.idleTime || s.stats.idle || 0;
+        }
+        setSummary(s);
+      }
       setFullLogs(Array.isArray(logsRes.data) ? logsRes.data : []);
 
     } catch (err) { console.error('Dashboard sync error:', err); }
@@ -310,10 +317,22 @@ const TimeTrackingDashboard = () => {
 
   // Timer Engine
   useEffect(() => {
-    if (!session?.isRunning || isIdle) return;
+    if (!session?.isRunning) return;
 
     const interval = setInterval(() => {
-      setTimer(prev => prev + 1);
+      if (isIdle) {
+        // Increment idle stat locally for real-time display
+        setSummary(prev => ({
+          ...prev,
+          stats: {
+            ...prev.stats,
+            idle: (prev.stats.idle || 0) + 1,
+            total: (prev.stats.total || 0) + 1
+          }
+        }));
+      } else {
+        setTimer(prev => prev + 1);
+      }
     }, 1000);
 
     return () => clearInterval(interval);
@@ -428,7 +447,7 @@ const TimeTrackingDashboard = () => {
     <div className="animate-fade-in pb-20 max-w-[1400px] mx-auto px-6">
 
       {/* 🏁 HEADER SECTION */}
-      <div className="mb-10 flex flex-col md:flex-row justify-between items-end border-b border-[#c5c0b1] pb-6">
+      <div className="mb-6 flex flex-col md:flex-row justify-between items-end border-b border-[#c5c0b1] pb-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <Activity size={14} className="text-[#ff4f00]" />
@@ -439,7 +458,7 @@ const TimeTrackingDashboard = () => {
           </h1>
         </div>
         <div className="flex items-center gap-4 mt-6 md:mt-0">
-          <button onClick={() => fetchData()} className="h-12 px-6 bg-[#201515] text-white rounded-[12px] text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-[#ff4f00] transition-all shadow-lg border-none cursor-pointer">
+          <button onClick={() => fetchData()} className="h-10 px-5 bg-[#201515] text-white rounded-[10px] text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:bg-[#ff4f00] transition-all shadow-lg border-none cursor-pointer">
             <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} /> Sync Pulse
           </button>
         </div>
@@ -447,7 +466,7 @@ const TimeTrackingDashboard = () => {
 
       <div className="grid grid-cols-12 gap-8">
         <div className="col-span-12 lg:col-span-8 space-y-8">
-          <div className={`rounded-[32px] p-8 transition-all duration-700 relative overflow-hidden shadow-xl border ${session?.isRunning ? 'bg-[#fffdf9] border-[#24a148]' : 'bg-[#201515] border-transparent'}`}>
+          <div className={`rounded-[24px] p-4 transition-all duration-700 relative overflow-hidden shadow-xl border ${session?.isRunning ? 'bg-[#fffdf9] border-[#24a148]' : 'bg-[#201515] border-transparent'}`}>
             <div className="relative z-10 flex flex-col xl:flex-row items-center justify-between gap-8">
               <div className="text-center xl:text-left">
                 <div className="flex items-center gap-2 mb-4 justify-center xl:justify-start">
@@ -456,7 +475,7 @@ const TimeTrackingDashboard = () => {
                     {isIdle ? 'Inactivity Detected' : (session?.isRunning ? 'Sync Active' : 'Sync Suspended')}
                   </span>
                 </div>
-                <h2 className={`text-[64px] md:text-[84px] font-black tabular-nums leading-none tracking-tighter italic ${isIdle ? 'text-[#ff4f00]' : (session?.isRunning ? 'text-[#201515]' : 'text-white/60')}`}>
+                <h2 className={`text-[44px] md:text-[54px] font-black tabular-nums leading-none tracking-tighter italic ${isIdle ? 'text-[#ff4f00]' : (session?.isRunning ? 'text-[#201515]' : 'text-white/60')}`}>
                   {formatTime(timer)}
                 </h2>
                 <div className="flex flex-col items-start gap-2 mt-4">
@@ -491,19 +510,28 @@ const TimeTrackingDashboard = () => {
                     )
                   )}
                 </div>
+                {session?.isRunning && (
+                  <div className="mt-4 p-3 bg-[#fdf2f2] border border-[#fbd5d5] rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock size={14} className="text-[#ff4f00]" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[#201515]">Total Inactivity Today</span>
+                    </div>
+                    <span className="text-[16px] font-black text-[#ff4f00] tabular-nums italic">{formatTime(summary.stats.idle)}</span>
+                  </div>
+                )}
                 <p className={`text-[10px] font-black mt-4 uppercase tracking-[0.3em] italic ${session?.isRunning && !isIdle ? 'text-[#939084]' : 'text-white/40'}`}>Operational Yield</p>
               </div>
               <div className="flex flex-row gap-4">
                 {!session ? (
-                  <button onClick={() => handleAction('start')} className="bg-[#ff4f00] text-white h-16 px-10 rounded-2xl font-black text-[15px] uppercase tracking-[0.2em] flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-xl border-none cursor-pointer italic">START <Play size={20} fill="white" /></button>
+                  <button onClick={() => handleAction('start')} className="bg-[#ff4f00] text-white h-10 px-6 rounded-xl font-black text-[12px] uppercase tracking-[0.2em] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl border-none cursor-pointer italic">START <Play size={16} fill="white" /></button>
                 ) : (
                   <div className="flex flex-row gap-3">
                     {!session.isRunning ? (
-                      <button onClick={() => handleAction('resume')} className="bg-[#24a148] text-white h-14 px-8 rounded-xl font-black text-[12px] uppercase tracking-widest flex items-center gap-3 hover:scale-105 active:scale-95 transition-all border-none cursor-pointer italic">RESUME <Play size={18} fill="white" /></button>
+                      <button onClick={() => handleAction('resume')} className="bg-[#24a148] text-white h-10 px-6 rounded-lg font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all border-none cursor-pointer italic">RESUME <Play size={14} fill="white" /></button>
                     ) : (
-                      <button onClick={() => handleAction('pause')} className="bg-white text-[#201515] h-14 px-8 rounded-xl font-black text-[12px] uppercase tracking-widest flex items-center gap-3 hover:bg-[#eceae3] transition-all border-none cursor-pointer shadow-lg italic">PAUSE <Pause size={18} /></button>
+                      <button onClick={() => handleAction('pause')} className="bg-white text-[#201515] h-10 px-6 rounded-lg font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-[#eceae3] transition-all border-none cursor-pointer shadow-lg italic">PAUSE <Pause size={14} /></button>
                     )}
-                    <button onClick={() => handleAction('stop')} className="bg-[#ff4f00] text-white h-14 px-8 rounded-xl font-black text-[12px] uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all border-none cursor-pointer italic">STOP <Square size={18} fill="white" /></button>
+                    <button onClick={() => handleAction('stop')} className="bg-[#ff4f00] text-white h-10 px-6 rounded-lg font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all border-none cursor-pointer italic">STOP <Square size={14} fill="white" /></button>
                   </div>
                 )}
               </div>
@@ -517,7 +545,7 @@ const TimeTrackingDashboard = () => {
               { label: 'Total', val: formatMinutes(summary.stats.total), icon: Timer, color: 'text-[#201515]' },
               { label: 'Yield', val: `${summary.stats.productivity}%`, icon: TrendingUp, color: 'text-[#ff4f00]' }
             ].map((card, i) => (
-              <div key={i} className="bg-white border border-[#c5c0b1] p-6 rounded-[24px] shadow-sm group hover:border-[#ff4f00] transition-colors">
+              <div key={i} className="bg-white border border-[#c5c0b1] p-4 rounded-[20px] shadow-sm group hover:border-[#ff4f00] transition-colors">
                 <div className="flex justify-between items-start mb-4"><card.icon size={16} className={card.color} /></div>
                 <h4 className="text-2xl font-black text-[#201515] tracking-tighter italic mb-1">{card.val}</h4>
                 <p className="text-[9px] font-black text-[#939084] uppercase tracking-widest">{card.label}</p>

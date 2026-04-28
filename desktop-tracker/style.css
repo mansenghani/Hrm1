@@ -331,3 +331,46 @@ body {
     color: var(--text-gray);
     margin-top: 16px;
 }
+
+.inactivity-box {
+    background: rgba(255, 79, 0, 0.05);
+    border: 1px solid rgba(255, 79, 0, 0.2);
+    border-radius: 20px;
+    padding: 16px;
+    text-align: center;
+    animation: slideIn 0.3s ease-out;
+}
+
+.inactivity-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.inactivity-title {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--accent-orange);
+    letter-spacing: 1px;
+}
+
+.inactivity-timer {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--accent-orange);
+    margin-bottom: 2px;
+}
+
+.inactivity-label {
+    font-size: 9px;
+    font-weight: 800;
+    color: var(--text-gray);
+    letter-spacing: 1px;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

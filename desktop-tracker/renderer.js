@@ -13,7 +13,7 @@ let statusPollInterval = null;
 
 const API_BASE = 'http://localhost:5000/api/time';
 const IDLE_THRESHOLD = 60 * 1000; // 1 Minute in ms
-const SYNC_INTERVAL = 60 * 1000; // 1 Minute sync
+const SYNC_INTERVAL = 15 * 1000; // 15 Second sync (matched to web)
 const STATUS_POLL = 3000; // 3 Seconds poll for cross-app sync
 
 const activeTimerEl = document.getElementById('active-timer');
@@ -468,8 +468,8 @@ async function fetchSessionStatus() {
             calculatedTimer = Math.max(0, elapsed + totalActive);
         }
 
-        // 🛡️ SOFT SYNC: Only jump if difference > 2s
-        if (Math.abs(activeSeconds - calculatedTimer) > 2 || activeSeconds === 0) {
+        // 🛡️ SOFT SYNC: Only jump if difference > 1s
+        if (Math.abs(activeSeconds - calculatedTimer) > 1 || activeSeconds === 0) {
             activeSeconds = calculatedTimer;
         }
 
@@ -504,6 +504,18 @@ function saveProgress() {
 function updateDisplay() {
     activeTimerEl.innerText = formatTime(activeSeconds);
     inactiveTimerEl.innerText = formatTime(inactiveSeconds);
+
+    const now = Date.now();
+    const idleMs = now - lastActivity;
+    const idleRegistry = document.getElementById('inactivity-registry');
+    const realtimeIdleTimer = document.getElementById('realtime-idle-timer');
+
+    if (status === 'ACTIVE' && idleMs > 1000) {
+        idleRegistry.style.display = 'block';
+        realtimeIdleTimer.innerText = formatTime(Math.floor(idleMs / 1000));
+    } else {
+        idleRegistry.style.display = 'none';
+    }
 }
 
 function updateUI() {
@@ -524,10 +536,15 @@ function formatTime(s) {
 
 // 🖱️ ACTIVITY LISTENERS (In-Window)
 const updateActivityTimestamp = (type) => {
-    if (status !== 'ACTIVE') return;
     lastActivity = Date.now();
     lastActivityType = type || 'mouse';
     idleNotificationSent = false;
+    
+    // 🛡️ INSTANT UI FEEDBACK
+    document.getElementById('inactivity-registry').style.display = 'none';
+    if (status === 'IDLE') {
+        resumeSession(); // Auto-resume on activity if we were idle
+    }
 };
 window.addEventListener('mousemove', () => updateActivityTimestamp('mouse'));
 window.addEventListener('mousedown', () => updateActivityTimestamp('mouse'));
