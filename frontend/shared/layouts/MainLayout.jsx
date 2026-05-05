@@ -22,8 +22,11 @@ import {
   X,
   Target,
   Bell,
-  MessageSquare
+  MessageSquare,
+  AlertCircle,
+  Play
 } from 'lucide-react';
+import { io } from 'socket.io-client';
 import { API_BASE_URL } from '@shared/services/api';
 
 const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
@@ -198,52 +201,178 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const [lastActivity, setLastActivity] = useState(Date.now());
-  const [idleDisplay, setIdleDisplay] = useState(0);
   const [isTrackingActive, setIsTrackingActive] = useState(false);
+  const [lastActivity, setLastActivity] = useState(Date.now());
+  const [idleTimer, setIdleTimer] = useState(null);
+  const [socket, setSocket] = useState(null);
+  const [isPausedByIdle, setIsPausedByIdle] = useState(false);
 
-  // 🛡️ POLL SESSION STATUS FOR HEADER PILL
+  // 🔌 SOCKET INITIALIZATION
   useEffect(() => {
-    const checkStatus = async () => {
+    if (!token) return;
+    const host = window.location.hostname;
+    const socketUrl = host === 'localhost' ? 'http://localhost:5000' : `http://${host}:5000`;
+    const s = io(socketUrl, { withCredentials: true });
+    
+    s.on('connect', () => {
+      const user = JSON.parse(sessionStorage.getItem('user'));
+      if (user) s.emit('join_notifications', { userId: user._id || user.id, role: user.role });
+    });
+
+    s.on('timer_paused', (data) => {
+      setIsTrackingActive(false);
+      if (data.reason === 'inactivity') {
+        setIsPausedByIdle(true);
+        notifyUser("Inactivity Detected", "Timer paused after 5 minutes of inactivity.");
+      }
+    });
+
+    s.on('timer_resumed', () => {
+      setIsTrackingActive(true);
+      setIsPausedByIdle(false);
+    });
+
+    setSocket(s);
+    return () => s.disconnect();
+  }, [token]);
+
+  // 🛡️ INITIAL STATUS FETCH & POLLING
+  useEffect(() => {
+    const fetchStatus = async () => {
       if (!token) return;
       try {
-        const res = await axios.get('/api/time/status', { headers: { Authorization: `Bearer ${token}` } });
+        const res = await axios.get('/api/timer/status', { headers: { Authorization: `Bearer ${token}` } });
         setIsTrackingActive(!!res.data?.isRunning);
+        if (res.data?.status === 'idle') setIsPausedByIdle(true);
         
-        // 🔄 SYNC SERVER ACTIVITY TIME
-        if (res.data?.lastActiveTime) {
-          const serverTs = Date.parse(res.data.lastActiveTime);
-          if (!isNaN(serverTs) && serverTs > lastActivity) {
-            setLastActivity(serverTs);
+        // 🔄 Sync last activity from server using clock skew compensation
+        if (res.data?.lastActiveTime && res.data?.serverTime) {
+          const serverNow = Date.parse(res.data.serverTime);
+          const serverLast = Date.parse(res.data.lastActiveTime);
+          const localNow = Date.now();
+          
+          if (!isNaN(serverNow) && !isNaN(serverLast)) {
+            const sinceLast = serverNow - serverLast;
+            const adjustedLastActivity = localNow - sinceLast;
+            
+            if (adjustedLastActivity > lastActivity) {
+              setLastActivity(adjustedLastActivity);
+              resetIdleTimer(adjustedLastActivity);
+            }
           }
         }
-      } catch (err) { console.error('Status sync failed:', err); }
+      } catch (err) { console.error('Status fetch failed:', err); }
     };
-    checkStatus();
-    const interval = setInterval(checkStatus, 3000); // 3s poll for parity
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 10000); // Poll every 10s
     return () => clearInterval(interval);
   }, [token, lastActivity]);
 
+  // 🛡️ REACTIVE IDLE TIMER
+  useEffect(() => {
+    if (isTrackingActive) {
+      resetIdleTimer();
+    }
+  }, [lastActivity, isTrackingActive]);
+
+  const [lastServerSync, setLastServerSync] = useState(0);
+
+  const reportActivity = async (type = 'heartbeat') => {
+    if (!token || !isTrackingActive) return;
+    const now = Date.now();
+    if (now - lastServerSync < 15000) return; // 15s throttle
+    
+    try {
+      await axios.post('/api/timer/update', { type }, { headers: { Authorization: `Bearer ${token}` } });
+      setLastServerSync(now);
+    } catch (err) { console.error('Heartbeat failed:', err); }
+  };
+
+  const notifyUser = (title, body) => {
+    const now = Date.now();
+    const lastNotified = parseInt(localStorage.getItem('last_idle_notification') || '0');
+    
+    if (now - lastNotified < 60000) return; // 1 minute cross-tab throttle
+    
+    localStorage.setItem('last_idle_notification', now.toString());
+    
+    if (Notification.permission === 'granted') {
+      new Notification(title, { body });
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') new Notification(title, { body });
+      });
+    }
+  };
+
+  const pauseTimer = async () => {
+    try {
+      await axios.post('/api/timer/update', { type: 'idle' }, { headers: { Authorization: `Bearer ${token}` } });
+    } catch (err) { console.error('Pause failed:', err); }
+  };
+
+  const resetIdleTimer = (manualTime) => {
+    if (idleTimer) clearTimeout(idleTimer);
+    
+    const referenceTime = manualTime || lastActivity;
+    const timeSinceLast = Date.now() - referenceTime;
+    const remaining = Math.max(0, (5 * 60 * 1000) - timeSinceLast);
+
+    const timer = setTimeout(() => {
+      if (isTrackingActive) {
+        pauseTimer();
+      }
+    }, remaining);
+    
+    setIdleTimer(timer);
+  };
+
   // 🔄 GLOBAL ACTIVITY TRACKER
   useEffect(() => {
-    const handleGlobalActivity = () => setLastActivity(Date.now());
-    window.addEventListener('mousemove', handleGlobalActivity);
-    window.addEventListener('keydown', handleGlobalActivity);
-    window.addEventListener('mousedown', handleGlobalActivity);
-    window.addEventListener('focus', handleGlobalActivity);
+    const handleActivity = (e) => {
+      const now = Date.now();
+      setLastActivity(now);
+      resetIdleTimer(now);
+      reportActivity(e?.type || 'active');
+    };
 
-    const interval = setInterval(() => {
-      setIdleDisplay(Math.floor((Date.now() - lastActivity) / 1000));
-    }, 1000);
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+    window.addEventListener('click', handleActivity);
+    window.addEventListener('scroll', handleActivity);
+    window.addEventListener('focus', handleActivity);
+    
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // handleHidden logic if needed, but we keep tracking
+      } else {
+        handleActivity();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    resetIdleTimer();
 
     return () => {
-      window.removeEventListener('mousemove', handleGlobalActivity);
-      window.removeEventListener('keydown', handleGlobalActivity);
-      window.removeEventListener('mousedown', handleGlobalActivity);
-      window.removeEventListener('focus', handleGlobalActivity);
-      clearInterval(interval);
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('click', handleActivity);
+      window.removeEventListener('scroll', handleActivity);
+      window.removeEventListener('focus', handleActivity);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (idleTimer) clearTimeout(idleTimer);
     };
-  }, [lastActivity]);
+  }, [isTrackingActive]);
+
+  const handleResume = async () => {
+    try {
+      await axios.post('/api/time/resume', {}, { headers: { Authorization: `Bearer ${token}` } });
+      const now = Date.now();
+      setLastActivity(now);
+      resetIdleTimer(now);
+      setIsPausedByIdle(false);
+    } catch (err) { console.error('Resume failed:', err); }
+  };
 
   const getImageUrl = (path) => {
     if (!path) return '';
@@ -283,13 +412,28 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           </nav>
           <div className="ml-auto flex items-center h-full gap-4">
             {/* ⏱️ GLOBAL INACTIVITY TRACKER */}
+            {isPausedByIdle && (
+              <button 
+                onClick={handleResume}
+                className="flex items-center gap-2 px-4 py-1.5 bg-[#ff4f00] text-white rounded-lg border-none cursor-pointer hover:bg-[#e64600] transition-all animate-pulse"
+              >
+                <Play size={14} fill="currentColor" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Resume Timer</span>
+              </button>
+            )}
             {isTrackingActive && (
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#eceae3] rounded-lg border border-[#c5c0b1]">
-                <div className={`w-1.5 h-1.5 rounded-full ${idleDisplay > 60 ? 'bg-[#ff4f00] animate-pulse' : 'bg-[#24a148]'}`}></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-[#24a148]"></div>
                 <span className="text-[10px] font-black text-[#201515] uppercase tracking-widest tabular-nums">
-                  {idleDisplay > 0 ? `${idleDisplay}s Inactive` : 'Active'}
+                  Active
                 </span>
               </div>
+            )}
+            {!isTrackingActive && !isPausedByIdle && (
+               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#eceae3] rounded-lg border border-[#c5c0b1] opacity-50">
+                 <div className="w-1.5 h-1.5 rounded-full bg-[#939084]"></div>
+                 <span className="text-[10px] font-black text-[#201515] uppercase tracking-widest">Offline</span>
+               </div>
             )}
 
             <button className="w-10 h-10 flex items-center justify-center text-[#36342e] hover:text-[#ff4f00] transition-colors relative group">

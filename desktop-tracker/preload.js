@@ -5,5 +5,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setStoreValue: (key, value) => ipcRenderer.invoke('set-store-value', key, value),
   closeApp: () => ipcRenderer.invoke('close-app'),
   minimizeApp: () => ipcRenderer.invoke('minimize-app'),
-  notifyNative: (title, body) => ipcRenderer.invoke('notify-native', { title, body })
+  notifyNative: (title, body) => ipcRenderer.invoke('notify-native', { title, body }),
+  onPowerStatus: (callback) => ipcRenderer.on('power-status', (event, status) => callback(status)),
+  onGlobalActivity: (callback) => ipcRenderer.on('global-activity', (event, status) => callback(status))
 });

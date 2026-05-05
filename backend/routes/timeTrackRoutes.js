@@ -26,7 +26,10 @@ router.post('/stop', protect, stopTracking);
 
 // 🔄 Monitoring
 router.post('/activity', protect, updateActivity);
+router.post('/update', protect, updateActivity); // Alias as requested
 router.get('/status', protect, getSessionStatus);
+router.get('/timer/status', protect, getSessionStatus); // Alias as requested
+router.post('/timer/update', protect, updateActivity); // Alias as requested
 
 // 📊 Analytics & History
 router.get('/my', protect, getMyTime);

@@ -14,7 +14,7 @@ import {
 } from 'recharts';
 
 const API_BASE = '/api/time';
-const STATUS_POLL_INTERVAL = 3000; // 3 seconds for near-instant parity
+const IDLE_THRESHOLD = 300; // 5 minutes in seconds
 
 const formatTime = (seconds) => {
   const totalSecs = Math.max(0, parseInt(seconds) || 0);
@@ -66,7 +66,7 @@ const TimeTrackingDashboard = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewDate, setViewDate] = useState(todayISO);
 
-  const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 Minutes
+  const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 Minutes
   const idleTimerRef = useRef(null);
   const audioRef = useRef(null);
 
@@ -210,74 +210,11 @@ const TimeTrackingDashboard = () => {
       }
     };
 
-    window.addEventListener('mousemove', handleActivity);
-    window.addEventListener('keydown', handleActivity);
-    window.addEventListener('mousedown', handleActivity);
-    window.addEventListener('click', handleActivity);
-    window.addEventListener('scroll', handleActivity);
-    window.addEventListener('focus', handleActivity);
-    window.addEventListener('touchstart', handleActivity);
-
-    // 🖥️ SYSTEM-LEVEL IDLE DETECTION (Chrome/Edge)
-    let controller;
-    const startSystemIdleDetection = async () => {
-      if ('IdleDetector' in window) {
-        try {
-          const status = await IdleDetector.requestPermission();
-          if (status === 'granted') {
-            controller = new AbortController();
-            const detector = new IdleDetector();
-            detector.addEventListener('change', () => {
-              const { userState, screenState } = detector;
-              console.log(`[SYSTEM] State changed: ${userState}, ${screenState}`);
-              if (userState === 'active') {
-                handleActivity();
-              } else {
-                // System went idle (even outside browser)
-                triggerIdle();
-              }
-            });
-            await detector.start({
-              threshold: INACTIVITY_TIMEOUT / 1000,
-              signal: controller.signal,
-            });
-            console.log('[SYSTEM] Idle Detection Active');
-          }
-        } catch (err) { console.error('IdleDetector Error:', err); }
-      }
-    };
-    startSystemIdleDetection();
-
-    return () => {
-      window.removeEventListener('mousemove', handleActivity);
-      window.removeEventListener('keydown', handleActivity);
-      window.removeEventListener('mousedown', handleActivity);
-      window.removeEventListener('click', handleActivity);
-      window.removeEventListener('scroll', handleActivity);
-      window.removeEventListener('focus', handleActivity);
-      window.removeEventListener('touchstart', handleActivity);
-      if (controller) controller.abort();
-    };
+  // 🛡️ REDUNDANT ACTIVITY LISTENERS REMOVED - Managed by MainLayout.jsx
   }, [session, isIdle, autoIdle]);
 
   // 💓 HEARTBEAT SYNC
-  useEffect(() => {
-    if (!session?.isRunning || isIdle) return;
-
-    const interval = setInterval(() => {
-      // Midnight Reset Check
-      const now = new Date().toISOString().split('T')[0];
-      if (now !== todayISO) {
-        console.log('[SYSTEM] MIDNIGHT DETECTED - RELOADING...');
-        window.location.reload();
-        return;
-      }
-      syncActivity(activityTypeRef.current || 'heartbeat');
-      activityTypeRef.current = 'heartbeat';
-    }, 30000); // 30s heartbeat
-
-    return () => clearInterval(interval);
-  }, [session, isIdle, todayISO]);
+  // 🛡️ REDUNDANT HEARTBEAT REMOVED - Managed by MainLayout.jsx
 
   const syncActivity = async (type) => {
     try {
@@ -361,8 +298,12 @@ const TimeTrackingDashboard = () => {
         const isRunning = s.isRunning !== undefined ? s.isRunning : (s.status === 'active');
         const totalActive = s.totalActiveTime || s.activeTime || 0;
         const timerValue = isRunning && s.startTime ? Math.floor((new Date() - new Date(s.startTime)) / 1000) + totalActive : totalActive;
+        
+        const now = Date.now();
+        setLastActivity(now);
         setSession({ ...s, isRunning, totalActiveTime: totalActive });
         setTimer(timerValue);
+        resetIdleTimer();
       }
 
       await fetchData();
@@ -494,8 +435,8 @@ const TimeTrackingDashboard = () => {
                           <span className="text-[16px] font-black text-[#201515] italic">{new Date(lastActivity).toLocaleTimeString()}</span>
                         </div>
                         <div className="flex flex-col items-end">
-                          <span className="text-[9px] font-bold text-[#939084] uppercase tracking-widest">Duration</span>
-                          <span className="text-[20px] font-black text-[#ff4f00] tabular-nums italic">-{formatTime(Math.floor((Date.now() - lastActivity) / 1000))}</span>
+                          <span className="text-[9px] font-bold text-[#939084] uppercase tracking-widest">Idle Deduction</span>
+                          <span className="text-[20px] font-black text-[#ff4f00] tabular-nums italic">-{formatTime(Math.max(0, Math.floor((Date.now() - lastActivity) / 1000) - 300))}</span>
                         </div>
                       </div>
                     </div>

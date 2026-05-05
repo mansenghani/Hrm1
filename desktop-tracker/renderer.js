@@ -10,11 +10,13 @@ let isIdle = false;
 let idleNotificationSent = false;
 let authToken = '';
 let statusPollInterval = null;
+let lastActionTime = 0; // Guard for polling sync
 
 const API_BASE = 'http://localhost:5000/api/time';
-const IDLE_THRESHOLD = 60 * 1000; // 1 Minute in ms
-const SYNC_INTERVAL = 15 * 1000; // 15 Second sync (matched to web)
-const STATUS_POLL = 3000; // 3 Seconds poll for cross-app sync
+const IDLE_THRESHOLD = 5 * 60 * 1000; // 5 Minutes in ms
+const SYNC_INTERVAL = 15 * 1000; // 15 Second sync
+const STATUS_POLL = 10000; // Increased poll since we have sockets
+let socket = null;
 
 const activeTimerEl = document.getElementById('active-timer');
 const inactiveTimerEl = document.getElementById('inactive-timer');
@@ -36,6 +38,7 @@ async function loadSession() {
     authToken = savedToken;
     document.getElementById('auth-section').style.display = 'none';
     await fetchUserProfile();
+    initSocket();
 
     const statusLoaded = await fetchSessionStatus();
     if (!statusLoaded) {
@@ -76,6 +79,7 @@ async function startSession() {
         }
         await fetchSessionStatus();
         lastActivity = Date.now();
+        lastActionTime = Date.now();
         updateUI();
     } catch (err) {
         console.error('Start failed:', err);
@@ -94,16 +98,29 @@ function setControlState(currentStatus) {
         binaryControls.style.display = 'flex';
         pauseBtn.style.display = 'flex';
         resumeBtn.style.display = 'none';
+        statusEl.innerText = 'ACTIVE';
+        statusEl.className = 'status-badge status-active';
     } else if (currentStatus === 'PAUSED' || currentStatus === 'IDLE') {
         startBtn.style.display = 'none';
         binaryControls.style.display = 'flex';
         pauseBtn.style.display = 'none';
         resumeBtn.style.display = 'flex';
+        statusEl.innerText = currentStatus;
+        statusEl.className = 'status-badge status-idle';
     } else {
         startBtn.style.display = 'flex';
         binaryControls.style.display = 'none';
-        pauseBtn.style.display = 'none';
-        resumeBtn.style.display = 'none';
+        statusEl.innerText = 'OFFLINE';
+        statusEl.className = 'status-badge';
+    }
+}
+
+function updateUI() {
+    setControlState(status);
+    const alertBox = document.getElementById('desktop-alert');
+    if (status !== 'IDLE' && alertBox) {
+        alertBox.style.display = 'none';
+        idleNotificationSent = false;
     }
 }
 
@@ -115,8 +132,10 @@ function startTimers() {
             
             if (status === 'ACTIVE') {
                 activeSeconds++;
-                // Require both local and server activity to avoid toggling when the app window itself is idle
-                if (now - lastActivity > IDLE_THRESHOLD && now - serverLastActivity > IDLE_THRESHOLD) {
+                // 🛡️ TRUST LOCAL ACTIVITY FOR IDLE TRANSITION
+                // We don't wait for serverLastActivity anymore to prevent "stuck" timers
+                if (Date.now() - lastActivity > IDLE_THRESHOLD) {
+                    console.log('Idle Threshold Hit (Local Activity)');
                     enterIdle();
                 }
             } else if (status === 'IDLE') {
@@ -133,7 +152,12 @@ function startTimers() {
     }
 }
 
+let lastNotificationTs = 0;
 async function notifyDesktop(title, body) {
+    const now = Date.now();
+    if (now - lastNotificationTs < 60000) return true; // 1 minute throttle
+    
+    lastNotificationTs = now;
     const payload = { title, body };
 
     const tryRendererNotification = () => {
@@ -187,14 +211,21 @@ function hideAppAlert() {
 async function showIdleNotification() {
     if (idleNotificationSent) return;
     idleNotificationSent = true;
-    showAppAlert('Inactivity Detected', 'No activity for 1 minute. Time tracking paused.');
-    await notifyDesktop('Inactivity Detected', 'No activity for 1 minute. Time tracking paused.');
+    showAppAlert('Inactivity Detected', 'No activity for 5 minutes. Time tracking paused.');
+    await notifyDesktop('Inactivity Detected', 'No activity for 5 minutes. Time tracking paused.');
 }
 
 async function enterIdle() {
     if (status !== 'ACTIVE' || idleNotificationSent) return;
+    lastActionTime = Date.now();
     status = 'IDLE';
     isIdle = true;
+    
+    // ✂️ INSTANT DEDUCTION (UI Sync)
+    // Remove the 5-minute wait time from the active clock and move it to inactive
+    activeSeconds = Math.max(0, activeSeconds - (IDLE_THRESHOLD / 1000));
+    inactiveSeconds += (IDLE_THRESHOLD / 1000);
+    updateDisplay();
     
     // 🛡️ IMMEDIATELY NOTIFY SERVER OF IDLE STATE
     // This prevents the status poller from seeing a stale ACTIVE status and resuming the timer
@@ -212,18 +243,24 @@ async function enterIdle() {
 
 async function resumeSession() {
     if (!authToken) return alert('Please login first.');
+    
+    // 🚀 INSTANT UI FEEDBACK
+    lastActionTime = Date.now();
     idleNotificationSent = false;
     isIdle = false;
-    lastActivityType = 'mouse';
     status = 'ACTIVE';
-    updateUI();
     lastActivity = Date.now();
     serverLastActivity = Date.now();
-    clearInterval(timerInterval);
-    clearInterval(syncInterval);
+    
+    // Force immediate timer restart
+    if (timerInterval) clearInterval(timerInterval);
+    if (syncInterval) clearInterval(syncInterval);
+    timerInterval = null;
+    syncInterval = null;
+    startTimers();
+    updateUI();
+    
     try {
-        clearInterval(timerInterval);
-        clearInterval(syncInterval);
         const response = await fetch(`${API_BASE}/resume`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${authToken}` }
@@ -244,6 +281,7 @@ async function resumeSession() {
 async function pauseSession() {
     if (!authToken) return alert('Please login first.');
     if (status === 'PAUSED') return;
+    lastActionTime = Date.now();
     status = 'PAUSED';
     isIdle = false;
     updateUI();
@@ -317,9 +355,8 @@ async function syncWithServer(type = 'update') {
     
     syncIndicator.classList.add('online');
     try {
-        // 🛡️ ONLY SEND ACTIVE IF ACTUAL LOCAL ACTIVITY OCCURRED
-        // If lastActivity is older than 60s, report as idle even if status is ACTIVE
-        const hasRecentLocalActivity = (Date.now() - lastActivity < SYNC_INTERVAL);
+        // 🛡️ ONLY SEND ACTIVE IF ACTUAL LOCAL ACTIVITY OCCURRED within IDLE_THRESHOLD
+        const hasRecentLocalActivity = (Date.now() - lastActivity < IDLE_THRESHOLD);
         const activityType = (status === 'ACTIVE' && hasRecentLocalActivity) ? (lastActivityType || 'mouse') : 'idle';
         
         const response = await fetch(`${API_BASE}/activity`, {
@@ -419,13 +456,19 @@ async function fetchSessionStatus() {
 
         const data = await response.json();
         
-        // 🛡️ SYNC SERVER ACTIVITY TIME TO PREVENT LOCAL IDLE FIGHTING
-        if (data.lastActiveTime) {
-            const serverActivityTs = Date.parse(data.lastActiveTime);
-            if (!isNaN(serverActivityTs) && serverActivityTs > serverLastActivity) {
-                serverLastActivity = serverActivityTs;
-                if (serverActivityTs > lastActivity) {
-                    lastActivity = serverActivityTs;
+        // 🛡️ SYNC SERVER ACTIVITY TIME TO PREVENT LOCAL IDLE FIGHTING (Clock Skew Compensation)
+        if (data.lastActiveTime && data.serverTime) {
+            const serverNow = Date.parse(data.serverTime);
+            const serverLast = Date.parse(data.lastActiveTime);
+            const localNow = Date.now();
+            
+            if (!isNaN(serverNow) && !isNaN(serverLast)) {
+                const sinceLast = serverNow - serverLast;
+                const adjustedLastActivity = localNow - sinceLast;
+                
+                if (adjustedLastActivity > lastActivity) {
+                    lastActivity = adjustedLastActivity;
+                    serverLastActivity = adjustedLastActivity;
                 }
             }
         }
@@ -443,6 +486,20 @@ async function fetchSessionStatus() {
         }
 
         const serverStatus = String(data.status || '').toUpperCase();
+        
+        // 🛡️ SYNC GUARD: Don't overwrite status if we just performed an action
+        if (Date.now() - lastActionTime < 5000) {
+            console.log('Sync Guard: Respecting transition grace period');
+            return true;
+        }
+
+        // 🛡️ STRICT MANUAL RESUME: If we are locally IDLE, don't let the server force us back to ACTIVE
+        // Only the Resume button (which sets lastActionTime) should break an idle state.
+        if (status === 'IDLE' && serverStatus === 'ACTIVE') {
+            console.log('Strict Mode: Blocking automatic server-side resume');
+            return true;
+        }
+
         const oldStatus = status;
 
         if (serverStatus === 'IDLE') {
@@ -469,7 +526,9 @@ async function fetchSessionStatus() {
         }
 
         // 🛡️ SOFT SYNC: Only jump if difference > 1s
-        if (Math.abs(activeSeconds - calculatedTimer) > 1 || activeSeconds === 0) {
+        // 🛡️ SOFT SYNC: Only jump if difference > 10s to prevent jumping/jitter
+        if (Math.abs(activeSeconds - calculatedTimer) > 10 || activeSeconds === 0) {
+            console.log('Sync: Correcting timer drift', { local: activeSeconds, server: calculatedTimer });
             activeSeconds = calculatedTimer;
         }
 
@@ -477,11 +536,25 @@ async function fetchSessionStatus() {
         updateUI();
         setControlState(status);
 
-        if (status === 'IDLE') {
-            await showIdleNotification();
-            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+        if (status === 'IDLE' || (Date.now() - lastActionTime < 5000)) {
+            // 🛡️ DO NOT RESTART TIMERS OR SYNC DURING TRANSITIONS
+            if (timerInterval) { 
+                console.log('Timer Safety: Stopping timer during IDLE/Transition state');
+                clearInterval(timerInterval); 
+                timerInterval = null; 
+            }
             if (syncInterval) { clearInterval(syncInterval); syncInterval = null; }
-        } else if (status === 'ACTIVE') {
+            
+            if (status === 'IDLE') {
+                await showIdleNotification();
+            }
+            
+            updateDisplay();
+            updateUI();
+            return true;
+        }
+
+        if (status === 'ACTIVE') {
             startTimers();
         } else {
             if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
@@ -504,27 +577,6 @@ function saveProgress() {
 function updateDisplay() {
     activeTimerEl.innerText = formatTime(activeSeconds);
     inactiveTimerEl.innerText = formatTime(inactiveSeconds);
-
-    const now = Date.now();
-    const idleMs = now - lastActivity;
-    const idleRegistry = document.getElementById('inactivity-registry');
-    const realtimeIdleTimer = document.getElementById('realtime-idle-timer');
-
-    if (status === 'ACTIVE' && idleMs > 1000) {
-        idleRegistry.style.display = 'block';
-        realtimeIdleTimer.innerText = formatTime(Math.floor(idleMs / 1000));
-    } else {
-        idleRegistry.style.display = 'none';
-    }
-}
-
-function updateUI() {
-    statusEl.innerText = status;
-    statusEl.className = 'status-badge ' + status.toLowerCase();
-    setControlState(status);
-    if (status !== 'IDLE') {
-        hideAppAlert();
-    }
 }
 
 function formatTime(s) {
@@ -538,13 +590,7 @@ function formatTime(s) {
 const updateActivityTimestamp = (type) => {
     lastActivity = Date.now();
     lastActivityType = type || 'mouse';
-    idleNotificationSent = false;
-    
-    // 🛡️ INSTANT UI FEEDBACK
-    document.getElementById('inactivity-registry').style.display = 'none';
-    if (status === 'IDLE') {
-        resumeSession(); // Auto-resume on activity if we were idle
-    }
+    // ⚠️ STRICT RULE: DO NOT AUTO-RESUME ON ACTIVITY
 };
 window.addEventListener('mousemove', () => updateActivityTimestamp('mouse'));
 window.addEventListener('mousedown', () => updateActivityTimestamp('mouse'));
@@ -564,9 +610,14 @@ document.getElementById('close-btn').onclick = () => window.electronAPI.closeApp
 async function loginWithCredentials() {
     const email = document.getElementById('email-input').value.trim();
     const password = document.getElementById('password-input').value;
+    const errorEl = document.getElementById('auth-error');
+
+    errorEl.style.display = 'none';
 
     if (!email || !password) {
-        return alert('Please enter both email and password.');
+        errorEl.innerText = 'Email and password required';
+        errorEl.style.display = 'block';
+        return;
     }
 
     try {
@@ -578,7 +629,9 @@ async function loginWithCredentials() {
 
         if (!response.ok) {
             const error = await response.json();
-            return alert(error.message || 'Login failed.');
+            errorEl.innerText = error.message || 'Wrong password or ID';
+            errorEl.style.display = 'block';
+            return;
         }
 
         const data = await response.json();
@@ -592,9 +645,70 @@ async function loginWithCredentials() {
         updateUI();
     } catch (err) {
         console.error('Login error:', err);
-        alert('Unable to login. Check the backend and network.');
+        errorEl.innerText = 'Connection error. Is backend running?';
+        errorEl.style.display = 'block';
     }
+}
+
+async function initSocket() {
+    if (socket) return;
+    
+    const userResponse = await fetch('http://localhost:5000/api/auth/me', {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    const user = await userResponse.json();
+    if (!user || !user.id) return;
+
+    socket = io('http://localhost:5000');
+    
+    socket.on('connect', () => {
+        console.log('Connected to socket server');
+        socket.emit('join_notifications', { userId: user.id, role: user.role });
+    });
+
+    socket.on('timer_paused', (data) => {
+        console.log('Socket: Timer Paused', data);
+        fetchSessionStatus();
+        if (data.reason === 'inactivity') {
+            showIdleNotification();
+        }
+    });
+
+    socket.on('timer_resumed', (data) => {
+        console.log('Socket: Timer Resumed', data);
+        idleNotificationSent = false;
+        fetchSessionStatus();
+    });
+}
+
+// ⚡ SYSTEM IDLE (Electron Power Monitor)
+if (window.electronAPI && window.electronAPI.onPowerStatus) {
+    window.electronAPI.onPowerStatus((powerStatus) => {
+        console.log('System Power Status:', powerStatus);
+        if (powerStatus === 'idle' && status === 'ACTIVE') {
+            enterIdle();
+        } else if (powerStatus === 'active') {
+            updateActivityTimestamp('active');
+            // 🛡️ ONLY NOTIFY IF WE WERE ACTUALLY IDLE
+            if (status === 'IDLE' || status === 'PAUSED') {
+                notifyDesktop('System Active', 'Click Resume to continue tracking.');
+            }
+        }
+    });
+}
+
+// 🌐 GLOBAL SYSTEM ACTIVITY (Any app, anywhere on PC)
+if (window.electronAPI && window.electronAPI.onGlobalActivity) {
+    window.electronAPI.onGlobalActivity((status) => {
+        // This fires whenever keyboard/mouse activity happens anywhere on the PC
+        // Word, Browser, WhatsApp, etc.
+        updateActivityTimestamp('system');
+    });
 }
 
 document.getElementById('auth-btn').onclick = loginWithCredentials;
 document.getElementById('logout-btn').onclick = logout;
+
+// 🪟 WINDOW CONTROLS (Login Screen)
+document.getElementById('auth-minimize-btn').onclick = () => window.electronAPI.minimizeApp();
+document.getElementById('auth-close-btn').onclick = () => window.electronAPI.closeApp();

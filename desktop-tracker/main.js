@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Notification } = require('electron');
+const { app, BrowserWindow, ipcMain, Notification, powerMonitor } = require('electron');
 const path = require('path');
 const Store = require('electron-store');
 
@@ -61,7 +61,36 @@ if (!gotTheLock) {
     }
   });
 
-  app.whenReady().then(createWindow);
+  app.whenReady().then(() => {
+    createWindow();
+
+    // ⚡ powerMonitor Activity Tracking
+    powerMonitor.on('user-idle', () => {
+      console.log('User is idle');
+      if (mainWindow) {
+        mainWindow.webContents.send('power-status', 'idle');
+      }
+    });
+
+    powerMonitor.on('user-active', () => {
+      console.log('User is active');
+      if (mainWindow) {
+        mainWindow.webContents.send('power-status', 'active');
+      }
+    });
+
+    // 🌐 GLOBAL SYSTEM ACTIVITY HEARTBEAT
+    // Checks if the system is being used (any app: Browser, Word, WhatsApp, etc.)
+    setInterval(() => {
+      if (!mainWindow) return;
+      
+      const systemIdleTime = powerMonitor.getSystemIdleTime();
+      // If idle time is 0, it means there was keyboard/mouse activity in the last second
+      if (systemIdleTime === 0) {
+        mainWindow.webContents.send('global-activity', 'active');
+      }
+    }, 1000); 
+  });
 }
 
 app.on('window-all-closed', () => {

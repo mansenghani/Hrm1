@@ -8,7 +8,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 const HEARTBEAT_INTERVAL = 15000; // 15 seconds
-const IDLE_THRESHOLD = 60; // 1 minute in seconds
+const IDLE_THRESHOLD = 300; // 5 minutes in seconds
 const STATUS_POLL_INTERVAL = 10000; // 10 seconds for cross-app sync
 const API_BASE = '/api/time';
 
@@ -170,32 +170,9 @@ const SmartTimeTracker = () => {
     activityTypeRef.current = normalizeActivityType(type);
   }, [session]);
 
-  useEffect(() => {
-    const events = ['mousemove', 'keydown', 'focus', 'click', 'scroll', 'touchstart', 'mousedown'];
-    const handler = (e) => handleUserActivity(e.type);
-    if (session?.isRunning) {
-      events.forEach(e => window.addEventListener(e, handler));
-    }
-    return () => events.forEach(e => window.removeEventListener(e, handler));
-  }, [session?.isRunning, handleUserActivity]);
+  // 🛡️ REDUNDANT ACTIVITY LISTENERS REMOVED - Managed by MainLayout.jsx
 
-  useEffect(() => {
-    if (session?.isRunning) {
-      heartbeatRef.current = setInterval(async () => {
-        try {
-          const auth = getAuth();
-          if (!auth) return;
-          const sinceLast = Math.floor((Date.now() - lastActivityRef.current) / 1000);
-          const type = sinceLast >= IDLE_THRESHOLD ? 'idle' : (activityTypeRef.current || 'active');
-          await axios.post(`${API_BASE}/activity`, { type }, auth);
-          activityTypeRef.current = null;
-        } catch (err) { console.error('Heartbeat failure'); }
-      }, HEARTBEAT_INTERVAL);
-    } else {
-      clearInterval(heartbeatRef.current);
-    }
-    return () => clearInterval(heartbeatRef.current);
-  }, [session?.isRunning]);
+  // 🛡️ REDUNDANT HEARTBEAT REMOVED - Managed by MainLayout.jsx
 
   if (loading) return (
     <div className="h-[60vh] flex flex-col items-center justify-center gap-6">

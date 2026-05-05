@@ -2,7 +2,7 @@ const TimeTrack = require('../models/TimeTrack');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 
-const IDLE_THRESHOLD = 60; // 1 Minute (Testing)
+const IDLE_THRESHOLD = 300; // 5 Minutes in seconds
 // 🧠 IN-MEMORY MOCK STORE
 let mockStore = {
   hasActiveSession: true,
@@ -114,6 +114,13 @@ exports.pauseTracking = async (req, res) => {
     session.lastActiveTime = now;
 
     await session.save();
+    
+    // 🔌 Emit Socket Event
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${id}`).emit('timer_paused', { reason: 'manual', session });
+    }
+
     res.json({ message: 'Tracking paused', session });
   } catch (error) {
     console.error('Pause Error:', error);
@@ -148,6 +155,13 @@ exports.resumeTracking = async (req, res) => {
     session.lastActiveTime = now;
 
     await session.save();
+
+    // 🔌 Emit Socket Event
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${id}`).emit('timer_resumed', { session });
+    }
+
     res.json({ message: 'Tracking resumed', session });
   } catch (error) {
     console.error('Resume Error:', error);
@@ -205,7 +219,6 @@ exports.updateActivity = async (req, res) => {
     const now = new Date();
     const session = await TimeTrack.findOne({ employeeId: id, date: getToday(), status: { $in: ['active', 'idle'] } });
 
-    // Day Shift Check
     if (!session) {
       const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
       const oldSession = await TimeTrack.findOne({ employeeId: id, date: yesterday, status: { $in: ['active', 'idle'] } });
@@ -220,33 +233,51 @@ exports.updateActivity = async (req, res) => {
     }
 
     const sinceLast = Math.floor((now - new Date(session.lastActiveTime)) / 1000);
-
     const activeTypes = ['mouse', 'keyboard', 'click', 'scroll', 'touch', 'focus', 'tab', 'heartbeat', 'active'];
     const normalizedType = String(type || '').toLowerCase();
     const isActiveSignal = activeTypes.includes(normalizedType);
 
-    if (isActiveSignal) {
-      if (session.status === 'idle') {
-        session.idleTime += sinceLast;
-        session.status = 'active';
-        session.isRunning = true;
-        session.startTime = now; // 🚀 RESET START TIME FOR FRONTEND SYNC
+    const io = req.app.get('io');
+    const isOverThreshold = sinceLast >= IDLE_THRESHOLD;
 
-        session.activityLog.push({ timestamp: now, type: 'resume' });
-      } else {
+    if (isActiveSignal && !isOverThreshold) {
+      // ⚠️ NORMAL ACTIVE UPDATE
+      if (session.status === 'active') {
         session.activeTime += sinceLast;
+        session.lastActiveTime = now;
       }
-
-      session.lastActiveTime = now;
+      
       if (normalizedType !== 'heartbeat' && normalizedType !== 'active') {
         session.activityLog.push({ timestamp: now, type: normalizedType });
       }
-    } else if (session.status === 'active' && (normalizedType === 'idle' || sinceLast >= IDLE_THRESHOLD)) {
-      session.idleTime += sinceLast;
+    } else if (session.status === 'active' && (normalizedType === 'idle' || isOverThreshold)) {
+      // 🚨 IDLE TRANSITION (Explicit or Timeout)
+      if (isOverThreshold) {
+        // ✂️ DEDUCTION LOGIC:
+        // Subtract the 5-minute grace period that was accidentally added during heartbeats
+        session.activeTime = Math.max(0, session.activeTime - IDLE_THRESHOLD);
+        session.idleTime += sinceLast;
+      } else {
+        // Explicit idle signal
+        session.idleTime += sinceLast;
+      }
+
       session.status = 'idle';
       session.isRunning = false;
       session.lastActiveTime = now;
-      session.activityLog.push({ timestamp: now, type: 'idle_start' });
+      session.activityLog.push({ timestamp: now, type: isOverThreshold ? 'idle_timeout' : 'idle_start' });
+      
+      // 🔌 Emit Socket Event (Only once per transition)
+      if (io) {
+        io.to(`user_${id}`).emit('timer_paused', { 
+            reason: 'inactivity', 
+            session,
+            timestamp: now 
+        });
+      }
+    } else if (session.status === 'idle') {
+        // If already idle, just update lastActiveTime so we know when they were last "seen"
+        session.lastActiveTime = now;
     }
 
     session.totalTime = (session.activeTime || 0) + (session.idleTime || 0);
@@ -271,12 +302,14 @@ exports.getSessionStatus = async (req, res) => {
       const lastActive = new Date(session.lastActiveTime);
       if (!isNaN(lastActive.getTime())) {
         const extra = Math.floor((now - lastActive) / 1000);
-        currentActiveTime += Math.max(0, extra);
+        // 🛡️ CAP active time at threshold to reflect impending idle state
+        currentActiveTime += Math.min(extra, IDLE_THRESHOLD);
       }
     }
 
     res.json({
       hasActiveSession: true,
+      serverTime: now,
       status: session.status,
       isRunning: session.isRunning !== undefined ? session.isRunning : (session.status === 'active'),
       startTime: session.startTime,

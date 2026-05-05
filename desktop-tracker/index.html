@@ -66,16 +66,6 @@
                 <span class="material-symbols-outlined">logout</span>
                 LOGOUT
             </button>
-            <div id="inactivity-registry" class="inactivity-box" style="display: none; margin-top: 16px;">
-                <div class="inactivity-header">
-                    <span class="material-symbols-outlined text-orange">timer_off</span>
-                    <span class="inactivity-title">INACTIVITY REGISTRY</span>
-                </div>
-                <div class="inactivity-body">
-                    <p class="inactivity-timer" id="realtime-idle-timer">00:00:00</p>
-                    <p class="inactivity-label">REAL-TIME IDLE DURATION</p>
-                </div>
-            </div>
         </div>
 
         <div class="analytics-footer">
@@ -90,15 +80,27 @@
         </div>
 
         <div class="auth-overlay" id="auth-section">
+            <div class="title-bar" style="position: absolute; top: 12px; left: 24px; right: 24px; margin-bottom: 0;">
+                <div class="brand">
+                    <span class="material-symbols-outlined text-orange">bolt</span>
+                    <span class="brand-text">FLUID<span class="text-orange">HR</span></span>
+                </div>
+                <div class="window-controls">
+                    <button id="auth-minimize-btn" class="win-ctrl"><span class="material-symbols-outlined">remove</span></button>
+                    <button id="auth-close-btn" class="win-ctrl"><span class="material-symbols-outlined">close</span></button>
+                </div>
+            </div>
             <div class="auth-card">
                 <h3>ACCESS AUTHORIZATION</h3>
                 <input type="text" id="email-input" placeholder="Email address">
                 <input type="password" id="password-input" placeholder="Password">
+                <p id="auth-error" style="color: #ff4f00; font-size: 10px; font-weight: 800; margin: 8px 0; text-transform: uppercase; letter-spacing: 0.1em; display: none;"></p>
                 <button id="auth-btn" class="ctrl-btn primary">LOGIN</button>
                 <p class="auth-hint">Use your HR account email and password</p>
             </div>
         </div>
     </div>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="renderer.js"></script>
 </body>
 </html>
