@@ -44,6 +44,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.set('io', io);
 
 // 🔌 Socket.io Logic
+const activeUsers = new Map();
+
 io.on('connection', (socket) => {
   console.log('⚡ User connected:', socket.id);
 
@@ -56,10 +58,40 @@ io.on('connection', (socket) => {
     if (!userId) return;
     socket.join(`user_${userId}`);
     if (role) socket.join(`role_${role}`);
+    
+    // Add to active users and broadcast
+    activeUsers.set(userId, socket.id);
+    io.emit('user_status_change', { userId, status: 'online' });
+    
     console.log(`🔔 User joined notification rooms: user_${userId} ${role ? `role_${role}` : ''}`);
   });
 
+  socket.on('get_online_users', () => {
+    socket.emit('online_users', Array.from(activeUsers.keys()));
+  });
+
+  socket.on('mark_delivered', async ({ messageId, senderId }) => {
+    try {
+      const Message = require('./models/Message');
+      await Message.findByIdAndUpdate(messageId, { status: 'delivered' });
+      io.to(`user_${senderId}`).emit('message_delivered', { messageId });
+    } catch (err) {
+      console.error('Error marking message delivered:', err);
+    }
+  });
+
   socket.on('disconnect', () => {
+    let disconnectedUserId = null;
+    for (const [userId, sid] of activeUsers.entries()) {
+      if (sid === socket.id) {
+        disconnectedUserId = userId;
+        activeUsers.delete(userId);
+        break;
+      }
+    }
+    if (disconnectedUserId) {
+      io.emit('user_status_change', { userId: disconnectedUserId, status: 'offline' });
+    }
     console.log('❌ User disconnected');
   });
 });
@@ -74,7 +106,10 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/personnel', require('./routes/personnelRoutes'));
 app.use('/api/teams', require('./routes/teamRoutes'));
 app.use('/api/projects', require('./routes/projectRoutes'));
-app.use('/api/time', require('./routes/timeTrackRoutes'));app.use('/api/notifications', notificationRoutes);app.use('/api/departments', departmentRoutes);
+app.use('/api/time', require('./routes/timeTrackRoutes'));
+app.use('/api/chat', require('./routes/chatRoutes'));
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/departments', departmentRoutes);
 app.use('/api/managers', managerRoutes);
 app.use('/api/users', userRoutes);
 

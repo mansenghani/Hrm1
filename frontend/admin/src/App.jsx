@@ -30,6 +30,7 @@ import Profile from '@shared/pages/Profile';
 import ProjectManagement from './pages/hr/ProjectManagement';
 import ManagerProjects from './pages/manager/ManagerProjects';
 import EmployeeProjects from './pages/employee/EmployeeProjects';
+import Chat from '@shared/pages/Chat';
 
 // ROUTE PROTECTION LOGIC
 const ProtectedRoute = ({ children, allowedRole }) => {
@@ -83,6 +84,7 @@ const App = () => {
           <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<Settings />} />
           <Route path="create-user" element={<CreateUser />} />
+          <Route path="chat" element={<Chat />} />
           <Route path="profile" element={<Profile />} />
         </Route>
 
@@ -104,6 +106,7 @@ const App = () => {
           <Route path="teams" element={<TeamManagement />} />
           <Route path="projects" element={<ProjectManagement />} />
           <Route path="time-tracker" element={<TimeTrackingDashboard />} />
+          <Route path="chat" element={<Chat />} />
           <Route path="profile" element={<Profile />} />
         </Route>
 
@@ -118,6 +121,7 @@ const App = () => {
           <Route path="projects" element={<EmployeeProjects />} />
           <Route path="time-tracker" element={<TimeTrackingDashboard />} />
           <Route path="leave" element={<EmployeeLeave />} />
+          <Route path="chat" element={<Chat />} />
           <Route path="profile" element={<Profile />} />
         </Route>
 
@@ -133,6 +137,7 @@ const App = () => {
           <Route path="projects" element={<ManagerProjects />} />
           <Route path="attendance" element={<Attendance />} />
           <Route path="leave" element={<LeaveManagement />} />
+          <Route path="chat" element={<Chat />} />
           <Route path="profile" element={<Profile />} />
           <Route path="time-tracker" element={<TimeTrackingDashboard />} />
         </Route>

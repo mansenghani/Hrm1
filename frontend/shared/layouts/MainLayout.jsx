@@ -21,7 +21,8 @@ import {
   Menu,
   X,
   Target,
-  Bell
+  Bell,
+  MessageSquare
 } from 'lucide-react';
 import { API_BASE_URL } from '@shared/services/api';
 
@@ -129,6 +130,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           { name: 'Tasks', path: '/hr/tasks', icon: CheckSquare },
           { name: 'Attendance', path: '/hr/attendance', icon: Calendar },
           { name: 'Time Tracker', path: '/hr/time-tracker', icon: Clock },
+          { name: 'Team Chat', path: '/hr/chat', icon: MessageSquare },
           { name: 'Project Registry', path: '/hr/projects', icon: Briefcase },
           { name: 'Request For Leave', path: '/hr/leave', icon: FileText },
         ];
@@ -137,6 +139,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           { name: 'Dashboard', path: '/employee/dashboard', icon: LayoutDashboard },
           { name: 'Active Tasks', path: '/employee/projects', icon: Target },
           { name: 'Time Tracker', path: '/employee/time-tracker', icon: Clock },
+          { name: 'Team Chat', path: '/employee/chat', icon: MessageSquare },
           { name: 'Request For Leave', path: '/employee/leave', icon: FileText },
         ];
       case 'manager':
@@ -145,6 +148,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           { name: 'Manage Task', path: '/manager/tasks', icon: ClipboardList },
           { name: 'Project Hub', path: '/manager/projects', icon: Briefcase },
           { name: 'Time Tracker', path: '/manager/time-tracker', icon: Clock },
+          { name: 'Team Chat', path: '/manager/chat', icon: MessageSquare },
           { name: 'Team Attendance', path: '/manager/attendance', icon: Calendar },
           { name: 'Review Leaves', path: '/manager/leave', icon: FileText },
         ];
@@ -157,6 +161,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           { name: 'Request For Leave', path: `/${currentRole}/leave`, icon: FileText },
           { name: 'Attendance', path: `/${currentRole}/attendance`, icon: Calendar },
           { name: 'Time Tracker', path: `/${currentRole}/time-tracker`, icon: Clock },
+          { name: 'Global Chat', path: `/${currentRole}/chat`, icon: MessageSquare },
           { name: 'Payroll', path: `/${currentRole}/payroll`, icon: Wallet },
           { name: 'Performance', path: `/${currentRole}/performance`, icon: TrendingUp },
           { name: 'Reports', path: `/${currentRole}/reports`, icon: BarChart3 },
