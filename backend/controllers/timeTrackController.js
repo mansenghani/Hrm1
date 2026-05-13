@@ -1,58 +1,31 @@
+/**
+ * ============================================================
+ * TIME ENGINE v2 — BACKEND AUTHORITY
+ * ============================================================
+ * Rules:
+ *  - Backend is the ONLY source of truth
+ *  - Frontend/Electron ONLY display values returned here
+ *  - No local timer math anywhere
+ *  - Idle time tracked as: inactivityCount × IDLE_THRESHOLD (deducted from activeTime)
+ *  - All values stored in DB and returned on every poll
+ * ============================================================
+ */
+
 const TimeTrack = require('../models/TimeTrack');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 
-const IDLE_THRESHOLD = 300; // 5 Minutes in seconds
-// 🧠 IN-MEMORY MOCK STORE
-let mockStore = {
-  hasActiveSession: true,
-  status: 'active',
-  isRunning: true,
-  startTime: new Date().toISOString(),
-  totalActiveTime: 3600,
-  activeTime: 3600,
-  idleTime: 120,
-  lastActiveTime: new Date().toISOString()
-};
+// ── CONFIG ────────────────────────────────────────────────
+const IDLE_THRESHOLD_SECONDS = 60; // 1 min test mode (change to 300 for 5 min prod)
 
+// ── HELPERS ───────────────────────────────────────────────
 const getToday = () => {
   const d = new Date();
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
+
 const isDBConnected = () => mongoose.connection.readyState === 1;
 
-const updateMock = (action) => {
-  const now = new Date();
-  if (action === 'start') {
-    mockStore = {
-      hasActiveSession: true, status: 'active', isRunning: true, startTime: now.toISOString(),
-      totalActiveTime: 0, activeTime: 0, idleTime: 0, lastActiveTime: now.toISOString()
-    };
-  } else if (action === 'pause') {
-    const elapsed = Math.floor((now - new Date(mockStore.startTime)) / 1000);
-    mockStore.totalActiveTime += elapsed;
-    mockStore.activeTime = mockStore.totalActiveTime;
-    mockStore.status = 'paused'; mockStore.isRunning = false;
-    mockStore.lastActiveTime = now.toISOString();
-  } else if (action === 'resume') {
-    mockStore.startTime = now.toISOString();
-    mockStore.status = 'active'; mockStore.isRunning = true;
-    mockStore.lastActiveTime = now.toISOString();
-  } else if (action === 'stop') {
-    const elapsed = mockStore.isRunning ? Math.floor((now - new Date(mockStore.startTime)) / 1000) : 0;
-    mockStore.totalActiveTime += elapsed;
-    mockStore.activeTime = mockStore.totalActiveTime;
-    mockStore.status = 'completed'; mockStore.isRunning = false; mockStore.hasActiveSession = false;
-  }
-  return mockStore;
-};
-
-// ==========================================
-// 🔐 ROLE-BASED FILTERING HELPER
-// ==========================================
 const getRoleFilter = (user) => {
   if (user.role === 'admin') return {};
   if (user.role === 'hr') return { employeeRole: { $in: ['employee', 'manager'] } };
@@ -60,87 +33,138 @@ const getRoleFilter = (user) => {
   return { employeeId: user.id };
 };
 
-// ==========================================
-// 🟢 START TRACKING
-// ==========================================
+// ── MOCK (DB offline fallback) ────────────────────────────
+let mock = {
+  hasActiveSession: false, status: 'completed', isRunning: false,
+  activeTime: 0, idleTime: 0, inactivityCount: 0
+};
+
+// ============================================================
+// 🟢 START
+// ============================================================
 exports.startTracking = async (req, res) => {
   try {
-    if (!isDBConnected()) return res.status(201).json({ message: 'Mock Start Success', session: updateMock('start') });
+    if (!isDBConnected()) {
+      mock = { hasActiveSession: true, status: 'active', isRunning: true, activeTime: 0, idleTime: 0, inactivityCount: 0, startTime: new Date() };
+      return res.status(201).json({ message: 'Mock start', session: mock });
+    }
+
     const { id, role } = req.user;
     const today = getToday();
     const now = new Date();
-    let session = await TimeTrack.findOne({ employeeId: id, date: today, status: { $ne: 'completed' } });
-    if (session) return res.status(400).json({ message: 'Session already active/paused', session });
     const userNode = await User.findById(id).select('reportingManager teamId');
-    session = await TimeTrack.create({
-      employeeId: id, employeeRole: role, managerId: userNode?.reportingManager || null,
-      teamId: userNode?.teamId || null, date: today, startTime: now, lastActiveTime: now,
-      status: 'active', isRunning: true, totalActiveTime: 0, sessions: [{ start: now }],
-      activityLog: [{ timestamp: now, type: 'resume' }]
-    });
-    res.status(201).json({ message: 'Tracking started', session });
-  } catch (error) { res.status(500).json({ message: 'Failed to start tracking', error: error.message }); }
-};
 
-// ==========================================
-// ⏸️ PAUSE TRACKING
-// ==========================================
-exports.pauseTracking = async (req, res) => {
-  try {
-    if (!isDBConnected()) return res.json({ message: 'Mock Pause Success', session: updateMock('pause') });
-    const { id } = req.user;
-    const now = new Date();
-    let session = await TimeTrack.findOne({ employeeId: id, date: getToday(), status: { $in: ['paused', 'idle'] } });
-    if (session) return res.json({ message: 'Session already paused', session });
+    // Close any stale session from a previous day
+    await TimeTrack.updateMany(
+      { employeeId: id, date: { $ne: today }, status: { $in: ['active', 'idle', 'paused'] } },
+      { $set: { status: 'completed', isRunning: false, endTime: now } }
+    );
 
-    session = await TimeTrack.findOne({ employeeId: id, date: getToday(), status: 'active' });
-    if (!session) return res.status(404).json({ message: 'No active session to pause' });
+    let session = await TimeTrack.findOne({ employeeId: id, date: today });
 
-    const lastIdx = session.sessions.length - 1;
-    if (lastIdx >= 0) session.sessions[lastIdx].pause = now;
-
-    // Calculate elapsed time from the start of the CURRENT segment
-    if (session.startTime) {
-      const startTime = new Date(session.startTime);
-      if (!isNaN(startTime.getTime())) {
-        const diff = Math.floor((now - startTime) / 1000);
-        session.totalActiveTime += Math.max(0, diff);
-      }
+    if (session) {
+      // Resume existing day session
+      session.status = 'active';
+      session.isRunning = true;
+      session.segmentStart = now;       // start of THIS active segment
+      session.lastHeartbeat = now;
+      session.idleApplied = false;
+      session.sessions.push({ start: now });
+      session.activityLog.push({ timestamp: now, type: 'resume' });
+    } else {
+      session = new TimeTrack({
+        employeeId: id,
+        employeeRole: role || 'employee',
+        managerId: userNode?.reportingManager || null,
+        teamId: userNode?.teamId || null,
+        date: today,
+        startTime: now,
+        segmentStart: now,
+        lastHeartbeat: now,
+        status: 'active',
+        isRunning: true,
+        activeTime: 0,
+        idleTime: 0,
+        inactivityCount: 0,
+        sessions: [{ start: now }],
+        activityLog: [{ timestamp: now, type: 'start' }]
+      });
     }
-
-    session.activeTime = session.totalActiveTime;
-    session.status = 'paused';
-    session.isRunning = false;
-    session.lastActiveTime = now;
 
     await session.save();
-    
-    // 🔌 Emit Socket Event
-    const io = req.app.get('io');
-    if (io) {
-      io.to(`user_${id}`).emit('timer_paused', { reason: 'manual', session });
-    }
 
-    res.json({ message: 'Tracking paused', session });
-  } catch (error) {
-    console.error('Pause Error:', error);
-    res.status(500).json({ message: 'Failed to pause tracking', error: error.message });
+    const io = req.app.get('io');
+    if (io) io.to(`user_${id}`).emit('timer_update', buildPayload(session));
+
+    res.status(201).json({ message: 'Tracking started', session: buildPayload(session) });
+  } catch (err) {
+    console.error('[START ERROR]', err);
+    res.status(500).json({ message: 'Failed to start tracking', error: err.message });
   }
 };
 
-// ==========================================
-// ▶️ RESUME TRACKING
-// ==========================================
-exports.resumeTracking = async (req, res) => {
+// ============================================================
+// ⏸️ PAUSE (manual)
+// ============================================================
+exports.pauseTracking = async (req, res) => {
   try {
-    if (!isDBConnected()) return res.json({ message: 'Mock Resume Success', session: updateMock('resume') });
+    if (!isDBConnected()) {
+      mock.status = 'paused'; mock.isRunning = false;
+      return res.json({ message: 'Mock pause', session: mock });
+    }
+
     const { id } = req.user;
     const now = new Date();
-    let session = await TimeTrack.findOne({ employeeId: id, date: getToday(), status: 'active' });
-    if (session) return res.json({ message: 'Session already active', session });
+    const session = await TimeTrack.findOne({ employeeId: id, date: getToday(), status: 'active' });
+    if (!session) return res.status(404).json({ message: 'No active session to pause' });
 
-    session = await TimeTrack.findOne({ employeeId: id, date: getToday(), status: { $in: ['paused', 'idle'] } });
-    if (!session) return res.status(404).json({ message: 'No paused or idle session to resume' });
+    // Commit the current active segment to activeTime
+    session.activeTime += flushSegment(session, now);
+    session.segmentStart = null;
+    session.status = 'paused';
+    session.isRunning = false;
+    session.lastHeartbeat = now;
+    session.idleApplied = false;
+
+    const lastIdx = session.sessions.length - 1;
+    if (lastIdx >= 0) session.sessions[lastIdx].pause = now;
+    session.activityLog.push({ timestamp: now, type: 'pause' });
+
+    await session.save();
+
+    const io = req.app.get('io');
+    if (io) io.to(`user_${id}`).emit('timer_paused', { reason: 'manual', ...buildPayload(session) });
+
+    res.json({ message: 'Tracking paused', session: buildPayload(session) });
+  } catch (err) {
+    console.error('[PAUSE ERROR]', err);
+    res.status(500).json({ message: 'Failed to pause', error: err.message });
+  }
+};
+
+// ============================================================
+// ▶️ RESUME (manual)
+// ============================================================
+exports.resumeTracking = async (req, res) => {
+  try {
+    if (!isDBConnected()) {
+      mock.status = 'active'; mock.isRunning = true;
+      return res.json({ message: 'Mock resume', session: mock });
+    }
+
+    const { id } = req.user;
+    const now = new Date();
+    const session = await TimeTrack.findOne({
+      employeeId: id, date: getToday(), status: { $in: ['paused', 'idle'] }
+    });
+    if (!session) return res.status(404).json({ message: 'No paused session to resume' });
+
+    // idleTime is tracked by inactivityCount × IDLE_THRESHOLD — nothing to add on resume
+    session.status = 'active';
+    session.isRunning = true;
+    session.segmentStart = now;
+    session.lastHeartbeat = now;
+    session.idleApplied = false;
 
     const lastIdx = session.sessions.length - 1;
     if (lastIdx >= 0 && session.sessions[lastIdx].pause && !session.sessions[lastIdx].resume) {
@@ -148,304 +172,293 @@ exports.resumeTracking = async (req, res) => {
     } else {
       session.sessions.push({ start: now });
     }
-
-    session.startTime = now;
-    session.status = 'active';
-    session.isRunning = true;
-    session.lastActiveTime = now;
+    session.activityLog.push({ timestamp: now, type: 'resume' });
 
     await session.save();
 
-    // 🔌 Emit Socket Event
     const io = req.app.get('io');
-    if (io) {
-      io.to(`user_${id}`).emit('timer_resumed', { session });
-    }
+    if (io) io.to(`user_${id}`).emit('timer_resumed', buildPayload(session));
 
-    res.json({ message: 'Tracking resumed', session });
-  } catch (error) {
-    console.error('Resume Error:', error);
-    res.status(500).json({ message: 'Failed to resume tracking', error: error.message });
+    res.json({ message: 'Tracking resumed', session: buildPayload(session) });
+  } catch (err) {
+    console.error('[RESUME ERROR]', err);
+    res.status(500).json({ message: 'Failed to resume', error: err.message });
   }
 };
 
-// ==========================================
-// 🔴 STOP TRACKING
-// ==========================================
+// ============================================================
+// 🔴 STOP
+// ============================================================
 exports.stopTracking = async (req, res) => {
   try {
-    if (!isDBConnected()) return res.json({ message: 'Mock Stop Success', session: updateMock('stop') });
-    const { id } = req.user;
-    const now = new Date();
-    let session = await TimeTrack.findOne({ employeeId: id, date: getToday(), status: 'completed' });
-    if (session) return res.json({ message: 'Session already completed', session });
-
-    session = await TimeTrack.findOne({ employeeId: id, date: getToday(), status: { $in: ['active', 'paused', 'idle'] } });
-    if (!session) return res.status(404).json({ message: 'No active/paused session found to stop' });
-
-    const lastIdx = session.sessions.length - 1;
-    if (lastIdx >= 0) {
-      session.sessions[lastIdx].end = now;
-      if (session.isRunning && session.startTime) {
-        const startTime = new Date(session.startTime);
-        if (!isNaN(startTime.getTime())) {
-          const diff = Math.floor((now - startTime) / 1000);
-          session.totalActiveTime += Math.max(0, diff);
-        }
-      }
+    if (!isDBConnected()) {
+      mock.status = 'completed'; mock.isRunning = false; mock.hasActiveSession = false;
+      return res.json({ message: 'Mock stop', session: mock });
     }
 
+    const { id } = req.user;
+    const now = new Date();
+    const session = await TimeTrack.findOne({
+      employeeId: id, date: getToday(), status: { $in: ['active', 'paused', 'idle'] }
+    });
+    if (!session) return res.status(404).json({ message: 'No session to stop' });
+
+    // Commit final active segment
+    if (session.status === 'active') {
+      session.activeTime += flushSegment(session, now);
+    }
+
+    session.segmentStart = null;
     session.endTime = now;
     session.status = 'completed';
     session.isRunning = false;
-    session.activeTime = session.totalActiveTime;
+
+    const lastIdx = session.sessions.length - 1;
+    if (lastIdx >= 0) session.sessions[lastIdx].end = now;
+    session.activityLog.push({ timestamp: now, type: 'stop' });
 
     await session.save();
-    res.json({ message: 'Tracking stopped', session });
-  } catch (error) {
-    console.error('Stop Error:', error);
-    res.status(500).json({ message: 'Failed to stop tracking', error: error.message });
+    res.json({ message: 'Tracking stopped', session: buildPayload(session) });
+  } catch (err) {
+    console.error('[STOP ERROR]', err);
+    res.status(500).json({ message: 'Failed to stop', error: err.message });
   }
 };
 
-// ==========================================
-// 🔄 UPDATE ACTIVITY
-// ==========================================
+// ============================================================
+// 🔄 HEARTBEAT / ACTIVITY UPDATE
+// ============================================================
 exports.updateActivity = async (req, res) => {
   try {
-    if (!isDBConnected()) return res.json({ status: mockStore.status, isRunning: mockStore.isRunning });
+    if (!isDBConnected()) return res.json(mock);
+
     const { id } = req.user;
     const { type } = req.body;
     const now = new Date();
-    const session = await TimeTrack.findOne({ employeeId: id, date: getToday(), status: { $in: ['active', 'idle'] } });
+
+    const session = await TimeTrack.findOne({
+      employeeId: id, date: getToday(), status: { $in: ['active', 'idle', 'paused'] }
+    });
 
     if (!session) {
+      // Auto-close stale yesterday session
       const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-      const oldSession = await TimeTrack.findOne({ employeeId: id, date: yesterday, status: { $in: ['active', 'idle'] } });
-      if (oldSession) {
-        oldSession.status = 'completed';
-        oldSession.isRunning = false;
-        oldSession.endTime = now;
-        await oldSession.save();
-        return res.json({ status: 'reload', message: 'Day shifted.' });
-      }
+      await TimeTrack.updateMany(
+        { employeeId: id, date: yesterday, status: { $in: ['active', 'idle'] } },
+        { $set: { status: 'completed', isRunning: false, endTime: now } }
+      );
       return res.status(404).json({ message: 'No active session' });
     }
 
-    const sinceLast = Math.floor((now - new Date(session.lastActiveTime)) / 1000);
-    const activeTypes = ['mouse', 'keyboard', 'click', 'scroll', 'touch', 'focus', 'tab', 'heartbeat', 'active'];
     const normalizedType = String(type || '').toLowerCase();
-    const isActiveSignal = activeTypes.includes(normalizedType);
+    const isActiveSignal = ['mouse', 'keyboard', 'click', 'scroll', 'touch', 'focus', 'tab', 'heartbeat', 'active'].includes(normalizedType);
+    const isIdleSignal = normalizedType === 'idle';
 
-    const io = req.app.get('io');
-    const isOverThreshold = sinceLast >= IDLE_THRESHOLD;
+    if (session.status === 'active') {
+      const sinceHeartbeat = session.lastHeartbeat
+        ? (now - new Date(session.lastHeartbeat)) / 1000
+        : 0;
 
-    if (isActiveSignal && !isOverThreshold) {
-      // ⚠️ NORMAL ACTIVE UPDATE
-      if (session.status === 'active') {
-        session.activeTime += sinceLast;
-        session.lastActiveTime = now;
-      }
-      
-      if (normalizedType !== 'heartbeat' && normalizedType !== 'active') {
-        session.activityLog.push({ timestamp: now, type: normalizedType });
-      }
-    } else if (session.status === 'active' && (normalizedType === 'idle' || isOverThreshold)) {
-      // 🚨 IDLE TRANSITION (Explicit or Timeout)
-      if (isOverThreshold) {
-        // ✂️ DEDUCTION LOGIC:
-        // Subtract the 5-minute grace period that was accidentally added during heartbeats
-        session.activeTime = Math.max(0, session.activeTime - IDLE_THRESHOLD);
-        session.idleTime += sinceLast;
-      } else {
-        // Explicit idle signal
-        session.idleTime += sinceLast;
+      if (isActiveSignal && sinceHeartbeat < IDLE_THRESHOLD_SECONDS) {
+        // ── Normal active heartbeat ──
+        // Commit elapsed seconds since last heartbeat to activeTime (high precision)
+        session.activeTime += Math.max(0, sinceHeartbeat);
+        session.lastHeartbeat = now;
+
+        if (!['heartbeat', 'active'].includes(normalizedType)) {
+          session.activityLog.push({ timestamp: now, type: normalizedType });
+        }
+
+      } else if (isIdleSignal || sinceHeartbeat >= IDLE_THRESHOLD_SECONDS) {
+        // ── Idle transition ──
+        if (!session.idleApplied) {
+          // ✅ Dynamic Rewind: Subtract the EXACT seconds of idleness reported by the OS
+          // This eliminates gaps caused by heartbeat delays or network latency.
+          const rewindAmount = Math.max(IDLE_THRESHOLD_SECONDS, req.body.idleSeconds || 0);
+          
+          session.activeTime += Math.max(0, sinceHeartbeat);
+          session.activeTime = Math.max(0, session.activeTime - rewindAmount);
+          
+          session.inactivityCount += 1;
+          session.idleTime = session.inactivityCount * IDLE_THRESHOLD_SECONDS;
+          session.idleApplied = true;
+
+          console.log(`[IDLE DYNAMIC] User ${id} — rewound by ${rewindAmount}s to ${session.activeTime}s`);
+        }
+
+        session.status = 'idle';
+        session.isRunning = false;
+        session.segmentStart = null;
+        session.lastHeartbeat = now;
+        session.activityLog.push({ timestamp: now, type: 'idle_start' });
+
+        await session.save();
+
+        const io = req.app.get('io');
+        if (io) {
+          io.to(`user_${id}`).emit('timer_paused', {
+            reason: 'inactivity',
+            employeeId: id,
+            ...buildPayload(session)
+          });
+        }
+
+        return res.json(buildPayload(session));
       }
 
-      session.status = 'idle';
-      session.isRunning = false;
-      session.lastActiveTime = now;
-      session.activityLog.push({ timestamp: now, type: isOverThreshold ? 'idle_timeout' : 'idle_start' });
-      
-      // 🔌 Emit Socket Event (Only once per transition)
-      if (io) {
-        io.to(`user_${id}`).emit('timer_paused', { 
-            reason: 'inactivity', 
-            session,
-            timestamp: now 
-        });
-      }
     } else if (session.status === 'idle') {
-        // If already idle, just update lastActiveTime so we know when they were last "seen"
-        session.lastActiveTime = now;
+      // While idle, just update heartbeat timestamp — no math
+      session.lastHeartbeat = now;
     }
 
-    session.totalTime = (session.activeTime || 0) + (session.idleTime || 0);
     await session.save();
-    res.json({ status: session.status, isRunning: session.isRunning, activeTime: session.activeTime, idleTime: session.idleTime, totalTime: session.totalTime });
-  } catch (error) { res.status(500).json({ message: 'Heartbeat failed', error: error.message }); }
+    res.json(buildPayload(session));
+  } catch (err) {
+    console.error('[HEARTBEAT ERROR]', err);
+    res.status(500).json({ message: 'Heartbeat failed', error: err.message });
+  }
 };
 
-// ==========================================
-// 📊 GET DATA VIEWS
-// ==========================================
+// ============================================================
+// 📡 GET SESSION STATUS  (frontend polls this every second)
+// ============================================================
 exports.getSessionStatus = async (req, res) => {
   try {
-    if (!isDBConnected()) return res.json(mockStore);
+    if (!isDBConnected()) return res.json({ hasActiveSession: false, ...mock });
+
     const { id } = req.user;
-    const session = await TimeTrack.findOne({ employeeId: id, date: getToday(), status: { $ne: 'completed' } });
+    const session = await TimeTrack.findOne({
+      employeeId: id, date: getToday(), status: { $ne: 'completed' }
+    });
+
     if (!session) return res.json({ hasActiveSession: false });
 
-    let currentActiveTime = session.activeTime || 0;
-    const now = new Date();
-    if (session.status === 'active' && session.lastActiveTime) {
-      const lastActive = new Date(session.lastActiveTime);
-      if (!isNaN(lastActive.getTime())) {
-        const extra = Math.floor((now - lastActive) / 1000);
-        // 🛡️ CAP active time at threshold to reflect impending idle state
-        currentActiveTime += Math.min(extra, IDLE_THRESHOLD);
+    // ── Live active time ──
+    // If session is active, add seconds elapsed since last heartbeat (high precision)
+    let liveActiveTime = session.activeTime || 0;
+    if (session.status === 'active' && session.lastHeartbeat) {
+      const elapsed = (new Date() - new Date(session.lastHeartbeat)) / 1000;
+      // Only add if within threshold (prevents runaway if heartbeat stopped)
+      if (elapsed < IDLE_THRESHOLD_SECONDS) {
+        liveActiveTime += elapsed;
       }
     }
-
+    
+    // Floor only at the last moment for the response
     res.json({
       hasActiveSession: true,
-      serverTime: now,
       status: session.status,
-      isRunning: session.isRunning !== undefined ? session.isRunning : (session.status === 'active'),
+      isRunning: session.isRunning,
+      activeTime: Math.floor(liveActiveTime),
+      idleTime: Math.floor(session.idleTime || 0),
+      inactivityCount: session.inactivityCount || 0,
       startTime: session.startTime,
-      lastActiveTime: session.lastActiveTime,
-      totalActiveTime: session.totalActiveTime || currentActiveTime,
-      activeTime: currentActiveTime,
-      idleTime: session.idleTime,
-      totalTime: (currentActiveTime || 0) + (session.idleTime || 0)
+      lastHeartbeat: session.lastHeartbeat
     });
-  } catch (error) { res.status(500).json({ message: 'Status check failed', error: error.message }); }
+  } catch (err) {
+    console.error('[STATUS ERROR]', err);
+    res.status(500).json({ message: 'Status check failed', error: err.message });
+  }
 };
 
+// ============================================================
+// 📊 ANALYTICS / VIEWS  (unchanged logic, just cleaner)
+// ============================================================
 exports.getTimeSummary = async (req, res) => {
   try {
-    if (!isDBConnected()) return res.json({
-      stats: { active: 3600, idle: 120, total: 3720, productivity: 97 },
-      chartData: [{ date: '2026-04-21', active: 1, idle: 0.1 }],
-      logs: []
-    });
+    if (!isDBConnected()) return res.json({ stats: { active: 0, idle: 0, total: 0, productivity: 0 }, chartData: [], logs: [] });
 
     const filter = getRoleFilter(req.user);
     const sessions = await TimeTrack.find(filter).sort({ date: -1 }).limit(30);
-
-    // 1. Calculate Stats (Today)
     const today = getToday();
     const todayData = sessions.filter(s => s.date === today);
+
     const stats = {
-      active: todayData.reduce((acc, s) => acc + (s.activeTime || 0), 0),
-      idle: todayData.reduce((acc, s) => acc + (s.idleTime || 0), 0),
-      total: todayData.reduce((acc, s) => acc + ((s.activeTime || 0) + (s.idleTime || 0)), 0),
+      active: todayData.reduce((a, s) => a + (s.activeTime || 0), 0),
+      idle: todayData.reduce((a, s) => a + (s.idleTime || 0), 0),
+      total: todayData.reduce((a, s) => a + (s.activeTime || 0) + (s.idleTime || 0), 0),
       productivity: 0
     };
-    const totalSessionTime = stats.active + stats.idle;
-    if (totalSessionTime > 0) stats.productivity = Math.round((stats.active / totalSessionTime) * 100);
+    const total = stats.active + stats.idle;
+    if (total > 0) stats.productivity = Math.round((stats.active / total) * 100);
 
-    // 2. Chart Data (Group by date)
     const chartMap = {};
     sessions.forEach(s => {
       if (!chartMap[s.date]) chartMap[s.date] = { date: s.date, active: 0, idle: 0 };
       chartMap[s.date].active += (s.activeTime || 0) / 3600;
       chartMap[s.date].idle += (s.idleTime || 0) / 3600;
     });
-    const chartData = Object.values(chartMap).sort((a, b) => a.date.localeCompare(b.date));
 
-    res.json({ stats, chartData, logs: sessions.slice(0, 10) });
-  } catch (error) { res.status(500).json({ message: 'Summary failed', error: error.message }); }
+    res.json({ stats, chartData: Object.values(chartMap).sort((a, b) => a.date.localeCompare(b.date)), logs: sessions.slice(0, 10) });
+  } catch (err) {
+    res.status(500).json({ message: 'Summary failed', error: err.message });
+  }
 };
 
 exports.getTimeByDate = async (req, res) => {
   try {
-    const { date } = req.params;
-    const filter = { ...getRoleFilter(req.user), date };
-    const logs = await TimeTrack.find(filter).populate('employeeId', 'fullName email');
-    res.json(logs);
-  } catch (error) { res.status(500).json({ message: 'Date fetch failed', error: error.message }); }
+    const filter = { ...getRoleFilter(req.user), date: req.params.date };
+    res.json(await TimeTrack.find(filter).populate('employeeId', 'fullName email'));
+  } catch (err) { res.status(500).json({ message: 'Date fetch failed', error: err.message }); }
 };
 
 exports.getLogs = async (req, res) => {
   try {
-    const filter = getRoleFilter(req.user);
-    const logs = await TimeTrack.find(filter).sort({ createdAt: -1 }).populate('employeeId', 'fullName email');
-    res.json(logs);
-  } catch (error) { res.status(500).json({ message: 'Logs fetch failed', error: error.message }); }
+    res.json(await TimeTrack.find(getRoleFilter(req.user)).sort({ createdAt: -1 }).populate('employeeId', 'fullName email'));
+  } catch (err) { res.status(500).json({ message: 'Logs failed', error: err.message }); }
 };
 
 exports.getMyTime = async (req, res) => {
   try {
-    const logs = await TimeTrack.find({ employeeId: req.user.id }).sort({ date: -1 });
-    res.json(logs);
-  } catch (error) { res.status(500).json({ message: 'My logs failed', error: error.message }); }
+    res.json(await TimeTrack.find({ employeeId: req.user.id }).sort({ date: -1 }));
+  } catch (err) { res.status(500).json({ message: 'My logs failed', error: err.message }); }
 };
 
 exports.getTeamTime = async (req, res) => {
   try {
-    const logs = await TimeTrack.find({ managerId: req.user.id }).sort({ date: -1 }).populate('employeeId', 'fullName email');
-    res.json(logs);
-  } catch (error) { res.status(500).json({ message: 'Team logs failed', error: error.message }); }
+    res.json(await TimeTrack.find({ managerId: req.user.id }).sort({ date: -1 }).populate('employeeId', 'fullName email'));
+  } catch (err) { res.status(500).json({ message: 'Team logs failed', error: err.message }); }
 };
 
 exports.getHRTime = async (req, res) => {
   try {
-    const logs = await TimeTrack.find({ employeeRole: { $in: ['employee', 'manager'] } }).sort({ date: -1 }).populate('employeeId', 'fullName email');
-    res.json(logs);
-  } catch (error) { res.status(500).json({ message: 'HR logs failed', error: error.message }); }
+    res.json(await TimeTrack.find({ employeeRole: { $in: ['employee', 'manager'] } }).sort({ date: -1 }).populate('employeeId', 'fullName email'));
+  } catch (err) { res.status(500).json({ message: 'HR logs failed', error: err.message }); }
 };
 
 exports.getAllTime = async (req, res) => {
   try {
-    const logs = await TimeTrack.find({}).sort({ date: -1 }).populate('employeeId', 'fullName email');
-    res.json(logs);
-  } catch (error) { res.status(500).json({ message: 'All logs failed', error: error.message }); }
+    res.json(await TimeTrack.find({}).sort({ date: -1 }).populate('employeeId', 'fullName email'));
+  } catch (err) { res.status(500).json({ message: 'All logs failed', error: err.message }); }
 };
 
-// ==========================================
-// 🚀 UNIFIED DASHBOARD API
-// ==========================================
 exports.getDashboardData = async (req, res) => {
   try {
     const { timeRange, userFilter, roleFilter } = req.query;
-    
-    // 1. Base Role Filter
     let filter = getRoleFilter(req.user);
-
-    // 2. Apply Custom Filters
     if (userFilter) filter.employeeId = userFilter;
     if (roleFilter) filter.employeeRole = roleFilter;
 
-    // 3. Date Range Logic
     const now = new Date();
     const today = getToday();
-    let startDate = new Date();
-    
     if (timeRange === 'weekly') {
-      startDate.setDate(now.getDate() - 7);
-      filter.date = { $gte: startDate.toISOString().split('T')[0] };
+      const d = new Date(); d.setDate(now.getDate() - 7);
+      filter.date = { $gte: d.toISOString().split('T')[0] };
     } else if (timeRange === 'monthly') {
-      startDate.setMonth(now.getMonth() - 1);
-      filter.date = { $gte: startDate.toISOString().split('T')[0] };
+      const d = new Date(); d.setMonth(now.getMonth() - 1);
+      filter.date = { $gte: d.toISOString().split('T')[0] };
     } else {
-      // Default to Today
       filter.date = today;
     }
 
-    const sessions = await TimeTrack.find(filter)
-      .sort({ date: -1, createdAt: -1 })
-      .populate('employeeId', 'fullName email role');
-
-    // 4. Calculate Stats
+    const sessions = await TimeTrack.find(filter).sort({ date: -1, createdAt: -1 }).populate('employeeId', 'fullName email role');
     const stats = {
-      totalTime: sessions.reduce((acc, s) => acc + ((s.activeTime || 0) + (s.idleTime || 0)), 0),
-      activeTime: sessions.reduce((acc, s) => acc + (s.activeTime || 0), 0),
-      idleTime: sessions.reduce((acc, s) => acc + (s.idleTime || 0), 0),
+      totalTime: sessions.reduce((a, s) => a + (s.activeTime || 0) + (s.idleTime || 0), 0),
+      activeTime: sessions.reduce((a, s) => a + (s.activeTime || 0), 0),
+      idleTime: sessions.reduce((a, s) => a + (s.idleTime || 0), 0),
       sessions: sessions.length
     };
 
-    // 5. Chart Data (Daily Work Hours, Active vs Idle)
     const chartMap = {};
     sessions.forEach(s => {
       if (!chartMap[s.date]) chartMap[s.date] = { date: s.date, active: 0, idle: 0, total: 0 };
@@ -453,29 +466,52 @@ exports.getDashboardData = async (req, res) => {
       chartMap[s.date].idle += (s.idleTime || 0) / 3600;
       chartMap[s.date].total += ((s.activeTime || 0) + (s.idleTime || 0)) / 3600;
     });
-    const chartData = Object.values(chartMap).sort((a, b) => a.date.localeCompare(b.date));
 
-    // 6. Table Data (Reusable Data Table format)
-    const tableData = sessions.map(s => ({
-      id: s._id,
-      name: s.employeeId?.fullName || 'Unknown',
-      role: s.employeeId?.role || s.employeeRole || 'N/A',
-      status: s.status,
-      todayHours: s.activeTime,
-      lastActivity: s.lastActiveTime
-    }));
-
-    // 7. Activity Logs
-    const activityLogs = sessions.slice(0, 10).map(s => ({
-      name: s.employeeId?.fullName || 'Unknown',
-      date: s.date,
-      activeTime: s.activeTime,
-      status: s.status
-    }));
-
-    res.json({ stats, chartData, tableData, activityLogs });
-  } catch (error) {
-    console.error('Dashboard Data Error:', error);
-    res.status(500).json({ message: 'Dashboard data fetch failed', error: error.message });
+    res.json({
+      stats,
+      chartData: Object.values(chartMap).sort((a, b) => a.date.localeCompare(b.date)),
+      tableData: sessions.map(s => ({
+        id: s._id, name: s.employeeId?.fullName || 'Unknown',
+        role: s.employeeId?.role || s.employeeRole || 'N/A',
+        status: s.status, todayHours: s.activeTime, lastActivity: s.lastHeartbeat
+      })),
+      activityLogs: sessions.slice(0, 10).map(s => ({
+        name: s.employeeId?.fullName || 'Unknown', date: s.date,
+        activeTime: s.activeTime, status: s.status
+      }))
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Dashboard failed', error: err.message });
   }
 };
+
+// ============================================================
+// 🔧 INTERNAL HELPERS
+// ============================================================
+
+/**
+ * Flush the current active segment: returns seconds elapsed since segmentStart.
+ * Does NOT mutate session — caller adds the result to session.activeTime.
+ */
+function flushSegment(session, now) {
+  if (!session.segmentStart) return 0;
+  const elapsed = Math.floor((now - new Date(session.segmentStart)) / 1000);
+  return Math.max(0, elapsed);
+}
+
+/**
+ * Build the authoritative payload returned to frontend/Electron.
+ * Frontend MUST display these values directly — no local math.
+ */
+function buildPayload(session) {
+  return {
+    hasActiveSession: session.status !== 'completed',
+    status: session.status,
+    isRunning: session.isRunning,
+    activeTime: Math.floor(session.activeTime || 0),
+    idleTime: Math.floor(session.idleTime || 0),
+    inactivityCount: session.inactivityCount || 0,
+    startTime: session.startTime,
+    lastHeartbeat: session.lastHeartbeat
+  };
+}

@@ -45,6 +45,15 @@ const timeTrackSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
+  // v2 Time Engine fields
+  segmentStart: {
+    type: Date,
+    default: null
+  },
+  lastHeartbeat: {
+    type: Date,
+    default: null
+  },
   totalTime: {
     type: Number, // total session duration in seconds (active + idle)
     default: 0
@@ -62,6 +71,14 @@ const timeTrackSchema = new mongoose.Schema({
     type: Number, // in seconds, accumulated from previous segments
     default: 0
   },
+  idleApplied: {
+    type: Boolean,
+    default: false
+  },
+  inactivityCount: {
+    type: Number,
+    default: 0
+  },
   sessions: [{
     start: { type: Date },
     pause: { type: Date },
@@ -75,7 +92,7 @@ const timeTrackSchema = new mongoose.Schema({
       type: String,
       enum: [
         'mouse', 'keyboard', 'click', 'scroll', 'touch', 'focus', 'tab',
-        'resume', 'pause', 'idle_start', 'idle', 'heartbeat', 'active'
+        'resume', 'pause', 'idle_start', 'idle', 'heartbeat', 'active', 'start', 'stop'
       ]
     }
   }]

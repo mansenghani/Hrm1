@@ -24,7 +24,8 @@ import {
   Bell,
   MessageSquare,
   AlertCircle,
-  Play
+  Play,
+  Camera
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { API_BASE_URL } from '@shared/services/api';
@@ -135,6 +136,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           { name: 'Time Tracker', path: '/hr/time-tracker', icon: Clock },
           { name: 'Team Chat', path: '/hr/chat', icon: MessageSquare },
           { name: 'Project Registry', path: '/hr/projects', icon: Briefcase },
+          { name: 'Monitoring Logs', path: '/hr/screenshots', icon: Camera },
           { name: 'Request For Leave', path: '/hr/leave', icon: FileText },
         ];
       case 'employee':
@@ -153,6 +155,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           { name: 'Time Tracker', path: '/manager/time-tracker', icon: Clock },
           { name: 'Team Chat', path: '/manager/chat', icon: MessageSquare },
           { name: 'Team Attendance', path: '/manager/attendance', icon: Calendar },
+          { name: 'Monitoring Logs', path: '/manager/screenshots', icon: Camera },
           { name: 'Review Leaves', path: '/manager/leave', icon: FileText },
         ];
       case 'admin':
@@ -168,6 +171,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           { name: 'Payroll', path: `/${currentRole}/payroll`, icon: Wallet },
           { name: 'Performance', path: `/${currentRole}/performance`, icon: TrendingUp },
           { name: 'Reports', path: `/${currentRole}/reports`, icon: BarChart3 },
+          { name: 'Monitoring Logs', path: `/${currentRole}/screenshots`, icon: Camera },
           { name: 'Settings', path: `/${currentRole}/settings`, icon: Settings },
         ];
     }
@@ -223,7 +227,8 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
       setIsTrackingActive(false);
       if (data.reason === 'inactivity') {
         setIsPausedByIdle(true);
-        notifyUser("Inactivity Detected", "Timer paused after 5 minutes of inactivity.");
+        // Silenced per user request: No more noisy idle popups
+        console.log("Inactivity Trace: Web-side idle state synchronized");
       }
     });
 
@@ -288,22 +293,8 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     } catch (err) { console.error('Heartbeat failed:', err); }
   };
 
-  const notifyUser = (title, body) => {
-    const now = Date.now();
-    const lastNotified = parseInt(localStorage.getItem('last_idle_notification') || '0');
-    
-    if (now - lastNotified < 60000) return; // 1 minute cross-tab throttle
-    
-    localStorage.setItem('last_idle_notification', now.toString());
-    
-    if (Notification.permission === 'granted') {
-      new Notification(title, { body });
-    } else if (Notification.permission !== 'denied') {
-      Notification.requestPermission().then(permission => {
-        if (permission === 'granted') new Notification(title, { body });
-      });
-    }
-  };
+  // 🛡️ NOTIFICATION LOGIC REMOVED PER USER REQUEST
+  // Absolute silence protocol active. No browser notifications will be sent.
 
   const pauseTimer = async () => {
     try {

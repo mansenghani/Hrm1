@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Notification, powerMonitor } = require('electron');
+const { app, BrowserWindow, ipcMain, Notification, powerMonitor, desktopCapturer } = require('electron');
 const path = require('path');
 const Store = require('electron-store');
 
@@ -6,30 +6,33 @@ if (process.platform === 'win32') {
   app.setAppUserModelId('com.fluidhr.tracker');
 }
 
-// 🛡️ ABSOLUTE ZERO TRANSPARENCY: Force DWM to honor transparency
+// Window transparency fixes for Windows 11
 app.disableHardwareAcceleration();
 app.commandLine.appendSwitch('disable-gpu-compositing');
-app.commandLine.appendSwitch('disable-direct-composition'); // 🛡️ Veto Win 11 compositing bugs
+app.commandLine.appendSwitch('disable-direct-composition');
 app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
 
 const store = new Store();
 let mainWindow;
 
+// ── MUST match backend IDLE_THRESHOLD_SECONDS ─────────────
+const IDLE_THRESHOLD = 60; // seconds — test mode (change to 300 for production)
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 350,
-    height: 650,
+    height: 720,
     resizable: false,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
-    hasShadow: false, // 🛡️ Use CSS shadow instead of native window shadow to keep square corners
+    hasShadow: false,
     thickFrame: false,
-    roundedCorners: false, // 🛡️ DISABLE SYSTEM ROUNDED CORNERS TO PREVENT VISIBLE CORNER BLEED
+    roundedCorners: false,
     show: false,
     skipTaskbar: false,
     autoHideMenuBar: true,
-    backgroundColor: '#00000000', // 🛡️ Explicit transparent background for Windows
+    backgroundColor: '#00000000',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -40,16 +43,15 @@ function createWindow() {
   mainWindow.setMenuBarVisibility(false);
   mainWindow.loadFile('index.html');
 
-  // 🛡️ DEEP SYNC PROTOCOL: Extended buffer for stubborn Win 11 compositors
   mainWindow.once('ready-to-show', () => {
     setTimeout(() => {
       mainWindow.show();
       mainWindow.focus();
-    }, 600); 
+    }, 600);
   });
 }
 
-// 🛡️ SINGLE INSTANCE LOCK
+// ── SINGLE INSTANCE LOCK ──────────────────────────────────
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   app.quit();
@@ -64,32 +66,30 @@ if (!gotTheLock) {
   app.whenReady().then(() => {
     createWindow();
 
-    // ⚡ powerMonitor Activity Tracking
-    powerMonitor.on('user-idle', () => {
-      console.log('User is idle');
-      if (mainWindow) {
-        mainWindow.webContents.send('power-status', 'idle');
-      }
-    });
-
-    powerMonitor.on('user-active', () => {
-      console.log('User is active');
-      if (mainWindow) {
-        mainWindow.webContents.send('power-status', 'active');
-      }
-    });
-
-    // 🌐 GLOBAL SYSTEM ACTIVITY HEARTBEAT
-    // Checks if the system is being used (any app: Browser, Word, WhatsApp, etc.)
+    // ============================================================
+    // 🌐 SYSTEM-WIDE IDLE MONITOR — MAIN PROCESS ONLY
+    // ============================================================
+    // powerMonitor.getSystemIdleTime() reads from the OS kernel.
+    // It counts seconds since the last keyboard/mouse event on the
+    // ENTIRE machine — Chrome, Word, VS Code, WhatsApp, anything.
+    // This fires every second regardless of Electron window focus.
+    // ============================================================
     setInterval(() => {
-      if (!mainWindow) return;
-      
-      const systemIdleTime = powerMonitor.getSystemIdleTime();
-      // If idle time is 0, it means there was keyboard/mouse activity in the last second
-      if (systemIdleTime === 0) {
-        mainWindow.webContents.send('global-activity', 'active');
-      }
-    }, 1000); 
+      if (!mainWindow || mainWindow.isDestroyed()) return;
+
+      const idleSeconds = powerMonitor.getSystemIdleTime();
+      const isIdle = idleSeconds >= IDLE_THRESHOLD;
+
+      // Always log so you can verify in terminal
+      console.log(`SYSTEM IDLE: ${idleSeconds}`);
+
+      // Send to renderer via IPC — renderer ONLY displays/reacts
+      mainWindow.webContents.send('system-idle-status', {
+        idleSeconds,
+        isIdle
+      });
+    }, 500); // 🚀 Higher precision for snappier sync
+    // ============================================================
   });
 }
 
@@ -97,7 +97,7 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// 🔄 IPC HANDLERS FOR PERSISTENCE
+// ── IPC HANDLERS ─────────────────────────────────────────
 ipcMain.handle('get-store-value', (event, key) => {
   return store.get(key);
 });
@@ -116,24 +116,37 @@ ipcMain.handle('minimize-app', () => {
 
 ipcMain.handle('notify-native', (event, payload) => {
   const { title, body } = payload || {};
+  const allowedTitles = ['started', 'paused', 'resumed', 'stopped', 'screenshot', 'inactivity', 'idle'];
+  const isAllowed = allowedTitles.some(t => title?.toLowerCase().includes(t));
+  if (!isAllowed) {
+    console.log('Notification blocked (not critical):', title);
+    return false;
+  }
   try {
     const notification = new Notification({
       title: title || 'FluidHR Tracker',
       body: body || '',
       silent: false
     });
-
-    notification.on('show', () => {
-      console.log('Native notification shown:', title);
-    });
-    notification.on('failed', (event, error) => {
-      console.error('Native notification failed:', error);
-    });
-
+    notification.on('failed', (event, error) => console.error('Notification failed:', error));
     notification.show();
     return true;
   } catch (err) {
-    console.error('Native notification error:', err);
+    console.error('Notification error:', err);
     return false;
+  }
+});
+
+ipcMain.handle('capture-screen', async () => {
+  try {
+    const sources = await desktopCapturer.getSources({
+      types: ['screen'],
+      thumbnailSize: { width: 1280, height: 720 }
+    });
+    if (sources.length > 0) return sources[0].thumbnail.toDataURL();
+    return null;
+  } catch (err) {
+    console.error('Capture Error:', err);
+    return null;
   }
 });

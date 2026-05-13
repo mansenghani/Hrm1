@@ -14,6 +14,7 @@ const departmentRoutes = require('./routes/departmentRoutes');
 const managerRoutes = require('./routes/managerRoutes');
 const userRoutes = require('./routes/userRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const screenshotRoutes = require('./routes/screenshotRoutes');
 const path = require('path');
 
 const http = require('http');
@@ -109,6 +110,7 @@ app.use('/api/projects', require('./routes/projectRoutes'));
 app.use('/api/time', require('./routes/timeTrackRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/screenshot', screenshotRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/managers', managerRoutes);
 app.use('/api/users', userRoutes);

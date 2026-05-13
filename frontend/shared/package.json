@@ -11,6 +11,10 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "emoji-picker-react": "^4.19.1"
+    "axios": "^1.16.0",
+    "date-fns": "^4.1.0",
+    "emoji-picker-react": "^4.19.1",
+    "lucide-react": "^1.14.0",
+    "socket.io-client": "^4.8.3"
   }
 }

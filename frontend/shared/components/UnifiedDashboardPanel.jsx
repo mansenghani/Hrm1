@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
-  Clock, Zap, Activity, Users, Monitor, Search,
+  Clock, Zap, Activity, Users, Search,
   BarChart3, RefreshCw, Calendar as CalendarIcon,
   ChevronRight, AlertTriangle
 } from 'lucide-react';
@@ -180,7 +180,7 @@ const UnifiedDashboardPanel = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard title="Total Time" value={formatHrs(data.stats.totalTime)} icon={Clock} colorClass="text-blue-500" />
           <StatsCard title="Active Time" value={formatHrs(data.stats.activeTime)} icon={Zap} colorClass="text-green-500" />
-          <StatsCard title="Idle Time" value={formatHrs(data.stats.idleTime)} icon={Monitor} colorClass="text-orange-500" />
+          <StatsCard title="Idle Time" value={formatHrs(data.stats.idleTime)} icon={Clock} colorClass="text-orange-500" />
           <StatsCard title="Total Sessions" value={data.stats.sessions} icon={Activity} colorClass="text-purple-500" />
         </div>
 

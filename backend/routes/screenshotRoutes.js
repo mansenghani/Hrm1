@@ -1,0 +1,89 @@
+const express = require('express');
+const router = express.Router();
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const Screenshot = require('../models/Screenshot');
+const User = require('../models/User');
+
+// Configure storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = 'uploads/screenshots';
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `screenshot-${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(file.originalname)}`);
+  }
+});
+
+const upload = multer({ storage });
+
+// @route   POST /api/screenshot/upload
+// @desc    Upload a screenshot
+router.post('/upload', upload.single('screenshot'), async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!req.file || !userId) {
+      return res.status(400).json({ message: 'Missing file or userId' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const newScreenshot = new Screenshot({
+      userId,
+      employeeName: user.name || user.fullName,
+      role: user.role,
+      imageUrl: req.file.path
+    });
+
+    await newScreenshot.save();
+
+    // Notify via Socket.io if available
+    const io = req.app.get('io');
+    if (io) {
+      // 1. Notify the specific user
+      io.to(`user_${userId}`).emit('screenshot_taken', {
+        message: 'System captured a random screenshot'
+      });
+      
+      // 2. Notify Admins/HR for live dashboard update
+      io.emit('new_screenshot', newScreenshot);
+    }
+
+    res.status(201).json(newScreenshot);
+  } catch (err) {
+    console.error('Upload Error:', err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+// @route   GET /api/screenshot/all
+// @desc    Get screenshots based on role
+router.get('/all', async (req, res) => {
+  try {
+    const { role, userId } = req.query; // Normally these come from auth middleware
+    
+    let query = {};
+    if (role === 'employee') {
+      return res.status(403).json({ message: 'Unauthorized' });
+    } else if (role === 'manager') {
+      // In a real app, filter by manager's team
+      // For now, simple role-based
+      query = {}; 
+    } else if (role === 'hr' || role === 'admin') {
+      query = {};
+    }
+
+    const screenshots = await Screenshot.find(query).sort({ timestamp: -1 });
+    res.json(screenshots);
+  } catch (err) {
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+module.exports = router;

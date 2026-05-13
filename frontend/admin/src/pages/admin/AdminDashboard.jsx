@@ -14,6 +14,7 @@ import {
   Zap,
   ShieldCheck,
   Clock,
+  ChevronRight,
 } from 'lucide-react';
 import AnalyticsChart from '../../components/AnalyticsChart';
 import UnifiedDashboardPanel from '@shared/components/UnifiedDashboardPanel';

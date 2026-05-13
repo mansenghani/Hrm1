@@ -1,484 +1,321 @@
+/**
+ * ============================================================
+ * TIME ENGINE v2 — FRONTEND DISPLAY ONLY
+ * ============================================================
+ * Rules:
+ *  - NO local timer increments
+ *  - NO local idle calculations
+ *  - NO anti-jitter / forward-only protection
+ *  - ALL values come directly from backend poll
+ *  - Display exactly what backend returns
+ * ============================================================
+ */
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import {
-  Play, Square, Clock, Activity, Zap, Timer, TrendingUp,
-  AlertTriangle, CheckCircle, MousePointer, Keyboard, Monitor,
-  BarChart3, ArrowUpRight, Users, User, Shield, Eye, Search,
-  Filter, RefreshCw, Pause, Calendar as CalendarIcon, ChevronLeft, ChevronRight,
-  List, PieChart, MoreVertical, Download, ExternalLink, ArrowRight
+  Play, Pause, Square, Clock, Zap, TrendingUp, BarChart3,
+  Calendar as CalendarIcon, Search, ArrowRight, Timer,
+  ChevronLeft, ChevronRight, Activity, AlertCircle
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell, AreaChart, Area
-} from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const API_BASE = '/api/time';
-const IDLE_THRESHOLD = 300; // 5 minutes in seconds
+const POLL_INTERVAL_MS = 1000;   // poll every second for live display
+const HEARTBEAT_INTERVAL_MS = 10000; // send heartbeat every 10s
 
 const formatTime = (seconds) => {
-  const totalSecs = Math.max(0, parseInt(seconds) || 0);
-  const h = Math.floor(totalSecs / 3600);
-  const m = Math.floor((totalSecs % 3600) / 60);
-  const s = totalSecs % 60;
-  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  const s = Math.max(0, Math.round(seconds || 0));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 };
 
-const formatMinutes = (seconds) => {
-  const totalSecs = parseInt(seconds) || 0;
-  const h = Math.floor(totalSecs / 3600);
-  const m = Math.floor((totalSecs % 3600) / 60);
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
-};
+const formatMinutes = (seconds) => `${Math.floor((seconds || 0) / 60)}m`;
+const getToday = () => new Date().toISOString().split('T')[0];
 
-const TimeTrackingDashboard = () => {
-  const navigate = useNavigate();
-  const userRole = sessionStorage.getItem('role') || 'employee';
-  const getLocalDate = (date) => {
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+const TimeTrackingDashboard = ({ user, socket }) => {
+  // ── State — display only, all values from backend ──────
+  const [activeTime, setActiveTime]       = useState(0);
+  const [idleTime, setIdleTime]           = useState(0);
+  const [inactivityCount, setInactivityCount] = useState(0);
+  const [status, setStatus]               = useState(null);   // null = no session
+  const [isRunning, setIsRunning]         = useState(false);
+  const [isIdle, setIsIdle]               = useState(false);
 
-  const todayISO = getLocalDate(new Date());
-  const yesterdayISO = getLocalDate(Date.now() - 86400000);
-
-  // State
-  const [timer, setTimer] = useState(0);
-  const [session, setSession] = useState(null);
-  const [lastActivity, setLastActivity] = useState(Date.now());
-  const [isIdle, setIsIdle] = useState(false);
-  const [autoIdle, setAutoIdle] = useState(false);
-  const [summary, setSummary] = useState({
+  const [viewDate, setViewDate]           = useState(getToday());
+  const [currentDate, setCurrentDate]     = useState(new Date());
+  const [summary, setSummary]             = useState({
     stats: { active: 0, idle: 0, total: 0, productivity: 0 },
-    chartData: [],
-    logs: []
+    logs: [], chartData: []
   });
-  const [fullLogs, setFullLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
-  const activityTypeRef = useRef('heartbeat');
 
-  // Calendar State
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewDate, setViewDate] = useState(todayISO);
-
-  const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 Minutes
-  const idleTimerRef = useRef(null);
-  const audioRef = useRef(null);
-
-  const clearIdleTimer = useCallback(() => {
-    if (idleTimerRef.current) {
-      clearTimeout(idleTimerRef.current);
-      idleTimerRef.current = null;
-    }
-  }, []);
-
-  const triggerIdle = useCallback(async () => {
-    if (isIdle) return;
-    setIsIdle(true);
-    setAutoIdle(true);
-    activityTypeRef.current = 'idle';
-    clearIdleTimer();
-    await syncActivity('idle');
-  }, [isIdle, clearIdleTimer]);
-
-  const resetIdleTimer = useCallback(() => {
-    clearIdleTimer();
-    if (!session?.isRunning || isIdle) return;
-    idleTimerRef.current = window.setTimeout(() => {
-      if (!isIdle && session?.isRunning) {
-        triggerIdle();
-      }
-    }, INACTIVITY_TIMEOUT);
-  }, [clearIdleTimer, isIdle, session?.isRunning, triggerIdle]);
-
-  useEffect(() => {
-    if (session?.isRunning && !isIdle) {
-      resetIdleTimer();
-    } else {
-      clearIdleTimer();
-    }
-    return () => clearIdleTimer();
-  }, [session?.isRunning, isIdle, resetIdleTimer, clearIdleTimer]);
-
-  // No browser notification needed here; desktop app will show idle alerts instead.
-  useEffect(() => {
-    // intentionally no web notification permission request
-  }, []);
+  const heartbeatRef  = useRef(null);
+  const pollRef       = useRef(null);
+  const lastActivityRef = useRef(Date.now());
 
   const getAuth = () => {
-    const token = sessionStorage.getItem('token');
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     return token ? { headers: { Authorization: `Bearer ${token}` } } : null;
   };
 
-  const fetchData = async (targetDate = viewDate) => {
+  // ── Apply backend values directly — NO local math ──────
+  const applyServerState = useCallback((data) => {
+    if (!data?.hasActiveSession) {
+      setStatus(null);
+      setIsRunning(false);
+      setIsIdle(false);
+      setActiveTime(0);
+      setIdleTime(0);
+      setInactivityCount(0);
+      return;
+    }
+    setStatus(data.status);
+    setIsRunning(data.isRunning);
+    setIsIdle(data.status === 'idle');
+    setActiveTime(data.activeTime ?? 0);
+    setIdleTime(data.idleTime ?? 0);
+    setInactivityCount(data.inactivityCount ?? 0);
+  }, []);
+
+  // ── Poll backend every second ───────────────────────────
+  const pollStatus = useCallback(async () => {
+    const auth = getAuth();
+    if (!auth) return;
     try {
-      const auth = getAuth();
-      if (!auth) { navigate('/login'); return; }
-      setSyncing(true);
+      const res = await axios.get(`${API_BASE}/status`, auth);
+      applyServerState(res.data);
+    } catch (err) {
+      console.error('[POLL ERROR]', err.message);
+    }
+  }, [applyServerState]);
 
-      // Check if day shifted (Midnight Reset)
-      const currentToday = new Date().toISOString().split('T')[0];
-      if (currentToday !== todayISO) {
-        window.location.reload(); // Force full system reset for new day
-        return;
-      }
-
-      const [statusRes, summaryRes, logsRes] = await Promise.all([
-        axios.get(`${API_BASE}/status`, auth).catch(() => ({ data: { hasActiveSession: false } })),
-        axios.get(`${API_BASE}/summary`, auth).catch(() => ({ data: null })),
-        axios.get(`${API_BASE}/date/${targetDate}`, auth).catch(() => ({ data: [] }))
-      ]);
-
-      if (statusRes.data?.hasActiveSession) {
-        const s = statusRes.data;
-        const isRunning = s.isRunning !== undefined ? s.isRunning : (s.status === 'active');
-        const totalActive = s.totalActiveTime || s.activeTime || 0;
-
-        setSession({ ...s, isRunning, totalActiveTime: totalActive });
-        setIsIdle(s.status === 'idle');
-        setAutoIdle(s.status === 'idle');
-
-        if (isRunning) {
-          let calculatedTimer = totalActive;
-          if (s.startTime) {
-            const elapsed = Math.floor((new Date() - new Date(s.startTime)) / 1000);
-            calculatedTimer = Math.max(0, elapsed + totalActive);
-          }
-
-          setTimer(prev => {
-            // 🛡️ SOFT SYNC: Only jump if difference > 1s (tighter sync)
-            if (Math.abs(prev - calculatedTimer) > 1 || prev === 0) {
-              return calculatedTimer;
-            }
-            return prev;
-          });
-        } else {
-          setTimer(totalActive);
-        }
-      } else {
-        setSession(null);
-        setTimer(0);
-        setIsIdle(false);
-      }
-
-      if (summaryRes.data) {
-        const s = summaryRes.data;
-        // Ensure idle time from status endpoint takes priority for the high-density box
-        if (statusRes.data?.hasActiveSession) {
-          s.stats.idle = statusRes.data.idleTime || s.stats.idle || 0;
-        }
-        setSummary(s);
-      }
-      setFullLogs(Array.isArray(logsRes.data) ? logsRes.data : []);
-
-    } catch (err) { console.error('Dashboard sync error:', err); }
-    finally { setLoading(false); setSyncing(false); }
-  };
-
-  // 🔄 ACTIVITY TRACKER
-  useEffect(() => {
-    if (!session?.hasActiveSession || session?.status === 'paused' || session?.status === 'idle') return;
-
-    const normalizeActivityType = (eventType) => {
-      switch (eventType) {
-        case 'keydown': return 'keyboard';
-        case 'mousemove':
-        case 'mousedown': return 'mouse';
-        case 'click': return 'click';
-        case 'scroll': return 'scroll';
-        case 'focus': return 'focus';
-        case 'touchstart': return 'touch';
-        default: return 'active';
-      }
-    };
-
-    const handleActivity = (event) => {
-      const now = Date.now();
-      setLastActivity(now);
-      const activityType = normalizeActivityType(event?.type);
-      activityTypeRef.current = activityType;
-      resetIdleTimer();
-
-      if (isIdle && autoIdle) {
-        console.log('[TERMINAL] ACTIVITY DETECTED WHILE AUTO-IDLE; MANUAL RESUME REQUIRED');
-        return;
-      }
-    };
-
-  // 🛡️ REDUNDANT ACTIVITY LISTENERS REMOVED - Managed by MainLayout.jsx
-  }, [session, isIdle, autoIdle]);
-
-  // 💓 HEARTBEAT SYNC
-  // 🛡️ REDUNDANT HEARTBEAT REMOVED - Managed by MainLayout.jsx
-
-  const syncActivity = async (type) => {
+  // ── Fetch summary (chart + logs) ────────────────────────
+  const fetchSummary = useCallback(async (date = viewDate) => {
+    const auth = getAuth();
+    if (!auth) return;
     try {
-      const auth = getAuth();
-      if (!auth) return;
-      const res = await axios.post(`${API_BASE}/activity`, { type }, auth);
-      if (type === 'heartbeat' && activityTypeRef.current !== 'heartbeat') {
-        activityTypeRef.current = 'heartbeat';
-      }
-
-      if (res.data) {
-        if (res.data.status === 'reload') {
-          window.location.reload();
-          return;
-        }
-        setSession(prev => ({
-          ...prev,
-          status: res.data.status,
-          isRunning: res.data.isRunning,
-          totalActiveTime: res.data.activeTime
-        }));
-
-        // If we just resumed or heartbeated, sync the main timer to the truth from the server
-        if (type === 'resume' || type === 'heartbeat') {
-          setTimer(res.data.activeTime);
-        }
-      }
-    } catch (err) { console.error('Activity sync failed:', err); }
-  };
-
-  useEffect(() => { fetchData(todayISO); }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => fetchData(viewDate), STATUS_POLL_INTERVAL);
-    return () => clearInterval(interval);
+      const res = await axios.get(`${API_BASE}/summary?date=${date}`, auth);
+      if (res.data) setSummary(res.data);
+    } catch (err) {
+      console.error('[SUMMARY ERROR]', err.message);
+    }
   }, [viewDate]);
 
-  // Timer Engine
-  useEffect(() => {
-    if (!session?.isRunning) return;
-
-    const interval = setInterval(() => {
-      if (isIdle) {
-        // Increment idle stat locally for real-time display
-        setSummary(prev => ({
-          ...prev,
-          stats: {
-            ...prev.stats,
-            idle: (prev.stats.idle || 0) + 1,
-            total: (prev.stats.total || 0) + 1
-          }
-        }));
-      } else {
-        setTimer(prev => prev + 1);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [session?.isRunning, isIdle]);
-
-  const handleDateClick = async (dateStr) => {
-    if (dateStr > todayISO) return;
-    setViewDate(dateStr);
-    fetchData(dateStr);
-  };
-
-  const handleAction = async (action) => {
-    if (['pause', 'stop', 'resume'].includes(action)) {
-      setAutoIdle(false);
-      if (action !== 'pause') setIsIdle(false);
-    }
-
+  // ── Send heartbeat to backend ───────────────────────────
+  const sendHeartbeat = useCallback(async () => {
+    const auth = getAuth();
+    if (!auth || !isRunning) return;
+    const sinceActivity = Date.now() - lastActivityRef.current;
+    const type = sinceActivity < 60000 ? 'heartbeat' : 'idle';
     try {
-      const auth = getAuth();
-      if (!auth) return;
-      setSyncing(true);
-      const res = await axios.post(`${API_BASE}/${action}`, {}, { ...auth, timeout: 10000 });
-
-      if (action === 'resume' && res.data?.session) {
-        const s = res.data.session;
-        const isRunning = s.isRunning !== undefined ? s.isRunning : (s.status === 'active');
-        const totalActive = s.totalActiveTime || s.activeTime || 0;
-        const timerValue = isRunning && s.startTime ? Math.floor((new Date() - new Date(s.startTime)) / 1000) + totalActive : totalActive;
-        
-        const now = Date.now();
-        setLastActivity(now);
-        setSession({ ...s, isRunning, totalActiveTime: totalActive });
-        setTimer(timerValue);
-        resetIdleTimer();
-      }
-
-      await fetchData();
+      await axios.post(`${API_BASE}/activity`, { type }, auth);
     } catch (err) {
-      console.error(`${action} Error:`, err);
-      alert(`Terminal Error: ${err.response?.data?.message || err.message}`);
-    } finally {
-      setSyncing(false);
+      console.error('[HEARTBEAT ERROR]', err.message);
+    }
+  }, [isRunning]);
+
+  // ── Start polling + heartbeat ───────────────────────────
+  useEffect(() => {
+    pollStatus();
+    fetchSummary();
+
+    pollRef.current = setInterval(pollStatus, POLL_INTERVAL_MS);
+    heartbeatRef.current = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS);
+
+    return () => {
+      clearInterval(pollRef.current);
+      clearInterval(heartbeatRef.current);
+    };
+  }, []);
+
+  // Re-fetch summary when date changes
+  useEffect(() => { fetchSummary(viewDate); }, [viewDate]);
+
+  // Re-bind heartbeat when isRunning changes
+  useEffect(() => {
+    clearInterval(heartbeatRef.current);
+    heartbeatRef.current = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS);
+    return () => clearInterval(heartbeatRef.current);
+  }, [sendHeartbeat]);
+
+  // ── Socket events ───────────────────────────────────────
+  useEffect(() => {
+    if (!socket) return;
+    const onPaused = () => { pollStatus(); fetchSummary(); };
+    const onResumed = () => { pollStatus(); fetchSummary(); };
+    const onUpdate = (data) => { if (data) applyServerState(data); };
+    socket.on('timer_paused', onPaused);
+    socket.on('timer_resumed', onResumed);
+    socket.on('timer_update', onUpdate);
+    return () => {
+      socket.off('timer_paused', onPaused);
+      socket.off('timer_resumed', onResumed);
+      socket.off('timer_update', onUpdate);
+    };
+  }, [socket, pollStatus, fetchSummary, applyServerState]);
+
+  // ── Track local activity (for heartbeat type only) ─────
+  useEffect(() => {
+    const mark = () => { lastActivityRef.current = Date.now(); };
+    window.addEventListener('mousemove', mark);
+    window.addEventListener('keydown', mark);
+    window.addEventListener('click', mark);
+    return () => {
+      window.removeEventListener('mousemove', mark);
+      window.removeEventListener('keydown', mark);
+      window.removeEventListener('click', mark);
+    };
+  }, []);
+
+  // ── Session actions ─────────────────────────────────────
+  const handleAction = async (action) => {
+    const auth = getAuth();
+    if (!auth) return;
+    try {
+      await axios.post(`${API_BASE}/${action}`, {}, auth);
+      // Immediately poll to get fresh state
+      await pollStatus();
+      await fetchSummary();
+    } catch (err) {
+      console.error(`[${action.toUpperCase()} ERROR]`, err.message);
     }
   };
 
-  // Calendar Helpers
-  const changeMonth = (offset) => {
-    const newDate = new Date(currentDate);
-    newDate.setMonth(newDate.getMonth() + offset);
-    const maxDate = new Date();
-    maxDate.setMonth(maxDate.getMonth() + 1);
-    if (newDate > maxDate) return;
-    setCurrentDate(newDate);
-  };
-
-  const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
-  const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
-
-  const HOLIDAYS = {
-    '2026-01-01': 'New Year',
-    '2026-01-26': 'Republic Day',
-    '2026-03-25': 'Holi',
-    '2026-04-10': 'Good Friday',
-    '2026-04-14': 'Ambedkar Jayanti',
-    '2026-05-01': 'Labour Day',
-    '2026-08-15': 'Independence Day',
-    '2026-10-02': 'Gandhi Jayanti',
-    '2026-12-25': 'Christmas'
-  };
-
+  // ── Calendar ────────────────────────────────────────────
   const renderCalendarDays = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const daysInMonth = getDaysInMonth(year, month);
-    const firstDay = getFirstDayOfMonth(year, month);
     const days = [];
-
-    for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="h-8 w-8 opacity-0"></div>);
-    }
-
-    for (let i = 1; i <= daysInMonth; i++) {
-      const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${i.toString().padStart(2, '0')}`;
+    const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+    const totalDays = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+    for (let i = 0; i < firstDay; i++) days.push(<div key={`e-${i}`} />);
+    for (let d = 1; d <= totalDays; d++) {
+      const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const isSelected = viewDate === dateStr;
-      const isFuture = dateStr > todayISO;
-      const isToday = i === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear();
-      const holidayName = HOLIDAYS[dateStr];
-
+      const isToday = getToday() === dateStr;
       days.push(
-        <div
-          key={i}
-          onClick={() => !isFuture && handleDateClick(dateStr)}
-          title={holidayName || ''}
-          className={`h-8 w-8 flex flex-col items-center justify-center rounded-lg text-[10px] font-black transition-all z-30 relative ${isFuture ? 'text-white/10 cursor-not-allowed' : 'cursor-pointer'
-            } ${isSelected ? 'bg-[#ff4f00] text-white shadow-lg' : (isToday ? 'border border-[#ff4f00]/40 text-white' : (isFuture ? '' : 'hover:bg-white/10'))
-            }`}
-        >
-          <span>{i}</span>
-          {holidayName && (
-            <div className="absolute bottom-1 w-1 h-1 bg-[#ff4f00] rounded-full shadow-[0_0_5px_#ff4f00]"></div>
-          )}
-        </div>
+        <button key={d} onClick={() => setViewDate(dateStr)}
+          className={`h-8 w-8 rounded-full text-[10px] font-black transition-all border-none cursor-pointer ${
+            isSelected ? 'bg-[#ff4f00] text-white shadow-lg scale-110' :
+            isToday ? 'bg-[#ff4f00]/10 text-[#ff4f00] border border-[#ff4f00]' :
+            'text-white/60 hover:bg-white/10'}`}>
+          {d}
+        </button>
       );
     }
     return days;
   };
 
-  if (loading) return (
-    <div className="h-[70vh] flex flex-col items-center justify-center gap-6">
-      <RefreshCw size={32} className="text-[#ff4f00] animate-spin" />
-      <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#939084]">Initializing Terminal...</p>
-    </div>
-  );
+  const changeMonth = (offset) => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + offset, 1));
+  };
+
+  const todayISO = getToday();
+  const yesterdayISO = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const hasSession = status !== null;
+  const isActive = status === 'active' && isRunning && !isIdle;
 
   return (
-    <div className="animate-fade-in pb-20 max-w-[1400px] mx-auto px-6">
+    <div className="min-h-screen bg-[#fffdf9] p-4 md:p-8 font-['Outfit'] text-[#201515]">
+      <div className="max-w-7xl mx-auto grid grid-cols-12 gap-8">
 
-      {/* 🏁 HEADER SECTION */}
-      <div className="mb-6 flex flex-col md:flex-row justify-between items-end border-b border-[#c5c0b1] pb-4">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <Activity size={14} className="text-[#ff4f00]" />
-            <p className="text-[9px] font-black uppercase tracking-[0.4em] text-[#ff4f00]">Operational Pulse V5.0</p>
-          </div>
-          <h1 className="text-[42px] font-black text-[#201515] tracking-tighter leading-none italic uppercase">
-            Time <span className="text-[#ff4f00]">Registry.</span>
-          </h1>
-        </div>
-        <div className="flex items-center gap-4 mt-6 md:mt-0">
-          <button onClick={() => fetchData()} className="h-10 px-5 bg-[#201515] text-white rounded-[10px] text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:bg-[#ff4f00] transition-all shadow-lg border-none cursor-pointer">
-            <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} /> Sync Pulse
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-12 gap-8">
+        {/* ── LEFT COLUMN ── */}
         <div className="col-span-12 lg:col-span-8 space-y-8">
-          <div className={`rounded-[24px] p-4 transition-all duration-700 relative overflow-hidden shadow-xl border ${session?.isRunning ? 'bg-[#fffdf9] border-[#24a148]' : 'bg-[#201515] border-transparent'}`}>
-            <div className="relative z-10 flex flex-col xl:flex-row items-center justify-between gap-8">
-              <div className="text-center xl:text-left">
-                <div className="flex items-center gap-2 mb-4 justify-center xl:justify-start">
-                  <div className={`w-2 h-2 rounded-full ${isIdle ? 'bg-[#ff4f00] animate-pulse shadow-[0_0_8px_#ff4f00]' : (session?.isRunning ? 'bg-[#24a148] animate-pulse shadow-[0_0_8px_#24a148]' : 'bg-[#939084]')}`}></div>
-                  <span className={`text-[10px] font-black uppercase tracking-[0.3em] italic ${isIdle ? 'text-[#ff4f00]' : (session?.isRunning ? 'text-[#201515]' : 'text-white/60')}`}>
-                    {isIdle ? 'Inactivity Detected' : (session?.isRunning ? 'Sync Active' : 'Sync Suspended')}
-                  </span>
+
+          {/* Timer Card */}
+          <div className="bg-white border border-[#c5c0b1] rounded-[32px] p-10 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#ff4f00]/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+            <div className="relative flex flex-col md:flex-row justify-between items-center gap-8">
+              <div className="flex-1 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-[#24a148] animate-pulse' : 'bg-[#c5c0b1]'}`} />
+                  <h2 className="text-[14px] font-black uppercase tracking-[0.3em] text-[#939084] italic">Session Telemetry</h2>
                 </div>
-                <h2 className={`text-[44px] md:text-[54px] font-black tabular-nums leading-none tracking-tighter italic ${isIdle ? 'text-[#ff4f00]' : (session?.isRunning ? 'text-[#201515]' : 'text-white/60')}`}>
-                  {formatTime(timer)}
-                </h2>
-                <div className="flex flex-col items-start gap-2 mt-4">
+
+                {/* ── ACTIVE TIME — direct from backend ── */}
+                <h1 className="text-7xl md:text-8xl font-black tracking-tighter tabular-nums italic text-[#201515]">
+                  {formatTime(activeTime)}
+                </h1>
+
+                <div className="flex flex-wrap items-center gap-4 pt-4">
                   {isIdle ? (
-                    <div className="flex flex-col gap-2 p-4 bg-[#ff4f00]/5 border border-[#ff4f00]/30 rounded-2xl w-full max-w-[400px]">
+                    <div className="bg-[#fff4f0] border border-[#ffb38a] rounded-2xl p-4 w-full">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-[#ff4f00] animate-ping"></div>
+                          <AlertCircle size={16} className="text-[#ff4f00]" />
                           <span className="text-[11px] font-black text-[#ff4f00] uppercase tracking-widest">Inactivity Detected</span>
                         </div>
-                        <span className="text-[11px] font-black text-[#ff4f00] uppercase tracking-widest bg-[#ff4f00] text-white px-2 py-0.5 rounded">Deducting</span>
+                        <span className="text-[11px] font-black bg-[#ff4f00] text-white px-2 py-0.5 rounded uppercase tracking-widest">Paused</span>
                       </div>
                       <div className="flex justify-between items-end mt-2">
                         <div className="flex flex-col">
-                          <span className="text-[9px] font-bold text-[#939084] uppercase tracking-widest">Activity Ceased at</span>
-                          <span className="text-[16px] font-black text-[#201515] italic">{new Date(lastActivity).toLocaleTimeString()}</span>
+                          <span className="text-[9px] font-bold text-[#939084] uppercase tracking-widest">Idle Time</span>
+                          <span className="text-[16px] font-black text-[#201515] italic">{formatTime(idleTime)}</span>
                         </div>
                         <div className="flex flex-col items-end">
-                          <span className="text-[9px] font-bold text-[#939084] uppercase tracking-widest">Idle Deduction</span>
-                          <span className="text-[20px] font-black text-[#ff4f00] tabular-nums italic">-{formatTime(Math.max(0, Math.floor((Date.now() - lastActivity) / 1000) - 300))}</span>
+                          <span className="text-[9px] font-bold text-[#939084] uppercase tracking-widest text-[#ff4f00]">Inactivity Events</span>
+                          <span className="text-[20px] font-black text-[#ff4f00] tabular-nums italic">{inactivityCount}×</span>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    session?.isRunning && (
+                    isActive && (
                       <div className="flex items-center gap-3 px-4 py-2 bg-[#24a148]/10 border border-[#24a148] rounded-full">
                         <Activity size={14} className="text-[#24a148]" />
                         <span className="text-[12px] font-black text-[#24a148] uppercase tracking-widest">
-                          Operational Pulse Active (Tracking Work)
+                          Operational Pulse Active
                         </span>
                       </div>
                     )
                   )}
                 </div>
-                {session?.isRunning && (
-                  <div className="mt-4 p-3 bg-[#fdf2f2] border border-[#fbd5d5] rounded-xl flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Clock size={14} className="text-[#ff4f00]" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-[#201515]">Total Inactivity Today</span>
+
+                {/* Idle time sub-display */}
+                {hasSession && (
+                  <div className="flex gap-6 pt-2">
+                    <div>
+                      <p className="text-[9px] font-black text-[#939084] uppercase tracking-widest">Idle</p>
+                      <p className="text-[14px] font-black text-[#ff4f00] tabular-nums italic">{formatTime(idleTime)}</p>
                     </div>
-                    <span className="text-[16px] font-black text-[#ff4f00] tabular-nums italic">{formatTime(summary.stats.idle)}</span>
+                    <div>
+                      <p className="text-[9px] font-black text-[#939084] uppercase tracking-widest">Interruptions</p>
+                      <p className="text-[14px] font-black text-[#201515] tabular-nums italic">{inactivityCount}</p>
+                    </div>
                   </div>
                 )}
-                <p className={`text-[10px] font-black mt-4 uppercase tracking-[0.3em] italic ${session?.isRunning && !isIdle ? 'text-[#939084]' : 'text-white/40'}`}>Operational Yield</p>
               </div>
+
+              {/* Controls */}
               <div className="flex flex-row gap-4">
-                {!session ? (
-                  <button onClick={() => handleAction('start')} className="bg-[#ff4f00] text-white h-10 px-6 rounded-xl font-black text-[12px] uppercase tracking-[0.2em] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl border-none cursor-pointer italic">START <Play size={16} fill="white" /></button>
+                {!hasSession ? (
+                  <button onClick={() => handleAction('start')}
+                    className="bg-[#ff4f00] text-white h-10 px-6 rounded-xl font-black text-[12px] uppercase tracking-[0.2em] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl border-none cursor-pointer italic">
+                    START <Play size={16} fill="white" />
+                  </button>
                 ) : (
                   <div className="flex flex-row gap-3">
-                    {!session.isRunning ? (
-                      <button onClick={() => handleAction('resume')} className="bg-[#24a148] text-white h-10 px-6 rounded-lg font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all border-none cursor-pointer italic">RESUME <Play size={14} fill="white" /></button>
+                    {isActive ? (
+                      <button onClick={() => handleAction('pause')}
+                        className="bg-white text-[#201515] h-10 px-6 rounded-lg font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-[#eceae3] transition-all border-none cursor-pointer shadow-lg italic">
+                        PAUSE <Pause size={14} />
+                      </button>
                     ) : (
-                      <button onClick={() => handleAction('pause')} className="bg-white text-[#201515] h-10 px-6 rounded-lg font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-[#eceae3] transition-all border-none cursor-pointer shadow-lg italic">PAUSE <Pause size={14} /></button>
+                      <button onClick={() => handleAction('resume')}
+                        className="bg-[#24a148] text-white h-10 px-6 rounded-lg font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all border-none cursor-pointer italic">
+                        RESUME <Play size={14} fill="white" />
+                      </button>
                     )}
-                    <button onClick={() => handleAction('stop')} className="bg-[#ff4f00] text-white h-10 px-6 rounded-lg font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all border-none cursor-pointer italic">STOP <Square size={14} fill="white" /></button>
+                    <button onClick={() => handleAction('stop')}
+                      className="bg-[#ff4f00] text-white h-10 px-6 rounded-lg font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all border-none cursor-pointer italic">
+                      STOP <Square size={14} fill="white" />
+                    </button>
                   </div>
                 )}
               </div>
             </div>
           </div>
 
+          {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: 'Active', val: formatMinutes(summary.stats.active), icon: Zap, color: 'text-[#24a148]' },
@@ -494,10 +331,11 @@ const TimeTrackingDashboard = () => {
             ))}
           </div>
 
+          {/* Chart */}
           <div className="bg-white border border-[#c5c0b1] rounded-[32px] p-10 shadow-sm">
             <div className="flex justify-between items-center mb-8">
-              <div><h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-[#201515] italic">Historical Pulse</h3></div>
-              <div className="flex gap-2"><button className="p-2 bg-[#201515] text-white rounded-lg"><BarChart3 size={16} /></button></div>
+              <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-[#201515] italic">Historical Pulse</h3>
+              <button className="p-2 bg-[#201515] text-white rounded-lg"><BarChart3 size={16} /></button>
             </div>
             <div className="h-[250px] w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -513,12 +351,16 @@ const TimeTrackingDashboard = () => {
           </div>
         </div>
 
+        {/* ── RIGHT COLUMN ── */}
         <div className="col-span-12 lg:col-span-4 space-y-8">
+          {/* Calendar */}
           <div className="bg-[#201515] text-white rounded-[32px] p-8 shadow-xl">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="text-[10px] font-black uppercase tracking-[0.3em] italic text-[#ff4f00]">Calendar</h3>
-                <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mt-1">{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mt-1">
+                  {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                </p>
               </div>
               <div className="flex gap-4">
                 <button onClick={() => changeMonth(-1)} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors border-none cursor-pointer text-white"><ChevronLeft size={16} /></button>
@@ -526,17 +368,21 @@ const TimeTrackingDashboard = () => {
               </div>
             </div>
             <div className="grid grid-cols-7 gap-1 text-center relative z-20">
-              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (<div key={d} className="text-[8px] font-black text-white/40 mb-3">{d}</div>))}
+              {['S','M','T','W','T','F','S'].map((d, i) => <div key={i} className="text-[8px] font-black text-white/40 mb-3">{d}</div>)}
               {renderCalendarDays()}
             </div>
           </div>
 
+          {/* Recent Logs */}
           <div className="bg-white border border-[#c5c0b1] rounded-[32px] p-8 shadow-sm max-h-[450px] flex flex-col overflow-hidden">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] italic text-[#201515] mb-6">Recent Nodes</h3>
             <div className="space-y-4 overflow-y-auto pr-2 scrollbar-hide">
               {summary.logs.slice(0, 5).map((log, i) => (
                 <div key={i} className="flex items-center justify-between p-4 bg-[#fffdf9] border border-[#eceae3] rounded-2xl hover:border-[#ff4f00] transition-colors group">
-                  <div className="flex flex-col"><span className="text-[16px] font-black text-[#201515] tracking-tighter italic">{formatTime(log.activeTime)}</span><span className="text-[8px] font-bold text-[#939084] uppercase tracking-widest">{log.date}</span></div>
+                  <div className="flex flex-col">
+                    <span className="text-[16px] font-black text-[#201515] tracking-tighter italic">{formatTime(log.activeTime)}</span>
+                    <span className="text-[8px] font-bold text-[#939084] uppercase tracking-widest">{log.date}</span>
+                  </div>
                   <ArrowRight size={14} className="text-[#c5c0b1] group-hover:text-[#ff4f00] group-hover:translate-x-1 transition-all" />
                 </div>
               ))}
@@ -545,6 +391,7 @@ const TimeTrackingDashboard = () => {
         </div>
       </div>
 
+      {/* ── LOGS TABLE ── */}
       <div className="mt-12 bg-white border border-[#c5c0b1] rounded-[32px] overflow-hidden shadow-xl">
         <div className="p-8 bg-[#eceae3] border-b border-[#c5c0b1] flex flex-col md:flex-row justify-between items-center gap-6">
           <div>
@@ -552,36 +399,57 @@ const TimeTrackingDashboard = () => {
             <p className="text-[9px] font-bold text-[#ff4f00] uppercase tracking-widest mt-1 italic">Filtered: {viewDate}</p>
           </div>
           <div className="flex flex-row items-center gap-4">
-            <button
-              onClick={() => handleDateClick(yesterdayISO)}
-              className="hidden h-10 px-4 bg-[#201515] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#ff4f00] transition-colors border-none cursor-pointer italic"
-            >
-              Yesterday
-            </button>
             <div className="relative">
               <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-[#ff4f00]" size={14} />
-              <input type="date" value={viewDate} max={todayISO} onChange={(e) => handleDateClick(e.target.value)} className="pl-10 pr-4 h-10 bg-white border border-[#c5c0b1] rounded-xl text-[11px] font-black text-[#201515] focus:outline-none focus:border-[#ff4f00] shadow-sm italic uppercase" />
+              <input type="date" value={viewDate} max={todayISO}
+                onChange={(e) => setViewDate(e.target.value)}
+                className="pl-10 pr-4 h-10 bg-white border border-[#c5c0b1] rounded-xl text-[11px] font-black text-[#201515] focus:outline-none focus:border-[#ff4f00] shadow-sm italic uppercase" />
             </div>
-            <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#939084]" size={14} /><input type="text" placeholder="Search..." className="pl-10 pr-4 h-10 bg-white border border-[#c5c0b1] rounded-xl text-[11px] font-black text-[#201515] focus:outline-none focus:border-[#ff4f00] w-48 shadow-sm italic" /></div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#939084]" size={14} />
+              <input type="text" placeholder="Search..."
+                className="pl-10 pr-4 h-10 bg-white border border-[#c5c0b1] rounded-xl text-[11px] font-black text-[#201515] focus:outline-none focus:border-[#ff4f00] w-48 shadow-sm italic" />
+            </div>
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
-            <thead><tr className="bg-[#fffdf9] border-b border-[#c5c0b1]"><th className="px-8 py-5 text-[9px] font-black text-[#939084] uppercase tracking-[0.2em]">Node</th><th className="px-8 py-5 text-[9px] font-black text-[#939084] uppercase tracking-[0.2em] text-center">Date</th><th className="px-8 py-5 text-[9px] font-black text-[#939084] uppercase tracking-[0.2em] text-center">Interval</th><th className="px-8 py-5 text-[9px] font-black text-[#939084] uppercase tracking-[0.2em] text-center">Yield</th><th className="px-8 py-5 text-[9px] font-black text-[#939084] uppercase tracking-[0.2em] text-right">Status</th></tr></thead>
-            <tbody className="divide-y divide-[#eceae3]">
-              {fullLogs.length === 0 ? (
-                <tr><td colSpan="5" className="py-20 text-center"><div className="opacity-30 italic"><Search size={32} className="mx-auto mb-4" /><p className="text-[11px] font-black uppercase tracking-widest">No node telemetry found for {viewDate}</p></div></td></tr>
-              ) : (
-                [...fullLogs].sort((a, b) => new Date(b.startTime) - new Date(a.startTime)).slice(0, 20).map((log, i) => (
-                  <tr key={i} className="hover:bg-[#fffdf9] transition-colors group">
-                    <td className="px-8 py-6"><div className="flex items-center gap-4"><div className="w-10 h-10 rounded-xl bg-[#201515] flex items-center justify-center text-white font-black text-lg group-hover:bg-[#ff4f00] transition-colors italic">{(log.employeeId?.fullName || log.employeeRole || 'U').charAt(0)}</div><span className="text-[13px] font-black text-[#201515] uppercase italic">{log.employeeId?.fullName || 'Node'}</span></div></td>
-                    <td className="px-8 py-6 text-[12px] font-black text-[#201515] text-center uppercase italic">{log.date}</td>
-                    <td className="px-8 py-6 text-center"><div className="inline-flex items-center gap-2 bg-[#eceae3] px-3 py-1 rounded-lg text-[9px] font-black text-[#201515] italic">{new Date(log.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} <ArrowRight size={10} /> {log.endTime ? new Date(log.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Active'}</div></td>
-                    <td className="px-8 py-6 text-[20px] font-black text-[#24a148] tabular-nums tracking-tighter italic text-center">{formatTime(log.activeTime)}</td>
-                    <td className="px-8 py-6 text-right"><div className="flex items-center justify-end gap-2"><div className={`w-2 h-2 rounded-full ${log.status === 'completed' ? 'bg-[#939084]' : 'bg-[#24a148] animate-pulse'}`}></div><span className="text-[10px] font-black uppercase tracking-widest text-[#201515] italic">{log.status}</span></div></td>
-                  </tr>
-                ))
-              )}
+            <thead>
+              <tr className="bg-[#fffdf9] border-b border-[#c5c0b1]">
+                {['Node','Date','Active','Idle','Status'].map(h => (
+                  <th key={h} className="px-8 py-5 text-[9px] font-black text-[#939084] uppercase tracking-[0.2em]">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {summary.logs.map((log, i) => (
+                <tr key={i} className="border-b border-[#eceae3] hover:bg-[#fffdf9] transition-colors group">
+                  <td className="px-8 py-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-[#201515] flex items-center justify-center text-white font-black text-[10px] italic">{i + 1}</div>
+                      <div>
+                        <div className="text-[14px] font-black text-[#201515] italic">Pulse-{log._id?.slice(-4) || i}</div>
+                        <div className="text-[8px] font-bold text-[#939084] uppercase tracking-widest">{log.startTime ? new Date(log.startTime).toLocaleTimeString() : 'N/A'}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-8 py-6 text-[11px] font-black text-[#201515] uppercase">{log.date}</td>
+                  <td className="px-8 py-6">
+                    <div className="text-[14px] font-black text-[#201515] tabular-nums italic">{formatTime(log.activeTime)}</div>
+                    <div className="text-[8px] font-bold text-[#24a148] uppercase tracking-widest">Active</div>
+                  </td>
+                  <td className="px-8 py-6">
+                    <div className="text-[14px] font-black text-[#ff4f00] tabular-nums italic">{formatTime(log.idleTime)}</div>
+                    <div className="text-[8px] font-bold text-[#939084] uppercase tracking-widest">Idle</div>
+                  </td>
+                  <td className="px-8 py-6">
+                    <span className={`px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest ${
+                      log.status === 'active' ? 'bg-[#24a148]/10 text-[#24a148]' : 'bg-[#939084]/10 text-[#939084]'}`}>
+                      {log.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
