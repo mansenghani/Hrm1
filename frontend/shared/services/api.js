@@ -1,9 +1,8 @@
 import axios from 'axios';
 
 // 🛰️ DYNAMIC ENDPOINT CONFIGURATION
-export const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-  ? 'http://localhost:5000' 
-  : window.location.origin; // In production, we assume the API is on the same origin or handled by proxy
+// Keep browser requests on the page origin so HTTPS pages do not load blocked HTTP resources.
+export const API_BASE_URL = window.location.origin;
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,

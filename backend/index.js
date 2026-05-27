@@ -1,3 +1,4 @@
+// nodemon restart comment 4
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -46,6 +47,8 @@ app.set('io', io);
 
 // 🔌 Socket.io Logic
 const activeUsers = new Map();
+const userRoom = (userId) => `user_${String(userId)}`;
+const isUserConnected = (userId) => (io.sockets.adapter.rooms.get(userRoom(userId))?.size || 0) > 0;
 
 io.on('connection', (socket) => {
   console.log('⚡ User connected:', socket.id);
@@ -57,14 +60,15 @@ io.on('connection', (socket) => {
 
   socket.on('join_notifications', ({ userId, role }) => {
     if (!userId) return;
-    socket.join(`user_${userId}`);
+    const normalizedUserId = String(userId);
+    socket.join(userRoom(normalizedUserId));
     if (role) socket.join(`role_${role}`);
     
     // Add to active users and broadcast
-    activeUsers.set(userId, socket.id);
-    io.emit('user_status_change', { userId, status: 'online' });
+    activeUsers.set(normalizedUserId, socket.id);
+    io.emit('user_status_change', { userId: normalizedUserId, status: 'online' });
     
-    console.log(`🔔 User joined notification rooms: user_${userId} ${role ? `role_${role}` : ''}`);
+    console.log(`🔔 User joined notification rooms: ${userRoom(normalizedUserId)} ${role ? `role_${role}` : ''}`);
   });
 
   socket.on('get_online_users', () => {
@@ -94,6 +98,49 @@ io.on('connection', (socket) => {
       io.emit('user_status_change', { userId: disconnectedUserId, status: 'offline' });
     }
     console.log('❌ User disconnected');
+  });
+
+  // ══════════════════════════════════════════════
+  //  📞  WebRTC CALL SIGNALING
+  // ══════════════════════════════════════════════
+
+  // 1. Caller sends offer → relay to callee
+  socket.on('call:offer', ({ to, from, offer, callType, callerName, callerImage }) => {
+    if (isUserConnected(to)) {
+      io.to(userRoom(to)).emit('call:incoming', { from, offer, callType, callerName, callerImage });
+      console.log(`📞 Call offer from ${from} to ${to} (${callType})`);
+    } else {
+      // Callee is offline — notify caller immediately
+      socket.emit('call:user_unavailable', { to });
+    }
+  });
+
+  // 2. Callee answers → relay answer to caller
+  socket.on('call:answer', ({ to, answer }) => {
+    if (isUserConnected(to)) {
+      io.to(userRoom(to)).emit('call:answer', { answer });
+    }
+  });
+
+  // 3. ICE candidates — bidirectional relay
+  socket.on('call:ice-candidate', ({ to, candidate }) => {
+    if (isUserConnected(to)) {
+      io.to(userRoom(to)).emit('call:ice-candidate', { candidate });
+    }
+  });
+
+  // 4. Call rejected by callee
+  socket.on('call:rejected', ({ to }) => {
+    if (isUserConnected(to)) {
+      io.to(userRoom(to)).emit('call:rejected');
+    }
+  });
+
+  // 5. Either side hangs up
+  socket.on('call:end', ({ to }) => {
+    if (isUserConnected(to)) {
+      io.to(userRoom(to)).emit('call:end');
+    }
   });
 });
 

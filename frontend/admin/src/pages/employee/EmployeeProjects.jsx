@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
-import TaskDetail from '../../components/TaskDetail';
+import TaskDetailView from '../../components/TaskDetailView';
 
 const EmployeeProjects = () => {
     const location = useLocation();
@@ -85,8 +85,8 @@ const EmployeeProjects = () => {
                 {/* HEADER */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#ff4f00] mb-2 italic">My Work Hub V4.2</p>
-                        <h1 className="text-6xl font-black text-[#201515] tracking-tighter leading-none mb-3 italic uppercase">
+                        <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#ff4f00] mb-2">My Work Hub V4.2</p>
+                        <h1 className="text-6xl font-black text-[#201515] tracking-tighter leading-none mb-3 uppercase">
                             My <span className="text-[#ff4f00]">Tasks.</span>
                         </h1>
                         <p className="text-[#939084] font-bold text-[11px] uppercase tracking-[0.2em] flex items-center gap-3">
@@ -240,13 +240,14 @@ const EmployeeProjects = () => {
             </div>
 
             {/* TASK DETAIL MODAL */}
-            {selectedTask && (
-                <TaskDetail 
+            {selectedTask && isTaskModalOpen && (
+                <TaskDetailView 
                     task={tasks.find(t => t._id === selectedTask._id) || selectedTask}
-                    isOpen={isTaskModalOpen}
-                    onClose={() => setIsTaskModalOpen(false)}
-                    onUpdate={() => { fetchData(true); }}
-                    userRole="employee"
+                    onClose={() => {
+                        setIsTaskModalOpen(false);
+                        setSelectedTask(null);
+                        fetchData(true);
+                    }}
                 />
             )}
 

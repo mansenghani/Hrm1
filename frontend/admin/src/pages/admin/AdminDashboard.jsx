@@ -29,8 +29,22 @@ const AdminDashboard = () => {
     activeNodes: 0
   });
   const [page, setPage] = useState(0);
+  const [filterRole, setFilterRole] = useState('all');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = React.useRef(null);
   const navigate = useNavigate();
   const token = sessionStorage.getItem('token');
+
+  // 🛡️ CLOSE DROPDOWN ON CLICK OUTSIDE
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -44,8 +58,6 @@ const AdminDashboard = () => {
       ]);
 
       const employees = empRes.data || [];
-
-
       const today = new Date().toISOString().split('T')[0];
       const activeNodes = (attRes.data || []).filter(a => a.date?.startsWith(today)).length;
 
@@ -67,19 +79,15 @@ const AdminDashboard = () => {
     fetchData();
   }, []);
 
-  const chartData = [
-    { name: '00:00', value: 400 },
-    { name: '04:00', value: 300 },
-    { name: '08:00', value: 600 },
-    { name: '12:00', value: 800 },
-    { name: '16:00', value: 500 },
-    { name: '20:00', value: 900 },
-  ];
+  const filteredEmployees = stats.employees.filter(emp => {
+    if (filterRole === 'all') return true;
+    return emp.role?.toLowerCase() === filterRole.toLowerCase();
+  });
 
   return (
-    <div className="animate-fade-in pb-24">
-      {/* HEADER SECTION */}
-      <div className="mb-12 border-b border-[#c5c0b1] pb-10 flex justify-between items-end">
+    <div className="animate-fade-in pb-40 flex flex-col gap-16">
+      {/* 1. HEADER SECTION */}
+      <div className="border-b border-[#c5c0b1] pb-10 flex justify-between items-end">
         <div>
           <p className="zap-caption-upper text-[#ff4f00] mb-4">Ecosystem Intelligence</p>
           <h1 className="zap-display-hero">Institutional <span className="text-[#ff4f00]">Control.</span></h1>
@@ -95,8 +103,8 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* KPI GRID - Zapier Style Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+      {/* 2. KPI GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { label: 'All Employees', val: stats.employees.length, icon: Users, status: 'Verified' },
           { label: 'Network Operations', val: stats.activeNodes, icon: Activity, status: 'Live' },
@@ -115,12 +123,14 @@ const AdminDashboard = () => {
         ))}
       </div>
 
-      {/* DASH CONTENT */}
-      <div className="grid grid-cols-12 gap-12">
-        {/* Main Analytics */}
-        <div className="col-span-12 lg:col-span-8 space-y-12">
-           <AnalyticsChart title="Institutional Activity Pulse" type="bar" />
+      {/* 3. UNIFIED PANEL */}
+      <div className="w-full">
+        <UnifiedDashboardPanel />
+      </div>
 
+      {/* 4. DASH CONTENT - REGISTRY & DIAGNOSTICS */}
+      <div className="grid grid-cols-12 gap-12">
+        <div className="col-span-12 lg:col-span-8 space-y-12">
            {/* EMPLOYEE REGISTRY LIST */}
            <div className="zap-card p-10">
               <div className="flex justify-between items-center mb-10 pb-6 border-b border-[#eceae3]">
@@ -129,13 +139,40 @@ const AdminDashboard = () => {
                     <p className="text-[12px] font-bold text-[#939084] uppercase tracking-widest mt-1">Live Institutional Nodes</p>
                  </div>
                  <div className="flex items-center gap-3">
-                    <span className="text-[11px] font-black text-[#ff4f00] uppercase tracking-[0.2em]">Matrix View</span>
+                    {/* CUSTOM ROUNDED DROPDOWN */}
+                    <div className="relative" ref={dropdownRef}>
+                      <button 
+                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        className="px-4 py-2 bg-[#fffdf9] border border-[#ff4f00] rounded-xl text-[10px] font-black uppercase tracking-widest text-[#ff4f00] outline-none flex items-center gap-2 cursor-pointer transition-all hover:bg-[#ff4f00]/5 min-w-[120px] justify-between"
+                      >
+                        {filterRole === 'all' ? 'All Roles' : filterRole}
+                        <ChevronRight size={12} className={`transition-transform ${isDropdownOpen ? 'rotate-90' : 'rotate-0'}`} />
+                      </button>
+
+                      {isDropdownOpen && (
+                        <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-[#eceae3] rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                          {['all', 'hr', 'manager', 'employee'].map((role) => (
+                            <div 
+                              key={role}
+                              onClick={() => {
+                                setFilterRole(role);
+                                setPage(0);
+                                setIsDropdownOpen(false);
+                              }}
+                              className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-[#201515] hover:bg-[#ff4f00]/5 hover:text-[#ff4f00] cursor-pointer transition-colors border-b border-[#f8f8f8] last:border-none"
+                            >
+                              {role === 'all' ? 'All Roles' : role}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <Users size={18} className="text-[#ff4f00]" />
                  </div>
               </div>
 
               <div className="space-y-4">
-                 {stats.employees.slice(page * 6, (page + 1) * 6).map((emp, i) => (
+                 {filteredEmployees.slice(page * 6, (page + 1) * 6).map((emp) => (
                     <div key={emp._id} className="flex items-center justify-between p-4 hover:bg-[#fffdf9] rounded-[8px] border border-transparent hover:border-[#eceae3] transition-all group">
                        <div className="flex items-center gap-5">
                           <div className="w-12 h-12 rounded-full bg-[#eceae3] overflow-hidden border border-[#c5c0b1]">
@@ -166,29 +203,16 @@ const AdminDashboard = () => {
                  ))}
               </div>
 
-              {stats.employees.length > 6 && (
+              {filteredEmployees.length > 6 && (
                 <div className="mt-10 pt-8 border-t border-[#eceae3] flex justify-between items-center">
-                   <button 
-                     disabled={page === 0}
-                     onClick={() => setPage(p => p - 1)}
-                     className="zap-btn zap-btn-light !h-10 !px-6 disabled:opacity-30"
-                   >
-                     Previous
-                   </button>
-                   <p className="text-[11px] font-black text-[#939084] uppercase tracking-[0.2em]">Page {page + 1} of {Math.ceil(stats.employees.length / 6)}</p>
-                   <button 
-                     disabled={(page + 1) * 6 >= stats.employees.length}
-                     onClick={() => setPage(p => p + 1)}
-                     className="zap-btn zap-btn-orange !h-10 !px-8"
-                   >
-                     Next
-                   </button>
+                   <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="zap-btn zap-btn-light !h-10 !px-6 disabled:opacity-30">Previous</button>
+                   <p className="text-[11px] font-black text-[#939084] uppercase tracking-[0.2em]">Page {page + 1} of {Math.ceil(filteredEmployees.length / 6)}</p>
+                   <button disabled={(page + 1) * 6 >= filteredEmployees.length} onClick={() => setPage(p => p + 1)} className="zap-btn zap-btn-orange !h-10 !px-8">Next</button>
                 </div>
               )}
            </div>
         </div>
 
-        {/* Intelligence / Actions */}
         <div className="col-span-12 lg:col-span-4 flex flex-col gap-8">
            <div className="zap-card flex-1 p-10">
               <div className="flex items-center gap-3 mb-10 text-[#ff4f00]">
@@ -211,15 +235,10 @@ const AdminDashboard = () => {
                    </div>
                  ))}
               </div>
-              <button className="zap-btn zap-btn-light w-full mt-10">
-                 Run Full Diagnostic
-              </button>
+              <button className="zap-btn zap-btn-light w-full mt-10">Run Full Diagnostic</button>
            </div>
 
-           <div 
-             onClick={() => navigate('/admin/create-user')}
-             className="zap-btn !bg-[#ff4f00] !h-auto p-10 flex flex-col items-start gap-4 group cursor-pointer border-none shadow-xl"
-           >
+           <div onClick={() => navigate('/admin/create-user')} className="zap-btn !bg-[#ff4f00] !h-auto p-10 flex flex-col items-start gap-4 group cursor-pointer border-none shadow-xl">
               <div className="flex justify-between items-center w-full">
                  <p className="zap-caption-upper !text-white opacity-90 group-hover:opacity-100 transition-opacity">Global Initialization</p>
                  <Plus size={24} className="text-white" />
@@ -229,9 +248,6 @@ const AdminDashboard = () => {
            </div>
         </div>
       </div>
-
-      {/* UNIFIED ROLE-BASED DASHBOARD COMPONENT */}
-      <UnifiedDashboardPanel />
     </div>
   );
 };

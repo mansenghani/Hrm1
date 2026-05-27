@@ -488,3 +488,30 @@ exports.forwardMessage = async (req, res) => {
     res.status(500).json({ message: 'Error forwarding message', error: error.message });
   }
 };
+
+exports.clearChatHistory = async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const { id: userId } = req.user;
+
+    console.log(`[CLEAR CHAT] Clearing history for chat ${chatId} by user ${userId}`);
+
+    // Find all messages in this chat
+    const messages = await Message.find({ chatId });
+
+    // Add userId to deletedFor for all messages where it's not already present
+    const updatePromises = messages.map(async (msg) => {
+      if (!msg.deletedFor.includes(userId)) {
+        msg.deletedFor.push(userId);
+        return msg.save();
+      }
+    });
+
+    await Promise.all(updatePromises);
+
+    res.json({ success: true, message: 'Chat history cleared' });
+  } catch (error) {
+    console.error('[ERROR] Clearing chat history:', error);
+    res.status(500).json({ message: 'Error clearing chat history', error: error.message });
+  }
+};

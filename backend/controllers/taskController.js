@@ -1,370 +1,272 @@
 const Task = require('../models/Task');
 const User = require('../models/User');
-const { createNotification } = require('../utils/notifications');
+const Notification = require('../models/Notification');
+const fs = require('fs');
 
-// --- HR ACTIONS ---
+// ── HELPERS ───────────────────────────────────────────────
+const getRoleFilter = (user) => {
+  if (user.role === 'admin') return {};
+  if (user.role === 'hr') return { $or: [{ employeeRole: { $in: ['employee', 'manager'] } }, { userId: user.id }] };
+  if (user.role === 'manager') return { $or: [{ managerId: user.id }, { userId: user.id }] };
+  return { userId: user.id };
+};
+
+// ── CONTROLLERS ───────────────────────────────────────────
+
+// @desc    Create a new task (Morning Workflow)
+// @route   POST /api/tasks
 exports.createTask = async (req, res) => {
   try {
-    const { title, description, assignedManager, priority, dueDate } = req.body;
+    const { title, description, date, status, priority, userId, employeeName, employeeRole, managerId } = req.body;
+    const user = await User.findById(req.user.id);
 
-    if (!assignedManager) return res.status(400).json({ message: 'Target Manager must be specified.' });
+    const attachments = [];
+    if (req.files) {
+      req.files.forEach(file => {
+        attachments.push({
+          fileName: file.originalname,
+          fileUrl: file.path,
+          fileType: file.mimetype
+        });
+      });
+    }
 
-    const manager = await User.findOne({ _id: assignedManager, role: { $in: ['manager', 'hr'] } });
-    if (!manager) return res.status(404).json({ message: 'Invalid Personnel node.' });
+    const targetUserId = userId || req.user.id;
+    let targetEmployeeName = employeeName;
+    let targetEmployeeRole = employeeRole;
+    let targetManagerId = managerId || user?.reportingManager;
+
+    if (userId && !employeeName) {
+      const assignedUser = await User.findById(userId);
+      if (assignedUser) {
+        targetEmployeeName = assignedUser.fullName || assignedUser.name;
+        targetEmployeeRole = assignedUser.role;
+        targetManagerId = assignedUser.reportingManager;
+      }
+    }
 
     const task = new Task({
+      userId: targetUserId,
+      employeeName: targetEmployeeName || user?.fullName || user?.name || 'System Admin',
+      employeeRole: targetEmployeeRole || user?.role || 'admin',
+      managerId: targetManagerId,
+      teamId: user?.teamId,
       title,
-      description,
-      assignedManager,
-      createdBy: req.user.id,
-      priority,
-      dueDate,
-      status: 'assigned',
-      attachments: req.file ? [{
-        fileName: req.file.originalname,
-        fileUrl: `/uploads/${req.file.filename}`
-      }] : []
+      description: description || 'No description provided.',
+      status: status || 'Ongoing',
+      priority: priority || 'Medium',
+      date: date || new Date().toISOString().split('T')[0],
+      attachments
     });
 
     await task.save();
-
-    // Notify Manager
-    await createNotification(assignedManager, `You have been assigned a new mission: ${title}`);
-
-    res.status(201).json(task);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(201).json({ success: true, data: task });
+  } catch (err) {
+    console.error('[TASK CREATE ERROR]', err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// --- MANAGER ACTIONS ---
-exports.getManagerTasks = async (req, res) => {
+// @desc    Get tasks based on role permissions
+// @route   GET /api/tasks
+exports.getTasks = async (req, res) => {
   try {
-    const tasks = await Task.find({ assignedManager: req.user.id })
-      .populate('createdBy', 'name email')
-      .populate('assignedEmployee', 'name email')
-      .populate('assignedEmployees', 'name email profileImage')
-      .populate('comments.userId', 'name profileImage');
-    res.status(200).json(tasks);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-exports.assignEmployee = async (req, res) => {
-  try {
-    const { employeeId } = req.body;
-    const task = await Task.findById(req.params.taskId);
-
-    if (!task) return res.status(404).json({ message: 'Task not found' });
-
-    const isAdminOrHR = ['admin', 'hr'].includes(req.user.role);
-    const isAssignedManager = task.assignedManager?.toString() === req.user.id;
-
-    if (!isAdminOrHR && !isAssignedManager) {
-      return res.status(403).json({ message: 'Unauthorized to delegate this mission.' });
-    }
-
-    if (isAdminOrHR) {
-      // HR/Admin assigns the Lead Manager (Single)
-      task.assignedManager = employeeId;
-      task.assignedEmployee = employeeId;
-    } else {
-      // Managers delegate to Deployed Employees (Multiple)
-      if (!task.assignedEmployees.includes(employeeId)) {
-        task.assignedEmployees.push(employeeId);
-      }
-      task.assignedEmployee = employeeId; 
-    }
+    const filter = getRoleFilter(req.user);
     
-    task.status = 'in_progress';
-    await task.save();
+    // Additional filters from query
+    if (req.query.status) filter.status = req.query.status;
+    if (req.query.priority) filter.priority = req.query.priority;
+    if (req.query.date) filter.date = req.query.date;
+    if (req.query.userId) filter.userId = req.query.userId;
 
-    // Notify Personnel
-    await createNotification(employeeId, `Strategic assignment received: ${task.title}. Report to your station.`);
-
-    res.status(200).json(task);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-exports.unassignEmployee = async (req, res) => {
-  try {
-    const { employeeId } = req.body;
-    const task = await Task.findById(req.params.taskId);
-
-    if (!task) return res.status(404).json({ message: 'Task not found' });
+    const tasks = await Task.find(filter).sort({ createdAt: -1 });
     
-    const isAdminOrHR = ['admin', 'hr'].includes(req.user.role);
-    const isAssignedManager = task.assignedManager?.toString() === req.user.id;
-    
-    if (!isAdminOrHR && !isAssignedManager) return res.status(403).json({ message: 'Unauthorized' });
-
-    task.assignedEmployees = task.assignedEmployees.filter(id => id.toString() !== employeeId);
-    
-    if (task.assignedManager?.toString() === employeeId) {
-      task.assignedManager = null;
-    }
-
-    if (task.assignedEmployee?.toString() === employeeId) {
-      task.assignedEmployee = task.assignedEmployees.length > 0 ? task.assignedEmployees[0] : null;
-    }
-
-    await task.save();
-    res.status(200).json(task);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-exports.approveTask = async (req, res) => {
-  try {
-    const task = await Task.findById(req.params.taskId);
-    const isAdminOrHR = ['admin', 'hr'].includes(req.user.role);
-    const isAssignedManager = task?.assignedManager?.toString() === req.user.id;
-
-    if (!task || (!isAdminOrHR && !isAssignedManager)) return res.status(403).json({ message: 'Unauthorized' });
-
-    task.status = 'completed';
-    task.progress = 100;
-    await task.save();
-
-    // 📡 Socket.io Real-time Broadcast
-    const io = req.app.get('io');
-    if (io) {
-      io.to(task._id.toString()).emit('task_updated', {
-        taskId: task._id,
-        updatedFields: { status: task.status, progress: task.progress }
-      });
-    }
-
-    // Notify Employee
-    if (task.assignedEmployee) {
-      await createNotification(task.assignedEmployee, `Mission Success: ${task.title} has been verified and closed.`);
-    }
-
-    res.status(200).json(task);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-exports.rejectTask = async (req, res) => {
-  try {
-    const { feedback } = req.body;
-    const task = await Task.findById(req.params.taskId);
-    const isAdminOrHR = ['admin', 'hr'].includes(req.user.role);
-    const isAssignedManager = task?.assignedManager?.toString() === req.user.id;
-
-    if (!task || (!isAdminOrHR && !isAssignedManager)) return res.status(403).json({ message: 'Unauthorized' });
-
-    task.status = 'rework';
-    task.feedback = feedback;
-    await task.save();
-
-    // 📡 Socket.io Real-time Broadcast
-    const io = req.app.get('io');
-    if (io) {
-      io.to(task._id.toString()).emit('task_updated', {
-        taskId: task._id,
-        updatedFields: { status: task.status, feedback: task.feedback }
-      });
-    }
-
-    // Notify Employee
-    if (task.assignedEmployee) {
-      await createNotification(task.assignedEmployee, `Task Rejected: ${task.title}. Feedback: ${feedback}`);
-    }
-
-    res.status(200).json(task);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// --- EMPLOYEE ACTIONS ---
-exports.getMyTasks = async (req, res) => {
-  try {
-    const tasks = await Task.find({ assignedEmployee: req.user.id })
-      .populate('assignedManager', 'name email')
-      .populate('assignedEmployees', 'name email')
-      .populate('comments.userId', 'name profileImage');
-    res.status(200).json(tasks);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-exports.updateProgress = async (req, res) => {
-  try {
-    const { progress } = req.body;
-    const task = await Task.findById(req.params.taskId);
-    if (!task) return res.status(404).json({ message: 'Task not found' });
-    if (task.assignedEmployee?.toString() !== req.user.id) return res.status(403).json({ message: 'Unauthorized' });
-
-    task.progress = progress;
-    if (progress > 0 && task.status === 'rework') task.status = 'in_progress';
-    await task.save();
-
-    // 📡 Socket.io Real-time Broadcast
-    const io = req.app.get('io');
-    if (io) {
-      io.to(task._id.toString()).emit('task_updated', {
-        taskId: task._id,
-        updatedFields: { progress: task.progress, status: task.status }
-      });
-    }
-
-    res.status(200).json(task);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-exports.submitTask = async (req, res) => {
-  try {
-    const task = await Task.findById(req.params.taskId);
-    if (!task) return res.status(404).json({ message: 'Task not found' });
-    if (task.assignedEmployee?.toString() !== req.user.id) return res.status(403).json({ message: 'Unauthorized' });
-
-    task.status = 'submitted';
-    await task.save();
-
-    // 📡 Socket.io Real-time Broadcast
-    const io = req.app.get('io');
-    if (io) {
-      io.to(task._id.toString()).emit('task_updated', {
-        taskId: task._id,
-        updatedFields: { status: task.status }
-      });
-    }
-
-    // Notify Manager
-    await createNotification(task.assignedManager, `Task telemetry received: ${task.title} submitted for review.`);
-
-    res.status(200).json(task);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-exports.uploadProof = async (req, res) => {
-  try {
-    const task = await Task.findById(req.params.taskId);
-    if (!task) return res.status(404).json({ message: 'Task not found' });
-
-    const isAdminOrHR = ['admin', 'hr'].includes(req.user.role);
-    const isLead = task.assignedManager?.toString() === req.user.id;
-    const isAssignee = task.assignedEmployee?.toString() === req.user.id;
-    const isPartofTeam = task.assignedEmployees?.some(id => id.toString() === req.user.id);
-
-    if (!isAdminOrHR && !isLead && !isAssignee && !isPartofTeam) return res.status(403).json({ message: 'Unauthorized' });
-
-    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
-
-    task.attachments.push({
-      fileName: req.file.originalname,
-      fileUrl: `/uploads/${req.file.filename}`
-    });
-
-    await task.save();
-
-    // Notify Manager
-    await createNotification(task.assignedManager, `New attachment uploaded for task: ${task.title}`);
-
-    res.status(200).json(task);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// --- COMMON ACTIONS ---
-exports.addComment = async (req, res) => {
-  try {
-    const { message } = req.body;
-    const task = await Task.findById(req.params.taskId);
-    if (!task) return res.status(404).json({ message: 'Task not found' });
-
-    // 🛡️ ROLE OVERRIDE: Admin/HR can comment on anything. 
-    const isAdminOrHR = ['admin', 'hr'].includes(req.user.role);
-    const isAssignedManager = task.assignedManager?.toString() === req.user.id;
-    const isAssignedEmployee = task.assignedEmployee?.toString() === req.user.id;
-    const isPartofTeam = task.assignedEmployees?.some(id => id.toString() === req.user.id);
-
-    if (!isAdminOrHR && !isAssignedManager && !isAssignedEmployee && !isPartofTeam) {
-      return res.status(403).json({ message: 'Unauthorized to participate in this mission.' });
-    }
-
-    // 🔄 Ensure we have the latest profile image from DB
-    const sender = await User.findById(req.user.id).select('profileImage name') || {};
-
-    const newComment = {
-      userId: req.user.id,
-      userName: sender.name || req.user.name || 'Personnel Node',
-      profileImage: sender.profileImage || req.user.profileImage,
-      role: req.user.role,
-      message,
-      createdAt: new Date()
+    // Stats calculation
+    const stats = {
+      total: tasks.length,
+      completed: tasks.filter(t => t.status === 'Completed').length,
+      pending: tasks.filter(t => t.status === 'Pending').length,
+      ongoing: tasks.filter(t => t.status === 'Ongoing').length
     };
 
-    task.comments.push(newComment);
-    await task.save();
+    res.json({ success: true, count: tasks.length, stats, data: tasks });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
 
-    // 📡 Socket.io Real-time Broadcast
-    const io = req.app.get('io');
-    if (io) {
-      console.log(`📤 Emitting comment to room ${task._id}:`, message);
-      io.to(task._id.toString()).emit('new_comment', {
-        taskId: task._id,
-        comment: newComment
-      });
-    }
+// @desc    Get single task
+// @route   GET /api/tasks/:id
+exports.getTask = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
+    
+    // Security check: can they see this?
+    // (Simplification: If they can list it via getRoleFilter, they can see it)
+    res.json({ success: true, data: task });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
 
-    // 🔔 Notify relevant parties (if assigned)
-    const recipientId = req.user.role === 'employee' ? task.assignedManager : task.assignedEmployee;
-    if (recipientId) {
-      try {
-        await createNotification(recipientId, `New communication on task ${task.title}: ${message.substring(0, 30)}...`);
-      } catch (notifyErr) {
-        console.warn('Notification delivery skipped (Recipient node unavailable)');
+// @desc    Update task status/details (End-of-Day Workflow)
+// @route   PUT /api/tasks/:id
+exports.updateTask = async (req, res) => {
+  try {
+    const { status, progressNote, title, description, priority, date, userId, managerId, newComment, comments, timeEstimate, sprintPoints, tags, attachments } = req.body;
+    let task = await Task.findById(req.params.id);
+    
+    if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
+
+    const oldStatus = task.status;
+    const employeeId = task.userId;
+
+    const updateData = { status, progressNote, title, description };
+    if (priority) updateData.priority = priority;
+    if (date) updateData.date = date;
+    if (userId) {
+      updateData.userId = userId;
+      const assignedUser = await User.findById(userId);
+      if (assignedUser) {
+        updateData.employeeName = assignedUser.fullName || assignedUser.name;
+        updateData.employeeRole = assignedUser.role;
+        updateData.managerId = assignedUser.reportingManager;
       }
     }
+    if (managerId) updateData.managerId = managerId;
+    if (timeEstimate !== undefined) updateData.timeEstimate = timeEstimate;
+    if (sprintPoints !== undefined) updateData.sprintPoints = sprintPoints;
+    if (tags !== undefined) updateData.tags = tags;
 
-    // 🔄 REPOPULATE FOR FRONTEND STABILITY
-    const updatedTask = await Task.findById(task._id)
-      .populate('createdBy', 'name email')
-      .populate('assignedManager', 'name email')
-      .populate('assignedEmployee', 'name email')
-      .populate('assignedEmployees', 'name email profileImage')
-      .populate('comments.userId', 'name profileImage');
+    if (comments) {
+      updateData.comments = comments;
+    }
+    if (attachments !== undefined) {
+      let parsedAttachments = attachments;
+      if (typeof attachments === 'string') {
+        try { parsedAttachments = JSON.parse(attachments); } catch (e) {}
+      }
+      if (Array.isArray(parsedAttachments)) {
+        // Delete removed attachments from disk
+        const newUrls = new Set(parsedAttachments.map(a => a.fileUrl));
+        task.attachments.forEach(file => {
+          if (file.fileUrl && !newUrls.has(file.fileUrl) && fs.existsSync(file.fileUrl)) {
+            try { fs.unlinkSync(file.fileUrl); } catch (err) { console.error('Failed to delete orphaned file:', err); }
+          }
+        });
+        updateData.attachments = parsedAttachments;
+      }
+    }
+    if (newComment) {
+      const user = await User.findById(req.user.id);
+      if (!updateData.$push) updateData.$push = {};
+      updateData.$push.comments = {
+        userName: user.fullName || user.name,
+        userRole: user.role,
+        text: newComment
+      };
+    }
 
-    res.status(200).json(updatedTask);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    if (req.body.newTimeLog) {
+      let timeLogData = req.body.newTimeLog;
+      if (typeof timeLogData === 'string') {
+        try { timeLogData = JSON.parse(timeLogData); } catch (e) {}
+      }
+      const user = await User.findById(req.user.id);
+      if (!updateData.$push) updateData.$push = {};
+      updateData.$push.timeLogs = {
+        employeeId: user._id,
+        employeeName: user.fullName || user.name,
+        duration: Number(timeLogData.duration) || 0,
+        startTime: timeLogData.startTime || new Date(),
+        endTime: timeLogData.endTime || new Date(),
+        notes: timeLogData.notes || '',
+        tags: Array.isArray(timeLogData.tags) ? timeLogData.tags : []
+      };
+    }
+    
+    // Add new attachments if any
+    if (req.files && req.files.length > 0) {
+      const newAttachments = req.files.map(file => ({
+        fileName: file.originalname,
+        fileUrl: file.path,
+        fileType: file.mimetype
+      }));
+      task.attachments.push(...newAttachments);
+      await task.save();
+    }
+
+    task = await Task.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('task_updated', task);
+    }
+    
+    // ── NOTIFICATION LOGIC ──────────────────────────────────
+    if (status !== oldStatus) {
+      const io = req.app.get('io');
+      
+      // 1. Employee -> Management (Review Submission)
+      if (status === 'Review') {
+        const managers = await User.find({ role: { $in: ['admin', 'hr', 'manager'] } });
+        const notifications = managers.map(m => ({
+          userId: m._id,
+          message: `Mission Node [${task.title}] submitted for REVIEW by ${task.employeeName}`,
+          type: 'task'
+        }));
+        await Notification.insertMany(notifications);
+        
+        // Broadcast to management roles
+        io.to('role_admin').to('role_hr').to('role_manager').emit('notification', {
+          message: `Mission Node [${task.title}] submitted for REVIEW by ${task.employeeName}`,
+          type: 'task',
+          time: 'Just Now'
+        });
+      }
+      
+      // 2. Management -> Employee (Feedback/Improvement/Completion)
+      if (status === 'Need to Improve' || status === 'Completed') {
+        const msg = status === 'Need to Improve' ? 'need to improve' : 'updated successfully';
+        await Notification.create({
+          userId: employeeId,
+          message: msg,
+          type: 'task'
+        });
+        
+        // Broadcast to specific employee
+        io.to(`user_${employeeId}`).emit('notification', {
+          message: msg,
+          type: 'task',
+          time: 'Just Now'
+        });
+      }
+    }
+    
+    res.json({ success: true, data: task });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// --- ADMIN / UTILS ---
-exports.getAllTasks = async (req, res) => {
-  try {
-    const tasks = await Task.find()
-      .populate('createdBy', 'name email')
-      .populate('assignedManager', 'name email')
-      .populate('assignedEmployee', 'name email')
-      .populate('assignedEmployees', 'name email profileImage')
-      .populate('comments.userId', 'name profileImage');
-    res.status(200).json(tasks);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
+// @desc    Delete task
+// @route   DELETE /api/tasks/:id
 exports.deleteTask = async (req, res) => {
   try {
-    await Task.findByIdAndDelete(req.params.taskId);
-    res.status(200).json({ message: 'Protocol Ejected' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
+
+    // Remove files from disk
+    task.attachments.forEach(file => {
+      if (fs.existsSync(file.fileUrl)) {
+        fs.unlinkSync(file.fileUrl);
+      }
+    });
+
+    await task.deleteOne();
+    res.json({ success: true, message: 'Task deleted' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };

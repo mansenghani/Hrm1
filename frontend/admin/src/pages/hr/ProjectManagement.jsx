@@ -95,7 +95,7 @@ const ProjectManagement = () => {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div>
-          <h1 className="text-3xl font-black text-[#1E2026] tracking-tight leading-none mb-3 uppercase italic">
+          <h1 className="text-3xl font-black text-[#1E2026] tracking-tight leading-none mb-3 uppercase">
             Project <span className="text-[#F0B90B]">Registry</span>
           </h1>
           <p className="text-[#848E9C] font-bold text-[10px] uppercase tracking-[0.2em] flex items-center gap-3">

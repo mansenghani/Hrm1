@@ -134,8 +134,8 @@ const EmployeeDashboard = () => {
             {/* HEADER */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 border-b border-[#c5c0b1] pb-10">
                 <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#ff4f00] mb-2 italic">Intelligence Terminal V4.2</p>
-                    <h1 className="text-6xl font-black text-[#201515] tracking-tighter leading-none mb-3 italic uppercase">
+                    <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#ff4f00] mb-2">Intelligence Terminal V4.2</p>
+                    <h1 className="text-6xl font-black text-[#201515] tracking-tighter leading-none mb-3 uppercase">
                         Active <span className="text-[#ff4f00]">Workspace.</span>
                     </h1>
                     <p className="text-[#939084] font-bold text-[11px] uppercase tracking-[0.2em] flex items-center gap-3">
@@ -155,9 +155,9 @@ const EmployeeDashboard = () => {
             {/* QUICK STATS */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {stats.map((stat, i) => (
-                    <div key={i} className="bg-white border border-[#c5c0b1] p-10 rounded-[32px] group hover:border-[#ff4f00] transition-all shadow-sm">
+                    <div key={i} className="bg-white border border-[#c5c0b1] p-10 rounded-[5px] group hover:border-[#ff4f00] transition-all shadow-sm">
                         <div className="flex justify-between items-start mb-6">
-                            <div className={`p-4 rounded-2xl bg-[#eceae3] group-hover:bg-[#ff4f00]/10 transition-colors ${stat.color}`}>
+                            <div className={`p-4 rounded-[5px] bg-[#eceae3] group-hover:bg-[#ff4f00]/10 transition-colors ${stat.color}`}>
                                 <stat.icon size={24} />
                             </div>
                             <span className="text-[9px] font-black text-[#939084] uppercase tracking-widest italic">{stat.cap}</span>
@@ -175,7 +175,7 @@ const EmployeeDashboard = () => {
                 <div className="col-span-12 lg:col-span-8 space-y-8">
                     
                     {/* BIG TIMER CARD */}
-                    <div className={`rounded-[40px] py-12 px-14 transition-all duration-700 relative overflow-hidden group shadow-2xl border ${
+                    <div className={`rounded-[5px] py-12 px-14 transition-all duration-700 relative overflow-hidden group shadow-2xl border ${
                         session?.isRunning ? 'bg-[#fffdf9] border-[#24a148]' : 'bg-[#201515] border-transparent text-white'
                     }`}>
                         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
@@ -196,7 +196,7 @@ const EmployeeDashboard = () => {
                                 {!session ? (
                                     <button 
                                         onClick={() => handleTrack('start')}
-                                        className="bg-[#ff4f00] text-white h-16 px-10 rounded-2xl font-black text-[13px] uppercase tracking-[0.3em] flex items-center justify-center gap-4 hover:scale-105 active:scale-95 transition-all shadow-2xl border-none cursor-pointer"
+                                        className="bg-[#ff4f00] text-white h-16 px-10 rounded-[5px] font-black text-[13px] uppercase tracking-[0.3em] flex items-center justify-center gap-4 hover:scale-105 active:scale-95 transition-all shadow-2xl border-none cursor-pointer"
                                     >
                                         START <Play size={20} fill="white" />
                                     </button>
@@ -205,21 +205,21 @@ const EmployeeDashboard = () => {
                                         {!session.isRunning ? (
                                             <button 
                                                 onClick={() => handleTrack('resume')}
-                                                className="bg-[#24a148] text-white h-14 px-6 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all border-none cursor-pointer"
+                                                className="bg-[#24a148] text-white h-14 px-6 rounded-[5px] font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all border-none cursor-pointer"
                                             >
                                                 RESUME <Play size={16} fill="white" />
                                             </button>
                                         ) : (
                                             <button 
                                                 onClick={() => handleTrack('pause')}
-                                                className="bg-[#fffefb] text-[#201515] h-14 px-6 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#eceae3] transition-all border-none cursor-pointer shadow-lg"
+                                                className="bg-[#fffefb] text-[#201515] h-14 px-6 rounded-[5px] font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#eceae3] transition-all border-none cursor-pointer shadow-lg"
                                             >
                                                 PAUSE <Pause size={16} />
                                             </button>
                                         )}
                                         <button 
                                             onClick={() => handleTrack('stop')}
-                                            className="bg-[#ff4f00] text-white h-14 px-6 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all border-none cursor-pointer"
+                                            className="bg-[#ff4f00] text-white h-14 px-6 rounded-[5px] font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all border-none cursor-pointer"
                                         >
                                             STOP <Square size={16} fill="white" />
                                         </button>
@@ -230,7 +230,7 @@ const EmployeeDashboard = () => {
                     </div>
 
                     {/* RECENT ACTIVITY */}
-                    <div className="bg-white border border-[#c5c0b1] rounded-[40px] p-10 shadow-sm">
+                    <div className="bg-white border border-[#c5c0b1] rounded-[5px] p-10 shadow-sm">
                         <div className="flex justify-between items-center mb-10">
                             <h3 className="text-[12px] font-black uppercase tracking-[0.3em] italic">Active Assignments</h3>
                             <TrendingUp size={18} className="text-[#ff4f00]" />
@@ -240,9 +240,9 @@ const EmployeeDashboard = () => {
                                 <p className="text-[10px] text-[#939084] uppercase font-black tracking-widest italic text-center py-10 opacity-40">No pending task nodes in registry</p>
                             ) : (
                                 tasks.slice(0, 4).map((task, i) => (
-                                    <div key={i} className="flex items-center justify-between p-6 bg-[#fffdf9] border border-[#eceae3] rounded-2xl hover:border-[#ff4f00] transition-colors">
+                                    <div key={i} className="flex items-center justify-between p-6 bg-[#fffdf9] border border-[#eceae3] rounded-[5px] hover:border-[#ff4f00] transition-colors">
                                         <div className="flex items-center gap-6">
-                                            <div className="w-12 h-12 rounded-xl bg-[#201515] text-white flex items-center justify-center font-black italic">
+                                            <div className="w-12 h-12 rounded-[5px] bg-[#201515] text-white flex items-center justify-center font-black italic">
                                                 {task.title?.charAt(0) || 'T'}
                                             </div>
                                             <div>
@@ -260,7 +260,7 @@ const EmployeeDashboard = () => {
 
                 {/* SIDEBAR WIDGETS */}
                 <div className="col-span-12 lg:col-span-4 space-y-12">
-                    <div className="bg-[#fffdf9] border border-[#c5c0b1] p-10 rounded-[40px] shadow-sm">
+                    <div className="bg-[#fffdf9] border border-[#c5c0b1] p-10 rounded-[5px] shadow-sm">
                         <h3 className="text-[12px] font-black uppercase tracking-[0.3em] italic mb-10 flex items-center gap-3">
                             <Shield size={18} className="text-[#ff4f00]" />
                             Security Pulse
@@ -271,7 +271,7 @@ const EmployeeDashboard = () => {
                                 { label: 'Session Integrity', val: 'High', icon: Fingerprint },
                                 { label: 'Node Sync', val: 'Active', icon: Activity }
                             ].map((item, i) => (
-                                <div key={i} className="flex items-center justify-between p-5 bg-white border border-[#c5c0b1] rounded-2xl">
+                                <div key={i} className="flex items-center justify-between p-5 bg-white border border-[#c5c0b1] rounded-[5px]">
                                     <div className="flex items-center gap-4">
                                         <item.icon size={16} className="text-[#ff4f00]" />
                                         <span className="text-[11px] font-black uppercase tracking-widest">{item.label}</span>

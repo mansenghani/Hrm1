@@ -65,7 +65,7 @@ const ManagerProjects = () => {
             {/* HEADER */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div>
-                    <h1 className="text-4xl font-black text-[#1E2026] tracking-tighter leading-none mb-3 italic uppercase">
+                    <h1 className="text-4xl font-black text-[#1E2026] tracking-tighter leading-none mb-3 uppercase">
                         Mission <span className="text-[#3E74FF]">Matrix</span>
                     </h1>
                     <p className="text-[#848E9C] font-bold text-[10px] uppercase tracking-[0.2em] flex items-center gap-3">
@@ -79,7 +79,7 @@ const ManagerProjects = () => {
 
             {/* PROJECT GRID */}
             {projects.length === 0 ? (
-                <div className="p-20 border-2 border-dashed border-[#F5F5F5] rounded-[48px] flex flex-col items-center text-center">
+                <div className="p-20 border-2 border-dashed border-[#F5F5F5] rounded-[5px] flex flex-col items-center text-center">
                     <div className="w-20 h-20 bg-[#F5F5F5] rounded-full flex items-center justify-center text-[#848E9C] mb-6">
                         <TrendingUp size={32} />
                     </div>
@@ -91,7 +91,7 @@ const ManagerProjects = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {projects.map((project) => (
-                        <div key={project._id} className="bg-white border border-[#E6E8EA] rounded-[32px] p-8 hover:shadow-xl transition-all group relative overflow-hidden flex flex-col min-h-[380px]">
+                        <div key={project._id} className="bg-white border border-[#E6E8EA] rounded-[5px] p-8 hover:shadow-xl transition-all group relative overflow-hidden flex flex-col min-h-[380px]">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-[#F5F5F5] rounded-full -mr-16 -mt-16 opacity-30 group-hover:scale-125 transition-all duration-700"></div>
 
                             <div className="flex justify-between items-start mb-6 relative z-10">
@@ -125,7 +125,7 @@ const ManagerProjects = () => {
 
                             <button
                                 onClick={() => setActiveProject(project)}
-                                className="mt-8 py-4 bg-[#1E2026] text-white rounded-[20px] flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-widest hover:bg-[#3E74FF] transition-all group/btn active:scale-95 shadow-lg"
+                                className="mt-8 py-4 bg-[#1E2026] text-white rounded-[5px] flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-widest hover:bg-[#3E74FF] transition-all group/btn active:scale-95 shadow-lg"
                             >
                                 <TrendingUp size={16} />
                                 Manage Tactical Team
@@ -143,7 +143,7 @@ const ManagerProjects = () => {
                 >
                     <div
                         onClick={(e) => e.stopPropagation()}
-                        className="w-full max-w-2xl bg-white rounded-[24px] shadow-[0_32px_128px_rgba(0,0,0,0.18)] border border-slate-200 overflow-hidden flex flex-col max-h-[80vh] cursor-default"
+                        className="w-full max-w-2xl bg-white rounded-[5px] shadow-[0_32px_128px_rgba(0,0,0,0.18)] border border-slate-200 overflow-hidden flex flex-col max-h-[80vh] cursor-default"
                     >
                         {/* SOPHISTICATED HEADER */}
                         <div className="bg-[#0F172A] p-10 text-white flex justify-between items-center relative overflow-hidden">
@@ -189,13 +189,13 @@ const ManagerProjects = () => {
                                                 if (isAlreadyAssigned) return;
                                                 setSelectedNodes(prev => prev.includes(emp._id) ? prev.filter(id => id !== emp._id) : [...prev, emp._id]);
                                             }}
-                                            className={`group flex items-center justify-between p-4 px-6 rounded-2xl border transition-all duration-200 ${isAlreadyAssigned ? 'bg-slate-50/50 border-slate-100 opacity-40 grayscale cursor-not-allowed' :
+                                            className={`group flex items-center justify-between p-4 px-6 rounded-[5px] border transition-all duration-200 ${isAlreadyAssigned ? 'bg-slate-50/50 border-slate-100 opacity-40 grayscale cursor-not-allowed' :
                                                     isSelected ? 'bg-white border-indigo-600 shadow-sm ring-1 ring-indigo-600/10' :
                                                         'bg-white border-slate-200 hover:border-indigo-400 cursor-pointer shadow-sm hover:translate-x-1'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-5">
-                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg transition-all ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-slate-100'
+                                                <div className={`w-12 h-12 rounded-[5px] flex items-center justify-center font-bold text-lg transition-all ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-slate-100'
                                                     }`}>
                                                     {emp.name?.charAt(0)}
                                                 </div>
@@ -210,11 +210,11 @@ const ManagerProjects = () => {
                                                     Assigned
                                                 </div>
                                             ) : isSelected ? (
-                                                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg">
+                                                <div className="w-8 h-8 bg-indigo-600 rounded-[5px] flex items-center justify-center text-white shadow-lg">
                                                     <CheckCircle2 size={18} />
                                                 </div>
                                             ) : (
-                                                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all">
+                                                <div className="w-8 h-8 rounded-[5px] flex items-center justify-center text-slate-300 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all">
                                                     <Plus size={20} />
                                                 </div>
                                             )}
@@ -242,7 +242,7 @@ const ManagerProjects = () => {
                                 <button
                                     disabled={selectedNodes.length === 0 || assigning}
                                     onClick={handleAssignNodes}
-                                    className="px-10 py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-[12px] uppercase tracking-widest shadow-[0_8px_20px_rgba(79,70,229,0.3)] hover:bg-slate-950 hover:shadow-none hover:translate-y-[-2px] active:translate-y-0 disabled:opacity-30 disabled:translate-y-0 transition-all flex items-center gap-3"
+                                    className="px-10 py-3.5 bg-indigo-600 text-white rounded-[5px] font-bold text-[12px] uppercase tracking-widest shadow-[0_8px_20px_rgba(79,70,229,0.3)] hover:bg-slate-950 hover:shadow-none hover:translate-y-[-2px] active:translate-y-0 disabled:opacity-30 disabled:translate-y-0 transition-all flex items-center gap-3"
                                 >
                                     {assigning ? 'Scheduling...' : 'Confirm Deployment'}
                                     <ArrowRight size={16} />

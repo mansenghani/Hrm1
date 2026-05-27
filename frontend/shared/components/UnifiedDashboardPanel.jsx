@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import {
   Clock, Zap, Activity, Users, Search,
   BarChart3, RefreshCw, Calendar as CalendarIcon,
-  ChevronRight, AlertTriangle
+  ChevronRight, AlertTriangle, ChevronDown
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -11,7 +11,7 @@ import {
 
 // Reusable Components
 const StatsCard = ({ title, value, icon: Icon, colorClass }) => (
-  <div className="bg-white border border-[#E6E8EA] p-6 rounded-2xl shadow-sm flex flex-col justify-between group hover:border-[#F0B90B] transition-all">
+  <div className="bg-white border border-[#E6E8EA] p-6 rounded-[5px] shadow-sm flex flex-col justify-between group hover:border-[#ff4f00] transition-all">
     <div className="flex justify-between items-center mb-4">
       <span className="text-[10px] font-black uppercase tracking-widest text-[#848E9C]">{title}</span>
       <div className={`w-8 h-8 rounded-full flex items-center justify-center bg-gray-50 group-hover:bg-opacity-80 transition-all ${colorClass}`}>
@@ -92,9 +92,24 @@ const UnifiedDashboardPanel = () => {
     roleFilter: ''
   });
   const [loading, setLoading] = useState(true);
+  const [openDropdown, setOpenDropdown] = useState(null); // 'time' or 'role'
 
+  const timeRef = useRef(null);
+  const roleRef = useRef(null);
   const userRole = sessionStorage.getItem('role');
   const token = sessionStorage.getItem('token');
+
+  // 🛡️ CLOSE DROPDOWN ON CLICK OUTSIDE
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (timeRef.current && !timeRef.current.contains(event.target) &&
+          roleRef.current && !roleRef.current.contains(event.target)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -124,37 +139,67 @@ const UnifiedDashboardPanel = () => {
   };
 
   return (
-    <div className="w-full bg-white rounded-[32px] shadow-xl border border-[#E6E8EA] overflow-hidden mt-8">
+    <div className="w-full bg-white rounded-[5px] shadow-xl border border-[#E6E8EA] overflow-hidden">
       {/* HEADER & FILTERS */}
-      <div className="p-8 border-b border-[#E6E8EA] bg-[#F8FAFC] flex flex-col lg:flex-row justify-between gap-6">
+      <div className="p-10 border-b border-[#E6E8EA] bg-[#F8FAFC] flex flex-col lg:flex-row justify-between gap-6">
         <div>
           <h2 className="text-[18px] font-black text-[#1E2026] uppercase tracking-[0.2em]">Operational Overview</h2>
           <p className="text-[11px] font-bold text-[#848E9C] uppercase tracking-widest mt-1">Unified Performance Metrics</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
-          <select
-            value={filters.timeRange}
-            onChange={(e) => setFilters(prev => ({ ...prev, timeRange: e.target.value }))}
-            className="px-4 py-2.5 rounded-xl border border-[#E6E8EA] text-[11px] font-black uppercase tracking-widest bg-white focus:border-[#F0B90B] outline-none"
-          >
-            <option value="today">Today</option>
-            <option value="weekly">This Week</option>
-            <option value="monthly">This Month</option>
-          </select>
+          {/* TIME RANGE DROPDOWN */}
+          <div className="relative" ref={timeRef}>
+            <button 
+              onClick={() => setOpenDropdown(openDropdown === 'time' ? null : 'time')}
+              className="px-4 py-2.5 bg-white border border-[#eceae3] rounded-[5px] text-[10px] font-black uppercase tracking-widest text-[#201515] outline-none flex items-center gap-4 cursor-pointer transition-all hover:border-[#ff4f00] min-w-[140px] justify-between shadow-sm"
+            >
+              {filters.timeRange === 'today' ? 'Today' : filters.timeRange === 'weekly' ? 'This Week' : 'This Month'}
+              <ChevronDown size={14} className={`transition-transform ${openDropdown === 'time' ? 'rotate-180 text-[#ff4f00]' : 'rotate-0 text-[#939084]'}`} />
+            </button>
+            {openDropdown === 'time' && (
+              <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-[#eceae3] rounded-[5px] shadow-xl z-[60] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                {[
+                  { id: 'today', label: 'Today' },
+                  { id: 'weekly', label: 'This Week' },
+                  { id: 'monthly', label: 'This Month' }
+                ].map((opt) => (
+                  <div key={opt.id} onClick={() => { setFilters(f => ({ ...f, timeRange: opt.id })); setOpenDropdown(null); }}
+                    className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-[#201515] hover:bg-[#ff4f00]/5 hover:text-[#ff4f00] cursor-pointer transition-colors border-b border-[#f8f8f8] last:border-none">
+                    {opt.label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {(userRole === 'admin' || userRole === 'hr' || userRole === 'manager') && (
             <>
-              <select
-                value={filters.roleFilter}
-                onChange={(e) => setFilters(prev => ({ ...prev, roleFilter: e.target.value }))}
-                className="px-4 py-2.5 rounded-xl border border-[#E6E8EA] text-[11px] font-black uppercase tracking-widest bg-white focus:border-[#F0B90B] outline-none"
-              >
-                <option value="">All Roles</option>
-                <option value="employee">Employees</option>
-                <option value="manager">Managers</option>
-                {userRole === 'admin' && <option value="hr">HR</option>}
-              </select>
+              {/* ROLE FILTER DROPDOWN */}
+              <div className="relative" ref={roleRef}>
+                <button 
+                  onClick={() => setOpenDropdown(openDropdown === 'role' ? null : 'role')}
+                  className="px-4 py-2.5 bg-white border border-[#eceae3] rounded-[5px] text-[10px] font-black uppercase tracking-widest text-[#201515] outline-none flex items-center gap-4 cursor-pointer transition-all hover:border-[#ff4f00] min-w-[140px] justify-between shadow-sm"
+                >
+                  {filters.roleFilter === '' ? 'All Roles' : filters.roleFilter === 'hr' ? 'HR' : filters.roleFilter === 'manager' ? 'Managers' : 'Employees'}
+                  <ChevronDown size={14} className={`transition-transform ${openDropdown === 'role' ? 'rotate-180 text-[#ff4f00]' : 'rotate-0 text-[#939084]'}`} />
+                </button>
+                {openDropdown === 'role' && (
+                  <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-[#eceae3] rounded-[5px] shadow-xl z-[60] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                    {[
+                      { id: '', label: 'All Roles' },
+                      { id: 'employee', label: 'Employees' },
+                      { id: 'manager', label: 'Managers' },
+                      { id: 'hr', label: 'HR' }
+                    ].filter(opt => opt.id !== 'hr' || userRole === 'admin').map((opt) => (
+                      <div key={opt.id} onClick={() => { setFilters(f => ({ ...f, roleFilter: opt.id })); setOpenDropdown(null); }}
+                        className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-[#201515] hover:bg-[#ff4f00]/5 hover:text-[#ff4f00] cursor-pointer transition-colors border-b border-[#f8f8f8] last:border-none">
+                        {opt.label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#848E9C]" size={14} />
@@ -163,19 +208,19 @@ const UnifiedDashboardPanel = () => {
                   placeholder="USER ID..."
                   value={filters.userFilter}
                   onChange={(e) => setFilters(prev => ({ ...prev, userFilter: e.target.value }))}
-                  className="pl-9 pr-4 py-2.5 w-40 rounded-xl border border-[#E6E8EA] text-[11px] font-black uppercase tracking-widest bg-white focus:border-[#F0B90B] outline-none"
+                  className="pl-9 pr-4 py-2.5 w-40 rounded-[5px] border border-[#E6E8EA] text-[11px] font-black uppercase tracking-widest bg-white focus:border-[#ff4f00] outline-none shadow-sm transition-all"
                 />
               </div>
             </>
           )}
 
-          <button onClick={fetchData} className="w-10 h-10 flex items-center justify-center bg-[#F5F5F5] hover:bg-[#F0B90B] hover:text-white rounded-xl transition-all">
+          <button onClick={fetchData} className="w-10 h-10 flex items-center justify-center bg-[#F5F5F5] hover:bg-[#ff4f00] hover:text-white rounded-[5px] transition-all shadow-sm">
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
       </div>
 
-      <div className="p-8">
+      <div className="p-10">
         {/* STATS CARDS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard title="Total Time" value={formatHrs(data.stats.totalTime)} icon={Clock} colorClass="text-blue-500" />
@@ -186,15 +231,15 @@ const UnifiedDashboardPanel = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* CHART SECTION */}
-          <div className="lg:col-span-2 bg-white border border-[#E6E8EA] rounded-3xl p-6 shadow-sm">
+          <div className="lg:col-span-2 bg-white border border-[#E6E8EA] rounded-[5px] p-8 shadow-sm">
             <h3 className="text-[12px] font-black uppercase tracking-[0.2em] text-[#1E2026] mb-6">Work Hours Trend</h3>
-            <div className="h-[250px] w-full">
+            <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.chartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F5F5F5" />
                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#848E9C', fontWeight: 700 }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#848E9C', fontWeight: 700 }} />
-                  <Tooltip cursor={{ fill: '#F5F7FA' }} contentStyle={{ borderRadius: '12px', border: '1px solid #E6E8EA', fontWeight: 'bold' }} />
+                  <Tooltip cursor={{ fill: '#F5F7FA' }} contentStyle={{ borderRadius: '5px', border: '1px solid #E6E8EA', fontWeight: 'bold' }} />
                   <Bar dataKey="active" fill="#24A148" radius={[4, 4, 0, 0]} stackId="a" />
                   <Bar dataKey="idle" fill="#FF832B" radius={[4, 4, 0, 0]} stackId="a" />
                 </BarChart>
@@ -203,16 +248,16 @@ const UnifiedDashboardPanel = () => {
           </div>
 
           {/* NOTIFICATIONS & ACTIVITY PANEL */}
-          <div className="bg-white border border-[#E6E8EA] rounded-3xl p-6 shadow-sm flex flex-col h-[320px]">
+          <div className="bg-white border border-[#E6E8EA] rounded-[5px] p-8 shadow-sm flex flex-col h-[380px]">
             <h3 className="text-[12px] font-black uppercase tracking-[0.2em] text-[#1E2026] mb-6 flex items-center gap-2">
-              <Activity size={16} className="text-[#F0B90B]" /> Recent Activity
+              <Activity size={16} className="text-[#ff4f00]" /> Recent Activity
             </h3>
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               {data.activityLogs.length === 0 ? (
                 <div className="text-center text-[#848E9C] text-[10px] uppercase font-black tracking-widest mt-10">No recent activity</div>
               ) : (
                 data.activityLogs.map((log, i) => (
-                  <div key={i} className="flex justify-between items-center p-3 bg-[#F5F7FA] rounded-xl hover:bg-gray-100 transition-colors">
+                  <div key={i} className="flex justify-between items-center p-4 bg-[#F5F7FA] rounded-[5px] hover:bg-gray-100 transition-colors">
                     <div>
                       <p className="text-[12px] font-black text-[#1E2026]">{log.name}</p>
                       <p className="text-[9px] font-bold text-[#848E9C] uppercase tracking-widest">{log.date}</p>
@@ -229,7 +274,7 @@ const UnifiedDashboardPanel = () => {
         </div>
 
         {/* TABLE SECTION */}
-        <div className="mt-8 border border-[#E6E8EA] rounded-3xl overflow-hidden shadow-sm">
+        <div className="mt-8 border border-[#E6E8EA] rounded-[5px] overflow-hidden shadow-sm">
           <div className="bg-white p-6 border-b border-[#E6E8EA]">
             <h3 className="text-[12px] font-black uppercase tracking-[0.2em] text-[#1E2026]">System Registry</h3>
           </div>

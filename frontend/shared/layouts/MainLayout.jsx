@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import {
   ShieldCheck,
   Search,
@@ -25,7 +26,8 @@ import {
   MessageSquare,
   AlertCircle,
   Play,
-  Camera
+  Camera,
+  PlusCircle
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { API_BASE_URL } from '@shared/services/api';
@@ -43,24 +45,31 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   const token = sessionStorage.getItem('token');
   const [userProfile, setUserProfile] = useState(null);
 
+  // 🛡️ DYNAMIC ROLE DERIVATION (URL-FIRST)
+  const pathRole = location.pathname.split('/')[1];
+  const roleMap = { admin: 'admin', hr: 'hr', manager: 'manager', employee: 'employee' };
+  const activeRole = roleMap[pathRole] ? pathRole : role;
+
   // 🛡️ SYNC LIVE NOTIFICATIONS
   useEffect(() => {
     const fetchNotifications = async () => {
-      if (!token || role !== 'employee') return;
+      if (!token) return;
       try {
-        const res = await axios.get('/api/tasks/my', { headers: { Authorization: `Bearer ${token}` } });
-        const tasks = res.data || [];
-        const alerts = tasks.filter(t => t.status === 'rework' || t.status === 'submitted').map(t => ({
-          type: t.status === 'rework' ? 'rework' : 'task',
-          text: t.status === 'rework' ? `Rework Needed: ${t.title}` : `Status Update: ${t.title}`,
-          time: 'Active Now',
-          path: `/employee/projects?taskId=${t._id}`
+        const res = await axios.get('/api/notifications', { headers: { Authorization: `Bearer ${token}` } });
+        const items = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+        const alerts = items.map(n => ({
+          type: n.type || 'task',
+          text: n.message,
+          time: n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+          path: n.type === 'task' ? `/${activeRole}/task-management` : `/${activeRole}/dashboard`
         }));
         setLiveNotifications(alerts.slice(0, 5));
       } catch (err) { console.error('Alert Sync Failed:', err); }
     };
     fetchNotifications();
-  }, [token, role]);
+    const interval = setInterval(fetchNotifications, 60000); // Back-up poll every min
+    return () => clearInterval(interval);
+  }, [token, activeRole]);
 
   // 🛡️ CLICK OUTSIDE HANDLER
   useEffect(() => {
@@ -131,41 +140,46 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
         return [
           { name: 'Dashboard', path: '/hr/dashboard', icon: LayoutDashboard },
           { name: 'Employees', path: '/hr/employees', icon: Users },
-          { name: 'Tasks', path: '/hr/tasks', icon: CheckSquare },
-          { name: 'Attendance', path: '/hr/attendance', icon: Calendar },
+          { name: 'Daily Tasks Board', path: '/hr/tasks', icon: CheckSquare },
+          // { name: 'Task Management', path: '/hr/task-management', icon: ClipboardList },
+          // { name: 'Attendance', path: '/hr/attendance', icon: Calendar },
           { name: 'Time Tracker', path: '/hr/time-tracker', icon: Clock },
           { name: 'Team Chat', path: '/hr/chat', icon: MessageSquare },
-          { name: 'Project Registry', path: '/hr/projects', icon: Briefcase },
+          // { name: 'Project Registry', path: '/hr/projects', icon: Briefcase },
           { name: 'Monitoring Logs', path: '/hr/screenshots', icon: Camera },
-          { name: 'Request For Leave', path: '/hr/leave', icon: FileText },
+          // { name: 'Request For Leave', path: '/hr/leave', icon: FileText },
         ];
       case 'employee':
         return [
           { name: 'Dashboard', path: '/employee/dashboard', icon: LayoutDashboard },
-          { name: 'Active Tasks', path: '/employee/projects', icon: Target },
+          // { name: 'Task Management', path: '/employee/task-management', icon: ClipboardList },
+          // { name: 'Active Projects', path: '/employee/projects', icon: Target },
           { name: 'Time Tracker', path: '/employee/time-tracker', icon: Clock },
           { name: 'Team Chat', path: '/employee/chat', icon: MessageSquare },
-          { name: 'Request For Leave', path: '/employee/leave', icon: FileText },
+          { name: 'Create Task', path: '/employee/task-management/create', icon: PlusCircle },
+          // { name: 'Request For Leave', path: '/employee/leave', icon: FileText },
         ];
       case 'manager':
         return [
           { name: 'Dashboard', path: '/manager/dashboard', icon: LayoutDashboard },
-          { name: 'Manage Task', path: '/manager/tasks', icon: ClipboardList },
-          { name: 'Project Hub', path: '/manager/projects', icon: Briefcase },
+          { name: 'Daily Tasks Board', path: '/manager/tasks', icon: CheckSquare },
+          // { name: 'Task Management', path: '/manager/task-management', icon: ClipboardList },
+          // { name: 'Project Hub', path: '/manager/projects', icon: Briefcase },
           { name: 'Time Tracker', path: '/manager/time-tracker', icon: Clock },
           { name: 'Team Chat', path: '/manager/chat', icon: MessageSquare },
-          { name: 'Team Attendance', path: '/manager/attendance', icon: Calendar },
+          // { name: 'Team Attendance', path: '/manager/attendance', icon: Calendar },
           { name: 'Monitoring Logs', path: '/manager/screenshots', icon: Camera },
-          { name: 'Review Leaves', path: '/manager/leave', icon: FileText },
+          // { name: 'Review Leaves', path: '/manager/leave', icon: FileText },
         ];
       case 'admin':
       default:
         return [
           { name: 'Dashboard', path: `/${currentRole}/dashboard`, icon: LayoutDashboard },
           { name: 'Employees', path: `/${currentRole}/employees`, icon: Users },
-          { name: 'Tasks', path: `/${currentRole}/tasks`, icon: CheckSquare },
-          { name: 'Request For Leave', path: `/${currentRole}/leave`, icon: FileText },
-          { name: 'Attendance', path: `/${currentRole}/attendance`, icon: Calendar },
+          { name: 'Daily Tasks Board', path: `/${currentRole}/tasks`, icon: CheckSquare },
+          // { name: 'Task Management', path: `/${currentRole}/task-management`, icon: ClipboardList },
+          // { name: 'Request For Leave', path: `/${currentRole}/leave`, icon: FileText },
+          // { name: 'Attendance', path: `/${currentRole}/attendance`, icon: Calendar },
           { name: 'Time Tracker', path: `/${currentRole}/time-tracker`, icon: Clock },
           { name: 'Global Chat', path: `/${currentRole}/chat`, icon: MessageSquare },
           { name: 'Payroll', path: `/${currentRole}/payroll`, icon: Wallet },
@@ -176,11 +190,6 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
         ];
     }
   };
-
-  // 🛡️ DYNAMIC ROLE DERIVATION (URL-FIRST)
-  const pathRole = location.pathname.split('/')[1];
-  const roleMap = { admin: 'admin', hr: 'hr', manager: 'manager', employee: 'employee' };
-  const activeRole = roleMap[pathRole] ? pathRole : role;
 
   const menuItems = navItems ? navItems.map(item => ({
     name: item.label || item.name,
@@ -214,20 +223,28 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   // 🔌 SOCKET INITIALIZATION
   useEffect(() => {
     if (!token) return;
-    const host = window.location.hostname;
-    const socketUrl = host === 'localhost' ? 'http://localhost:5000' : `http://${host}:5000`;
-    const s = io(socketUrl, { withCredentials: true });
-    
+    const s = io(window.location.origin, { withCredentials: true });
+
     s.on('connect', () => {
       const user = JSON.parse(sessionStorage.getItem('user'));
       if (user) s.emit('join_notifications', { userId: user._id || user.id, role: user.role });
+    });
+
+    s.on('notification', (data) => {
+      const newAlert = {
+        type: data.type || 'task',
+        text: data.message,
+        time: 'Just Now',
+        path: data.type === 'task' ? `/${activeRole}/task-management` : `/${activeRole}/dashboard`
+      };
+      setLiveNotifications(prev => [newAlert, ...prev].slice(0, 5));
+      toast(data.message, { icon: '🔔', style: { borderRadius: '5px', background: '#201515', color: '#fff', fontWeight: 900, fontSize: '12px' } });
     });
 
     s.on('timer_paused', (data) => {
       setIsTrackingActive(false);
       if (data.reason === 'inactivity') {
         setIsPausedByIdle(true);
-        // Silenced per user request: No more noisy idle popups
         console.log("Inactivity Trace: Web-side idle state synchronized");
       }
     });
@@ -239,7 +256,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
 
     setSocket(s);
     return () => s.disconnect();
-  }, [token]);
+  }, [token, activeRole]);
 
   // 🛡️ INITIAL STATUS FETCH & POLLING
   useEffect(() => {
@@ -249,17 +266,17 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
         const res = await axios.get('/api/timer/status', { headers: { Authorization: `Bearer ${token}` } });
         setIsTrackingActive(!!res.data?.isRunning);
         if (res.data?.status === 'idle') setIsPausedByIdle(true);
-        
+
         // 🔄 Sync last activity from server using clock skew compensation
         if (res.data?.lastActiveTime && res.data?.serverTime) {
           const serverNow = Date.parse(res.data.serverTime);
           const serverLast = Date.parse(res.data.lastActiveTime);
           const localNow = Date.now();
-          
+
           if (!isNaN(serverNow) && !isNaN(serverLast)) {
             const sinceLast = serverNow - serverLast;
             const adjustedLastActivity = localNow - sinceLast;
-            
+
             if (adjustedLastActivity > lastActivity) {
               setLastActivity(adjustedLastActivity);
               resetIdleTimer(adjustedLastActivity);
@@ -286,7 +303,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     if (!token || !isTrackingActive) return;
     const now = Date.now();
     if (now - lastServerSync < 15000) return; // 15s throttle
-    
+
     try {
       await axios.post('/api/timer/update', { type }, { headers: { Authorization: `Bearer ${token}` } });
       setLastServerSync(now);
@@ -304,7 +321,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
 
   const resetIdleTimer = (manualTime) => {
     if (idleTimer) clearTimeout(idleTimer);
-    
+
     const referenceTime = manualTime || lastActivity;
     const timeSinceLast = Date.now() - referenceTime;
     const remaining = Math.max(0, (5 * 60 * 1000) - timeSinceLast);
@@ -314,7 +331,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
         pauseTimer();
       }
     }, remaining);
-    
+
     setIdleTimer(timer);
   };
 
@@ -332,7 +349,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     window.addEventListener('click', handleActivity);
     window.addEventListener('scroll', handleActivity);
     window.addEventListener('focus', handleActivity);
-    
+
     const handleVisibilityChange = () => {
       if (document.hidden) {
         // handleHidden logic if needed, but we keep tracking
@@ -385,17 +402,17 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
             </Link>
             <button
               onClick={toggleSidebar}
-              className="flex items-center justify-center w-10 h-10 hover:bg-[#eceae3] rounded-[6px] text-[#36342e] transition-all cursor-pointer border-none bg-transparent"
+              className="flex items-center justify-center w-10 h-10 hover:bg-[#eceae3] rounded-[5px] text-[#36342e] transition-all cursor-pointer border-none bg-transparent"
             >
               <Menu size={22} />
             </button>
           </div>
-          <nav className="hidden lg:flex items-center h-full gap-2">
+          <nav className="hidden xl:flex items-center h-full gap-2">
             {menuItems.slice(0, 4).map(item => (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`zap-tab ${location.pathname.startsWith(item.path) ? 'zap-tab-active' : ''}`}
+                className={`zap-tab ${location.pathname === item.path ? 'zap-tab-active' : ''}`}
               >
                 {item.name}
               </Link>
@@ -404,16 +421,16 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           <div className="ml-auto flex items-center h-full gap-4">
             {/* ⏱️ GLOBAL INACTIVITY TRACKER */}
             {isPausedByIdle && (
-              <button 
+              <button
                 onClick={handleResume}
-                className="flex items-center gap-2 px-4 py-1.5 bg-[#ff4f00] text-white rounded-lg border-none cursor-pointer hover:bg-[#e64600] transition-all animate-pulse"
+                className="flex items-center gap-2 px-4 py-1.5 bg-[#ff4f00] text-white rounded-[5px] border-none cursor-pointer hover:bg-[#e64600] transition-all animate-pulse"
               >
                 <Play size={14} fill="currentColor" />
                 <span className="text-[10px] font-black uppercase tracking-widest">Resume Timer</span>
               </button>
             )}
             {isTrackingActive && (
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#eceae3] rounded-lg border border-[#c5c0b1]">
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#eceae3] rounded-[5px] border border-[#c5c0b1]">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#24a148]"></div>
                 <span className="text-[10px] font-black text-[#201515] uppercase tracking-widest tabular-nums">
                   Active
@@ -421,10 +438,10 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
               </div>
             )}
             {!isTrackingActive && !isPausedByIdle && (
-               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#eceae3] rounded-lg border border-[#c5c0b1] opacity-50">
-                 <div className="w-1.5 h-1.5 rounded-full bg-[#939084]"></div>
-                 <span className="text-[10px] font-black text-[#201515] uppercase tracking-widest">Offline</span>
-               </div>
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#eceae3] rounded-[5px] border border-[#c5c0b1] opacity-50">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#939084]"></div>
+                <span className="text-[10px] font-black text-[#201515] uppercase tracking-widest">Offline</span>
+              </div>
             )}
 
             <button className="w-10 h-10 flex items-center justify-center text-[#36342e] hover:text-[#ff4f00] transition-colors relative group">
@@ -434,7 +451,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
             <div className="relative" ref={notificationRef}>
               <button
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all relative ${isNotificationsOpen ? 'bg-[#ff4f00] text-white shadow-lg' : 'text-[#36342e] hover:bg-[#eceae3]'}`}
+                className={`w-10 h-10 flex items-center justify-center rounded-[5px] transition-all relative ${isNotificationsOpen ? 'bg-[#ff4f00] text-white shadow-lg' : 'text-[#36342e] hover:bg-[#eceae3]'}`}
               >
                 <Bell size={20} />
                 {liveNotifications.length > 0 && (
@@ -443,7 +460,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
               </button>
 
               {isNotificationsOpen && (
-                <div className="absolute top-[80px] right-0 w-80 bg-white border border-[#c5c0b1] rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[100]">
+                <div className="absolute top-[80px] right-0 w-80 bg-white border border-[#c5c0b1] rounded-[5px] shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[100]">
                   <div className="p-4 border-b border-[#eceae3] bg-[#fffdf9] flex justify-between items-center">
                     <span className="text-[11px] font-black uppercase tracking-widest text-[#201515]">Intelligence Alerts</span>
                     {liveNotifications.length > 0 && (
@@ -508,21 +525,21 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           </div>
         </div>
       </header>
-      <div className="flex flex-1 w-full overflow-hidden relative">
+      <div className="flex flex-1 w-full relative">
         <aside
-          className="bg-transparent flex flex-col shrink-0 border-r border-[#c5c0b1] transition-[width] duration-300 ease-in-out overflow-hidden hidden md:flex"
+          className="bg-transparent flex flex-col shrink-0 border-r border-[#c5c0b1] transition-[width] duration-300 ease-in-out overflow-y-auto scrollbar-hide hidden md:flex sticky top-[56px] h-[calc(100vh-56px)]"
           style={{ width: isSidebarOpen ? '220px' : '64px' }}
         >
           <div className="flex flex-col pb-12 w-full">
             <nav className="flex-1 space-y-2 pt-[10px] px-3">
               {menuItems.map((item) => {
-                const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+                const isActive = location.pathname === item.path;
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center h-12 text-[15px] font-bold no-underline rounded-[6px] transition-all border border-transparent group ${isSidebarOpen ? 'px-4 gap-3 w-full' : 'px-0 justify-center w-full'} ${isActive ? 'text-[#ff4f00] bg-[#fffdf9] !border-[#ff4f00] shadow-sm' : 'text-[#201515] hover:bg-[#eceae3] hover:border-[#c5c0b1]'}`}
+                    className={`flex items-center h-12 text-[15px] font-bold no-underline rounded-[5px] transition-all border border-transparent group ${isSidebarOpen ? 'px-4 gap-3 w-full' : 'px-0 justify-center w-full'} ${isActive ? 'text-[#ff4f00] bg-[#fffdf9] !border-[#ff4f00] shadow-sm' : 'text-[#201515] hover:bg-[#eceae3] hover:border-[#c5c0b1]'}`}
                     title={!isSidebarOpen ? item.name : ""}
                   >
                     <div className={`shrink-0 flex items-center justify-center transition-all ${isSidebarOpen ? 'w-5' : 'w-12'}`}>
@@ -535,17 +552,25 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
             </nav>
           </div>
         </aside>
-        <main className="flex-1 overflow-y-auto bg-[#fffefb] relative">
-          <div className="py-6 px-6 lg:px-8 max-w-[1600px] mx-auto animate-fade-in w-full min-h-full flex flex-col">
-            <div className="flex-1">
+        <main className="flex-1 min-w-0 overflow-hidden bg-[#fffefb] relative flex flex-col">
+          {location.pathname.endsWith('/chat') ? (
+            <div className="h-[calc(100vh-56px)] relative overflow-hidden">
               <Outlet />
               {children}
             </div>
-            {/* LARGE VERTICAL SPACER */}
-            <div className="h-24 shrink-0"></div>
-          </div>
+          ) : (
+            <div className="py-6 px-6 lg:px-8 max-w-[1600px] mx-auto animate-fade-in w-full min-h-full flex flex-col">
+              <div className="flex-1">
+                <Outlet />
+                {children}
+              </div>
+              {/* LARGE VERTICAL SPACER */}
+              <div className="h-24 shrink-0"></div>
+            </div>
+          )}
         </main>
       </div>
+      {!location.pathname.endsWith('/chat') && (
       <footer className="py-6 px-12 border-t border-[#c5c0b1] bg-[#fffefb] flex justify-between items-center text-[11px] text-[#939084] font-bold uppercase tracking-widest z-50">
         <div className="flex gap-10 items-center">
           <div className="flex items-center gap-2">
@@ -556,6 +581,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
         </div>
         <span>© 2026 Zapier HR Infrastructure</span>
       </footer>
+      )}
     </div>
   );
 };

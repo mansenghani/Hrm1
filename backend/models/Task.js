@@ -1,76 +1,93 @@
 const mongoose = require('mongoose');
 
 const taskSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  employeeName: String,
+  employeeRole: String,
+  managerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  teamId: String,
   title: {
     type: String,
     required: true,
+    trim: true
   },
   description: {
     type: String,
-    required: true,
-  },
-  createdBy: { // Usually HR or Admin
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-  },
-  assignedManager: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
-  assignedEmployee: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
-  assignedEmployees: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  }],
-  project: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Project',
-  },
-  status: {
-    type: String,
-    enum: ['assigned', 'in_progress', 'submitted', 'under_review', 'completed', 'rework'],
-    default: 'assigned',
+    required: true
   },
   priority: {
     type: String,
-    enum: ['low', 'medium', 'high'],
-    default: 'medium',
+    enum: ['Low', 'Medium', 'High'],
+    default: 'Medium'
   },
-  progress: {
-    type: Number,
-    default: 0,
-    min: 0,
-    max: 100
+  status: {
+    type: String,
+    enum: ['Completed', 'Pending', 'Ongoing', 'Review', 'Need to Improve'],
+    default: 'Ongoing'
   },
-  feedback: {
+  progressNote: {
+    type: String,
+    required: false // Only required on update/EOD
+  },
+  timeEstimate: {
     type: String,
     default: ''
   },
-  attachments: [
-    {
-      fileName: String,
-      fileUrl: String,
-      uploadedAt: { type: Date, default: Date.now }
+  sprintPoints: {
+    type: Number,
+    default: 0
+  },
+  tags: {
+    type: [String],
+    default: []
+  },
+  attachments: [{
+    fileName: String,
+    fileUrl: String,
+    fileType: String,
+    uploadedAt: {
+      type: Date,
+      default: Date.now
     }
-  ],
-  comments: [
-    {
-      userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-      userName: String,
-      profileImage: String,
-      role: String,
-      message: String,
-      createdAt: { type: Date, default: Date.now }
+  }],
+  comments: [{
+    userName: String,
+    userRole: String,
+    text: String,
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+    reactions: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
     }
-  ],
-  dueDate: {
-    type: Date,
-    required: true,
-  }
-}, { timestamps: true });
+  }],
+  date: {
+    type: String, // YYYY-MM-DD for easy filtering
+    default: () => new Date().toISOString().split('T')[0]
+  },
+  timeLogs: [{
+    employeeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    employeeName: String,
+    duration: Number, // in seconds
+    startTime: { type: Date, default: Date.now },
+    endTime: { type: Date, default: Date.now },
+    notes: String,
+    tags: [String]
+  }]
+}, {
+  timestamps: true
+});
 
 module.exports = mongoose.model('Task', taskSchema);

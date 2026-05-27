@@ -1,0 +1,322 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Search, Filter, Plus, Edit, Trash2, CheckCircle2, 
+  Clock, AlertCircle, FileText, Download, Eye, ArrowRight,
+  MoreVertical, Calendar, User, Briefcase, RefreshCw, X, ChevronLeft, ChevronRight
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+
+const TaskManagement = () => {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [selectedTask, setSelectedTask] = useState(null);
+  
+  // Universal Gallery State
+  const [previewGallery, setPreviewGallery] = useState({ items: [], index: 0 });
+
+  const role = sessionStorage.getItem('role');
+  const token = sessionStorage.getItem('token');
+  const navigate = useNavigate();
+
+  const headers = { Authorization: `Bearer ${token}` };
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const fetchTasks = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get('/api/tasks', { headers });
+      if (res.data.success) {
+        setTasks(res.data.data);
+      }
+    } catch (err) {
+      toast.error('Failed to load missions');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateStatus = async (id, status) => {
+    try {
+      await axios.put(`/api/tasks/${id}`, { status }, { headers });
+      toast.success(`Mission status: ${status}`);
+      fetchTasks();
+    } catch (err) {
+      toast.error('Update failed');
+    }
+  };
+
+  const quickCompleteTask = async (id) => {
+    try {
+      await axios.put(`/api/tasks/${id}`, { status: 'Completed' }, { headers });
+      toast.success('Mission Accomplished');
+      fetchTasks();
+    } catch (err) {
+      toast.error('Status injection failed');
+    }
+  };
+
+  const deleteTask = async (id) => {
+    if (!window.confirm('Erase this mission log permanently?')) return;
+    try {
+      await axios.delete(`/api/tasks/${id}`, { headers });
+      toast.success('Mission Expunged');
+      fetchTasks();
+    } catch (err) {
+      toast.error('Deletion failed');
+    }
+  };
+
+  const openGallery = (attachments, startIndex = 0) => {
+    if (!attachments || attachments.length === 0) return;
+
+    const galleryItems = attachments.map(file => {
+      // Precise mapping to DB schema
+      const filePath = file.fileName || file.path || file.filename || '';
+      const fileUrl = file.fileUrl || file.url || '';
+      const fileType = file.fileType || file.type || '';
+      const name = file.name || filePath || 'Mission Evidence';
+      
+      const isImage = (fileType.startsWith('image/')) || (name.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i));
+      
+      let url = '';
+      if (file instanceof File) {
+        url = URL.createObjectURL(file);
+      } else {
+        url = fileUrl || (filePath ? `/api/uploads/${filePath}` : '');
+      }
+
+      return { url, name, isImage };
+    });
+    
+    setPreviewGallery({ items: galleryItems, index: startIndex });
+  };
+
+  const filteredTasks = tasks.filter(task => {
+    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         task.assignedTo?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'All' || task.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Completed': return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+      case 'Ongoing': return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
+      case 'Pending': return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+      default: return 'bg-slate-500/10 text-slate-600 border-slate-500/20';
+    }
+  };
+
+  return (
+    <div className="p-4 md:p-8 bg-[#fcfcfc] min-h-screen animate-in fade-in duration-500">
+      {/* Universal Multi-Image Lightbox */}
+      {previewGallery.items.length > 0 && (
+        <div className="fixed inset-0 z-[9999] bg-[#201515]/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <button onClick={() => setPreviewGallery({ items: [], index: 0 })} className="absolute top-6 right-6 w-12 h-12 rounded-[5px] bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-all border-none cursor-pointer z-[10001]">
+            <X size={24} />
+          </button>
+          
+          {previewGallery.items.length > 1 && (
+            <>
+              <button 
+                onClick={(e) => { e.stopPropagation(); setPreviewGallery(prev => ({ ...prev, index: (prev.index - 1 + prev.items.length) % prev.items.length })) }}
+                className="absolute left-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-[5px] bg-white/10 text-white flex items-center justify-center hover:bg-[#ff4f00] transition-all border-none cursor-pointer z-[10001]"
+              >
+                <ChevronLeft size={32} />
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); setPreviewGallery(prev => ({ ...prev, index: (prev.index + 1) % prev.items.length })) }}
+                className="absolute right-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-[5px] bg-white/10 text-white flex items-center justify-center hover:bg-[#ff4f00] transition-all border-none cursor-pointer z-[10001]"
+              >
+                <ChevronRight size={32} />
+              </button>
+              <div className="absolute bottom-10 left-1/2 -translate-x-1/2 px-6 py-2 bg-white/10 rounded-[5px] text-white text-[12px] font-black uppercase tracking-[0.3em] backdrop-blur-md">
+                {previewGallery.index + 1} / {previewGallery.items.length}
+              </div>
+            </>
+          )}
+
+          <div className="max-w-full max-h-[85vh] flex flex-col items-center gap-6 animate-in zoom-in-95 duration-500">
+            {previewGallery.items[previewGallery.index].isImage ? (
+              <img 
+                src={previewGallery.items[previewGallery.index].url} 
+                alt="Full Preview" 
+                className="max-w-full max-h-[80vh] object-contain rounded-[5px] shadow-2xl ring-1 ring-white/10"
+                onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }}
+              />
+            ) : (
+              <div className="w-[400px] aspect-video bg-white/5 rounded-[5px] border border-white/10 flex flex-col items-center justify-center p-10 text-center gap-6 backdrop-blur-md">
+                <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center text-[#ff4f00]"><FileText size={40} /></div>
+                <div>
+                  <p className="text-white text-[18px] font-black tracking-tight line-clamp-1">{previewGallery.items[previewGallery.index].name}</p>
+                  <p className="text-white/40 text-[12px] font-bold uppercase tracking-widest mt-1">Non-Visual Document detected</p>
+                </div>
+                <a 
+                  href={previewGallery.items[previewGallery.index].url} 
+                  download 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full h-14 bg-[#ff4f00] text-white rounded-[5px] font-black text-[12px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 no-underline hover:scale-105 transition-all"
+                >
+                  DOWNLOAD FILE <Download size={18} />
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-8 rounded-[5px] border border-[#eceae3] shadow-sm">
+          <div>
+            <h1 className="text-4xl font-black text-[#201515] tracking-tighter uppercase leading-none">Mission <span className="text-[#ff4f00]">Control.</span></h1>
+            <p className="text-[12px] font-bold text-[#939084] uppercase tracking-[0.2em] mt-2 flex items-center gap-2 ml-1"><Briefcase size={12} className="text-[#ff4f00]" /> Orchestrating Operational Tasks</p>
+          </div>
+          <button 
+            onClick={() => navigate(`/${role}/task-management/create`)}
+            className="group h-14 px-8 bg-[#201515] hover:bg-[#ff4f00] text-white rounded-[5px] font-black text-[12px] uppercase tracking-[0.3em] transition-all flex items-center gap-3 shadow-lg shadow-[#201515]/10"
+          >
+            New Mission <Plus size={20} className="group-hover:rotate-90 transition-transform" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="md:col-span-2 relative">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-[#939084]" size={20} />
+            <input 
+              type="text" 
+              placeholder="Search missions or operatives..." 
+              className="w-full h-16 pl-16 pr-6 bg-white border border-[#eceae3] rounded-[5px] text-[15px] font-bold text-[#201515] focus:outline-none focus:ring-4 focus:ring-[#ff4f00]/5 focus:border-[#ff4f00] transition-all shadow-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="relative">
+            <Filter className="absolute left-6 top-1/2 -translate-y-1/2 text-[#939084]" size={20} />
+            <select 
+              className="w-full h-16 pl-16 pr-6 bg-white border border-[#eceae3] rounded-[5px] text-[15px] font-bold text-[#201515] focus:outline-none focus:ring-4 focus:ring-[#ff4f00]/5 focus:border-[#ff4f00] transition-all shadow-sm appearance-none cursor-pointer"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              {['All', 'Pending', 'Ongoing', 'Completed'].map(s => <option key={s} value={s}>{s} Status</option>)}
+            </select>
+          </div>
+          <button 
+            onClick={fetchTasks}
+            className="h-16 bg-white border border-[#eceae3] rounded-[5px] flex items-center justify-center text-[#201515] hover:text-[#ff4f00] hover:border-[#ff4f00] transition-all group shadow-sm"
+          >
+            <RefreshCw size={20} className={loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'} />
+          </button>
+        </div>
+
+        <div className="bg-white border border-[#eceae3] rounded-[5px] shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-[#fcfcfc] border-b border-[#eceae3]">
+                  {['Mission Log', 'Operative', 'Protocol', 'Evidence', 'Timeline', 'Actions'].map(h => (
+                    <th key={h} className="px-8 py-6 text-[11px] font-black text-[#939084] uppercase tracking-[0.2em]">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#eceae3]">
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td colSpan="6" className="px-8 py-10"><div className="h-4 bg-[#f8f9fa] rounded-[5px] w-full"></div></td>
+                    </tr>
+                  ))
+                ) : filteredTasks.length === 0 ? (
+                  <tr><td colSpan="6" className="px-8 py-20 text-center text-[#939084] font-bold">No missions detected in current sector.</td></tr>
+                ) : filteredTasks.map((task) => (
+                  <tr key={task._id} className="hover:bg-[#fcfcfc] transition-colors group">
+                    <td className="px-8 py-8">
+                      <div className="max-w-[280px]">
+                        <p className="text-[17px] font-black text-[#201515] tracking-tight line-clamp-1">{task.title}</p>
+                        <p className="text-[12px] font-medium text-[#939084] mt-1 line-clamp-2 italic leading-relaxed">"{task.description}"</p>
+                      </div>
+                    </td>
+                    <td className="px-8 py-8">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-[#201515] flex items-center justify-center text-white font-black text-[14px] shadow-lg">
+                          {task.assignedTo?.name?.charAt(0) || 'U'}
+                        </div>
+                        <div>
+                          <p className="text-[13px] font-black text-[#201515] tracking-tight">{task.assignedTo?.name || 'Unassigned'}</p>
+                          <p className="text-[10px] font-bold text-[#939084] uppercase tracking-widest">{task.assignedTo?.role || 'Operative'}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-8">
+                      <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-[5px] border text-[10px] font-black uppercase tracking-widest ${getStatusColor(task.status)}`}>
+                        <div className={`w-2 h-2 rounded-full animate-pulse ${task.status === 'Completed' ? 'bg-emerald-500' : task.status === 'Ongoing' ? 'bg-blue-500' : 'bg-amber-500'}`}></div>
+                        {task.status}
+                      </div>
+                    </td>
+                    <td className="px-8 py-8">
+                      {task.attachments?.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <div 
+                            onClick={() => openGallery(task.attachments, 0)}
+                            className="w-14 h-14 rounded-[5px] border-2 border-white bg-[#f8f9fa] flex items-center justify-center overflow-hidden shadow-sm ring-1 ring-[#eceae3] transition-all cursor-pointer hover:scale-110 hover:shadow-md relative group"
+                          >
+                            {((typeof task.attachments[0] === 'string' ? task.attachments[0] : (task.attachments[0].fileName || task.attachments[0].path || task.attachments[0].filename || '')) || '').match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i) || (task.attachments[0].fileType?.startsWith('image/')) ? (
+                              <img src={task.attachments[0].fileUrl || `/api/uploads/${typeof task.attachments[0] === 'string' ? task.attachments[0] : (task.attachments[0].fileName || task.attachments[0].path || task.attachments[0].filename)}`} className="w-full h-full object-cover" />
+                            ) : (
+                              <FileText size={18} className="text-[#939084]" />
+                            )}
+                            {task.attachments.length > 1 && (
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-[10px] font-black text-white">+{task.attachments.length - 1}</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-8 py-8">
+                      <div className="flex items-center gap-3 text-[#939084]">
+                        <Calendar size={14} className="text-[#ff4f00]" />
+                        <span className="text-[12px] font-bold">{new Date(task.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-8">
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => quickCompleteTask(task._id)}
+                          title="Quick Complete"
+                          className="w-10 h-10 rounded-full bg-[#24a148]/10 flex items-center justify-center text-[#24a148] hover:bg-[#24a148] hover:text-white transition-all shadow-sm"
+                        >
+                          <CheckCircle2 size={18} />
+                        </button>
+                        <button 
+                          onClick={() => navigate(`/${role}/task-management/update/${task._id}`)}
+                          className="h-10 px-5 bg-[#201515] text-white rounded-[5px] text-[10px] font-black uppercase tracking-widest hover:bg-[#ff4f00] transition-all shadow-lg flex items-center gap-2"
+                        >
+                          LOG UPDATE <ArrowRight size={14} />
+                        </button>
+                        <button 
+                          onClick={() => deleteTask(task._id)}
+                          className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TaskManagement;

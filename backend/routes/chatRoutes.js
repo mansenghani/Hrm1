@@ -4,7 +4,7 @@ const { protect } = require('../middleware/authMiddleware');
 const {
   getAvailableUsers, getChats, getMessages, getGroupMessages,
   sendMessage, markAsSeen, createGroup, deleteMessage,
-  toggleReaction, togglePin, toggleStar, forwardMessage
+  toggleReaction, togglePin, toggleStar, forwardMessage, clearChatHistory
 } = require('../controllers/chatController');
 const upload = require('../middleware/upload');
 
@@ -20,5 +20,6 @@ router.post('/message/:messageId/react', protect, toggleReaction);
 router.post('/message/:messageId/pin', protect, togglePin);
 router.post('/message/:messageId/star', protect, toggleStar);
 router.post('/message/forward', protect, forwardMessage);
+router.delete('/clear/:chatId', protect, clearChatHistory);
 
 module.exports = router;

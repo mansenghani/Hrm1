@@ -32,6 +32,9 @@ import ManagerProjects from './pages/manager/ManagerProjects';
 import EmployeeProjects from './pages/employee/EmployeeProjects';
 import Screenshots from './pages/Screenshots';
 import Chat from '@shared/pages/Chat';
+import TaskManagement from './pages/TaskManagement';
+import TaskCreate from './pages/TaskCreate';
+import TaskUpdate from './pages/TaskUpdate';
 
 // ROUTE PROTECTION LOGIC
 const ProtectedRoute = ({ children, allowedRole }) => {
@@ -76,6 +79,9 @@ const App = () => {
           <Route path="employees/edit/:id" element={<EmployeeForm />} />
           <Route path="employees/view/:id" element={<EmployeeDetail />} />
           <Route path="tasks" element={<Tasks />} />
+          <Route path="task-management" element={<TaskManagement />} />
+          <Route path="task-management/create" element={<TaskCreate />} />
+          <Route path="task-management/update/:id" element={<TaskUpdate />} />
 
           <Route path="leave" element={<LeaveManagement />} />
           <Route path="attendance" element={<Attendance />} />
@@ -99,6 +105,9 @@ const App = () => {
           <Route index element={<HRDashboard />} />
           <Route path="dashboard" element={<HRDashboard />} />
           <Route path="tasks" element={<HRTasks />} />
+          <Route path="task-management" element={<TaskManagement />} />
+          <Route path="task-management/create" element={<TaskCreate />} />
+          <Route path="task-management/update/:id" element={<TaskUpdate />} />
           <Route path="attendance" element={<Attendance />} />
           <Route path="leave" element={<LeaveManagement />} />
           <Route path="employees" element={<HREmployees />} />
@@ -119,8 +128,10 @@ const App = () => {
             <MainLayout />
           </ProtectedRoute>
         }>
-          <Route index element={<EmployeeDashboard />} />
           <Route path="dashboard" element={<EmployeeDashboard />} />
+          <Route path="task-management" element={<TaskManagement />} />
+          <Route path="task-management/create" element={<TaskCreate />} />
+          <Route path="task-management/update/:id" element={<TaskUpdate />} />
           <Route path="projects" element={<EmployeeProjects />} />
           <Route path="time-tracker" element={<TimeTrackingDashboard />} />
           <Route path="leave" element={<EmployeeLeave />} />
@@ -137,6 +148,9 @@ const App = () => {
           <Route index element={<ManagerDashboard />} />
           <Route path="dashboard" element={<ManagerDashboard />} />
           <Route path="tasks" element={<ManagerTasks />} />
+          <Route path="task-management" element={<TaskManagement />} />
+          <Route path="task-management/create" element={<TaskCreate />} />
+          <Route path="task-management/update/:id" element={<TaskUpdate />} />
           <Route path="projects" element={<ManagerProjects />} />
           <Route path="attendance" element={<Attendance />} />
           <Route path="leave" element={<LeaveManagement />} />

@@ -36,7 +36,7 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
     if (!isOpen || !task?._id) return;
 
     // Connect to backend (adjust URL if needed, usually same as origin in dev)
-    const socket = io(window.location.protocol + '//' + window.location.hostname + ':5000', {
+    const socket = io(window.location.origin, {
       withCredentials: true
     });
 

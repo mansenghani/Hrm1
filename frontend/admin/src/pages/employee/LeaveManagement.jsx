@@ -160,10 +160,10 @@ const LeaveManagement = () => {
         {/* HEADER */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 border-b border-[#E6E8EA] pb-10">
           <div>
-            <h1 className="text-[48px] font-black text-[#1E2026] tracking-tighter leading-none italic uppercase">
+            <h1 className="text-[48px] font-black text-[#1E2026] tracking-tighter leading-none uppercase">
               Leave <span className="text-[#F0B90B]">Protocols.</span>
             </h1>
-            <p className="text-[#848E9C] font-black text-[10px] uppercase tracking-[0.4em] mt-3 italic">
+            <p className="text-[#848E9C] font-black text-[10px] uppercase tracking-[0.4em] mt-3">
               Operational Time-Off Distribution Matrix
             </p>
           </div>

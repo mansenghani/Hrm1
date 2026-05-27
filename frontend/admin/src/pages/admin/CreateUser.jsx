@@ -49,6 +49,7 @@ const CreateUser = () => {
   // Document State
   const [adharFile, setAdharFile] = useState(null);
   const [bankFile, setBankFile] = useState(null);
+  const [panFile, setPanFile] = useState(null);
 
   const token = sessionStorage.getItem('token');
 
@@ -163,6 +164,16 @@ const CreateUser = () => {
         } catch (err) { console.warn('Bank detail upload failed:', err); }
       }
 
+      if (panFile && profileId) {
+        const panData = new FormData();
+        panData.append('document', panFile);
+        try {
+          await axios.post(`/api/employees/${profileId}/pan-card`, panData, {
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+          });
+        } catch (err) { console.warn('PAN Card upload failed:', err); }
+      }
+
       setMessage({
         type: 'success',
         text: 'User Node successfully initialized with visual identity.',
@@ -200,6 +211,7 @@ const CreateUser = () => {
       setPreviewUrl(null);
       setAdharFile(null);
       setBankFile(null);
+      setPanFile(null);
 
     } catch (err) {
       setMessage({
@@ -433,59 +445,86 @@ const CreateUser = () => {
             {/* DOCUMENT VAULT SECTION */}
             <div className="pt-10 border-t border-[#eceae3] space-y-8">
                <h3 className="zap-caption-upper !text-[#201515]">Identity Verification Vault</h3>
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {/* Adharcard */}
-                  <div className={`p-6 rounded-[8px] border-2 border-dashed transition-all ${adharFile ? 'bg-[#24a148]/5 border-[#24a148]' : 'bg-white border-[#c5c0b1] hover:border-[#ff4f00]'}`}>
-                     <div className="flex items-center justify-between mb-4">
-                        <div 
-                          className={`w-16 h-12 rounded-[4px] flex items-center justify-center overflow-hidden border border-[#eceae3] transition-all ${adharFile ? 'bg-white cursor-pointer hover:scale-105 active:scale-95' : 'bg-[#eceae3] text-[#939084]'}`}
-                          onClick={() => adharFile && window.open(URL.createObjectURL(adharFile), '_blank')}
-                        >
-                           {adharFile ? (
-                             <img src={URL.createObjectURL(adharFile)} alt="" className="w-full h-full object-cover" />
-                           ) : (
-                             <Info size={20} />
-                           )}
+                  <div className={`p-5 rounded-[8px] border-2 border-dashed transition-all flex flex-col justify-between h-full ${adharFile ? 'bg-[#24a148]/5 border-[#24a148]' : 'bg-white border-[#c5c0b1] hover:border-[#ff4f00]'}`}>
+                     <div className="flex items-start justify-between mb-6">
+                        <div className="flex items-center gap-4">
+                           <div 
+                             className={`w-14 h-14 rounded-[4px] flex items-center justify-center overflow-hidden border border-[#eceae3] transition-all shrink-0 ${adharFile ? 'bg-white cursor-pointer hover:scale-105 active:scale-95 shadow-sm' : 'bg-[#eceae3] text-[#939084]'}`}
+                             onClick={() => adharFile && window.open(URL.createObjectURL(adharFile), '_blank')}
+                           >
+                              {adharFile ? (
+                                <img src={URL.createObjectURL(adharFile)} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <Info size={24} />
+                              )}
+                           </div>
+                           <div className="flex-1 min-w-0">
+                              <p className="text-[15px] font-bold text-[#201515] mb-0.5">Adharcard Registry</p>
+                              {!adharFile && <p className="text-[11px] text-[#939084] leading-tight">Identity Verification Protocol</p>}
+                           </div>
                         </div>
-                        {adharFile && <span className="text-[10px] font-black text-[#24a148] uppercase tracking-widest">Asset Ready</span>}
+                        {adharFile && <span className="text-[10px] font-black text-[#24a148] uppercase tracking-widest bg-[#24a148]/10 px-2 py-1 rounded-[4px]">Ready</span>}
                      </div>
-                     <div className="flex items-center justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                           <p className="text-[14px] font-bold text-[#201515] mb-1">Adharcard Registry</p>
-                           {!adharFile && <p className="text-[11px] text-[#939084]">Identity Verification Protocol</p>}
-                        </div>
-                        <label className="zap-btn !h-10 !text-[11px] !bg-[#201515] !text-white px-6 cursor-pointer whitespace-nowrap">
-                           {adharFile ? 'Change' : 'Upload'}
-                           <input type="file" className="hidden" onChange={(e) => setAdharFile(e.target.files[0])} />
-                        </label>
-                     </div>
+                     <label className="zap-btn !h-12 !text-[12px] !bg-[#201515] hover:!bg-[#ff4f00] !text-white w-full cursor-pointer flex items-center justify-center transition-colors">
+                        {adharFile ? 'Change Document' : 'Upload Document'}
+                        <input type="file" className="hidden" onChange={(e) => setAdharFile(e.target.files[0])} />
+                     </label>
                   </div>
 
                   {/* Bank Details */}
-                  <div className={`p-6 rounded-[8px] border-2 border-dashed transition-all ${bankFile ? 'bg-[#24a148]/5 border-[#24a148]' : 'bg-white border-[#c5c0b1] hover:border-[#ff4f00]'}`}>
-                     <div className="flex items-center justify-between mb-4">
-                        <div 
-                          className={`w-16 h-12 rounded-[4px] flex items-center justify-center overflow-hidden border border-[#eceae3] transition-all ${bankFile ? 'bg-white cursor-pointer hover:scale-105 active:scale-95' : 'bg-[#eceae3] text-[#939084]'}`}
-                          onClick={() => bankFile && window.open(URL.createObjectURL(bankFile), '_blank')}
-                        >
-                           {bankFile ? (
-                             <img src={URL.createObjectURL(bankFile)} alt="" className="w-full h-full object-cover" />
-                           ) : (
-                             <span className="material-symbols-outlined text-xl">credit_card</span>
-                           )}
+                  <div className={`p-5 rounded-[8px] border-2 border-dashed transition-all flex flex-col justify-between h-full ${bankFile ? 'bg-[#24a148]/5 border-[#24a148]' : 'bg-white border-[#c5c0b1] hover:border-[#ff4f00]'}`}>
+                     <div className="flex items-start justify-between mb-6">
+                        <div className="flex items-center gap-4">
+                           <div 
+                             className={`w-14 h-14 rounded-[4px] flex items-center justify-center overflow-hidden border border-[#eceae3] transition-all shrink-0 ${bankFile ? 'bg-white cursor-pointer hover:scale-105 active:scale-95 shadow-sm' : 'bg-[#eceae3] text-[#939084]'}`}
+                             onClick={() => bankFile && window.open(URL.createObjectURL(bankFile), '_blank')}
+                           >
+                              {bankFile ? (
+                                <img src={URL.createObjectURL(bankFile)} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="material-symbols-outlined text-[24px]">credit_card</span>
+                              )}
+                           </div>
+                           <div className="flex-1 min-w-0">
+                              <p className="text-[15px] font-bold text-[#201515] mb-0.5">Bank Details Registry</p>
+                              {!bankFile && <p className="text-[11px] text-[#939084] leading-tight">Banking Verification Protocol</p>}
+                           </div>
                         </div>
-                        {bankFile && <span className="text-[10px] font-black text-[#24a148] uppercase tracking-widest">Asset Ready</span>}
+                        {bankFile && <span className="text-[10px] font-black text-[#24a148] uppercase tracking-widest bg-[#24a148]/10 px-2 py-1 rounded-[4px]">Ready</span>}
                      </div>
-                     <div className="flex items-center justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                           <p className="text-[14px] font-bold text-[#201515] mb-1">Bank Details Registry</p>
-                           {!bankFile && <p className="text-[11px] text-[#939084]">Banking Verification Protocol</p>}
+                     <label className="zap-btn !h-12 !text-[12px] !bg-[#201515] hover:!bg-[#ff4f00] !text-white w-full cursor-pointer flex items-center justify-center transition-colors">
+                        {bankFile ? 'Change Document' : 'Upload Document'}
+                        <input type="file" className="hidden" onChange={(e) => setBankFile(e.target.files[0])} />
+                     </label>
+                  </div>
+
+                  {/* PAN Card */}
+                  <div className={`p-5 rounded-[8px] border-2 border-dashed transition-all flex flex-col justify-between h-full ${panFile ? 'bg-[#24a148]/5 border-[#24a148]' : 'bg-white border-[#c5c0b1] hover:border-[#ff4f00]'}`}>
+                     <div className="flex items-start justify-between mb-6">
+                        <div className="flex items-center gap-4">
+                           <div 
+                             className={`w-14 h-14 rounded-[4px] flex items-center justify-center overflow-hidden border border-[#eceae3] transition-all shrink-0 ${panFile ? 'bg-white cursor-pointer hover:scale-105 active:scale-95 shadow-sm' : 'bg-[#eceae3] text-[#939084]'}`}
+                             onClick={() => panFile && window.open(URL.createObjectURL(panFile), '_blank')}
+                           >
+                              {panFile ? (
+                                <img src={URL.createObjectURL(panFile)} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="material-symbols-outlined text-[24px]">badge</span>
+                              )}
+                           </div>
+                           <div className="flex-1 min-w-0">
+                              <p className="text-[15px] font-bold text-[#201515] mb-0.5">Pan Card Registry</p>
+                              {!panFile && <p className="text-[11px] text-[#939084] leading-tight">Tax Identity Verification</p>}
+                           </div>
                         </div>
-                        <label className="zap-btn !h-10 !text-[11px] !bg-[#201515] !text-white px-6 cursor-pointer whitespace-nowrap">
-                           {bankFile ? 'Change' : 'Upload'}
-                           <input type="file" className="hidden" onChange={(e) => setBankFile(e.target.files[0])} />
-                        </label>
+                        {panFile && <span className="text-[10px] font-black text-[#24a148] uppercase tracking-widest bg-[#24a148]/10 px-2 py-1 rounded-[4px]">Ready</span>}
                      </div>
+                     <label className="zap-btn !h-12 !text-[12px] !bg-[#201515] hover:!bg-[#ff4f00] !text-white w-full cursor-pointer flex items-center justify-center transition-colors">
+                        {panFile ? 'Change Document' : 'Upload Document'}
+                        <input type="file" className="hidden" onChange={(e) => setPanFile(e.target.files[0])} />
+                     </label>
                   </div>
                </div>
             </div>
