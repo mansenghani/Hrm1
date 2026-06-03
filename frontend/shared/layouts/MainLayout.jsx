@@ -38,6 +38,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [liveNotifications, setLiveNotifications] = useState([]);
   const notificationRef = React.useRef(null);
+  const searchRef = React.useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -45,26 +46,158 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   const token = sessionStorage.getItem('token');
   const [userProfile, setUserProfile] = useState(null);
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchDebounceRef = React.useRef(null);
+
   // 🛡️ DYNAMIC ROLE DERIVATION (URL-FIRST)
   const pathRole = location.pathname.split('/')[1];
   const roleMap = { admin: 'admin', hr: 'hr', manager: 'manager', employee: 'employee' };
   const activeRole = roleMap[pathRole] ? pathRole : role;
 
-  // 🛡️ SYNC LIVE NOTIFICATIONS
+  // ── SEARCH HANDLER ──────────────────────────────────────────
+  const handleSearch = async (query) => {
+    setSearchQuery(query);
+    if (!query.trim()) { setSearchResults([]); setIsSearchOpen(false); return; }
+    setIsSearchOpen(true);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const headers = { Authorization: `Bearer ${token}` };
+        const q = query.toLowerCase();
+        const results = [];
+
+        // Search Employees
+        try {
+          const empRes = await axios.get('/api/employees', { headers });
+          const emps = Array.isArray(empRes.data) ? empRes.data : [];
+          emps.filter(e => {
+            const name = (e.userId?.name || e.fullName || '').toLowerCase();
+            const id = (e.employeeId || '').toLowerCase();
+            const dept = (e.department || '').toLowerCase();
+            return name.includes(q) || id.includes(q) || dept.includes(q);
+          }).slice(0, 4).forEach(e => results.push({
+            category: 'Employee',
+            title: e.userId?.name || e.fullName || 'Unknown',
+            subtitle: `${e.employeeId || ''} · ${e.department || e.role || ''}`,
+            path: `/${activeRole}/employees/view/${e._id || e.id}`,
+            icon: '👤'
+          }));
+        } catch (_) {}
+
+        // Search Leave Requests
+        try {
+          const leaveRes = await axios.get('/api/leaves', { headers });
+          const leaves = Array.isArray(leaveRes.data) ? leaveRes.data : (leaveRes.data?.data || []);
+          leaves.filter(l => {
+            const type = (l.leaveType || l.type || '').toLowerCase();
+            const status = (l.status || '').toLowerCase();
+            const emp = (l.employee?.name || '').toLowerCase();
+            return type.includes(q) || status.includes(q) || emp.includes(q);
+          }).slice(0, 3).forEach(l => results.push({
+            category: 'Leave',
+            title: `${l.leaveType || l.type || 'Leave'} — ${l.employee?.name || 'Employee'}`,
+            subtitle: `Status: ${l.status} · ${new Date(l.startDate || l.createdAt).toLocaleDateString()}`,
+            path: `/${activeRole}/leave`,
+            icon: '📅'
+          }));
+        } catch (_) {}
+
+        // Search Payroll
+        try {
+          const payRes = await axios.get('/api/payroll', { headers });
+          const payrolls = Array.isArray(payRes.data) ? payRes.data : [];
+          payrolls.filter(p => {
+            const name = (p.employeeId?.userId?.name || p.employeeName || '').toLowerCase();
+            return name.includes(q);
+          }).slice(0, 3).forEach(p => results.push({
+            category: 'Payroll',
+            title: p.employeeId?.userId?.name || p.employeeName || 'Employee',
+            subtitle: `Net: ${p.netSalary || p.basicSalary || 'N/A'} · ${p.month || ''}`,
+            path: `/${activeRole}/payroll`,
+            icon: '💰'
+          }));
+        } catch (_) {}
+
+        // Quick nav page suggestions — full list from all roles
+        const allPages = [
+          { label: 'Dashboard', path: `/${activeRole}/dashboard` },
+          { label: 'Employees', path: `/${activeRole}/employees` },
+          { label: 'Departments', path: `/${activeRole}/departments` },
+          { label: 'Leave Management', path: `/${activeRole}/leave` },
+          { label: 'Attendance', path: `/${activeRole}/attendance` },
+          { label: 'Time Tracker', path: `/${activeRole}/time-tracker` },
+          { label: 'Payroll', path: `/${activeRole}/payroll` },
+          { label: 'Performance', path: `/${activeRole}/performance` },
+          { label: 'Tasks', path: `/${activeRole}/tasks` },
+          { label: 'Daily Tasks Board', path: `/${activeRole}/tasks` },
+          { label: 'Task Management', path: `/${activeRole}/task-management` },
+          { label: 'Reports', path: `/${activeRole}/reports` },
+          { label: 'Notifications', path: `/${activeRole}/notifications` },
+          { label: 'Settings', path: `/${activeRole}/settings` },
+          { label: 'Monitoring Logs', path: `/${activeRole}/screenshots` },
+          { label: 'Team Chat', path: `/${activeRole}/chat` },
+          { label: 'Global Chat', path: `/${activeRole}/chat` },
+          { label: 'Profile', path: `/${activeRole}/profile` },
+          { label: 'Create User', path: `/${activeRole}/create-user` },
+        ];
+        const navSuggestions = allPages.filter(s => s.label.toLowerCase().includes(q));
+
+        navSuggestions.slice(0, 3).forEach(s => results.push({
+          category: 'Page',
+          title: s.label,
+          subtitle: 'Go to page',
+          path: s.path,
+          icon: '🔗'
+        }));
+
+        setSearchResults(results);
+      } catch (err) {
+        console.error('[SEARCH ERROR]', err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 350);
+  };
+
+  // Close search on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setIsSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+
   useEffect(() => {
     const fetchNotifications = async () => {
       if (!token) return;
       try {
         const res = await axios.get('/api/notifications', { headers: { Authorization: `Bearer ${token}` } });
-        const items = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+        const items = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data?.notifications)
+            ? res.data.notifications
+            : Array.isArray(res.data?.data)
+              ? res.data.data
+              : [];
         const alerts = items.map(n => ({
+          id: n._id,
           type: n.type || 'task',
           text: n.message,
+          read: n.read || false,
           time: n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
-          path: n.type === 'task' ? `/${activeRole}/task-management` : `/${activeRole}/dashboard`
+          path: `/${activeRole}/notifications`
         }));
-        setLiveNotifications(alerts.slice(0, 5));
-      } catch (err) { console.error('Alert Sync Failed:', err); }
+        setLiveNotifications(alerts.slice(0, 10));
+      } catch (err) { console.error('Notification fetch failed:', err); }
     };
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 60000); // Back-up poll every min
@@ -81,6 +214,59 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // 🔔 REAL-TIME SOCKET NOTIFICATIONS
+  useEffect(() => {
+    if (!token) return;
+    const userId = (() => { try { return JSON.parse(atob(token.split('.')[1]))?.id; } catch { return null; } })();
+    if (!userId) return;
+
+    const socket = io(API_BASE_URL, { transports: ['websocket', 'polling'] });
+
+    socket.on('connect', () => {
+      socket.emit('join_notifications', { userId, role });
+    });
+
+    socket.on('new_notification', (notif) => {
+      const formatted = {
+        id: notif._id,
+        type: notif.type || 'announcement',
+        text: notif.message,
+        read: false,
+        batchId: notif.batchId,
+        time: new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        path: `/${activeRole}/notifications`
+      };
+      setLiveNotifications(prev => [formatted, ...prev].slice(0, 10));
+
+      // Show Native OS Desktop Notification
+      if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+          new Notification('New Announcement', { body: notif.message });
+        } else if (Notification.permission !== 'denied') {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              new Notification('New Announcement', { body: notif.message });
+            }
+          });
+        }
+      }
+    });
+
+    socket.on('update_notification', (notif) => {
+      setLiveNotifications(prev => prev.map(n => 
+        (n.id === notif._id || (n.batchId && n.batchId === notif.batchId)) ? { ...n, text: notif.message } : n
+      ));
+    });
+
+    socket.on('delete_notification', (notif) => {
+      setLiveNotifications(prev => prev.filter(n => 
+        !(n.id === notif._id || (n.batchId && n.batchId === notif.batchId))
+      ));
+    });
+
+    return () => socket.disconnect();
+  }, [token, role, activeRole]);
 
   const displayRole = userRole || (role ? role.toUpperCase() : 'ADMIN');
 
@@ -140,14 +326,17 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
         return [
           { name: 'Dashboard', path: '/hr/dashboard', icon: LayoutDashboard },
           { name: 'Employees', path: '/hr/employees', icon: Users },
-          { name: 'Daily Tasks Board', path: '/hr/tasks', icon: CheckSquare },
-          // { name: 'Task Management', path: '/hr/task-management', icon: ClipboardList },
-          // { name: 'Attendance', path: '/hr/attendance', icon: Calendar },
+          { name: 'Departments', path: '/hr/departments', icon: Layers },
+          { name: 'Leave Management', path: '/hr/leave', icon: FileText },
+          { name: 'Attendance', path: '/hr/attendance', icon: Calendar },
           { name: 'Time Tracker', path: '/hr/time-tracker', icon: Clock },
           { name: 'Team Chat', path: '/hr/chat', icon: MessageSquare },
-          // { name: 'Project Registry', path: '/hr/projects', icon: Briefcase },
-          { name: 'Monitoring Logs', path: '/hr/screenshots', icon: Camera },
-          // { name: 'Request For Leave', path: '/hr/leave', icon: FileText },
+          { name: 'Payroll', path: '/hr/payroll', icon: Wallet },
+          { name: 'Performance', path: '/hr/performance', icon: TrendingUp },
+          { name: 'Tasks', path: '/hr/tasks', icon: CheckSquare },
+          { name: 'Reports', path: '/hr/reports', icon: BarChart3 },
+          { name: 'Notifications', path: '/hr/notifications', icon: Bell },
+          { name: 'Settings', path: '/hr/settings', icon: Settings },
         ];
       case 'employee':
         return [
@@ -169,6 +358,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           { name: 'Team Chat', path: '/manager/chat', icon: MessageSquare },
           // { name: 'Team Attendance', path: '/manager/attendance', icon: Calendar },
           { name: 'Monitoring Logs', path: '/manager/screenshots', icon: Camera },
+          { name: 'Notifications', path: '/manager/notifications', icon: Bell },
           // { name: 'Review Leaves', path: '/manager/leave', icon: FileText },
         ];
       case 'admin':
@@ -186,6 +376,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           { name: 'Performance', path: `/${currentRole}/performance`, icon: TrendingUp },
           { name: 'Reports', path: `/${currentRole}/reports`, icon: BarChart3 },
           { name: 'Monitoring Logs', path: `/${currentRole}/screenshots`, icon: Camera },
+          { name: 'Notifications', path: `/${currentRole}/notifications`, icon: Bell },
           { name: 'Settings', path: `/${currentRole}/settings`, icon: Settings },
         ];
     }
@@ -219,6 +410,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   const [idleTimer, setIdleTimer] = useState(null);
   const [socket, setSocket] = useState(null);
   const [isPausedByIdle, setIsPausedByIdle] = useState(false);
+  const [trackerRawStatus, setTrackerRawStatus] = useState('offline');
 
   // 🔌 SOCKET INITIALIZATION
   useEffect(() => {
@@ -247,11 +439,13 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
         setIsPausedByIdle(true);
         console.log("Inactivity Trace: Web-side idle state synchronized");
       }
+      setTrackerRawStatus(data.status || 'paused');
     });
 
     s.on('timer_resumed', () => {
       setIsTrackingActive(true);
       setIsPausedByIdle(false);
+      setTrackerRawStatus('active');
     });
 
     setSocket(s);
@@ -263,9 +457,10 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     const fetchStatus = async () => {
       if (!token) return;
       try {
-        const res = await axios.get('/api/timer/status', { headers: { Authorization: `Bearer ${token}` } });
+        const res = await axios.get('/api/time/status', { headers: { Authorization: `Bearer ${token}` } });
         setIsTrackingActive(!!res.data?.isRunning);
         if (res.data?.status === 'idle') setIsPausedByIdle(true);
+        setTrackerRawStatus(res.data?.status || 'offline');
 
         // 🔄 Sync last activity from server using clock skew compensation
         if (res.data?.lastActiveTime && res.data?.serverTime) {
@@ -305,7 +500,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     if (now - lastServerSync < 15000) return; // 15s throttle
 
     try {
-      await axios.post('/api/timer/update', { type }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post('/api/time/activity', { type }, { headers: { Authorization: `Bearer ${token}` } });
       setLastServerSync(now);
     } catch (err) { console.error('Heartbeat failed:', err); }
   };
@@ -315,7 +510,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
 
   const pauseTimer = async () => {
     try {
-      await axios.post('/api/timer/update', { type: 'idle' }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post('/api/time/activity', { type: 'idle' }, { headers: { Authorization: `Bearer ${token}` } });
     } catch (err) { console.error('Pause failed:', err); }
   };
 
@@ -407,6 +602,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
               <Menu size={22} />
             </button>
           </div>
+          {/* Top Horizontal Menu Hidden per user request 
           <nav className="hidden xl:flex items-center h-full gap-2">
             {menuItems.slice(0, 4).map(item => (
               <Link
@@ -418,6 +614,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
               </Link>
             ))}
           </nav>
+          */}
           <div className="ml-auto flex items-center h-full gap-4">
             {/* ⏱️ GLOBAL INACTIVITY TRACKER */}
             {isPausedByIdle && (
@@ -429,24 +626,85 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                 <span className="text-[10px] font-black uppercase tracking-widest">Resume Timer</span>
               </button>
             )}
-            {isTrackingActive && (
+            {isTrackingActive ? (
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#eceae3] rounded-[5px] border border-[#c5c0b1]">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#24a148]"></div>
                 <span className="text-[10px] font-black text-[#201515] uppercase tracking-widest tabular-nums">
                   Active
                 </span>
               </div>
-            )}
-            {!isTrackingActive && !isPausedByIdle && (
+            ) : trackerRawStatus === 'paused' && !isPausedByIdle ? (
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#eceae3] rounded-[5px] border border-[#c5c0b1]">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#f1c21b]"></div>
+                <span className="text-[10px] font-black text-[#201515] uppercase tracking-widest">Paused</span>
+              </div>
+            ) : !isTrackingActive && !isPausedByIdle ? (
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#eceae3] rounded-[5px] border border-[#c5c0b1] opacity-50">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#939084]"></div>
                 <span className="text-[10px] font-black text-[#201515] uppercase tracking-widest">Offline</span>
               </div>
-            )}
+            ) : null}
 
-            <button className="w-10 h-10 flex items-center justify-center text-[#36342e] hover:text-[#ff4f00] transition-colors relative group">
-              <Search size={20} />
-            </button>
+            <div className="relative hidden md:flex items-center ml-2" ref={searchRef}>
+              <Search size={16} className="absolute left-3 text-[#939084] z-10" />
+              {isSearching && (
+                <div className="absolute right-3 top-3 w-4 h-4 border-2 border-[#ff4f00] border-t-transparent rounded-full animate-spin z-10" />
+              )}
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => handleSearch(e.target.value)}
+                onFocus={() => { if (searchQuery.trim()) setIsSearchOpen(true); }}
+                placeholder="Search employees, attendance, leaves, payroll..."
+                className="w-[340px] h-10 pl-10 pr-4 bg-[#eceae3] border border-transparent rounded-[5px] text-[12px] font-bold text-[#201515] placeholder:text-[#939084] focus:outline-none focus:bg-white focus:border-[#ff4f00] transition-all"
+              />
+              {/* Search Dropdown */}
+              {isSearchOpen && (
+                <div className="absolute top-12 left-0 w-[420px] bg-white border border-[#eceae3] rounded-[8px] shadow-2xl z-[200] overflow-hidden">
+                  {searchResults.length === 0 && !isSearching ? (
+                    <div className="p-6 text-center">
+                      <p className="text-[12px] font-bold text-[#939084]">No results found for "{searchQuery}"</p>
+                      <p className="text-[10px] font-medium text-[#c5c0b1] mt-1">Try searching by name, ID, or department</p>
+                    </div>
+                  ) : (
+                    <div>
+                      {/* Group by category */}
+                      {['Employee', 'Leave', 'Payroll', 'Page'].map(cat => {
+                        const items = searchResults.filter(r => r.category === cat);
+                        if (!items.length) return null;
+                        return (
+                          <div key={cat}>
+                            <div className="px-4 py-2 bg-[#fffdf9] border-b border-[#eceae3]">
+                              <span className="text-[9px] font-black text-[#939084] uppercase tracking-widest">{cat}s</span>
+                            </div>
+                            {items.map((result, i) => (
+                              <button
+                                key={i}
+                                onMouseDown={(e) => {
+                                  e.preventDefault(); // prevent input blur closing dropdown before click fires
+                                  navigate(result.path);
+                                  setIsSearchOpen(false);
+                                  setSearchQuery('');
+                                  setSearchResults([]);
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#fffdf9] transition-colors text-left border-b border-[#eceae3] last:border-0"
+                              >
+                                <span className="text-[18px] shrink-0">{result.icon}</span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[13px] font-bold text-[#201515] truncate">{result.title}</p>
+                                  <p className="text-[10px] font-medium text-[#939084] truncate">{result.subtitle}</p>
+                                </div>
+                                <span className="text-[10px] font-black text-[#ff4f00] uppercase tracking-widest shrink-0">→</span>
+                              </button>
+                            ))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <div className="relative" ref={notificationRef}>
               <button
@@ -454,7 +712,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                 className={`w-10 h-10 flex items-center justify-center rounded-[5px] transition-all relative ${isNotificationsOpen ? 'bg-[#ff4f00] text-white shadow-lg' : 'text-[#36342e] hover:bg-[#eceae3]'}`}
               >
                 <Bell size={20} />
-                {liveNotifications.length > 0 && (
+                {liveNotifications.filter(n => !n.read).length > 0 && (
                   <span className="absolute top-2 right-2 w-2 h-2 bg-[#ff4f00] border-2 border-[#fffefb] rounded-full"></span>
                 )}
               </button>
@@ -462,12 +720,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
               {isNotificationsOpen && (
                 <div className="absolute top-[80px] right-0 w-80 bg-white border border-[#c5c0b1] rounded-[5px] shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[100]">
                   <div className="p-4 border-b border-[#eceae3] bg-[#fffdf9] flex justify-between items-center">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-[#201515]">Intelligence Alerts</span>
-                    {liveNotifications.length > 0 && (
-                      <span className="px-2 py-0.5 bg-[#ff4f00]/10 text-[#ff4f00] text-[8px] font-black rounded-full uppercase">
-                        {liveNotifications.length} New
-                      </span>
-                    )}
+                    <span className="text-[11px] font-black uppercase tracking-widest text-[#201515]">Notifications</span>
                   </div>
                   <div className="max-h-[320px] overflow-y-auto">
                     {liveNotifications.length === 0 ? (
@@ -484,10 +737,10 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                           }}
                           className="p-4 border-b border-[#eceae3] hover:bg-[#fffdf9] transition-all cursor-pointer group"
                         >
-                          <div className="flex gap-3">
+                          <div className="flex gap-3 overflow-hidden">
                             <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${n.type === 'rework' ? 'bg-red-500' : 'bg-[#ff4f00]'}`}></div>
-                            <div>
-                              <p className="text-[12px] font-bold text-[#201515] leading-tight group-hover:text-[#ff4f00] transition-colors">{n.text}</p>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[12px] font-bold text-[#201515] leading-snug group-hover:text-[#ff4f00] transition-colors break-words overflow-hidden" style={{display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{n.text}</p>
                               <p className="text-[9px] font-black text-[#939084] uppercase tracking-widest mt-1">{n.time}</p>
                             </div>
                           </div>
@@ -496,10 +749,10 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                     )}
                   </div>
                   <button
-                    onClick={() => { navigate(`/${role}/dashboard`); setIsNotificationsOpen(false); }}
+                    onClick={() => { navigate(`/${activeRole}/notifications/all`); setIsNotificationsOpen(false); }}
                     className="w-full py-3 bg-[#eceae3] text-[10px] font-black text-[#201515] uppercase tracking-[0.2em] hover:bg-[#c5c0b1] transition-all border-none"
                   >
-                    View All Activity
+                    View All Notifications
                   </button>
                 </div>
               )}

@@ -142,6 +142,7 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
   }, [viewDate]);
 
   const [currentDate, setCurrentDate]     = useState(new Date());
+  const [pulseFilter, setPulseFilter]     = useState('30days');
   const [summary, setSummary]             = useState({
     stats: { active: 0, idle: 0, total: 0, productivity: 0 },
     logs: [], chartData: []
@@ -212,8 +213,15 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
     try {
       const res = await axios.get(`${API_BASE}/status`, auth);
       applyServerState(res.data);
-    } catch (err) { console.error('[POLL ERROR]', err.message); }
-  }, [applyServerState]);
+    } catch (err) { 
+      if (err.response && err.response.status === 401) {
+        sessionStorage.clear();
+        localStorage.clear();
+        navigate('/login');
+      }
+      console.error('[POLL ERROR]', err.message); 
+    }
+  }, [applyServerState, navigate]);
 
   const fetchCurrentUser = useCallback(async () => {
     const auth = getAuth();
@@ -224,19 +232,23 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
     } catch (err) { console.error('User fetch failed'); }
   }, []);
 
-  const fetchSummary = useCallback(async (date = viewDate) => {
+  const fetchSummary = useCallback(async (date = viewDate, timeRange = pulseFilter) => {
     const auth = getAuth();
     if (!auth) return;
     try {
       setIsSyncing(true);
-      const res = await axios.get(`${API_BASE}/summary?date=${date}`, auth);
+      const res = await axios.get(`${API_BASE}/summary?date=${date}&timeRange=${timeRange}`, auth);
       if (res.data) setSummary(res.data);
     } catch (err) { 
+      if (err.response && err.response.status === 401) {
+        sessionStorage.clear(); localStorage.clear();
+        navigate('/login');
+      }
       console.error('[SUMMARY ERROR]', err.message); 
     } finally {
       setIsSyncing(false);
     }
-  }, [viewDate]);
+  }, [viewDate, pulseFilter, navigate]);
 
   const fetchRegistryTasks = useCallback(async (date = registryDate) => {
     const auth = getAuth();
@@ -249,11 +261,15 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
         setCurrentPage(1); // Reset to page 1 on date change
       }
     } catch (err) {
+      if (err.response && err.response.status === 401) {
+        sessionStorage.clear(); localStorage.clear();
+        navigate('/login');
+      }
       console.error('[REGISTRY FETCH ERROR]', err.message);
     } finally {
       setIsSyncing(false);
     }
-  }, [registryDate]);
+  }, [registryDate, navigate]);
 
   const handleStatusClick = (taskId, nextStatus) => {
     if (nextStatus === 'Completed' || nextStatus === 'Review' || nextStatus === 'Need to Improve') {
@@ -281,7 +297,16 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
       await pollStatus();
       await fetchSummary();
       toast.success(`Session ${action === 'start' ? 'Initialized' : action.toUpperCase()}`);
-    } catch (err) { toast.error(`Action Failed: ${err.message}`); }
+    } catch (err) { 
+      if (err.response && err.response.status === 401) {
+        sessionStorage.clear();
+        localStorage.clear();
+        toast.error('Session expired. Redirecting to login...');
+        navigate('/login');
+      } else {
+        toast.error(`Action Failed: ${err.message}`); 
+      }
+    }
   };
 
   const handleQuickAddTask = async (e) => {
@@ -330,7 +355,7 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
     };
   }, [isRunning, fetchSummary, fetchRegistryTasks, pollStatus, registryDate, fetchCurrentUser]);
 
-  useEffect(() => { fetchSummary(viewDate); }, [viewDate, fetchSummary]);
+  useEffect(() => { fetchSummary(viewDate, pulseFilter); }, [viewDate, pulseFilter, fetchSummary]);
   useEffect(() => { fetchRegistryTasks(registryDate); }, [registryDate, fetchRegistryTasks]);
 
   // Personal vs Global Tasks
@@ -719,7 +744,6 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
                       ) : (
                         <button onClick={() => handleAction('resume')} className="zap-btn !bg-[#24a148] !text-white h-12 px-8 rounded-[5px]">RESUME <Play size={14} fill="white" /></button>
                       )}
-                      <button onClick={() => handleAction('stop')} className="zap-btn zap-btn-orange h-12 px-6 rounded-[5px]">STOP <Square size={14} fill="white" /></button>
                     </div>
                   )}
                 </div>
@@ -765,14 +789,35 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
 
             {/* Chart */}
             <div className="bg-white border border-[#c5c0b1] rounded-[5px] p-10 shadow-sm">
-              <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-[#201515] mb-8">Historical Pulse</h3>
-              <div className="h-[250px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={summary.chartData}>
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-[#201515]">Historical Pulse</h3>
+                <select 
+                  value={pulseFilter}
+                  onChange={(e) => setPulseFilter(e.target.value)}
+                  className="bg-[#f4f2ec] border border-[#c5c0b1] text-[#201515] text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-[3px] outline-none cursor-pointer"
+                >
+                  <option value="7days">Last 7 Days</option>
+                  <option value="30days">Last 30 Days</option>
+                  <option value="year">This Year</option>
+                </select>
+              </div>
+              <div className="h-[250px] w-full focus:outline-none" style={{ outline: 'none' }}>
+                <ResponsiveContainer width="100%" height="100%" className="focus:outline-none" style={{ outline: 'none' }}>
+                  <BarChart data={summary.chartData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }} style={{ outline: 'none', border: 'none' }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eceae3" />
                     <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 900, fill: '#939084' }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 900, fill: '#939084' }} />
-                    <Tooltip contentStyle={{ borderRadius: '5px', border: 'none', padding: '15px', fontWeight: 900 }} />
+                    <YAxis 
+                      axisLine={false} 
+                      tickLine={false} 
+                      domain={[0, dataMax => Math.max(10, Math.ceil(dataMax))]} 
+                      tickCount={6}
+                      tick={{ fontSize: 9, fontWeight: 900, fill: '#939084' }} 
+                    />
+                    <Tooltip 
+                      cursor={false}
+                      formatter={(value) => [formatTime(Math.round(value * 3600)), 'Active']}
+                      contentStyle={{ borderRadius: '5px', border: 'none', padding: '15px', fontWeight: 900 }} 
+                    />
                     <Bar dataKey="active" fill="#ff4f00" radius={[2, 2, 0, 0]} barSize={20} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -795,7 +840,6 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
             </div>
           </div>
         </div>
-      </div>
 
       {/* SYMMETRIC PERSONAL COMMAND MATRIX — STABILIZED DIMENSIONS */}
       {/* Hidden per user request: */}
@@ -1375,6 +1419,7 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

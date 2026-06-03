@@ -67,7 +67,7 @@ exports.getAvailableUsers = async (req, res) => {
 exports.getChats = async (req, res) => {
   try {
     const { id } = req.user;
-    const chats = await Chat.find({ participants: id })
+    const chats = await Chat.find({ participants: id, deletedBy: { $ne: id } })
       .populate('participants', 'name email employeeId role profileImage isOnline lastActive')
       .populate('lastMessage')
       .sort({ updatedAt: -1 });
@@ -187,6 +187,12 @@ exports.sendMessage = async (req, res) => {
     }
 
     const isSelfChat = !chat.isGroup && (String(senderId) === String(receiverId) || chat.participants.length === 1 || (chat.participants.length === 2 && String(chat.participants[0]) === String(chat.participants[1])));
+    
+    // Prevent sending message if the chat is blocked
+    if (chat.blockedBy && chat.blockedBy.length > 0) {
+      return res.status(403).json({ message: 'Cannot send messages to a blocked chat.' });
+    }
+
     const initialStatus = isSelfChat ? 'seen' : 'sent';
 
     const messagesToCreate = [];
@@ -239,6 +245,7 @@ exports.sendMessage = async (req, res) => {
       .populate('senderId', 'name profileImage role employeeId');
 
     chat.lastMessage = savedMessages[savedMessages.length - 1]._id;
+    chat.deletedBy = []; // Un-delete for all participants on new message
     await chat.save();
 
     const io = req.app.get('io');
@@ -278,7 +285,7 @@ exports.markAsSeen = async (req, res) => {
 
     const io = req.app.get('io');
     if (io) {
-      io.to(`user_${senderId}`).emit('messages_seen', { receiverId });
+      io.to(`user_${senderId}`).emit('messages_seen', { receiverId, senderId });
     }
 
     res.json({ success: true });
@@ -513,5 +520,91 @@ exports.clearChatHistory = async (req, res) => {
   } catch (error) {
     console.error('[ERROR] Clearing chat history:', error);
     res.status(500).json({ message: 'Error clearing chat history', error: error.message });
+  }
+};
+
+exports.deleteChat = async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const { id: userId } = req.user;
+    
+    // First clear chat history just like clearChatHistory
+    const messages = await Message.find({ chatId });
+    const updatePromises = messages.map(async (msg) => {
+      if (!msg.deletedFor.includes(userId)) {
+        msg.deletedFor.push(userId);
+        return msg.save();
+      }
+    });
+    await Promise.all(updatePromises);
+
+    // Now add user to deletedBy in Chat
+    const chat = await Chat.findById(chatId);
+    if (chat) {
+      if (!chat.deletedBy) chat.deletedBy = [];
+      const hasDeleted = chat.deletedBy.some(id => String(id) === String(userId));
+      if (!hasDeleted) {
+        chat.deletedBy.push(userId);
+        await chat.save();
+      }
+    }
+
+    res.json({ success: true, message: 'Chat deleted' });
+  } catch (error) {
+    console.error('[ERROR] Deleting chat:', error);
+    res.status(500).json({ message: 'Error deleting chat', error: error.message });
+  }
+};
+
+exports.toggleChatState = async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const { stateType } = req.body;
+    const { id: userId } = req.user;
+
+    const chat = await Chat.findById(chatId);
+    if (!chat) return res.status(404).json({ message: 'Chat not found' });
+
+    let arrayToUpdate;
+    switch (stateType) {
+      case 'archive': 
+        if (!chat.archivedBy) chat.archivedBy = [];
+        arrayToUpdate = chat.archivedBy; 
+        break;
+      case 'pin': 
+        if (!chat.pinnedBy) chat.pinnedBy = [];
+        arrayToUpdate = chat.pinnedBy; 
+        break;
+      case 'mute': 
+        if (!chat.mutedBy) chat.mutedBy = [];
+        arrayToUpdate = chat.mutedBy; 
+        break;
+      case 'lock': 
+        if (!chat.lockedBy) chat.lockedBy = [];
+        arrayToUpdate = chat.lockedBy; 
+        break;
+      case 'unread': 
+        if (!chat.unreadBy) chat.unreadBy = [];
+        arrayToUpdate = chat.unreadBy; 
+        break;
+      case 'block':
+        if (!chat.blockedBy) chat.blockedBy = [];
+        arrayToUpdate = chat.blockedBy;
+        break;
+      default: return res.status(400).json({ message: 'Invalid state type' });
+    }
+
+    const index = arrayToUpdate.findIndex(id => String(id) === String(userId));
+    if (index > -1) {
+      arrayToUpdate.splice(index, 1);
+    } else {
+      arrayToUpdate.push(userId);
+    }
+
+    await chat.save();
+    res.json({ chat });
+  } catch (error) {
+    console.error('[ERROR] Toggling chat state:', error);
+    res.status(500).json({ message: 'Error toggling chat state', error: error.message });
   }
 };

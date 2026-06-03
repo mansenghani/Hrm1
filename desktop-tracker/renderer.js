@@ -35,7 +35,7 @@ let screenshotTimeout = null;
 let socket = null;
 
 // ── Config ────────────────────────────────────────────────
-const API_BASE       = 'http://localhost:5000/api/time';
+const API_BASE       = 'http://127.0.0.1:5000/api/time';
 const POLL_MS        = 1000;   // 1s display refresh
 const HEARTBEAT_MS   = 10000;  // 10s heartbeat to backend
 
@@ -413,13 +413,13 @@ async function takeScreenshot() {
     if (!dataUrl) return;
     const blob = await (await fetch(dataUrl)).blob();
     const formData = new FormData();
-    const userRes = await fetch('http://localhost:5000/api/auth/me', {
+    const userRes = await fetch('http://127.0.0.1:5000/api/auth/me', {
       headers: { Authorization: `Bearer ${authToken}` }
     });
     const user = await userRes.json();
     formData.append('screenshot', blob, `screenshot-${Date.now()}.png`);
     formData.append('userId', user.id || user._id);
-    await fetch('http://localhost:5000/api/screenshot/upload', { method: 'POST', body: formData });
+    await fetch('http://127.0.0.1:5000/api/screenshot/upload', { method: 'POST', body: formData });
     await notifyDesktop('Screenshot Captured', 'A monitoring trace has been recorded.');
   } catch (err) {
     console.error('[SCREENSHOT ERROR]', err);
@@ -445,7 +445,7 @@ function stopScreenshotLoop() {
 async function fetchUserProfile() {
   if (!authToken) return;
   try {
-    const res = await fetch('http://localhost:5000/api/auth/me', {
+    const res = await fetch('http://127.0.0.1:5000/api/auth/me', {
       headers: { Authorization: `Bearer ${authToken}` }
     });
     if (!res.ok) return;
@@ -467,14 +467,15 @@ async function fetchUserProfile() {
 async function initSocket() {
   if (socket || !authToken) return;
   try {
-    const res = await fetch('http://localhost:5000/api/auth/me', {
+    const res = await fetch('http://127.0.0.1:5000/api/auth/me', {
       headers: { Authorization: `Bearer ${authToken}` }
     });
     const user = await res.json();
-    if (!user?.id) return;
-    socket = io('http://localhost:5000');
+    const userId = user.id || user._id;
+    if (!userId) return;
+    socket = io('http://127.0.0.1:5000');
     socket.on('connect', () => {
-      socket.emit('join_notifications', { userId: user.id, role: user.role });
+      socket.emit('join_notifications', { userId: userId, role: user.role });
     });
     socket.on('timer_paused',  (data) => { if (data) applyServerState(data); });
     socket.on('timer_resumed', (data) => { 
@@ -483,6 +484,13 @@ async function initSocket() {
       else pollSessionStatus(); 
     });
     socket.on('timer_update',  (data) => { if (data) applyServerState(data); });
+    socket.on('new_notification', (notif) => {
+      if (window.electronAPI?.notifyNative) {
+        window.electronAPI.notifyNative('New Announcement', notif.message).catch(() => {});
+      } else if (window.Notification?.permission === 'granted') {
+        new window.Notification('New Announcement', { body: notif.message });
+      }
+    });
   } catch (err) {
     console.error('[SOCKET ERROR]', err);
   }
@@ -513,7 +521,7 @@ async function loginWithCredentials() {
     return;
   }
   try {
-    const res = await fetch('http://localhost:5000/api/auth/login', {
+    const res = await fetch('http://127.0.0.1:5000/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -584,4 +592,18 @@ document.getElementById('auth-close-btn')?.addEventListener('click', () => windo
 window.addEventListener('focus', () => { if (authToken) pollSessionStatus(); });
 window.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && authToken) pollSessionStatus();
+});
+
+// ── Window Controls ─────────────────────────────────────
+document.getElementById('minimize-btn')?.addEventListener('click', () => {
+  window.electronAPI.minimizeApp();
+});
+document.getElementById('close-btn')?.addEventListener('click', () => {
+  window.electronAPI.closeApp();
+});
+document.getElementById('auth-minimize-btn')?.addEventListener('click', () => {
+  window.electronAPI.minimizeApp();
+});
+document.getElementById('auth-close-btn')?.addEventListener('click', () => {
+  window.electronAPI.closeApp();
 });

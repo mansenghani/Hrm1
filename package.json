@@ -29,6 +29,7 @@
   "type": "commonjs",
   "dependencies": {
     "emoji-picker-react": "^4.19.1",
+    "framer-motion": "^12.40.0",
     "lucide-react": "^1.8.0",
     "recharts": "^3.8.1"
   }

@@ -6,7 +6,14 @@ const chatSchema = new mongoose.Schema({
   isGroup: { type: Boolean, default: false },
   groupName: { type: String },
   groupAdmin: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  groupImage: { type: String }
+  groupImage: { type: String },
+  archivedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  pinnedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  mutedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  lockedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  unreadBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  deletedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  blockedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Chat', chatSchema);

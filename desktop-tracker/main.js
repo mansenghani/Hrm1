@@ -16,7 +16,7 @@ const store = new Store();
 let mainWindow;
 
 // ── MUST match backend IDLE_THRESHOLD_SECONDS ─────────────
-const IDLE_THRESHOLD = 60; // seconds — test mode (change to 300 for production)
+const IDLE_THRESHOLD = 600; // 10 minutes (600 seconds)
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -24,19 +24,20 @@ function createWindow() {
     height: 720,
     resizable: false,
     frame: false,
-    transparent: true,
-    alwaysOnTop: true,
-    hasShadow: false,
+    transparent: false,
+    alwaysOnTop: false,
+    hasShadow: true,
     thickFrame: false,
     roundedCorners: false,
     show: false,
     skipTaskbar: false,
     autoHideMenuBar: true,
-    backgroundColor: '#00000000',
+    backgroundColor: '#1E2026',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
-      contextIsolation: true
+      contextIsolation: true,
+      backgroundThrottling: false
     }
   });
 
@@ -116,7 +117,7 @@ ipcMain.handle('minimize-app', () => {
 
 ipcMain.handle('notify-native', (event, payload) => {
   const { title, body } = payload || {};
-  const allowedTitles = ['started', 'paused', 'resumed', 'stopped', 'screenshot', 'inactivity', 'idle'];
+  const allowedTitles = ['started', 'paused', 'resumed', 'stopped', 'screenshot', 'inactivity', 'idle', 'announcement'];
   const isAllowed = allowedTitles.some(t => title?.toLowerCase().includes(t));
   if (!isAllowed) {
     console.log('Notification blocked (not critical):', title);

@@ -35,6 +35,9 @@ import Chat from '@shared/pages/Chat';
 import TaskManagement from './pages/TaskManagement';
 import TaskCreate from './pages/TaskCreate';
 import TaskUpdate from './pages/TaskUpdate';
+import Notifications from './pages/Notifications';
+import AllNotifications from './pages/AllNotifications';
+import Departments from './pages/Departments';
 
 // ROUTE PROTECTION LOGIC
 const ProtectedRoute = ({ children, allowedRole }) => {
@@ -94,6 +97,8 @@ const App = () => {
           <Route path="chat" element={<Chat />} />
           <Route path="screenshots" element={<Screenshots />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="notifications" element={<Notifications />} />
+          <Route path="notifications/all" element={<AllNotifications />} />
         </Route>
 
         {/* HR MODULE */}
@@ -120,6 +125,13 @@ const App = () => {
           <Route path="chat" element={<Chat />} />
           <Route path="screenshots" element={<Screenshots />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="payroll" element={<Payroll />} />
+          <Route path="performance" element={<Performance />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="departments" element={<Departments />} />
+          <Route path="notifications" element={<Notifications />} />
+          <Route path="notifications/all" element={<AllNotifications />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
 
         {/* EMPLOYEE MODULE */}
@@ -137,6 +149,7 @@ const App = () => {
           <Route path="leave" element={<EmployeeLeave />} />
           <Route path="chat" element={<Chat />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="notifications/all" element={<AllNotifications />} />
         </Route>
 
         {/* MANAGER MODULE */}
@@ -158,6 +171,8 @@ const App = () => {
           <Route path="screenshots" element={<Screenshots />} />
           <Route path="profile" element={<Profile />} />
           <Route path="time-tracker" element={<TimeTrackingDashboard />} />
+          <Route path="notifications" element={<Notifications />} />
+          <Route path="notifications/all" element={<AllNotifications />} />
         </Route>
 
         {/* FALLBACK */}

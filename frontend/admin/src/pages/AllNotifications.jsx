@@ -1,0 +1,156 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Bell, Calendar, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+const TYPE_COLORS = {
+  announcement: 'bg-orange-100 text-orange-600',
+  task:         'bg-blue-100 text-blue-600',
+  leave:        'bg-purple-100 text-purple-600',
+  attendance:   'bg-green-100 text-green-600',
+  emergency:    'bg-red-100 text-red-600',
+  default:      'bg-gray-100 text-gray-600',
+};
+
+const AllNotifications = () => {
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  const token = sessionStorage.getItem('token');
+  const pathRole = window.location.pathname.split('/')[1];
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      setLoading(true);
+      try {
+        const res = await axios.get('/api/notifications', { 
+          headers: { Authorization: `Bearer ${token}` } 
+        });
+        let items = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data?.notifications)
+            ? res.data.notifications
+            : Array.isArray(res.data?.data)
+              ? res.data.data
+              : [];
+              
+        // Sort newest first
+        items = items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        setNotifications(items);
+      } catch (err) {
+        console.error('Fetch notifications error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNotifications();
+  }, [token]);
+
+  // Group notifications by date
+  const groupedNotifications = notifications.reduce((groups, notif) => {
+    const date = new Date(notif.createdAt);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    let dateLabel = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    
+    if (date.toDateString() === today.toDateString()) {
+      dateLabel = 'Today';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      dateLabel = 'Yesterday';
+    }
+
+    if (!groups[dateLabel]) {
+      groups[dateLabel] = [];
+    }
+    groups[dateLabel].push(notif);
+    return groups;
+  }, {});
+
+  return (
+    <div className="p-6 md:p-10 pb-20 max-w-5xl mx-auto animate-fade-in">
+      {/* Header */}
+      <div className="flex items-center gap-4 mb-8">
+        <button 
+          onClick={() => navigate(-1)}
+          className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-[#848E9C] hover:text-[#ff4f00] shadow-sm border border-[#eceae3] transition-all"
+        >
+          <ArrowLeft size={18} />
+        </button>
+        <div>
+          <h1 className="text-[28px] font-black text-[#201515] tracking-tight">
+            Notification <span className="text-[#ff4f00]">History</span>
+          </h1>
+          <p className="text-[13px] font-medium text-[#939084] mt-1">
+            All your received alerts and announcements
+          </p>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 border-4 border-[#ff4f00] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : notifications.length === 0 ? (
+        <div className="bg-white rounded-[5px] border border-[#eceae3] shadow-sm p-16 flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 rounded-full bg-[#fffdf9] border border-[#eceae3] flex items-center justify-center mb-4">
+            <Bell size={28} className="text-[#c5c0b1]" />
+          </div>
+          <h3 className="text-[16px] font-bold text-[#201515] mb-2">No notifications found</h3>
+          <p className="text-[13px] font-medium text-[#939084]">You are all caught up!</p>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {Object.entries(groupedNotifications).map(([dateLabel, notifs]) => (
+            <div key={dateLabel} className="bg-white rounded-[5px] border border-[#eceae3] shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-[#eceae3] bg-[#fffdf9] flex items-center gap-2">
+                <Calendar size={16} className="text-[#939084]" />
+                <h2 className="text-[12px] font-black text-[#201515] uppercase tracking-widest">{dateLabel}</h2>
+                <span className="ml-auto px-2 py-0.5 bg-[#eceae3] text-[#939084] text-[10px] font-black rounded-full">
+                  {notifs.length}
+                </span>
+              </div>
+              <div className="divide-y divide-[#eceae3]">
+                {notifs.map((notif) => {
+                  const colorClass = TYPE_COLORS[notif.type] || TYPE_COLORS.default;
+                  return (
+                    <div
+                      key={notif._id}
+                      className="p-5 flex items-start gap-4 transition-colors hover:bg-[#fffdf9]"
+                    >
+                      {/* Icon */}
+                      <div className={`w-10 h-10 rounded-[5px] flex items-center justify-center shrink-0 ${colorClass}`}>
+                        <Bell size={18} />
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[14px] leading-snug font-bold text-[#201515] break-words">
+                          {notif.message}
+                        </p>
+                        <div className="flex items-center gap-3 mt-2">
+                          <span className={`px-2 py-0.5 rounded-[3px] text-[9px] font-black uppercase tracking-widest ${colorClass}`}>
+                            {notif.type || 'general'}
+                          </span>
+                          <span className="text-[11px] font-bold text-[#939084]">
+                            {new Date(notif.createdAt).toLocaleTimeString('en-US', {
+                              hour: '2-digit', minute: '2-digit'
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AllNotifications;

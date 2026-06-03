@@ -15,8 +15,8 @@ const TimeTrack = require('../models/TimeTrack');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 
-// ── CONFIG ────────────────────────────────────────────────
-const IDLE_THRESHOLD_SECONDS = 60; // 1 min test mode (change to 300 for 5 min prod)
+// ── CONFIG // Constants for Idle tracking (MUST MATCH DESKTOP APP)
+const IDLE_THRESHOLD_SECONDS = 600; // 10 minutes (600 seconds)
 
 // ── HELPERS ───────────────────────────────────────────────
 const getToday = () => {
@@ -28,8 +28,18 @@ const isDBConnected = () => mongoose.connection.readyState === 1;
 
 const getRoleFilter = (user) => {
   if (user.role === 'admin') return {};
-  if (user.role === 'hr') return { employeeRole: { $in: ['employee', 'manager'] } };
-  if (user.role === 'manager') return { managerId: user.id };
+  if (user.role === 'hr') return { 
+    $or: [
+      { employeeRole: { $in: ['employee', 'manager'] } },
+      { employeeId: user.id }
+    ] 
+  };
+  if (user.role === 'manager') return { 
+    $or: [
+      { managerId: user.id },
+      { employeeId: user.id }
+    ]
+  };
   return { employeeId: user.id };
 };
 
@@ -327,10 +337,11 @@ exports.getSessionStatus = async (req, res) => {
     if (!isDBConnected()) return res.json({ hasActiveSession: false, ...mock });
 
     const { id } = req.user;
+    const today = getToday();
     const session = await TimeTrack.findOne({
-      employeeId: id, date: getToday(), status: { $ne: 'completed' }
+      employeeId: id, date: today, status: { $ne: 'completed' }
     });
-
+    // console.log(`[STATUS CHECK] User: ${req.user.role} (${id}), Date: ${today}, Found: ${!!session}, Headers: ${req.headers['user-agent']}`);
     if (!session) return res.json({ hasActiveSession: false });
 
     // ── Live active time ──
@@ -369,7 +380,13 @@ exports.getTimeSummary = async (req, res) => {
     if (!isDBConnected()) return res.json({ stats: { active: 0, idle: 0, total: 0, productivity: 0 }, chartData: [], logs: [] });
 
     const filter = getRoleFilter(req.user);
-    const sessions = await TimeTrack.find(filter).sort({ date: -1 }).limit(30);
+    
+    const { timeRange } = req.query;
+    let limitCount = 30; // default 30 days
+    if (timeRange === '7days') limitCount = 7;
+    else if (timeRange === 'year') limitCount = 365;
+
+    const sessions = await TimeTrack.find(filter).sort({ date: -1 }).limit(limitCount);
     const today = getToday();
     const todayData = sessions.filter(s => s.date === today);
 
@@ -494,9 +511,12 @@ exports.getDashboardData = async (req, res) => {
  * Does NOT mutate session — caller adds the result to session.activeTime.
  */
 function flushSegment(session, now) {
-  if (!session.segmentStart) return 0;
-  const elapsed = Math.floor((now - new Date(session.segmentStart)) / 1000);
-  return Math.max(0, elapsed);
+  if (!session.lastHeartbeat) return 0;
+  const elapsed = (now - new Date(session.lastHeartbeat)) / 1000;
+  if (elapsed < IDLE_THRESHOLD_SECONDS) {
+    return Math.max(0, Math.floor(elapsed));
+  }
+  return 0;
 }
 
 /**
