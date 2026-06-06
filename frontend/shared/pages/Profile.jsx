@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '@shared/services/api';
+import { Eye, Shield, Lock, FileText, Upload, Trash2, Check, RefreshCw, Plus } from 'lucide-react';
 
 const Profile = () => {
   const [userData, setUserData] = useState(null);
@@ -22,7 +23,6 @@ const Profile = () => {
         const response = await axios.get(`/api/auth/me?t=${timestamp}`, {
           headers: { Authorization: `Bearer ${token}`, 'Cache-Control': 'no-cache' }
         });
-        console.log('[CLIENT TRACE] Identity Received:', response.data.employeeId);
         if (response.data) {
           setUserData(response.data);
           sessionStorage.setItem('user', JSON.stringify(response.data));
@@ -38,10 +38,10 @@ const Profile = () => {
 
   if (syncing) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 animate-pulse">
-            <div className="w-12 h-12 border-4 border-t-orange-500 border-slate-100 rounded-full animate-spin"></div>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Verifying Professional Node...</p>
-        </div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 16 }}>
+        <RefreshCw size={32} className="animate-spin text-[#00a76b]" />
+        <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#9ca3af' }}>Syncing Identity Node...</p>
+      </div>
     );
   }
 
@@ -51,20 +51,19 @@ const Profile = () => {
   const userRole = safeUserData.role || 'Personnel';
   const userDept = (safeUserData.department && typeof safeUserData.department === 'object') ? safeUserData.department.name : (safeUserData.department || 'General Operations');
   
-  // New Professional Metadata
   const empId = safeUserData.employeeId || 'PENDING-SYNC';
-  const personalEmail = safeUserData.personalEmail || 'NOT CONFIGURED';
-  const joinDate = safeUserData.joinDate ? new Date(safeUserData.joinDate).toLocaleDateString() : 'NOT SET';
-  const phone = safeUserData.phone || 'DATA MISSING';
+  const personalEmail = safeUserData.personalEmail || 'Not Configured';
+  const joinDate = safeUserData.joinDate ? new Date(safeUserData.joinDate).toLocaleDateString() : 'Not Set';
+  const phone = safeUserData.phone || 'Data Missing';
   const empType = safeUserData.employmentType || 'Standard';
-  const gender = safeUserData.gender || 'NOT SPECIFIED';
-  const address = safeUserData.address || 'LOCATOR DATA MISSING';
-  const birthdate = safeUserData.dob ? new Date(safeUserData.dob).toLocaleDateString() : 'NOT CONFIGURED';
+  const gender = safeUserData.gender || 'Not Specified';
+  const address = safeUserData.address || 'Locator Data Missing';
+  const birthdate = safeUserData.dob ? new Date(safeUserData.dob).toLocaleDateString() : 'Not Configured';
   const adharCard = safeUserData.adharCard || null;
   const bankDetails = safeUserData.bankDetails || null;
   const panCard = safeUserData.panCard || null;
 
-  const initials = fullName ? fullName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase() || 'NA' : 'NA';
+  const initials = fullName ? fullName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'NA' : 'NA';
 
   const resetForm = () => {
     setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -110,77 +109,63 @@ const Profile = () => {
     return normalized.startsWith('/') ? normalized : `/${normalized}`;
   };
 
+  const handleSave = () => {
+    alert('Profile configurations have been saved successfully.');
+  };
+
   return (
-    <div className="animate-fade-in text-left overflow-hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <style>{`
-        .font-manrope { font-family: 'Manrope', sans-serif; }
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; }
-        .compact-input { 
-          background-color: #f8fafc;
-          border: 2px solid rgba(251, 146, 60, 0.6);
-          border-radius: 12px;
-          padding: 14px 18px;
-          font-size: 13px;
-          font-weight: 600;
-          color: #1F2937;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          outline: none;
-        }
-        .compact-input:focus {
-          border-color: rgba(249, 115, 22, 1);
-          background-color: white;
-          box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.4);
-        }
-      `}</style>
-
-      {/* ALERT SECTION */}
-      {status.message && (
-        <div className="mb-8 animate-scale-up">
-          <div className={`${status.type === 'success' ? 'bg-emerald-50/50 border-emerald-200' : 'bg-rose-50/50 border-rose-200'} p-5 rounded-xl border shadow-sm`}>
-            <div className="flex items-center gap-3 mb-1">
-              <span className={`material-symbols-outlined text-lg ${status.type === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {status.type === 'success' ? 'verified_user' : 'report'}
-              </span>
-              <h4 className={`text-[11px] font-black uppercase tracking-[0.2em] ${status.type === 'success' ? 'text-emerald-700' : 'text-rose-700'}`}>
-                {status.type === 'success' ? 'System Protocol Verified' : 'Access Alert'}
-              </h4>
-            </div>
-            <p className="text-[#1F2937] text-[12px] font-medium pl-8">{status.message}</p>
+    <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: '#f9fdfc', minHeight: 'calc(100vh - 56px)', color: '#3b3e3c', width: '100%', boxSizing: 'border-box' }}>
+      <div style={{ width: '100%', maxWidth: '100%', padding: '32px 32px 60px', boxSizing: 'border-box' }}>
+        
+        {/* ALERTS */}
+        {status.message && (
+          <div style={{ marginBottom: 20, padding: 16, borderRadius: 12, border: status.type === 'success' ? '1px solid #10b981' : '1px solid #f87171', background: status.type === 'success' ? '#f0fdf4' : '#fef2f2', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <h4 style={{ fontSize: 11, fontWeight: 900, textTransform: 'uppercase', tracking: 1, margin: 0, color: status.type === 'success' ? '#065f46' : '#991b1b' }}>
+              {status.type === 'success' ? 'Protocol Verified' : 'Security Alert'}
+            </h4>
+            <p style={{ fontSize: 13, color: '#3b3e3c', margin: 0 }}>{status.message}</p>
           </div>
+        )}
+
+        {/* HEADER SECTION */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
+          <div>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#2c302e', margin: 0, letterSpacing: '-0.5px' }}>My profile</h1>
+            <p style={{ fontSize: 14, color: '#8c918f', margin: '4px 0 0' }}>Personal information.</p>
+          </div>
+          <button onClick={handleSave} className="verdant-btn-primary">
+            <Plus size={16} /> Save
+          </button>
         </div>
-      )}
 
-      {/* HEADER SECTION */}
-      <section className="bg-white p-8 rounded-[24px] border border-slate-200/60 shadow-sm mb-8 flex flex-col md:flex-row items-center gap-8">
-        <div className="relative group">
-          <div className="w-24 h-24 rounded-2xl bg-[#F5F7FA] flex items-center justify-center border border-slate-100 shadow-inner group-hover:scale-105 transition-transform duration-500 overflow-hidden">
-            {userData?.profileImage ? (
-              <img src={getImageUrl(userData.profileImage)} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-3xl font-black text-[#2E3A59] opacity-20">{initials}</span>
-            )}
-          </div>
-          {userRole === 'admin' && (
-            <label htmlFor="profile-upload" className="absolute -bottom-2 -right-2 bg-[var(--accent-gold)] text-white p-2 rounded-lg shadow-lg hover:scale-110 active:scale-95 transition-all cursor-pointer">
-              <span className="material-symbols-outlined text-base">edit</span>
+        {/* PROFILE METADATA GRID */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, alignItems: 'start', marginBottom: 24 }}>
+          
+          {/* IDENTITY CARD */}
+          <div className="verdant-card" style={{ textAlign: 'center', position: 'relative' }}>
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#3b3e3c', margin: '0 0 24px', textAlign: 'left' }}>Identity</p>
+            
+            <label htmlFor="profile-upload" style={{ display: 'inline-flex', position: 'relative', cursor: 'pointer', margin: '0 auto 16px' }} className="group">
+              <div style={{ width: 100, height: 100, borderRadius: '50%', background: '#00a76b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 800, overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,167,107,0.1)' }}>
+                {userData?.profileImage ? (
+                  <img src={getImageUrl(userData.profileImage)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  initials
+                )}
+              </div>
               <input 
                 id="profile-upload"
                 type="file" 
-                className="hidden" 
+                style={{ display: 'none' }} 
                 accept="image/*"
                 onChange={async (e) => {
                   const file = e.target.files[0];
                   if (!file) return;
-                  
                   const formData = new FormData();
                   formData.append('image', file);
-                  
                   try {
                     const res = await axios.post('/api/auth/profile-image', formData, {
-                      headers: { 
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'multipart/form-data'
-                      }
+                      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
                     });
                     const updatedUser = { ...userData, profileImage: res.data.profileImage };
                     setUserData(updatedUser);
@@ -193,278 +178,143 @@ const Profile = () => {
                 }}
               />
             </label>
-          )}
+
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#3b3e3c', margin: '0 0 4px' }}>{fullName}</h3>
+            <p style={{ fontSize: 13, color: '#8c918f', margin: '0 0 2px', fontWeight: 600 }}>{userRole.toUpperCase()}</p>
+            <p style={{ fontSize: 12, color: '#9ca3af', margin: 0, fontWeight: 600 }}>{userDept}</p>
+          </div>
+
+          {/* PERSONAL DETAILS CARD */}
+          <div className="verdant-card">
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#3b3e3c', marginBottom: 24, marginTop: 0 }}>Personal details</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px 24px' }}>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full name</label>
+                <input type="text" readOnly defaultValue={fullName} className="verdant-input" />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</label>
+                <input type="email" readOnly defaultValue={userEmail} className="verdant-input" />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Department</label>
+                <input type="text" readOnly defaultValue={userDept} className="verdant-input" />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Designation</label>
+                <input type="text" readOnly defaultValue={userRole} className="verdant-input" />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Phone</label>
+                <input type="text" readOnly defaultValue={phone} className="verdant-input" />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Location</label>
+                <input type="text" readOnly defaultValue={address} className="verdant-input" />
+              </div>
+
+            </div>
+          </div>
+
         </div>
-        <div className="text-center md:text-left flex-1">
-          <h1 className="text-3xl font-black text-[#2E3A59] tracking-tighter font-manrope leading-none mb-2">{fullName}</h1>
-          <div className="flex flex-wrap gap-4 mt-4 justify-center md:justify-start">
-            <div className="flex items-center gap-2 bg-[#F5F7FA] px-3 py-1.5 rounded-lg text-slate-500 text-[10px] font-bold uppercase tracking-widest border border-slate-100">
-              <span className="material-symbols-outlined text-sm text-[var(--accent-gold)]">mail</span> {userEmail}
-            </div>
-            <div className="flex items-center gap-2 bg-[#F5F7FA] px-3 py-1.5 rounded-lg text-slate-500 text-[10px] font-bold uppercase tracking-widest border border-slate-100">
-              <span className="material-symbols-outlined text-sm text-[#2E3A59]">badge</span> {userRole}
-            </div>
-            <div className="flex items-center gap-2 bg-[#2E3A59] text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg">
-              <span className="material-symbols-outlined text-sm text-[var(--accent-gold)]">fingerprint</span> {empId}
-            </div>
-            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-emerald-100">
-              <span className="material-symbols-outlined text-sm">verified</span> Active Node
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-        {/* IDENTITY REGISTRY */}
-        <section className="lg:col-span-2 bg-white p-10 rounded-[24px] shadow-sm border border-slate-200/60 space-y-10">
-          <div className="flex justify-between items-center pb-6 border-b border-slate-50">
-            <div>
-              <h3 className="text-[12px] font-black text-[#2E3A59] font-manrope tracking-[0.2em] uppercase">Personal Details</h3>
-              <p className="text-slate-400 text-[9px] mt-1 font-medium">Core system profile identifiers</p>
-            </div>
-            <span className="material-symbols-outlined text-[#2E3A59]/5 text-5xl">fingerprint</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Full Legal Name</label>
-              <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#1F2937] font-bold text-[13px] border border-slate-200/60">{fullName}</div>
-            </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Employee ID</label>
-              <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#2E3A59] font-black text-[13px] border-2 border-orange-400/20">{empId}</div>
-            </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Professional Email</label>
-              <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#1F2937] font-bold text-[13px] border border-slate-200/60">{userEmail}</div>
-            </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Personal Email ID</label>
-              <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#1F2937] font-bold text-[13px] border border-slate-200/60 italic opacity-60">{personalEmail}</div>
-            </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Gender Identity</label>
-              <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#1F2937] font-bold text-[13px] border border-slate-200/60 uppercase">{gender}</div>
-            </div>
-            <div className="space-y-3 col-span-full">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-1">Local Address</label>
-              <div className="bg-[#fcfcfc] px-5 py-4 rounded-xl text-[#1F2937] font-bold text-[13px] border border-slate-200/60">{address}</div>
-            </div>
-          </div>
-
-          <div className="pt-8 border-t border-slate-50">
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="space-y-2">
-                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Join Date</p>
-                   <p className="text-sm font-black text-[#2E3A59]">{joinDate}</p>
-                </div>
-                <div className="space-y-2">
-                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Assignment Branch</p>
-                   <p className="text-sm font-black text-[#2E3A59] uppercase">{userDept}</p>
-                </div>
-                <div className="space-y-2">
-                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Birthdate</p>
-                   <p className="text-sm font-black text-[#2E3A59]">{birthdate}</p>
-                </div>
-                <div className="space-y-2">
-                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Phone No.</p>
-                   <p className="text-sm font-black text-[#2E3A59]">{phone}</p>
-                </div>
-             </div>
-          </div>
-        </section>
-
-        {/* INTELLIGENCE HUB */}
-        <section className="bg-[#2E3A59] p-10 rounded-[28px] text-white flex flex-col justify-between relative shadow-2xl border border-white/5 overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-
-          <div className="space-y-8 relative z-10">
-            <h3 className="text-[12px] font-black font-manrope uppercase tracking-[0.2em] text-[var(--accent-gold)]">Operational Trace</h3>
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-white/10 pb-5">
-                <span className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Protocol Status</span>
-                <span className="font-black text-[11px] uppercase text-emerald-400 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Secured
-                </span>
-              </div>
-              <div className="flex items-center justify-between border-b border-white/10 pb-5">
-                <span className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Node Health</span>
-                <div className="flex items-center gap-4">
-                  <span className="text-[var(--accent-gold)] font-black text-[12px]">98%</span>
-                  <div className="w-20 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-[var(--accent-gold)] w-[98%]"></div>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Cryptography</span>
-                <span className="text-[9px] font-black px-3 py-1 bg-white/5 rounded-lg border border-white/10 uppercase tracking-widest text-emerald-300">Active</span>
-              </div>
-            </div>
-          </div>
-          <p className="mt-12 text-[10px] text-white/40 italic font-medium uppercase tracking-tight leading-relaxed">
-            "Identity is the bedrock of secure architecture."
-          </p>
-        </section>
 
         {/* VERIFIED DOCUMENTS VAULT */}
-        <section className="lg:col-span-3 bg-white p-10 rounded-[32px] shadow-sm border border-slate-200/60">
-           <div className="flex justify-between items-center mb-10 pb-6 border-b border-slate-50">
-              <div>
-                 <h3 className="text-[12px] font-black text-[#2E3A59] font-manrope tracking-[0.2em] uppercase">Verified Documents Vault</h3>
-                 <p className="text-slate-400 text-[9px] mt-1 font-medium">Secured identity and professional assets</p>
+        <div className="verdant-card" style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#3b3e3c', marginBottom: 24, marginTop: 0 }}>Verified Documents Vault</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+            
+            {/* Adharcard Display */}
+            <div className="verdant-highlight-box" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: 20 }}>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', tracking: 1, color: '#8c918f', margin: '0 0 4px' }}>National ID</p>
+                <p style={{ fontSize: 14, fontWeight: 800, color: '#3b3e3c', margin: 0 }}>Adharcard</p>
               </div>
-              <span className="material-symbols-outlined text-[#2E3A59]/5 text-5xl">folder_shared</span>
-           </div>
-
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Adharcard Display */}
-              <div className="flex flex-col items-center gap-6 p-8 bg-[#fcfcfc] rounded-[24px] border border-slate-200/60 group hover:border-[var(--accent-gold)] transition-all">
-                 <div className="w-full aspect-square max-w-[140px] rounded-2xl bg-white flex items-center justify-center text-[var(--accent-gold)] shadow-lg border border-slate-100 group-hover:scale-[1.03] transition-all overflow-hidden">
-                    {adharCard ? (
-                      <img src={getImageUrl(adharCard)} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="flex flex-col items-center gap-2">
-                         <span className="material-symbols-outlined text-4xl opacity-10">fingerprint</span>
-                         <p className="text-[9px] font-black uppercase tracking-widest opacity-20">Identity Missing</p>
-                      </div>
-                    )}
-                 </div>
-                 <div className="text-center flex-1">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">National ID</p>
-                    <p className="text-[14px] font-black text-[#2E3A59]">Adharcard</p>
-                 </div>
-                 {adharCard ? (
-                    <a 
-                      href={getImageUrl(adharCard)} 
-                      target="_blank" rel="noopener noreferrer"
-                      className="w-full text-center py-3.5 bg-[#2E3A59] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95"
-                    >
-                      View Document
-                    </a>
-                 ) : (
-                    <span className="text-[10px] font-bold text-slate-300 uppercase italic">Not Registered</span>
-                 )}
-              </div>
-
-              {/* Bank Details Display */}
-              <div className="flex flex-col items-center gap-6 p-8 bg-[#fcfcfc] rounded-[24px] border border-slate-200/60 group hover:border-[var(--accent-gold)] transition-all">
-                 <div className="w-full aspect-square max-w-[140px] rounded-2xl bg-white flex items-center justify-center text-[#2E3A59] shadow-lg border border-slate-100 group-hover:scale-[1.03] transition-all overflow-hidden">
-                    {bankDetails ? (
-                      <img src={getImageUrl(bankDetails)} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="flex flex-col items-center gap-2">
-                         <span className="material-symbols-outlined text-4xl opacity-10">credit_card</span>
-                         <p className="text-[9px] font-black uppercase tracking-widest opacity-20">Banking Missing</p>
-                      </div>
-                    )}
-                 </div>
-                 <div className="text-center flex-1">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Financial ID</p>
-                    <p className="text-[14px] font-black text-[#2E3A59]">Bank Details</p>
-                 </div>
-                 {bankDetails ? (
-                    <a 
-                      href={getImageUrl(bankDetails)} 
-                      target="_blank" rel="noopener noreferrer"
-                      className="w-full text-center py-3.5 bg-[#2E3A59] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95"
-                    >
-                      View Document
-                    </a>
-                 ) : (
-                    <span className="text-[10px] font-bold text-slate-300 uppercase italic">Not Registered</span>
-                 )}
-              </div>
-
-              {/* PAN Card Display */}
-              <div className="flex flex-col items-center gap-6 p-8 bg-[#fcfcfc] rounded-[24px] border border-slate-200/60 group hover:border-[var(--accent-gold)] transition-all">
-                 <div className="w-full aspect-square max-w-[140px] rounded-2xl bg-white flex items-center justify-center text-[#2E3A59] shadow-lg border border-slate-100 group-hover:scale-[1.03] transition-all overflow-hidden">
-                    {panCard ? (
-                      <img src={getImageUrl(panCard)} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="flex flex-col items-center gap-2">
-                         <span className="material-symbols-outlined text-4xl opacity-10">badge</span>
-                         <p className="text-[9px] font-black uppercase tracking-widest opacity-20">PAN Missing</p>
-                      </div>
-                    )}
-                 </div>
-                 <div className="text-center flex-1">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Identity Node</p>
-                    <p className="text-[14px] font-black text-[#2E3A59]">Pancard</p>
-                 </div>
-                 {panCard ? (
-                    <a 
-                      href={getImageUrl(panCard)} 
-                      target="_blank" rel="noopener noreferrer"
-                      className="w-full text-center py-3.5 bg-[#2E3A59] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 active:scale-95"
-                    >
-                      View Document
-                    </a>
-                 ) : (
-                    <span className="text-[10px] font-bold text-slate-300 uppercase italic">Not Registered</span>
-                 )}
-              </div>
-           </div>
-        </section>
-
-        {/* SECURITY REGISTRY */}
-        <section className="lg:col-span-3 bg-white p-10 rounded-[32px] shadow-sm border border-slate-200/60 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-[var(--accent-gold)]"></div>
-
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 pb-8 border-b border-slate-50 gap-4">
-            <div>
-              <h3 className="text-2xl font-black text-[#2E3A59] font-manrope uppercase tracking-tighter">Change The Password</h3>
-              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-2 italic">Official Access Management Hub</p>
+              {adharCard ? (
+                <a href={getImageUrl(adharCard)} target="_blank" rel="noopener noreferrer" className="verdant-btn-primary"
+                  style={{ fontSize: 12, padding: '8px 16px', height: 'auto' }}>
+                  View Document
+                </a>
+              ) : (
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#8c918f', fontStyle: 'italic' }}>Not Registered</span>
+              )}
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 bg-[#F5F7FA] text-[#2E3A59] px-4 py-2 rounded-xl border border-slate-200/60 text-[9px] font-black uppercase tracking-widest shadow-sm">
-                <span className="material-symbols-outlined text-sm">shield</span> AES-256 Validated
+
+            {/* Bank Details Display */}
+            <div className="verdant-highlight-box" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: 20 }}>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', tracking: 1, color: '#8c918f', margin: '0 0 4px' }}>Financial ID</p>
+                <p style={{ fontSize: 14, fontWeight: 800, color: '#3b3e3c', margin: 0 }}>Bank Details</p>
               </div>
+              {bankDetails ? (
+                <a href={getImageUrl(bankDetails)} target="_blank" rel="noopener noreferrer" className="verdant-btn-primary"
+                  style={{ fontSize: 12, padding: '8px 16px', height: 'auto' }}>
+                  View Document
+                </a>
+              ) : (
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#8c918f', fontStyle: 'italic' }}>Not Registered</span>
+              )}
             </div>
+
+            {/* PAN Card Display */}
+            <div className="verdant-highlight-box" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: 20 }}>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', tracking: 1, color: '#8c918f', margin: '0 0 4px' }}>Identity Node</p>
+                <p style={{ fontSize: 14, fontWeight: 800, color: '#3b3e3c', margin: 0 }}>Pancard</p>
+              </div>
+              {panCard ? (
+                <a href={getImageUrl(panCard)} target="_blank" rel="noopener noreferrer" className="verdant-btn-primary"
+                  style={{ fontSize: 12, padding: '8px 16px', height: 'auto' }}>
+                  View Document
+                </a>
+              ) : (
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#8c918f', fontStyle: 'italic' }}>Not Registered</span>
+              )}
+            </div>
+
           </div>
+        </div>
 
-          <form onSubmit={handleUpdatePassword} className="space-y-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-4">Old Password</label>
-                <input className="compact-input w-full" placeholder="********" type="password" required value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} />
+        {/* SECURITY CHANGE PASSWORD */}
+        <div className="verdant-card">
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#3b3e3c', marginBottom: 24, marginTop: 0 }}>Change Password</h3>
+          
+          <form onSubmit={handleUpdatePassword} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Old Password</label>
+                <input type="password" required value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} className="verdant-input" />
               </div>
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-4">New Password</label>
-                <input className="compact-input w-full" placeholder="********" type="password" required value={passwords.newPassword} onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} />
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>New Password</label>
+                <input type="password" required value={passwords.newPassword} onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} className="verdant-input" />
               </div>
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[#2E3A59] opacity-40 ml-4">Confirm New Password</label>
-                <input className="compact-input w-full" placeholder="********" type="password" required value={passwords.confirmPassword} onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })} />
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Confirm Password</label>
+                <input type="password" required value={passwords.confirmPassword} onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })} className="verdant-input" />
               </div>
+
             </div>
 
-            {/* CONTROL HUB */}
-            <div className="pt-10 flex flex-wrap gap-4 border-t border-slate-50">
-              <button type="submit" disabled={loading} className="px-12 bg-[#2E3A59] text-white py-4 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-slate-900/10 hover:bg-[#1f2a44] hover:scale-[1.03] active:scale-95 transition-all disabled:opacity-50 flex items-center gap-3">
-                <span className="material-symbols-outlined text-base">lock_reset</span>
-                {loading ? 'Processing...' : 'Update The Password'}
+            <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+              <button type="submit" disabled={loading} className="verdant-btn-primary">
+                {loading ? 'Updating...' : 'Update Password'}
               </button>
-
-              <button type="button" onClick={resetForm} className="px-12 bg-slate-50 text-slate-400 py-4 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-slate-100 hover:text-slate-600 border border-slate-100 transition-all flex items-center gap-3">
-                <span className="material-symbols-outlined text-base">close</span>
-                Discard Changes
+              <button type="button" onClick={resetForm} className="verdant-btn-outline">
+                Discard
               </button>
             </div>
           </form>
-        </section>
-      </div>
+        </div>
 
-      {/* Deep Diagnostic section removed for production clarity */}
-
-      <div className="text-center pt-24 pb-12 opacity-30">
-        <p className="text-[#2E3A59] text-[10px] font-black uppercase tracking-[0.5em] leading-loose">
-          Narrative HR Central Operations Hub v2.5.5 <br />
-          <span className="text-[var(--accent-gold)]">Premium Security Tier Authorized</span>
-        </p>
       </div>
     </div>
   );

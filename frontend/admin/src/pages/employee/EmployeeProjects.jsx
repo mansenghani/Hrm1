@@ -72,7 +72,7 @@ const EmployeeProjects = () => {
 
     if (loading) return (
         <div className="h-[60vh] flex flex-col items-center justify-center gap-6 opacity-30">
-            <div className="w-12 h-12 border-4 border-t-[#ff4f00] border-[#eceae3] rounded-full animate-spin"></div>
+            <div className="w-12 h-12 border-4 border-t-[#00a76b] border-[#eceae3] rounded-full animate-spin"></div>
             <p className="text-[10px] font-black uppercase tracking-[0.4em]">Synchronizing Active Arcs...</p>
         </div>
     );
@@ -85,12 +85,12 @@ const EmployeeProjects = () => {
                 {/* HEADER */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#ff4f00] mb-2">My Work Hub V4.2</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#00a76b] mb-2">My Work Hub V4.2</p>
                         <h1 className="text-6xl font-black text-[#201515] tracking-tighter leading-none mb-3 uppercase">
-                            My <span className="text-[#ff4f00]">Tasks.</span>
+                            My <span className="text-[#00a76b]">Tasks.</span>
                         </h1>
                         <p className="text-[#939084] font-bold text-[11px] uppercase tracking-[0.2em] flex items-center gap-3">
-                            <span className="w-12 h-[2px] bg-[#ff4f00]"></span>
+                            <span className="w-12 h-[2px] bg-[#00a76b]"></span>
                             See all your assigned work here
                         </p>
                     </div>
@@ -101,7 +101,7 @@ const EmployeeProjects = () => {
                         </div>
                         <div className="px-6 py-3 bg-white rounded-xl shadow-sm">
                             <p className="text-[9px] font-black text-[#939084] uppercase tracking-widest mb-1">Active Now</p>
-                            <p className="text-xl font-black text-[#ff4f00]">{tasks.filter(t => t.status !== 'completed').length + projects.filter(p => p.status !== 'completed').length}</p>
+                            <p className="text-xl font-black text-[#00a76b]">{tasks.filter(t => t.status !== 'completed').length + projects.filter(p => p.status !== 'completed').length}</p>
                         </div>
                     </div>
                 </div>
@@ -125,9 +125,9 @@ const EmployeeProjects = () => {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                     {projects.map((project) => (
-                                        <div key={project._id} className="bg-white border border-[#c5c0b1] rounded-[40px] p-8 hover:border-[#ff4f00] transition-all group relative overflow-hidden shadow-sm flex flex-col min-h-[320px]">
+                                        <div key={project._id} className="bg-white border border-[#c5c0b1] rounded-[40px] p-8 hover:border-[#00a76b] transition-all group relative overflow-hidden shadow-sm flex flex-col min-h-[320px]">
                                             <div className="flex justify-between items-start mb-6">
-                                                <div className="p-3 rounded-2xl bg-[#eceae3] text-[#201515] group-hover:bg-[#ff4f00] group-hover:text-white transition-all">
+                                                <div className="p-3 rounded-2xl bg-[#eceae3] text-[#201515] group-hover:bg-[#00a76b] group-hover:text-white transition-all">
                                                     <Briefcase size={20} />
                                                 </div>
                                                 <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest text-white ${statusColors[project.status] || 'bg-gray-400'}`}>
@@ -152,13 +152,13 @@ const EmployeeProjects = () => {
                                                 <div className="flex gap-3">
                                                     <button 
                                                         onClick={() => { setSelectedProject(project); setIsProjectModalOpen(true); }}
-                                                        className="flex-1 h-10 bg-[#eceae3] text-[#201515] rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#c5c0b1] transition-all"
+                                                        className="verdant-btn-secondary" style={{ flex: 1, height: 38, fontSize: 11 }}
                                                     >
                                                         Details
                                                     </button>
                                                     <button 
                                                         onClick={() => { setSelectedProject(project); setIsProjectModalOpen(true); }}
-                                                        className="flex-1 h-10 bg-[#201515] text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#ff4f00] transition-all"
+                                                        className="verdant-btn-primary" style={{ flex: 1, height: 38, fontSize: 11 }}
                                                     >
                                                         Start Work
                                                     </button>
@@ -179,9 +179,9 @@ const EmployeeProjects = () => {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                     {tasks.map((task) => (
-                                        <div key={task._id} className="bg-white border border-[#c5c0b1] rounded-[40px] p-8 hover:border-[#ff4f00] transition-all group relative overflow-hidden shadow-sm flex flex-col min-h-[400px]">
+                                        <div key={task._id} className="bg-white border border-[#c5c0b1] rounded-[40px] p-8 hover:border-[#00a76b] transition-all group relative overflow-hidden shadow-sm flex flex-col min-h-[400px]">
                                             <div className="flex justify-between items-start mb-6">
-                                                <div className="p-3 rounded-2xl bg-[#eceae3] text-[#201515] group-hover:bg-[#ff4f00] group-hover:text-white transition-all">
+                                                <div className="p-3 rounded-2xl bg-[#eceae3] text-[#201515] group-hover:bg-[#00a76b] group-hover:text-white transition-all">
                                                     <Target size={20} />
                                                 </div>
                                                 <div className="flex flex-col items-end gap-2">
@@ -192,7 +192,7 @@ const EmployeeProjects = () => {
                                                 </div>
                                             </div>
 
-                                            <h3 className="text-xl font-black text-[#201515] uppercase tracking-tighter italic mb-2 group-hover:text-[#ff4f00] transition-colors">{task.title}</h3>
+                                            <h3 className="text-xl font-black text-[#201515] uppercase tracking-tighter italic mb-2 group-hover:text-[#00a76b] transition-colors">{task.title}</h3>
                                             <p className="text-[12px] font-bold text-[#939084] mb-6 line-clamp-3 italic">"{task.description}"</p>
                                             
                                             <div className="mt-auto space-y-6">
@@ -204,7 +204,7 @@ const EmployeeProjects = () => {
                                                     </div>
                                                     <div className="text-right">
                                                         <p className="text-[8px] font-black text-[#939084] uppercase tracking-widest mb-1">Deadline</p>
-                                                        <p className="text-[10px] font-black text-[#ff4f00] uppercase italic">{new Date(task.dueDate).toLocaleDateString()}</p>
+                                                        <p className="text-[10px] font-black text-[#00a76b] uppercase italic">{new Date(task.dueDate).toLocaleDateString()}</p>
                                                     </div>
                                                 </div>
 
@@ -213,13 +213,13 @@ const EmployeeProjects = () => {
                                                     <div className="flex-1 flex flex-col gap-2">
                                                         <button 
                                                             onClick={(e) => { e.stopPropagation(); setSelectedTask(task); setIsTaskModalOpen(true); }}
-                                                            className="w-full h-9 bg-[#eceae3] text-[#201515] rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#c5c0b1] transition-all flex items-center justify-center gap-2"
+                                                            className="verdant-btn-secondary" style={{ width: '100%', height: 36, fontSize: 11, gap: 4 }}
                                                         >
                                                             Details <ArrowUpRight size={12} />
                                                         </button>
                                                         <button 
                                                             onClick={(e) => { e.stopPropagation(); setSelectedTask(task); setIsTaskModalOpen(true); }}
-                                                            className="w-full h-9 bg-[#201515] text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#ff4f00] transition-all flex items-center justify-center gap-2 shadow-sm"
+                                                            className="verdant-btn-primary" style={{ width: '100%', height: 36, fontSize: 11, gap: 4 }}
                                                         >
                                                             Execute <Zap size={12} />
                                                         </button>
@@ -268,7 +268,7 @@ const EmployeeProjects = () => {
                         </button>
 
                         <div className="mb-10 relative z-10">
-                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4f00] mb-2 italic">Project Details</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#00a76b] mb-2 italic">Project Details</p>
                             <h2 className="text-4xl font-black text-[#201515] uppercase tracking-tighter italic leading-none">{selectedProject.projectName}</h2>
                         </div>
 
@@ -299,13 +299,13 @@ const EmployeeProjects = () => {
                             <div className="flex gap-4">
                                 <button 
                                     onClick={() => setIsProjectModalOpen(false)}
-                                    className="flex-1 py-5 bg-[#eceae3] text-[#201515] rounded-[20px] font-black text-[11px] uppercase tracking-widest hover:bg-[#c5c0b1] transition-all active:scale-95"
+                                    className="verdant-btn-secondary" style={{ flex: 1 }}
                                 >
                                     Close
                                 </button>
                                 <button 
                                     onClick={() => setIsProjectModalOpen(false)}
-                                    className="flex-1 py-5 bg-[#201515] text-white rounded-[20px] font-black text-[11px] uppercase tracking-widest hover:bg-[#ff4f00] shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3"
+                                    className="verdant-btn-primary" style={{ flex: 1, gap: 8 }}
                                 >
                                     Start Working <Zap size={16} fill="white" />
                                 </button>

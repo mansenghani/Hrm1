@@ -1,39 +1,77 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import MainLayout from '@shared/layouts/MainLayout';
-import { User, Clock, CalendarDays, Timer, CheckSquare, FolderOpen } from 'lucide-react';
+import EmployeeLayout from './layouts/EmployeeLayout';
+import Dashboard from './pages/Dashboard';
 import useAuthStore from '@shared/store/authStore';
 
-function App() {
-  const { user, logout } = useAuthStore();
+// Shared pages that already exist for employee role
+import Chat from '@shared/pages/Chat';
 
-  const navItems = [
-    { label: 'My Profile', icon: <User size={22} />, path: '/' },
-    { label: 'Daily Attendance', icon: <Clock size={22} />, path: '/attendance' },
-    { label: 'Request Leave', icon: <CalendarDays size={22} />, path: '/leave' },
-    { label: 'My Timesheet', icon: <Timer size={22} />, path: '/timesheet' },
-    { label: 'Assigned Tasks', icon: <CheckSquare size={22} />, path: '/tasks' },
-    { label: 'Personal Files', icon: <FolderOpen size={22} />, path: '/files' },
-  ];
+// ─── Lazy page stubs for existing routes ──────────────────────────────────
+// These preserve the existing route structure while the new layout is applied.
+// Each placeholder can be replaced with a real page later.
+const PlaceholderPage = ({ title }) => (
+  <div className="space-y-4 animate-slide-up">
+    <div>
+      <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h2>
+      <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>This section is coming soon.</p>
+    </div>
+    <div className="glass-card p-8 flex flex-col items-center justify-center text-center" style={{ minHeight: 300 }}>
+      <div className="w-14 h-14 rounded-2xl mb-4 flex items-center justify-center"
+        style={{ background: 'var(--accent-muted)' }}>
+        <span className="text-2xl">🚧</span>
+      </div>
+      <p className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Under Construction</p>
+      <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+        This page will be fully built soon. Check back later!
+      </p>
+    </div>
+  </div>
+);
+
+function App() {
+  const { isAuthenticated } = useAuthStore();
+
+  if (!isAuthenticated) {
+    return (
+      <Router>
+        <Routes>
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Router>
+    );
+  }
 
   return (
     <Router>
-      <MainLayout 
-        navItems={navItems} 
-        userRole="Company Employee" 
-        userName={user?.profile?.firstName || 'Employee'}
-        onLogout={logout}
-      >
-        <Routes>
-          <Route path="/" element={<div className="p-8 font-black text-3xl">Employee Dashboard</div>} />
-          <Route path="/attendance" element={<div className="p-8 font-black text-2xl">Daily Time Logs</div>} />
-          <Route path="/leave" element={<div className="p-8 font-black text-2xl">Request Management</div>} />
-          <Route path="/timesheet" element={<div className="p-8 font-black text-2xl">Work Hours Record</div>} />
-          <Route path="/tasks" element={<div className="p-8 font-black text-2xl">My Current Tasks</div>} />
-          <Route path="/files" element={<div className="p-8 font-black text-2xl">Shared Repository</div>} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </MainLayout>
+      <Routes>
+        {/* Employee portal — all routes live inside EmployeeLayout */}
+        <Route path="/employee" element={<EmployeeLayout />}>
+          <Route index element={<Navigate to="/employee/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="time-tracker" element={<PlaceholderPage title="Time Tracker" />} />
+          <Route path="chat" element={<Chat />} />
+          <Route path="task-management/create" element={<PlaceholderPage title="Create Task" />} />
+          <Route path="task-management" element={<PlaceholderPage title="Task Management" />} />
+          <Route path="profile" element={<PlaceholderPage title="My Profile" />} />
+          <Route path="attendance" element={<PlaceholderPage title="My Attendance" />} />
+          <Route path="leave" element={<PlaceholderPage title="My Leaves" />} />
+          <Route path="payslips" element={<PlaceholderPage title="My Payslips" />} />
+          <Route path="documents" element={<PlaceholderPage title="My Documents" />} />
+          <Route path="performance" element={<PlaceholderPage title="My Performance" />} />
+        </Route>
+
+        {/* Legacy root routes (kept for backwards compatibility) */}
+        <Route path="/" element={<Navigate to="/employee/dashboard" replace />} />
+        <Route path="/attendance" element={<Navigate to="/employee/attendance" replace />} />
+        <Route path="/leave" element={<Navigate to="/employee/leave" replace />} />
+        <Route path="/timesheet" element={<Navigate to="/employee/time-tracker" replace />} />
+        <Route path="/tasks" element={<Navigate to="/employee/task-management" replace />} />
+        <Route path="/files" element={<Navigate to="/employee/documents" replace />} />
+
+        {/* Catch-all */}
+        <Route path="*" element={<Navigate to="/employee/dashboard" replace />} />
+      </Routes>
     </Router>
   );
 }

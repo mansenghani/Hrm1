@@ -77,24 +77,18 @@ const SmartTimeTracker = () => {
       if (statusRes.data && statusRes.data.hasActiveSession) {
         const s = statusRes.data;
         const isRunning = s.isRunning !== undefined ? s.isRunning : (s.status === 'active');
-        const totalActive = s.totalActiveTime || s.activeTime || 0;
+        const totalActive = s.activeTime || 0;
 
-        setSession({ ...s, isRunning, totalActiveTime: totalActive });
+        setSession({ ...s, isRunning });
         setIdleTime(s.idleTime || 0);
 
         if (isRunning) {
           lastActivityRef.current = Date.now();
 
-          let calculatedTimer = totalActive;
-          if (s.startTime) {
-            const elapsed = Math.floor((new Date() - new Date(s.startTime)) / 1000);
-            calculatedTimer = Math.max(0, elapsed + totalActive);
-          }
-
           // 🛡️ SOFT SYNC: Only jump if difference > 2s to avoid jitter
           setTimer(prev => {
-            if (Math.abs(prev - calculatedTimer) > 2 || prev === 0) {
-              return calculatedTimer;
+            if (Math.abs(prev - totalActive) > 2 || prev === 0) {
+              return totalActive;
             }
             return prev;
           });
