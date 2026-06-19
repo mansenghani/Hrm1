@@ -291,7 +291,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     const fetchStatus = async () => {
       if (!token) return;
       try {
-        const res = await axios.get('/api/timer/status', { headers: { Authorization: `Bearer ${token}` } });
+        const res = await axios.get('/api/time/timer/status', { headers: { Authorization: `Bearer ${token}` } });
         setIsTrackingActive(!!res.data?.isRunning);
         if (res.data?.status === 'idle') setIsPausedByIdle(true);
 
@@ -333,7 +333,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     if (now - lastServerSync < 15000) return; // 15s throttle
 
     try {
-      await axios.post('/api/timer/update', { type }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post('/api/time/timer/update', { type }, { headers: { Authorization: `Bearer ${token}` } });
       setLastServerSync(now);
     } catch (err) { console.error('Heartbeat failed:', err); }
   };
@@ -343,7 +343,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
 
   const pauseTimer = async () => {
     try {
-      await axios.post('/api/timer/update', { type: 'idle' }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post('/api/time/timer/update', { type: 'idle' }, { headers: { Authorization: `Bearer ${token}` } });
     } catch (err) { console.error('Pause failed:', err); }
   };
 

@@ -137,7 +137,7 @@ const EmployeeLayout = () => {
   // ── Timer Status ───────────────────────────────────────────
   useEffect(() => {
     if (!token) return;
-    axios.get('/api/timer/status', { headers: { Authorization: `Bearer ${token}` } })
+    axios.get('/api/time/timer/status', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => { setTimerActive(!!r.data?.isRunning); if (r.data?.status === 'idle') setIsPaused(true); })
       .catch(() => {});
   }, [token]);

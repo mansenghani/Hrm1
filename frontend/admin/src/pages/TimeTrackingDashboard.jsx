@@ -72,6 +72,14 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
   const [selectedTask, setSelectedTask] = useState(null);
   const today = getYYYYMMDD(new Date());
   const [viewDate, setViewDate]           = useState(today);
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
   const [registryDate, setRegistryDate]   = useState(today); 
   
   const [roleFilter, setRoleFilter]       = useState(userRole === 'employee' ? 'Employee' : 'All'); 
@@ -426,14 +434,14 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
   const avgWeeklyHours = (parseFloat(totalHoursWorked) / weeksCount).toFixed(1);
 
   return (
-    <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: '#f9fdfc', minHeight: 'calc(100vh - 56px)', color: '#3b3e3c', width: '100%', boxSizing: 'border-box' }}>
+    <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: isDark ? '#08100e' : '#f9fdfc', minHeight: 'calc(100vh - 56px)', color: isDark ? '#cbd5e1' : '#3b3e3c', width: '100%', boxSizing: 'border-box', transition: 'background-color 0.3s ease, color 0.3s ease' }}>
       <div style={{ width: '100%', maxWidth: '100%', padding: '32px 32px 60px', boxSizing: 'border-box' }}>
         
         {/* HEADER SECTION */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, marginBottom: 28 }}>
           <div>
-            <h1 style={{ fontSize: '32px', fontWeight: 800, color: '#2c302e', margin: 0, letterSpacing: '-0.75px' }}>Attendance</h1>
-            <p style={{ fontSize: '15px', color: '#8c918f', margin: '4px 0 0', fontWeight: 500 }}>Track check-ins, hours and shifts.</p>
+            <h1 style={{ fontSize: '32px', fontWeight: 800, color: isDark ? '#fff' : '#2c302e', margin: 0, letterSpacing: '-0.75px' }}>Attendance</h1>
+            <p style={{ fontSize: '15px', color: isDark ? '#a3b3af' : '#8c918f', margin: '4px 0 0', fontWeight: 500 }}>Track check-ins, hours and shifts.</p>
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
             <button onClick={handleExport} className="verdant-btn-outline">
@@ -448,7 +456,7 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
         {/* SEARCH AND FILTERS */}
         <div style={{ display: 'flex', gap: 14, marginBottom: 28, flexWrap: 'wrap' }}>
           <div style={{ position: 'relative', flex: 1, minWidth: 260 }}>
-            <Search size={18} color="#8c918f" style={{ position: 'absolute', left: 18, top: '50%', transform: 'translateY(-50%)' }} />
+            <Search size={18} color={isDark ? '#a3b3af' : '#8c918f'} style={{ position: 'absolute', left: 18, top: '50%', transform: 'translateY(-50%)' }} />
             <input type="text" placeholder="Search..." className="verdant-input" style={{ paddingLeft: 48 }} />
           </div>
           <button className="verdant-btn-outline">
@@ -462,53 +470,53 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
           {/* Card 1: Total Days Worked */}
           <div className="verdant-card" style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#f2fbf6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(0,167,107,0.08)' : '#f2fbf6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <CheckCircle2 size={20} color="#00a76b" />
               </div>
             </div>
-            <p style={{ fontSize: '38px', fontWeight: 800, color: '#3b3e3c', margin: '16px 0 4px', letterSpacing: '-1.5px', lineHeight: 1 }}>
+            <p style={{ fontSize: '38px', fontWeight: 800, color: isDark ? '#fff' : '#3b3e3c', margin: '16px 0 4px', letterSpacing: '-1.5px', lineHeight: 1 }}>
               {totalDaysWorked}
             </p>
-            <p style={{ fontSize: 14, color: '#8c918f', margin: 0, fontWeight: 600 }}>Total days worked</p>
+            <p style={{ fontSize: 14, color: isDark ? '#a3b3af' : '#8c918f', margin: 0, fontWeight: 600 }}>Total days worked</p>
           </div>
 
           {/* Card 2: Leaves Taken */}
           <div className="verdant-card" style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#fbf2f2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(199,101,95,0.08)' : '#fbf2f2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <CalendarIcon size={20} color="#c7655f" />
               </div>
             </div>
-            <p style={{ fontSize: '38px', fontWeight: 800, color: '#3b3e3c', margin: '16px 0 4px', letterSpacing: '-1.5px', lineHeight: 1 }}>
+            <p style={{ fontSize: '38px', fontWeight: 800, color: isDark ? '#fff' : '#3b3e3c', margin: '16px 0 4px', letterSpacing: '-1.5px', lineHeight: 1 }}>
               {totalLeavesTaken}
             </p>
-            <p style={{ fontSize: 14, color: '#8c918f', margin: 0, fontWeight: 600 }}>Leaves taken (days)</p>
+            <p style={{ fontSize: 14, color: isDark ? '#a3b3af' : '#8c918f', margin: 0, fontWeight: 600 }}>Leaves taken (days)</p>
           </div>
 
           {/* Card 3: Total Hours Worked */}
           <div className="verdant-card" style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#f0f5fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(94,139,181,0.08)' : '#f0f5fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Clock size={20} color="#5e8bb5" />
               </div>
             </div>
-            <p style={{ fontSize: '38px', fontWeight: 800, color: '#3b3e3c', margin: '16px 0 4px', letterSpacing: '-1.5px', lineHeight: 1 }}>
+            <p style={{ fontSize: '38px', fontWeight: 800, color: isDark ? '#fff' : '#3b3e3c', margin: '16px 0 4px', letterSpacing: '-1.5px', lineHeight: 1 }}>
               {totalHoursWorked}h
             </p>
-            <p style={{ fontSize: 14, color: '#8c918f', margin: 0, fontWeight: 600 }}>Total active hours</p>
+            <p style={{ fontSize: 14, color: isDark ? '#a3b3af' : '#8c918f', margin: 0, fontWeight: 600 }}>Total active hours</p>
           </div>
 
           {/* Card 4: Average Hours / Week */}
           <div className="verdant-card" style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#f2fbf6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(0,167,107,0.08)' : '#f2fbf6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <TrendingUp size={20} color="#00a76b" />
               </div>
             </div>
-            <p style={{ fontSize: '38px', fontWeight: 800, color: '#3b3e3c', margin: '16px 0 4px', letterSpacing: '-1.5px', lineHeight: 1 }}>
+            <p style={{ fontSize: '38px', fontWeight: 800, color: isDark ? '#fff' : '#3b3e3c', margin: '16px 0 4px', letterSpacing: '-1.5px', lineHeight: 1 }}>
               {avgWeeklyHours}h
             </p>
-            <p style={{ fontSize: 14, color: '#8c918f', margin: 0, fontWeight: 600 }}>Avg. hours / week</p>
+            <p style={{ fontSize: 14, color: isDark ? '#a3b3af' : '#8c918f', margin: 0, fontWeight: 600 }}>Avg. hours / week</p>
           </div>
 
         </div>
@@ -518,14 +526,14 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
           
           {/* Chart card */}
           <div className="verdant-card" style={{ display: 'flex', flexDirection: 'column' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3b3e3c', marginBottom: 20, marginTop: 0 }}>This week</h3>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', marginBottom: 20, marginTop: 0 }}>This week</h3>
             <div style={{ height: 260, width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartDataToRender} barCategoryGap="40%">
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2eae7" />
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#8c918f', fontWeight: 600 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#8c918f' }} />
-                  <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e2eae7', fontSize: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }} />
+                <BarChart key={isDark ? 'dark' : 'light'} data={chartDataToRender} barCategoryGap="40%">
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1a2d29' : '#e2eae7'} />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: isDark ? '#a3b3af' : '#8c918f', fontWeight: 600 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: isDark ? '#a3b3af' : '#8c918f' }} />
+                  <Tooltip contentStyle={{ background: isDark ? '#111c18' : '#fff', border: isDark ? '1px solid #1a2d29' : '1px solid #e2eae7', borderRadius: 12, fontSize: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.05)', color: isDark ? '#fff' : '#000' }} />
                   <Bar dataKey="active" stackId="a" fill="#00a76b" />
                   <Bar dataKey="idle" stackId="a" fill="#dfb479" />
                   <Bar dataKey="overtime" stackId="a" fill="#d0746e" radius={[6, 6, 0, 0]} />
@@ -537,7 +545,7 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
           {/* Quick Actions Card */}
           <div className="verdant-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3b3e3c', marginBottom: 20, marginTop: 0 }}>Quick actions</h3>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', marginBottom: 20, marginTop: 0 }}>Quick actions</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <button 
                   onClick={() => !isRunning && handleAction('start')}
@@ -550,7 +558,7 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
                   onClick={() => isRunning && handleAction('stop')}
                   disabled={!isRunning}
                   className={!isRunning ? "verdant-btn-secondary text-[#a3a3a3]" : "verdant-btn-primary"}
-                  style={{ width: '100%', backgroundColor: isRunning ? '#3b3e3c' : undefined }}>
+                  style={{ width: '100%', backgroundColor: isRunning ? (isDark ? '#1a2d29' : '#3b3e3c') : undefined }}>
                   <Square size={14} fill="currentColor" /> Check out
                 </button>
                 <button 
@@ -563,11 +571,11 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
             </div>
 
             <div className="verdant-highlight-box" style={{ marginTop: 20 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 6px' }}>Current session</p>
-              <h4 style={{ fontSize: '28px', fontWeight: 800, color: '#3b3e3c', margin: '0 0 4px', fontFamily: 'monospace' }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 6px' }}>Current session</p>
+              <h4 style={{ fontSize: '28px', fontWeight: 800, color: isDark ? '#fff' : '#3b3e3c', margin: '0 0 4px', fontFamily: 'monospace' }}>
                 {formatTime(activeTime)}
               </h4>
-              <p style={{ fontSize: 12, color: '#8c918f', margin: 0, fontWeight: 500 }}>
+              <p style={{ fontSize: 12, color: isDark ? '#a3b3af' : '#8c918f', margin: 0, fontWeight: 500 }}>
                 {isRunning ? `Started at ${startedAtTime}` : 'Session inactive'}
               </p>
             </div>
@@ -577,34 +585,34 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
 
         {/* SYSTEM REGISTRY TABLE */}
         <div className="verdant-card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '24px 24px 20px', borderBottom: '1px solid #e2eae7', background: '#f9fdfc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+          <div style={{ padding: '24px 24px 20px', borderBottom: isDark ? '1px solid #1a2d29' : '1px solid #e2eae7', background: isDark ? '#111c18' : '#f9fdfc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3b3e3c', margin: 0 }}>System Registry</h3>
-              <p style={{ fontSize: 13, color: '#8c918f', margin: '4px 0 0', fontWeight: 500 }}>Matrix activity logs and system ticks.</p>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', margin: 0 }}>System Registry</h3>
+              <p style={{ fontSize: 13, color: isDark ? '#a3b3af' : '#8c918f', margin: '4px 0 0', fontWeight: 500 }}>Matrix activity logs and system ticks.</p>
             </div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <span style={{ fontSize: 13, color: '#8c918f', fontWeight: 600 }}>Active Date:</span>
+              <span style={{ fontSize: 13, color: isDark ? '#a3b3af' : '#8c918f', fontWeight: 600 }}>Active Date:</span>
               <div style={{ position: 'relative' }} ref={viewCalendarRef}>
                 <button onClick={() => setShowViewCalendar(!showViewCalendar)} className="verdant-btn-outline" style={{ height: 38, padding: '0 16px' }}>
                   <CalendarIcon size={15} color="#00a76b" /> {formatDateDisplay(viewDate)}
                 </button>
                 {showViewCalendar && (
-                  <div style={{ position: 'absolute', right: 0, bottom: '100%', marginBottom: 8, width: 280, background: '#fff', border: '1px solid #e2eae7', borderRadius: 16, padding: 16, boxShadow: '0 10px 30px rgba(0,0,0,0.06)', zIndex: 100 }}>
+                  <div style={{ position: 'absolute', right: 0, bottom: '100%', marginBottom: 8, width: 280, background: isDark ? '#111c18' : '#fff', border: isDark ? '1px solid #1a2d29' : '1px solid #e2eae7', borderRadius: 16, padding: 16, boxShadow: '0 10px 30px rgba(0,0,0,0.06)', zIndex: 100 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                       <button type="button" onClick={() => setViewCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
-                        style={{ border: 'none', background: '#f3f4f6', cursor: 'pointer', borderRadius: 8, width: 28, height: 28, display: 'flex', alignItems: 'center', justify: 'center' }}>
+                        style={{ border: 'none', background: isDark ? '#162722' : '#f3f4f6', color: isDark ? '#fff' : '#000', cursor: 'pointer', borderRadius: 8, width: 28, height: 28, display: 'flex', alignItems: 'center', justify: 'center', justifyContent: 'center' }}>
                         <ChevronLeft size={14} />
                       </button>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: '#3b3e3c' }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c' }}>
                         {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][viewCalendarMonth.getMonth()]} {viewCalendarMonth.getFullYear()}
                       </span>
                       <button type="button" onClick={() => setViewCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
-                        style={{ border: 'none', background: '#f3f4f6', cursor: 'pointer', borderRadius: 8, width: 28, height: 28, display: 'flex', alignItems: 'center', justify: 'center' }}>
+                        style={{ border: 'none', background: isDark ? '#162722' : '#f3f4f6', color: isDark ? '#fff' : '#000', cursor: 'pointer', borderRadius: 8, width: 28, height: 28, display: 'flex', alignItems: 'center', justify: 'center', justifyContent: 'center' }}>
                         <ChevronRight size={14} />
                       </button>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, textAlign: 'center' }}>
-                      {['Su','Mo','Tu','We','Th','Fr','Sa'].map(w => <div key={w} style={{ fontSize: 10, fontWeight: 800, color: '#8c918f' }}>{w}</div>)}
+                      {['Su','Mo','Tu','We','Th','Fr','Sa'].map(w => <div key={w} style={{ fontSize: 10, fontWeight: 800, color: isDark ? '#a3b3af' : '#8c918f' }}>{w}</div>)}
                       {getDaysInMonth(viewCalendarMonth).map((day, idx) => {
                         if (!day) return <div key={idx} />;
                         const dStr = getYYYYMMDD(day);
@@ -612,7 +620,7 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
                         const isFut = dStr > today;
                         return (
                           <button key={dStr} type="button" disabled={isFut} onClick={() => { setViewDate(dStr); setShowViewCalendar(false); }}
-                            style={{ height: 28, width: 28, border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: isFut ? 'not-allowed' : 'pointer', background: isSel ? '#00a76b' : 'transparent', color: isSel ? '#fff' : isFut ? '#e2eae7' : '#3b3e3c' }}>
+                            style={{ height: 28, width: 28, border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: isFut ? 'not-allowed' : 'pointer', background: isSel ? '#00a76b' : 'transparent', color: isSel ? '#fff' : isFut ? (isDark ? '#1a2d29' : '#e2eae7') : (isDark ? '#fff' : '#3b3e3c') }}>
                             {day.getDate()}
                           </button>
                         );
@@ -626,34 +634,34 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ background: '#f9fdfc', borderBottom: '1px solid #e2eae7' }}>
-                  <th style={{ padding: '14px 24px', fontSize: 11, fontWeight: 800, color: '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sequence ID</th>
-                  <th style={{ padding: '14px 24px', fontSize: 11, fontWeight: 800, color: '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Date</th>
-                  <th style={{ padding: '14px 24px', fontSize: 11, fontWeight: 800, color: '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Time</th>
-                  <th style={{ padding: '14px 24px', fontSize: 11, fontWeight: 800, color: '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Idle Duration</th>
-                  <th style={{ padding: '14px 24px', fontSize: 11, fontWeight: 800, color: '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status Code</th>
+                <tr style={{ background: isDark ? '#111c18' : '#f9fdfc', borderBottom: isDark ? '1px solid #1a2d29' : '1px solid #e2eae7' }}>
+                  <th style={{ padding: '14px 24px', fontSize: 11, fontWeight: 800, color: isDark ? '#a3b3af' : '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sequence ID</th>
+                  <th style={{ padding: '14px 24px', fontSize: 11, fontWeight: 800, color: isDark ? '#a3b3af' : '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Date</th>
+                  <th style={{ padding: '14px 24px', fontSize: 11, fontWeight: 800, color: isDark ? '#a3b3af' : '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Time</th>
+                  <th style={{ padding: '14px 24px', fontSize: 11, fontWeight: 800, color: isDark ? '#a3b3af' : '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Idle Duration</th>
+                  <th style={{ padding: '14px 24px', fontSize: 11, fontWeight: 800, color: isDark ? '#a3b3af' : '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status Code</th>
                 </tr>
               </thead>
               <tbody>
                 {summary.logs.length === 0 ? (
                   <tr>
-                    <td colSpan="5" style={{ padding: '48px 24px', textAlign: 'center', color: '#8c918f', fontSize: 14, fontWeight: 500 }}>No activity logs recorded for this date range.</td>
+                    <td colSpan="5" style={{ padding: '48px 24px', textAlign: 'center', color: isDark ? '#a3b3af' : '#8c918f', fontSize: 14, fontWeight: 500 }}>No activity logs recorded for this date range.</td>
                   </tr>
                 ) : (
                   summary.logs.map((log, i) => (
-                    <tr key={i} style={{ borderBottom: i < summary.logs.length - 1 ? '1px solid #e2eae7' : 'none', fontSize: 13, transition: 'background 0.2s' }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = '#f2fbf6'}
+                    <tr key={i} style={{ borderBottom: i < summary.logs.length - 1 ? (isDark ? '1px solid #1a2d29' : '1px solid #e2eae7') : 'none', fontSize: 13, transition: 'background 0.2s' }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = isDark ? '#162722' : '#f2fbf6'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                      <td style={{ padding: '16px 24px', fontWeight: 700, color: '#3b3e3c' }}>Pulse-{i + 1}</td>
-                      <td style={{ padding: '16px 24px', color: '#5c5f5d', fontWeight: 500 }}>{formatDateDisplay(log.date)}</td>
-                      <td style={{ padding: '16px 24px', color: '#3b3e3c', fontWeight: 700 }}>{formatTime(log.activeTime)}</td>
+                      <td style={{ padding: '16px 24px', fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c' }}>Pulse-{i + 1}</td>
+                      <td style={{ padding: '16px 24px', color: isDark ? '#cbd5e1' : '#5c5f5d', fontWeight: 500 }}>{formatDateDisplay(log.date)}</td>
+                      <td style={{ padding: '16px 24px', color: isDark ? '#fff' : '#3b3e3c', fontWeight: 700 }}>{formatTime(log.activeTime)}</td>
                       <td style={{ padding: '16px 24px', color: '#c7655f', fontWeight: 700 }}>{formatTime(log.idleTime)}</td>
                       <td style={{ padding: '16px 24px' }}>
                         <span style={{
                           fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 8,
-                          background: log.status === 'active' ? '#f2fbf6' : '#fbf9f2',
+                          background: log.status === 'active' ? (isDark ? 'rgba(0,167,107,0.08)' : '#f2fbf6') : (isDark ? 'rgba(223,180,121,0.08)' : '#fbf9f2'),
                           color: log.status === 'active' ? '#00a76b' : '#dfb479',
-                          border: log.status === 'active' ? '1px solid #e2eae7' : '1px solid #f6eedc'
+                          border: log.status === 'active' ? (isDark ? '1px solid #1a2d29' : '1px solid #e2eae7') : (isDark ? '1px solid #38352e' : '1px solid #f6eedc')
                         }}>
                           {log.status === 'active' ? 'ACTIVE' : log.status.toUpperCase()}
                         </span>

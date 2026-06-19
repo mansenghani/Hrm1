@@ -24,6 +24,23 @@
   --zap-radius-pill: 20px;
 }
 
+.dark {
+  /* Primary Palette */
+  --zap-black: #ffffff;
+  --zap-cream: #0f0d0a;
+  --zap-off-white: #181612;
+
+  /* Brand Accent */
+  --zap-orange: #ff4f00;
+
+  /* Neutrals */
+  --zap-charcoal: #e5e2da;
+  --zap-warm-gray: #a3a094;
+  --zap-sand: #38352e;
+  --zap-light-sand: #282520;
+  --zap-mid-warm: #5c584f;
+}
+
 /* Base Styles */
 * {
   box-sizing: border-box;

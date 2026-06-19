@@ -33,6 +33,16 @@ const SmartTimeTracker = () => {
   const [session, setSession] = useState(null);
   const [timer, setTimer] = useState(0);
   const [idleTime, setIdleTime] = useState(0);
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+
+  // Sync theme status reactively
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   const [todaySessions, setTodaySessions] = useState([]);
   const [teamData, setTeamData] = useState([]);
@@ -180,7 +190,9 @@ const SmartTimeTracker = () => {
   return (
     <div className="animate-fade-in pb-32 max-w-[1400px] mx-auto px-6">
       {/* HEADER */}
-      <div className="mb-12 flex flex-col md:flex-row justify-between items-end border-b border-[#c5c0b1] pb-10">
+      <div className={`mb-12 flex flex-col md:flex-row justify-between items-end border-b pb-10 ${
+        isDark ? 'border-[#38352e]' : 'border-[#c5c0b1]'
+      }`}>
         <div>
           <p className="zap-caption-upper text-[#ff4f00] mb-4">Activity Monitoring Protocol</p>
           <h1 className="zap-display-hero">Smart <span className="text-[#ff4f00]">Time Tracker.</span></h1>
@@ -193,12 +205,20 @@ const SmartTimeTracker = () => {
               placeholder="Search personnel..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 pr-6 h-12 bg-white border border-[#c5c0b1] rounded-[4px] text-[14px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] w-64 shadow-sm"
+              className={`pl-12 pr-6 h-12 border rounded-[4px] text-[14px] font-medium focus:outline-none focus:border-[#ff4f00] w-64 shadow-sm ${
+                isDark 
+                  ? 'bg-[#181612] border-[#38352e] text-white focus:bg-[#0f0d0a]' 
+                  : 'bg-white border-[#c5c0b1] text-[#201515]'
+              }`}
             />
           </div>
           <button
             onClick={fetchData}
-            className="h-12 px-6 bg-[#201515] text-[#fffefb] rounded-[4px] text-[12px] font-black uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-[#ff4f00] transition-all shadow-lg cursor-pointer border-none"
+            className={`h-12 px-6 rounded-[4px] text-[12px] font-black uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-[#ff4f00] transition-all shadow-lg cursor-pointer border-none ${
+              isDark 
+                ? 'bg-[#282520] text-white' 
+                : 'bg-[#201515] text-[#fffefb]'
+            }`}
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             Sync Registry
@@ -207,50 +227,59 @@ const SmartTimeTracker = () => {
             type="date"
             value={viewDate}
             onChange={(e) => setViewDate(e.target.value)}
-            className="h-12 px-5 bg-white border border-[#c5c0b1] rounded-[4px] text-[14px] font-bold text-[#201515] outline-none shadow-sm"
+            className={`h-12 px-5 border rounded-[4px] text-[14px] font-bold outline-none shadow-sm ${
+              isDark 
+                ? 'bg-[#181612] border-[#38352e] text-white' 
+                : 'bg-white border-[#c5c0b1] text-[#201515]'
+            }`}
           />
         </div>
       </div>
 
       {/* TRACKER PANEL */}
       <div className="grid grid-cols-12 gap-8 mb-12">
-        <div className={`col-span-12 lg:col-span-8 zap-card p-10 transition-all duration-700 relative overflow-hidden shadow-xl ${session?.isRunning ? (session.status === 'idle' ? 'bg-[#fffdf9] border-[#ff4f00]' : 'bg-[#fffdf9] border-[#24a148]') : 'bg-[#201515] text-[#fffefb]'
-          }`}>
+        <div className={`col-span-12 lg:col-span-8 zap-card p-10 transition-all duration-700 relative overflow-hidden shadow-xl ${
+          session?.isRunning 
+            ? (session.status === 'idle' 
+                ? (isDark ? 'bg-[#181612] border-[#ff4f00] text-white' : 'bg-[#fffdf9] border-[#ff4f00] text-[#201515]') 
+                : (isDark ? 'bg-[#181612] border-[#24a148] text-white' : 'bg-[#fffdf9] border-[#24a148] text-[#201515]')) 
+            : (isDark ? 'bg-[#0f0d0a] border-[#38352e] text-white' : 'bg-[#201515] text-[#fffefb]')
+        }`}>
           <div className="relative z-10 flex flex-col h-full justify-between">
             <div className="flex justify-between items-start mb-12">
               <div className="flex items-center gap-4">
                 <div className={`w-3 h-3 rounded-full ${session?.isRunning ? (session.status === 'idle' ? 'bg-[#ff4f00] animate-pulse' : 'bg-[#24a148] animate-pulse') : 'bg-[#939084]'}`}></div>
-                <span className={`zap-caption-upper !text-[11px] font-black tracking-widest ${!session?.isRunning ? 'text-white' : 'text-[#201515]'}`}>
+                <span className={`zap-caption-upper !text-[11px] font-black tracking-widest ${(!session?.isRunning && !isDark) || (session?.isRunning && isDark) ? 'text-white' : 'text-[#201515]'}`}>
                   {session?.isRunning ? (session.status === 'idle' ? 'Idle — Sync Paused' : 'Actively Monitoring') : (session?.status === 'paused' ? 'Session Paused' : 'Timer Disconnected')}
                 </span>
               </div>
               {session && session.startTime && (
-                <span className={`text-[11px] font-black uppercase tracking-widest ${!session?.isRunning ? 'text-white/60' : 'text-[#939084]'}`}>
+                <span className={`text-[11px] font-black uppercase tracking-widest ${(!session?.isRunning && !isDark) || (session?.isRunning && isDark) ? 'text-white/60' : 'text-[#939084]'}`}>
                   Sync: {new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               )}
             </div>
 
             <div className="text-center mb-12">
-              <h2 className={`text-[80px] font-black tabular-nums tracking-tighter leading-none mb-4 italic ${!session?.isRunning ? 'text-white' : 'text-[#201515]'}`}>
+              <h2 className={`text-[80px] font-black tabular-nums tracking-tighter leading-none mb-4 italic ${(!session?.isRunning && !isDark) || (session?.isRunning && isDark) ? 'text-white' : 'text-[#201515]'}`}>
                 {formatTime(timer)}
               </h2>
-              <p className={`text-[11px] font-black uppercase tracking-widest ${!session?.isRunning ? 'text-white/60' : 'text-[#939084]'}`}>Active Workspace Participation</p>
+              <p className={`text-[11px] font-black uppercase tracking-widest ${(!session?.isRunning && !isDark) || (session?.isRunning && isDark) ? 'text-white/60' : 'text-[#939084]'}`}>Active Workspace Participation</p>
             </div>
 
             {session?.isRunning && (
               <div className="grid grid-cols-3 gap-6 mb-12">
-                <div className="bg-white/5 border border-white/10 p-6 rounded-xl text-center">
+                <div className={`border p-6 rounded-xl text-center ${isDark ? 'bg-white/5 border-white/10' : 'bg-[#fffdf9]/50 border-black/5'}`}>
                   <p className="text-[10px] font-black text-[#939084] uppercase tracking-widest mb-2">Active</p>
                   <p className="text-[20px] font-black text-[#24a148] tracking-tighter">{formatMinutes(timer)}</p>
                 </div>
-                <div className="bg-white/5 border border-white/10 p-6 rounded-xl text-center">
+                <div className={`border p-6 rounded-xl text-center ${isDark ? 'bg-white/5 border-white/10' : 'bg-[#fffdf9]/50 border-black/5'}`}>
                   <p className="text-[10px] font-black text-[#939084] uppercase tracking-widest mb-2">Idle</p>
                   <p className="text-[20px] font-black text-[#ff4f00] tracking-tighter">{formatMinutes(idleTime)}</p>
                 </div>
-                <div className="bg-white/5 border border-white/10 p-6 rounded-xl text-center">
+                <div className={`border p-6 rounded-xl text-center ${isDark ? 'bg-white/5 border-white/10' : 'bg-[#fffdf9]/50 border-black/5'}`}>
                   <p className="text-[10px] font-black text-[#939084] uppercase tracking-widest mb-2">Yield</p>
-                  <p className="text-[20px] font-black text-white tracking-tighter">{activePercent}%</p>
+                  <p className={`text-[20px] font-black tracking-tighter ${isDark ? 'text-white' : 'text-[#201515]'}`}>{activePercent}%</p>
                 </div>
               </div>
             )}
@@ -275,7 +304,11 @@ const SmartTimeTracker = () => {
                   ) : (
                     <button
                       onClick={() => handleAction('pause')}
-                      className="bg-[#fffefb] text-[#201515] h-16 flex-1 rounded-xl font-black text-[16px] uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-[#eceae3] transition-all cursor-pointer border-none"
+                      className={`h-16 flex-1 rounded-xl font-black text-[16px] uppercase tracking-widest flex items-center justify-center gap-3 transition-all cursor-pointer border-none ${
+                        isDark 
+                          ? 'bg-[#282520] text-white hover:bg-[#ff4f00]' 
+                          : 'bg-[#fffefb] text-[#201515] hover:bg-[#eceae3]'
+                      }`}
                     >
                       <Pause size={20} /> PAUSE
                     </button>
@@ -294,8 +327,12 @@ const SmartTimeTracker = () => {
 
         {/* SIDE ACTIVITY */}
         <div className="col-span-12 lg:col-span-4 space-y-8">
-          <div className="bg-[#fffdf9] border border-[#c5c0b1] p-8 rounded-3xl">
-            <h3 className="text-[12px] font-black text-[#201515] uppercase tracking-widest mb-8 flex items-center gap-3 italic">
+          <div className={`border p-8 rounded-3xl transition-colors ${
+            isDark ? 'bg-[#0f0d0a] border-[#38352e]' : 'bg-[#fffdf9] border-[#c5c0b1]'
+          }`}>
+            <h3 className={`text-[12px] font-black uppercase tracking-widest mb-8 flex items-center gap-3 italic ${
+              isDark ? 'text-white' : 'text-[#201515]'
+            }`}>
               <Monitor size={18} />
               Node Sensor Stream
             </h3>
@@ -305,8 +342,10 @@ const SmartTimeTracker = () => {
                 { icon: Keyboard, label: 'Keyboard Input', active: session?.isRunning && session.status === 'active' },
                 { icon: Monitor, label: 'Tab Focus', active: session?.isRunning },
               ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-4 bg-white border border-[#c5c0b1] rounded-xl">
-                  <div className="flex items-center gap-4 text-[#201515]">
+                <div key={i} className={`flex items-center justify-between p-4 border rounded-xl transition-colors ${
+                  isDark ? 'bg-[#181612] border-[#38352e] text-white' : 'bg-white border-[#c5c0b1] text-[#201515]'
+                }`}>
+                  <div className="flex items-center gap-4">
                     <item.icon size={16} />
                     <span className="text-[11px] font-black uppercase tracking-wider">{item.label}</span>
                   </div>
@@ -316,7 +355,9 @@ const SmartTimeTracker = () => {
             </div>
           </div>
 
-          <div className="bg-[#201515] p-8 rounded-3xl text-white shadow-2xl">
+          <div className={`p-8 rounded-3xl shadow-2xl transition-colors ${
+            isDark ? 'bg-[#0f0d0a] border border-[#38352e] text-white' : 'bg-[#201515] text-white'
+          }`}>
             <h3 className="text-[12px] font-black text-[#ff4f00] uppercase tracking-widest mb-8 italic">Historical Pulse</h3>
             <div className="space-y-4">
               {todaySessions.length === 0 ? (
@@ -336,32 +377,38 @@ const SmartTimeTracker = () => {
 
       {/* TEAM TABLE */}
       {teamData.length > 0 && (
-        <div className="bg-white border border-[#c5c0b1] rounded-3xl overflow-hidden shadow-xl">
-          <div className="p-8 bg-[#eceae3] border-b border-[#c5c0b1] flex justify-between items-center">
-            <h3 className="text-[12px] font-black uppercase tracking-widest text-[#201515]">Personnel Time Registry</h3>
+        <div className={`border rounded-3xl overflow-hidden shadow-xl transition-colors ${
+          isDark ? 'bg-[#0f0d0a] border-[#38352e]' : 'bg-white border-[#c5c0b1]'
+        }`}>
+          <div className={`p-8 border-b flex justify-between items-center transition-colors ${
+            isDark ? 'bg-[#181612] border-[#38352e]' : 'bg-[#eceae3] border-[#c5c0b1]'
+          }`}>
+            <h3 className={`text-[12px] font-black uppercase tracking-widest ${isDark ? 'text-white' : 'text-[#201515]'}`}>Personnel Time Registry</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-[#fffdf9] border-b border-[#c5c0b1]">
-                  <th className="px-8 py-5 text-[10px] font-black text-[#939084] uppercase tracking-widest">Personnel</th>
-                  <th className="px-8 py-5 text-[10px] font-black text-[#939084] uppercase tracking-widest">Active Yield</th>
-                  <th className="px-8 py-5 text-[10px] font-black text-[#939084] uppercase tracking-widest text-right">Status</th>
+                <tr className={`border-b ${isDark ? 'bg-[#181612] border-[#38352e]' : 'bg-[#fffdf9] border-[#c5c0b1]'}`}>
+                  <th className={`px-8 py-5 text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-[#a3a094]' : 'text-[#939084]'}`}>Personnel</th>
+                  <th className={`px-8 py-5 text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-[#a3a094]' : 'text-[#939084]'}`}>Active Yield</th>
+                  <th className={`px-8 py-5 text-[10px] font-black uppercase tracking-widest text-right ${isDark ? 'text-[#a3a094]' : 'text-[#939084]'}`}>Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#c5c0b1]">
+              <tbody className={`divide-y ${isDark ? 'divide-[#38352e]' : 'divide-[#c5c0b1]'}`}>
                 {teamData.map((s, i) => (
-                  <tr key={i} className="hover:bg-[#fffdf9] transition-colors group">
+                  <tr key={i} className={`transition-colors ${isDark ? 'hover:bg-[#181612]/50' : 'hover:bg-[#fffdf9]'} group`}>
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-[#eceae3] flex items-center justify-center text-[#201515] font-black">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-black ${
+                          isDark ? 'bg-[#282520] text-white' : 'bg-[#eceae3] text-[#201515]'
+                        }`}>
                           {s.employeeRole?.charAt(0) || 'U'}
                         </div>
                         <div>
-                          <p className="text-[14px] font-black text-[#201515] uppercase tracking-tight">
+                          <p className={`text-[14px] font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-[#201515]'}`}>
                             {s.employeeRole || 'Unknown Node'}
                           </p>
-                          <p className="text-[9px] font-black text-[#939084] uppercase">Node ID: {String(s.employeeId || '').slice(-6)}</p>
+                          <p className={`text-[9px] font-black uppercase ${isDark ? 'text-[#a3a094]' : 'text-[#939084]'}`}>Node ID: {String(s.employeeId || '').slice(-6)}</p>
                         </div>
                       </div>
                     </td>
@@ -369,7 +416,7 @@ const SmartTimeTracker = () => {
                     <td className="px-8 py-6 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <div className={`w-2 h-2 rounded-full ${s.isRunning ? 'bg-[#24a148] animate-pulse' : 'bg-[#c5c0b1]'}`}></div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#201515]">{s.status}</span>
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-white' : 'text-[#201515]'}`}>{s.status}</span>
                       </div>
                     </td>
                   </tr>

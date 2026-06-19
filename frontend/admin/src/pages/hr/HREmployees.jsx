@@ -9,7 +9,17 @@ const HREmployees = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('');
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
   const navigate = useNavigate();
+
+  // Sync theme status reactively
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   const fetchEmployees = async () => {
     try {
@@ -85,7 +95,9 @@ const HREmployees = () => {
   return (
     <div className="animate-fade-in">
       {/* HEADER SECTION */}
-      <div className="mb-12 flex flex-col md:flex-row justify-between items-end border-b border-[#c5c0b1] pb-8">
+      <div className={`mb-12 flex flex-col md:flex-row justify-between items-end border-b pb-8 ${
+        isDark ? 'border-[#38352e]' : 'border-[#c5c0b1]'
+      }`}>
         <div>
           <h1 className="zap-display-hero">Employee <span className="text-[#ff4f00]">Registry</span></h1>
         </div>
@@ -108,7 +120,9 @@ const HREmployees = () => {
       </div>
 
       {/* FILTER BAR */}
-      <div className="bg-[#fffdf9] p-6 border border-[#c5c0b1] rounded-[8px] flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
+      <div className={`p-6 border rounded-[8px] flex flex-col md:flex-row justify-between items-center gap-6 mb-8 transition-colors ${
+        isDark ? 'bg-[#0f0d0a] border-[#38352e]' : 'bg-[#fffdf9] border-[#c5c0b1]'
+      }`}>
         <div className="relative w-full md:w-96 flex items-center">
           <Search size={18} className="absolute left-4 text-[#939084]" />
           <input
@@ -116,7 +130,11 @@ const HREmployees = () => {
             placeholder="Filter by name, email, or ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-12 bg-white border border-[#c5c0b1] rounded-[4px] pl-12 pr-4 text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all"
+            className={`w-full h-12 border rounded-[4px] pl-12 pr-4 text-[15px] font-medium focus:outline-none focus:border-[#ff4f00] transition-all ${
+              isDark 
+                ? 'bg-[#181612] border-[#38352e] text-white focus:bg-[#0f0d0a]' 
+                : 'bg-white border-[#c5c0b1] text-[#201515]'
+            }`}
           />
         </div>
 
@@ -124,15 +142,21 @@ const HREmployees = () => {
           <select
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
-            className="h-12 bg-white border border-[#c5c0b1] rounded-[4px] pl-4 pr-10 text-[14px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%23201515%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22m19%209-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.75rem_center] bg-no-repeat"
+            className={`h-12 border rounded-[4px] pl-4 pr-10 text-[14px] font-bold focus:outline-none focus:border-[#ff4f00] cursor-pointer appearance-none bg-[length:1.25rem_1.25rem] bg-[right_0.75rem_center] bg-no-repeat ${
+              isDark 
+                ? 'bg-[#181612] border-[#38352e] text-white bg-[url(\'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%23ffffff%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22m19%209-7%207-7-7%22%2F%3E%3C%2Fsvg%3E\')]' 
+                : 'bg-white border-[#c5c0b1] text-[#201515] bg-[url(\'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%23201515%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22m19%209-7%207-7-7%22%2F%3E%3C%2Fsvg%3E\')]'
+            }`}
           >
             <option value="">All Roles</option>
             <option value="hr">HR</option>
             <option value="manager">Manager</option>
             <option value="employee">Employee</option>
           </select>
-          <div className="px-6 border-l border-[#c5c0b1] h-10 flex items-center">
-            <span className="text-[13px] font-bold text-[#939084] uppercase tracking-wider">All Employees: <span className="text-[#201515] font-black">{filteredEmployees.length}</span></span>
+          <div className={`px-6 border-l h-10 flex items-center ${
+            isDark ? 'border-[#38352e]' : 'border-[#c5c0b1]'
+          }`}>
+            <span className="text-[13px] font-bold text-[#939084] uppercase tracking-wider">All Employees: <span className={`font-black ${isDark ? 'text-white' : 'text-[#201515]'}`}>{filteredEmployees.length}</span></span>
           </div>
         </div>
       </div>
@@ -141,7 +165,7 @@ const HREmployees = () => {
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b-2 border-[#201515] text-left">
+            <tr className={`border-b-2 text-left ${isDark ? 'border-[#38352e]' : 'border-[#201515]'}`}>
               <th className="py-4 px-4 text-[12px] font-bold text-[#939084] uppercase tracking-widest">ID</th>
               <th className="py-4 px-4 text-[12px] font-bold text-[#939084] uppercase tracking-widest">Employee</th>
               <th className="py-4 px-4 text-[12px] font-bold text-[#939084] uppercase tracking-widest">Role/Status</th>
@@ -160,23 +184,29 @@ const HREmployees = () => {
               </tr>
             ) : filteredEmployees.length === 0 ? (
               <tr>
-                <td colSpan="4" className="text-center py-24 border border-[#c5c0b1] bg-[#fffdf9] rounded-[8px]">
+                <td colSpan="4" className={`text-center py-24 border rounded-[8px] ${
+                  isDark ? 'border-[#38352e] bg-[#0f0d0a]' : 'border-[#c5c0b1] bg-[#fffdf9]'
+                }`}>
                   <p className="text-[16px] font-medium text-[#939084]">No active personnel nodes matching filter.</p>
                 </td>
               </tr>
             ) : (
               filteredEmployees.map((emp) => (
-                <tr key={emp._id} className="border-b border-[#c5c0b1] hover:bg-[#fffdf9] transition-colors group">
+                <tr key={emp._id} className={`border-b hover:bg-[#fffdf9]/50 transition-colors group ${
+                  isDark ? 'border-[#38352e]' : 'border-[#c5c0b1]'
+                }`}>
                   <td className="py-6 px-4">
-                    <span className="font-bold text-[#201515]">{emp.employeeId || 'NODE-UNDEF'}</span>
+                    <span className={`font-bold ${isDark ? 'text-white' : 'text-[#201515]'}`}>{emp.employeeId || 'NODE-UNDEF'}</span>
                   </td>
                   <td className="py-6 px-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] flex items-center justify-center overflow-hidden">
+                      <div className={`w-10 h-10 border rounded-[4px] flex items-center justify-center overflow-hidden ${
+                        isDark ? 'bg-[#282520] border-[#38352e]' : 'bg-[#eceae3] border-[#c5c0b1]'
+                      }`}>
                         {emp.profileImage ? <img src={`${API_BASE_URL}${emp.profileImage}`} alt="User" className="w-full h-full object-cover" /> : <User size={18} className="text-[#939084]" />}
                       </div>
                       <div>
-                        <p className="text-[15px] font-bold text-[#201515] leading-none mb-2">{emp.fullName || emp.userId?.name || 'Anonymous Node'}</p>
+                        <p className={`text-[15px] font-bold leading-none mb-2 ${isDark ? 'text-white' : 'text-[#201515]'}`}>{emp.fullName || emp.userId?.name || 'Anonymous Node'}</p>
                         <p className="text-[13px] font-medium text-[#939084] leading-none">{emp.email || emp.userId?.email}</p>
                       </div>
                     </div>
@@ -184,7 +214,11 @@ const HREmployees = () => {
 
                   <td className="py-6 px-4">
                     <div className="flex flex-col gap-2">
-                      <span className={`w-fit px-3 py-1 rounded-[4px] text-[10px] font-bold uppercase tracking-widest ${emp.role === 'admin' ? 'bg-[#201515] text-white' : 'bg-[#eceae3] text-[#201515]'}`}>
+                      <span className={`w-fit px-3 py-1 rounded-[4px] text-[10px] font-bold uppercase tracking-widest ${
+                        emp.role === 'admin' 
+                          ? (isDark ? 'bg-white text-black' : 'bg-[#201515] text-white') 
+                          : (isDark ? 'bg-[#282520] text-white' : 'bg-[#eceae3] text-[#201515]')
+                      }`}>
                         {emp.role?.toUpperCase() || emp.userId?.role?.toUpperCase() || 'NODE'}
                       </span>
                       <div className={`flex items-center gap-1 text-[11px] font-bold ${emp.status === 'active' || emp.userId?.status === 'active' ? 'text-[#24a148]' : 'text-[#ff4f00]'}`}>
@@ -197,21 +231,27 @@ const HREmployees = () => {
                     <div className="flex items-center justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => navigate(`/hr/employees/view/${emp._id}`)}
-                        className="w-10 h-10 flex items-center justify-center text-[#201515] hover:bg-[#201515] hover:text-[#fffefb] rounded-[4px] transition-all bg-transparent border-none cursor-pointer"
+                        className={`w-10 h-10 flex items-center justify-center rounded-[4px] transition-all bg-transparent border-none cursor-pointer ${
+                          isDark ? 'text-white hover:bg-white/10' : 'text-[#201515] hover:bg-[#201515] hover:text-[#fffefb]'
+                        }`}
                         title="View Node"
                       >
                         <Eye size={18} />
                       </button>
                       <button
                         onClick={() => navigate(`/hr/employees/edit/${emp._id}`)}
-                        className="w-10 h-10 flex items-center justify-center text-[#201515] hover:bg-[#201515] hover:text-[#fffefb] rounded-[4px] transition-all bg-transparent border-none cursor-pointer"
+                        className={`w-10 h-10 flex items-center justify-center rounded-[4px] transition-all bg-transparent border-none cursor-pointer ${
+                          isDark ? 'text-white hover:bg-white/10' : 'text-[#201515] hover:bg-[#201515] hover:text-[#fffefb]'
+                        }`}
                         title="Edit Node"
                       >
                         <Edit3 size={18} />
                       </button>
                       <button
                         onClick={() => handleDelete(emp._id)}
-                        className="w-10 h-10 flex items-center justify-center text-[#ff4f00] hover:bg-[#ff4f00] hover:text-[#fffefb] rounded-[4px] transition-all bg-transparent border-none cursor-pointer"
+                        className={`w-10 h-10 flex items-center justify-center text-[#ff4f00] hover:text-[#fffefb] rounded-[4px] transition-all bg-transparent border-none cursor-pointer ${
+                          isDark ? 'hover:bg-red-950/40' : 'hover:bg-[#ff4f00]'
+                        }`}
                         title="Delete Node"
                       >
                         <Trash2 size={18} />

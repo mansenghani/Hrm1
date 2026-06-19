@@ -15,8 +15,18 @@ const LeaveManagement = () => {
     reason: ''
   });
   const [error, setError] = useState('');
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
   const token = sessionStorage.getItem('token');
   const userRole = sessionStorage.getItem('role');
+
+  // Sync theme status reactively
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   const fetchLeaves = async () => {
     try {
@@ -115,7 +125,9 @@ const LeaveManagement = () => {
       <div className="animate-fade-in pb-32">
       
       {/* HEADER */}
-      <div className="mb-16 flex flex-col md:flex-row justify-between items-end border-b border-[#c5c0b1] pb-10">
+      <div className={`mb-16 flex flex-col md:flex-row justify-between items-end border-b pb-10 ${
+        isDark ? 'border-[#38352e]' : 'border-[#c5c0b1]'
+      }`}>
         <div>
           <p className="zap-caption-upper text-[#ff4f00] mb-4">Personnel Logistics</p>
           <h1 className="zap-display-hero">Leave <span className="text-[#ff4f00]">Protocol.</span></h1>
@@ -144,22 +156,32 @@ const LeaveManagement = () => {
 
       {/* SUMMARY GRID */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-16">
-        <div className="zap-card group hover:border-[#201515] transition-all">
-           <div className="w-12 h-12 bg-[#eceae3] rounded-[8px] text-[#201515] mb-8 group-hover:bg-[#ff4f00] group-hover:text-white flex items-center justify-center transition-all">
+        <div className={`zap-card group transition-all ${
+          isDark ? 'bg-[#0f0d0a] border-[#38352e] hover:border-white' : 'bg-white border-[#c5c0b1] hover:border-[#201515]'
+        }`}>
+           <div className={`w-12 h-12 rounded-[8px] mb-8 flex items-center justify-center transition-all ${
+             isDark ? 'bg-[#282520] text-white' : 'bg-[#eceae3] text-[#201515] group-hover:bg-[#ff4f00] group-hover:text-white'
+           }`}>
               <Users size={20} />
            </div>
-           <h3 className="text-[36px] font-medium text-[#201515] tabular-nums leading-none mb-2">98%</h3>
+           <h3 className={`text-[36px] font-medium leading-none mb-2 tabular-nums ${isDark ? 'text-white' : 'text-[#201515]'}`}>98%</h3>
            <p className="text-[13px] font-bold text-[#939084] uppercase tracking-wider">Presence Pulse</p>
-           <div className="mt-8 w-full bg-[#eceae3] rounded-full h-1">
+           <div className={`mt-8 w-full rounded-full h-1 ${isDark ? 'bg-[#282520]' : 'bg-[#eceae3]'}`}>
               <div className="bg-[#24a148] h-full rounded-full transition-all duration-1000" style={{ width: '98%' }}></div>
            </div>
         </div>
 
-        <div className="zap-card group hover:border-[#201515] transition-all">
-           <div className={`w-12 h-12 rounded-[8px] mb-8 flex items-center justify-center transition-all ${pendingCount > 0 ? 'bg-[#fffdf9] border border-[#ff4f00] text-[#ff4f00]' : 'bg-[#eceae3] text-[#939084]'}`}>
+        <div className={`zap-card group transition-all ${
+          isDark ? 'bg-[#0f0d0a] border-[#38352e] hover:border-white' : 'bg-white border-[#c5c0b1] hover:border-[#201515]'
+        }`}>
+           <div className={`w-12 h-12 rounded-[8px] mb-8 flex items-center justify-center transition-all ${
+             pendingCount > 0 
+               ? (isDark ? 'bg-[#181612] border border-[#ff4f00] text-[#ff4f00]' : 'bg-[#fffdf9] border border-[#ff4f00] text-[#ff4f00]') 
+               : (isDark ? 'bg-[#282520] text-[#a3a094]' : 'bg-[#eceae3] text-[#939084]')
+           }`}>
               <ShieldAlert size={20} />
            </div>
-           <h3 className="text-[36px] font-medium text-[#201515] tabular-nums leading-none mb-2">{pendingCount}</h3>
+           <h3 className={`text-[36px] font-medium leading-none mb-2 tabular-nums ${isDark ? 'text-white' : 'text-[#201515]'}`}>{pendingCount}</h3>
            <p className="text-[13px] font-bold text-[#939084] uppercase tracking-wider">
              {userRole === 'manager' ? 'Awaiting My Approval' : 'Awaiting HR Approval'}
            </p>
@@ -168,11 +190,15 @@ const LeaveManagement = () => {
            </p>
         </div>
 
-        <div className="md:col-span-2 zap-card bg-[#201515] text-[#fffefb] p-10 flex flex-col justify-between overflow-hidden relative">
+        <div className={`md:col-span-2 zap-card p-10 flex flex-col justify-between overflow-hidden relative transition-colors ${
+          isDark ? 'bg-[#0f0d0a] border border-[#38352e] text-white' : 'bg-[#201515] text-[#fffefb]'
+        }`}>
            <div className="absolute top-0 right-0 w-40 h-40 bg-[#ff4f00]/10 blur-3xl rounded-full"></div>
            <div className="relative z-10">
               <p className="zap-caption-upper !text-[#939084] mb-4">Organizational Quota Trace</p>
-              <h4 className="text-[28px] font-medium leading-tight mb-4">Standard cycle set to <span className="text-[#ff4f00]">24 units</span> per personnel node.</h4>
+              <h4 className={`text-[28px] font-medium leading-tight mb-4 ${isDark ? 'text-white' : 'text-[#fffefb]'}`}>
+                Standard cycle set to <span className="text-[#ff4f00]">24 units</span> per personnel node.
+              </h4>
            </div>
            <button className="text-[#ff4f00] font-bold text-[14px] uppercase tracking-widest flex items-center gap-2 hover:underline bg-transparent border-none p-0 cursor-pointer transition-all">
               Modify Global Protocol <ArrowUpRight size={18} />
@@ -182,17 +208,23 @@ const LeaveManagement = () => {
       </div>
 
       {/* REQUEST TABLE */}
-      <div className="zap-card p-0 overflow-hidden">
-        <div className="p-8 bg-[#fffdf9] border-b border-[#c5c0b1] flex flex-col md:flex-row justify-between items-center gap-6">
-           <h3 className="text-[14px] font-black uppercase tracking-widest text-[#201515]">
+      <div className={`zap-card p-0 overflow-hidden transition-colors ${isDark ? 'bg-[#0f0d0a] border-[#38352e]' : ''}`}>
+        <div className={`p-8 border-b flex flex-col md:flex-row justify-between items-center gap-6 transition-colors ${
+          isDark ? 'bg-[#181612] border-[#38352e]' : 'bg-[#fffdf9] border-[#c5c0b1]'
+        }`}>
+           <h3 className={`text-[14px] font-black uppercase tracking-widest ${isDark ? 'text-white' : 'text-[#201515]'}`}>
              {userRole === 'manager' ? 'Direct Report Matrix' : 'Manager Approved Matrix'}
            </h3>
-           <div className="flex items-center gap-4 bg-white px-6 h-12 rounded-[4px] border border-[#c5c0b1] focus-within:border-[#ff4f00] transition-all w-full md:w-96">
+           <div className={`flex items-center gap-4 px-6 h-12 rounded-[4px] border focus-within:border-[#ff4f00] transition-all w-full md:w-96 ${
+             isDark ? 'bg-[#181612] border-[#38352e]' : 'bg-white border-[#c5c0b1]'
+           }`}>
               <Search size={18} className="text-[#939084]" />
               <input 
                 type="text" 
                 placeholder="Search trace..." 
-                className="bg-transparent border-none focus:outline-none text-[14px] font-medium text-[#201515] w-full" 
+                className={`bg-transparent border-none focus:outline-none text-[14px] font-medium w-full ${
+                  isDark ? 'text-white placeholder-[#939084]' : 'text-[#201515]'
+                }`} 
               />
            </div>
         </div>
@@ -210,15 +242,15 @@ const LeaveManagement = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-[#fffdf9] border-b border-[#c5c0b1]">
-                  <th className="px-8 py-5 text-[11px] font-bold text-[#939084] uppercase tracking-widest">Personnel Node</th>
-                  <th className="px-8 py-5 text-[11px] font-bold text-[#939084] uppercase tracking-widest">Type</th>
-                  <th className="px-8 py-5 text-[11px] font-bold text-[#939084] uppercase tracking-widest">Cycle Window</th>
-                  <th className="px-8 py-5 text-[11px] font-bold text-[#939084] uppercase tracking-widest">Status Trace</th>
-                  <th className="px-8 py-5 text-[11px] font-bold text-[#939084] uppercase tracking-widest text-right">Ops Logic</th>
+                <tr className={`border-b ${isDark ? 'bg-[#181612] border-[#38352e]' : 'bg-[#fffdf9] border-[#c5c0b1]'}`}>
+                  <th className={`px-8 py-5 text-[11px] font-bold uppercase tracking-widest ${isDark ? 'text-[#a3a094]' : 'text-[#939084]'}`}>Personnel Node</th>
+                  <th className={`px-8 py-5 text-[11px] font-bold uppercase tracking-widest ${isDark ? 'text-[#a3a094]' : 'text-[#939084]'}`}>Type</th>
+                  <th className={`px-8 py-5 text-[11px] font-bold uppercase tracking-widest ${isDark ? 'text-[#a3a094]' : 'text-[#939084]'}`}>Cycle Window</th>
+                  <th className={`px-8 py-5 text-[11px] font-bold uppercase tracking-widest ${isDark ? 'text-[#a3a094]' : 'text-[#939084]'}`}>Status Trace</th>
+                  <th className={`px-8 py-5 text-[11px] font-bold uppercase tracking-widest text-right ${isDark ? 'text-[#a3a094]' : 'text-[#939084]'}`}>Ops Logic</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#c5c0b1]">
+              <tbody className={`divide-y ${isDark ? 'divide-[#38352e]' : 'divide-[#c5c0b1]'}`}>
                 {leaves.map((row, i) => (
                   <tr 
                     key={row?._id || i} 
@@ -226,15 +258,21 @@ const LeaveManagement = () => {
                       setSelectedLeave(row);
                       setIsModalOpen(true);
                     }}
-                    className="hover:bg-[#fffdf9] transition-colors group cursor-pointer"
+                    className={`transition-colors group cursor-pointer ${
+                      isDark ? 'hover:bg-[#181612]/50' : 'hover:bg-[#fffdf9]'
+                    }`}
                   >
                     <td className="px-8 py-6">
                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-[4px] bg-[#eceae3] border border-[#c5c0b1] flex items-center justify-center text-[#201515] font-bold text-xs">
+                          <div className={`w-10 h-10 rounded-[4px] border flex items-center justify-center font-bold text-xs ${
+                            isDark ? 'bg-[#282520] border-[#38352e] text-white' : 'bg-[#eceae3] border-[#c5c0b1] text-[#201515]'
+                          }`}>
                              {(row?.user?.name || 'U').charAt(0)}
                           </div>
                           <div>
-                             <p className="text-[15px] font-bold text-[#201515] uppercase group-hover:text-[#ff4f00] transition-colors">
+                             <p className={`text-[15px] font-bold uppercase group-hover:text-[#ff4f00] transition-colors ${
+                               isDark ? 'text-white' : 'text-[#201515]'
+                             }`}>
                                 {row?.user?.name || 'Anonymous Node'}
                              </p>
                              <p className="text-[12px] font-medium text-[#939084] mt-1">
@@ -244,12 +282,14 @@ const LeaveManagement = () => {
                        </div>
                     </td>
                     <td className="px-8 py-6">
-                       <span className="px-3 py-1 bg-[#eceae3] rounded-[4px] text-[10px] font-bold uppercase tracking-widest text-[#201515]">
+                       <span className={`px-3 py-1 rounded-[4px] text-[10px] font-bold uppercase tracking-widest ${
+                         isDark ? 'bg-[#282520] text-white' : 'bg-[#eceae3] text-[#201515]'
+                       }`}>
                           {row?.leaveType}
                        </span>
                     </td>
                     <td className="px-8 py-6">
-                       <p className="text-[14px] font-bold text-[#201515] tabular-nums uppercase">
+                       <p className={`text-[14px] font-bold tabular-nums uppercase ${isDark ? 'text-white' : 'text-[#201515]'}`}>
                           {new Date(row.startDate).toLocaleDateString()} - {new Date(row.endDate).toLocaleDateString()}
                        </p>
                        <p className="text-[11px] font-bold text-[#ff4f00] uppercase tracking-widest mt-1">{row?.totalDays || 0} Units</p>
@@ -258,9 +298,9 @@ const LeaveManagement = () => {
                        <span className={`px-4 py-1.5 rounded-[4px] text-[10px] font-bold uppercase tracking-widest ${
                          row?.status === 'approved' ? 'bg-[#24a148] text-white' : 
                          row?.status === 'rejected' ? 'bg-[#ff4f00] text-white' : 
-                         'bg-[#fffdf9] border border-[#ff4f00] text-[#ff4f00] animate-pulse'
+                         (isDark ? 'bg-[#181612] border border-[#ff4f00] text-[#ff4f00] animate-pulse' : 'bg-[#fffdf9] border border-[#ff4f00] text-[#ff4f00] animate-pulse')
                        }`}>
-                         {row?.status}
+                          {row?.status}
                        </span>
                     </td>
                     <td className="px-8 py-6 text-right">
@@ -272,7 +312,7 @@ const LeaveManagement = () => {
                                    e.stopPropagation();
                                    handleStatusUpdate(row._id, 'approved');
                                  }} 
-                                 className="w-10 h-10 flex items-center justify-center bg-[#24a148] text-white rounded-[4px] hover:bg-[#1e8a3d] transition-all"
+                                 className="w-10 h-10 flex items-center justify-center bg-[#24a148] text-white rounded-[4px] hover:bg-[#1e8a3d] transition-all cursor-pointer"
                                >
                                   <CheckCircle size={18} />
                                </button>
@@ -281,13 +321,15 @@ const LeaveManagement = () => {
                                    e.stopPropagation();
                                    handleStatusUpdate(row._id, 'rejected');
                                  }} 
-                                 className="w-10 h-10 flex items-center justify-center bg-[#ff4f00] text-white rounded-[4px] hover:bg-[#201515] transition-all"
+                                 className="w-10 h-10 flex items-center justify-center bg-[#ff4f00] text-white rounded-[4px] hover:bg-[#201515] transition-all cursor-pointer"
                                >
                                   <XCircle size={18} />
                                </button>
                              </>
                           )}
-                          <button className="w-10 h-10 flex items-center justify-center text-[#939084] hover:text-[#201515] transition-all bg-transparent border-none cursor-pointer"><MoreHorizontal size={18} /></button>
+                          <button className={`w-10 h-10 flex items-center justify-center transition-all bg-transparent border-none cursor-pointer ${
+                            isDark ? 'text-[#a3a094] hover:text-white' : 'text-[#939084] hover:text-[#201515]'
+                          }`}><MoreHorizontal size={18} /></button>
                        </div>
                     </td>
                   </tr>
