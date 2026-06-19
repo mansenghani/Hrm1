@@ -6,6 +6,7 @@ import useAuthStore from '@shared/store/authStore';
 
 // Shared pages that already exist for employee role
 import Chat from '@shared/pages/Chat';
+import AttendanceDashboard from '@shared/components/AttendanceDashboard';
 
 // ─── Lazy page stubs for existing routes ──────────────────────────────────
 // These preserve the existing route structure while the new layout is applied.
@@ -54,7 +55,7 @@ function App() {
           <Route path="task-management/create" element={<PlaceholderPage title="Create Task" />} />
           <Route path="task-management" element={<PlaceholderPage title="Task Management" />} />
           <Route path="profile" element={<PlaceholderPage title="My Profile" />} />
-          <Route path="attendance" element={<PlaceholderPage title="My Attendance" />} />
+          <Route path="attendance" element={<AttendanceDashboard userRole="employee" />} />
           <Route path="leave" element={<PlaceholderPage title="My Leaves" />} />
           <Route path="payslips" element={<PlaceholderPage title="My Payslips" />} />
           <Route path="documents" element={<PlaceholderPage title="My Documents" />} />

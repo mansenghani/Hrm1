@@ -8,6 +8,6 @@ const { protect, authorize } = require('../middleware/authMiddleware');
  */
 
 // 🛡️ Admin Only: Create Personnel Node
-router.post('/create', protect, authorize('admin'), userController.createUser);
+router.post('/create', protect, authorize('admin', 'hr'), userController.createUser);
 
 module.exports = router;

@@ -7,24 +7,24 @@ const attendanceSchema = new mongoose.Schema({
     required: true
   },
   date: {
-    type: String,
+    type: String, // format: YYYY-MM-DD
     required: true
   },
-  clockIn: {
-    type: String,
+  checkInTime: {
+    type: Date,
     required: true
   },
-  clockOut: {
-    type: String
+  checkOutTime: {
+    type: Date
+  },
+  totalHours: {
+    type: Number,
+    default: 0
   },
   status: {
     type: String,
     enum: ['Present', 'Late', 'Half Day', 'Absent'],
     default: 'Present'
-  },
-  location: {
-    lat: Number,
-    lng: Number
   }
 }, { timestamps: true });
 

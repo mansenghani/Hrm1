@@ -29,6 +29,7 @@ const EmployeeForm = () => {
   const [managers, setManagers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
   const [activeTab, setActiveTab] = useState('profile');
 
   useEffect(() => {
@@ -71,13 +72,73 @@ const EmployeeForm = () => {
   }, [id, isEdit]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    let { name, value } = e.target;
+    let newErrors = { ...errors, [name]: '' };
+
+    if (name === 'fullName') {
+      if (value && !/^[A-Za-z\s]*$/.test(value)) {
+        newErrors[name] = 'Full Name allows only alphabetic characters.';
+        value = value.replace(/[^A-Za-z\s]/g, '');
+      }
+    }
+
+    if (name === 'phone') {
+      if (value && !/^[0-9]*$/.test(value)) {
+        newErrors.phone = 'Only numbers (0-9) are allowed.';
+        value = value.replace(/[^0-9]/g, '');
+      }
+    }
+
+    if (name === 'email' || name === 'personalEmail') {
+      if (/\s/.test(value)) {
+        newErrors[name] = 'Spaces are not allowed in email address.';
+        value = value.replace(/\s/g, '');
+      }
+    }
+
+    if (name === 'password' && value) {
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,20}$/;
+      if (!passwordRegex.test(value)) {
+        newErrors.password = 'Password must be 8-20 chars with 1 uppercase, 1 lowercase, 1 number, and 1 special char.';
+      }
+    }
+    
+    setErrors(newErrors);
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Custom Validation
+    const newErrors = {};
+    if (!formData.fullName) newErrors.fullName = 'Full Name is required.';
+    if (!formData.email) newErrors.email = 'Email Address is required.';
+    if (!formData.phone) newErrors.phone = 'Phone Number is required.';
+    if (!isEdit && !formData.password) {
+      newErrors.password = 'Password is required.';
+    } else if (formData.password) {
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,20}$/;
+      if (!passwordRegex.test(formData.password)) {
+        newErrors.password = 'Password must be 8-20 chars with 1 uppercase, 1 lowercase, 1 number, and 1 special char.';
+      }
+    }
+    if (!formData.role) newErrors.role = 'Role is required.';
+    if (!formData.gender) newErrors.gender = 'Gender is required.';
+    if (!formData.joinDate) newErrors.joinDate = 'Join Date is required.';
+    if (!formData.dob) newErrors.dob = 'Date of Birth is required.';
+    if (!['hr', 'manager', 'admin'].includes(formData.role?.toLowerCase()) && !formData.managerId) {
+      newErrors.managerId = 'Direct Manager is required.';
+    }
+    if (!formData.address) newErrors.address = 'Location Node is required.';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(prev => ({ ...prev, ...newErrors }));
+      setLoading(false);
+      return;
+    }
 
     try {
       const token = sessionStorage.getItem('token');
@@ -357,43 +418,48 @@ const EmployeeForm = () => {
              )}
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Full Name *</label>
-               <input required name="fullName" value={formData.fullName} onChange={handleChange} className="w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm" placeholder="John Doe" />
+               <input required name="fullName" value={formData.fullName} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.fullName ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} placeholder="John Doe" />
+               {errors.fullName && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.fullName}</p>}
              </div>
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Office Email Address *</label>
                <input 
                  type="email" required name="email" value={formData.email} onChange={handleChange} 
                  disabled={isEdit}
-                 className={`w-full px-4 py-3 bg-[#F5F5F5] border-2 border-transparent rounded-xl font-bold text-sm ${isEdit ? 'opacity-60 cursor-not-allowed' : 'focus:bg-white focus:border-[#F0B90B]'}`} 
+                 className={`w-full px-4 py-3 bg-[#F5F5F5] border-2 rounded-xl font-bold text-sm ${isEdit ? 'opacity-60 cursor-not-allowed border-transparent' : (errors.email ? 'border-[#F6465D] bg-white' : 'border-transparent focus:border-[#F0B90B] focus:bg-white')}`} 
                  placeholder="john@fluidhr.com" 
                />
+               {errors.email && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.email}</p>}
              </div>
              
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Personal Email Address</label>
                <input 
                  type="email" name="personalEmail" value={formData.personalEmail} onChange={handleChange} 
-                 className="w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm" 
+                 className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.personalEmail ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} 
                  placeholder="john.doe@gmail.com" 
                />
+               {errors.personalEmail && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.personalEmail}</p>}
              </div>
              
              {!isEdit && (
                <div className="space-y-2">
                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Password *</label>
-                 <input type="password" required={!isEdit} name="password" value={formData.password} onChange={handleChange} className="w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm" placeholder="••••••••" />
+                 <input type="password" required={!isEdit} maxLength={20} name="password" value={formData.password} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.password ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} placeholder="••••••••" />
+                 {errors.password && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.password}</p>}
                </div>
              )}
 
              <div className="space-y-2">
-               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Phone Number</label>
-               <input name="phone" value={formData.phone} onChange={handleChange} className="w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm" placeholder="+1 234 567 8900" />
+               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Phone Number *</label>
+               <input name="phone" maxLength={15} value={formData.phone} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.phone ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} placeholder="+1 234 567 8900" />
+               {errors.phone && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.phone}</p>}
              </div>
 
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Role *</label>
                <div className="relative">
-                 <select required name="role" value={formData.role} onChange={handleChange} className="w-full px-4 pr-10 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm appearance-none cursor-pointer transition-all">
+                 <select required name="role" value={formData.role} onChange={handleChange} className={`w-full px-4 pr-10 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.role ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm appearance-none cursor-pointer transition-all`}>
                    <option value="employee">Employee</option>
                    <option value="manager">Manager</option>
                    <option value="hr">HR</option>
@@ -401,6 +467,7 @@ const EmployeeForm = () => {
                  </select>
                  <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#848E9C] pointer-events-none" />
                </div>
+               {errors.role && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.role}</p>}
              </div>
 
 
@@ -408,63 +475,72 @@ const EmployeeForm = () => {
              {/* Direct Manager Selection - Hidden for Leadership Nodes */}
              {!['hr', 'manager', 'admin'].includes(formData.role?.toLowerCase()) && (
                <div className="space-y-2">
-                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Direct Manager</label>
+                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Direct Manager *</label>
                  <div className="relative">
                    <select 
                     name="managerId" 
                     value={formData.managerId} 
                     onChange={handleChange} 
-                    className="w-full px-4 pr-10 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm appearance-none cursor-pointer transition-all"
+                    className={`w-full px-4 pr-10 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.managerId ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm appearance-none cursor-pointer transition-all`}
                    >
                      <option value="">Select Manager</option>
                      {managers.map(m => <option key={m._id} value={m._id}>{m.name}</option>)}
                    </select>
                    <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#848E9C] pointer-events-none" />
                  </div>
+                 {errors.managerId && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.managerId}</p>}
                </div>
              )}
 
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Join Date *</label>
-               <input type="date" required name="joinDate" value={formData.joinDate} onChange={handleChange} className="w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm" />
+               <input type="date" required name="joinDate" value={formData.joinDate} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.joinDate ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} />
+               {errors.joinDate && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.joinDate}</p>}
              </div>
 
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Birthdate *</label>
-               <input type="date" required name="dob" value={formData.dob} onChange={handleChange} className="w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm" />
+               <input type="date" required name="dob" value={formData.dob} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.dob ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} />
+               {errors.dob && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.dob}</p>}
              </div>
 
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Employment Type</label>
                <div className="relative">
-                 <select name="employmentType" value={formData.employmentType} onChange={handleChange} className="w-full px-4 pr-10 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm appearance-none cursor-pointer transition-all">
+                 <select name="employmentType" value={formData.employmentType} onChange={handleChange} className={`w-full px-4 pr-10 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.employmentType ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm appearance-none cursor-pointer transition-all`}>
                    <option value="Full-time">Full-time</option>
                    <option value="Part-time">Part-time</option>
                    <option value="Contract">Contract</option>
                  </select>
                  <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#848E9C] pointer-events-none" />
                </div>
+               {errors.employmentType && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.employmentType}</p>}
              </div>
 
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Gender Identity *</label>
                <div className="relative">
-                 <select required name="gender" value={formData.gender} onChange={handleChange} className="w-full px-4 pr-10 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm appearance-none cursor-pointer transition-all">
+                 <select required name="gender" value={formData.gender} onChange={handleChange} className={`w-full px-4 pr-10 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.gender ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm appearance-none cursor-pointer transition-all`}>
                    <option value="Male">Male</option>
                    <option value="Female">Female</option>
                    <option value="Other">Other</option>
                  </select>
                  <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#848E9C] pointer-events-none" />
                </div>
+               {errors.gender && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.gender}</p>}
              </div>
 
              <div className="space-y-2 col-span-full">
-               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Location Node (Address)</label>
+               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Location Node (Address) *</label>
                <textarea 
-                 name="address" value={formData.address} onChange={handleChange} 
-                 className="w-full h-32 px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm resize-none" 
+                 name="address" required maxLength={250} value={formData.address} onChange={handleChange} 
+                 className={`w-full h-32 px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.address ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm resize-none`} 
                  placeholder="Enter physical location address..." 
                />
+               <div className="flex justify-between items-center mt-1">
+                 {errors.address ? <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest">{errors.address}</p> : <div></div>}
+                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#848E9C]">{formData.address?.length || 0}/250</p>
+               </div>
              </div>
           </div>
 

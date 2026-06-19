@@ -32,7 +32,7 @@ async function initializeCoreTeam() {
             { name: 'Bhavik Kukadiya', email: 'bhavik.kukadiya@fluidhr.com', id: 'AT_EMP_6', role: 'employee' }
         ];
 
-        const password = await bcrypt.hash('pass123', 10);
+        const plainPassword = 'pass123';
 
         for (const member of coreTeam) {
             console.log(`📡 Registering Node: ${member.id} | ${member.name}...`);
@@ -40,7 +40,7 @@ async function initializeCoreTeam() {
             const user = new User({
                 name: member.name,
                 email: member.email,
-                password: password,
+                password: plainPassword,
                 role: member.role,
                 employeeId: member.id,
                 status: 'active'
@@ -66,7 +66,7 @@ async function initializeCoreTeam() {
 
         // 🌟 Also restore the generic System Admin for stability
         console.log('🌟 RESTORING SYSTEM ADMIN...');
-        const adminPass = await bcrypt.hash('admin123', 10);
+        const adminPass = 'admin123';
         const sysAdmin = new User({
             name: 'System Admin',
             email: 'admin@fluidhr.com',
