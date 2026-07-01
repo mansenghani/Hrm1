@@ -1,8 +1,9 @@
 import axios from 'axios';
 
 // 🛰️ DYNAMIC ENDPOINT CONFIGURATION
-// Keep browser requests on the page origin so HTTPS pages do not load blocked HTTP resources.
-export const API_BASE_URL = window.location.origin;
+export const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? window.location.origin
+  : 'https://hrm1.onrender.com';
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
