@@ -19,15 +19,18 @@ import {
   Plus,
   ChevronDown,
   Camera,
-  MapPin
+  MapPin,
+  Phone
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import CustomDatePicker from '../../components/CustomDatePicker';
 
 const CreateUser = () => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
+    phone: '',
     password: '',
     role: 'employee',
     gender: 'Male',
@@ -41,6 +44,7 @@ const CreateUser = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '', employeeId: '', status: '' });
+  const [errors, setErrors] = useState({});
   
   // Image State
   const [selectedFile, setSelectedFile] = useState(null);
@@ -92,19 +96,105 @@ const CreateUser = () => {
   }, [formData.role, token]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    let { name, value } = e.target;
+    let newErrors = { ...errors, [name]: '' };
+
+    if (name === 'firstName' || name === 'lastName') {
+      // Remove spaces and non-alphabetic characters
+      if (value && !/^[A-Za-z]*$/.test(value)) {
+        const fieldDisplayName = name === 'firstName' ? 'First Name' : 'Last Name';
+        newErrors[name] = `${fieldDisplayName} allows only alphabetic characters (no spaces).`;
+        value = value.replace(/[^A-Za-z]/g, '');
+      }
+    }
+
+    if (name === 'phone') {
+      if (value && !/^[0-9]*$/.test(value)) {
+        newErrors.phone = 'Only numbers (0-9) are allowed.';
+        value = value.replace(/[^0-9]/g, '');
+      }
+    }
+
+    if (name === 'email') {
+      if (/\s/.test(value)) {
+        newErrors.email = 'Spaces are not allowed in email address.';
+        value = value.replace(/\s/g, '');
+      }
+    }
+
+    if (name === 'password' && value) {
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,20}$/;
+      if (!passwordRegex.test(value)) {
+        newErrors.password = 'Password must be 8-20 chars with 1 uppercase, 1 lowercase, 1 number, and 1 special char.';
+      }
+    }
+    
+    setErrors(newErrors);
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setErrors(prev => ({ ...prev, profilePicture: '' }));
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!validTypes.includes(file.type)) {
+        setErrors(prev => ({ ...prev, profilePicture: 'Only JPG and PNG images are allowed.' }));
+        e.target.value = '';
+        return;
+      }
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
     }
   };
 
+  const handleDocumentChange = (e, setter, documentName) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+      toast.error(`Invalid format for ${documentName}. Please upload a JPG or PNG image.`, {
+        style: { background: '#ff4f00', color: '#fff', fontWeight: 'bold' }
+      });
+      e.target.value = '';
+      return;
+    }
+    
+    setter(file);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Custom Validation
+    const newErrors = {};
+    if (!formData.firstName) newErrors.firstName = 'First Name is required.';
+    if (!formData.lastName) newErrors.lastName = 'Last Name is required.';
+    if (!formData.email) newErrors.email = 'Email Address is required.';
+    if (!formData.phone) newErrors.phone = 'Phone Number is required.';
+    if (!formData.password) {
+      newErrors.password = 'Password is required.';
+    } else {
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,20}$/;
+      if (!passwordRegex.test(formData.password)) {
+        newErrors.password = 'Password must be 8-20 chars with 1 uppercase, 1 lowercase, 1 number, and 1 special char.';
+      }
+    }
+    if (!formData.role) newErrors.role = 'System Role is required.';
+    if (!formData.gender) newErrors.gender = 'Gender is required.';
+    if (!formData.joinDate) newErrors.joinDate = 'Join Date is required.';
+    if (!formData.dob) newErrors.dob = 'Date of Birth is required.';
+    if (!['hr', 'manager', 'admin'].includes(formData.role) && !formData.reportingManager) {
+      newErrors.reportingManager = 'Reporting Manager is required.';
+    }
+    if (!formData.address) newErrors.address = 'Physical Address is required.';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(prev => ({ ...prev, ...newErrors }));
+      return;
+    }
+
     setLoading(true);
     setMessage({ type: '', text: '', employeeId: '', status: '' });
 
@@ -176,12 +266,12 @@ const CreateUser = () => {
 
       setMessage({
         type: 'success',
-        text: 'User Node successfully initialized with visual identity.',
+        text: 'Employee profile created successfully.',
         employeeId: user?.employeeId,
         status: user?.status
       });
 
-      toast.success('Professional Node Initialized Successfully', {
+      toast.success('Employee Created Successfully', {
         style: {
           background: '#ff4f00',
           color: '#fff',
@@ -216,7 +306,7 @@ const CreateUser = () => {
     } catch (err) {
       setMessage({
         type: 'error',
-        text: err.response?.data?.message || 'Synchronization Failure: Node initialization aborted.'
+        text: err.response?.data?.message || 'Failed to create employee.'
       });
     } finally {
       setLoading(false);
@@ -232,7 +322,7 @@ const CreateUser = () => {
             {message.type === 'success' ? <CheckCircle size={28} /> : <AlertTriangle size={28} />}
           </div>
           <div className="flex-1">
-            <h4 className="zap-caption-upper !text-[#939084] mb-2">{message.type === 'success' ? 'Sync Success' : 'Pulse Failure'}</h4>
+            <h4 className="zap-caption-upper !text-[#939084] mb-2">{message.type === 'success' ? 'Success' : 'Error'}</h4>
             <p className="text-[16px] font-bold text-[#201515] leading-tight mb-4">{message.text}</p>
 
             {message.employeeId && (
@@ -254,9 +344,7 @@ const CreateUser = () => {
 
       {/* HEADER */}
       <div className="mb-16 border-b border-[#c5c0b1] pb-10">
-        <p className="zap-caption-upper text-[#ff4f00] mb-4">Identity Synthesis</p>
-        <h1 className="zap-display-hero">Initialize <span className="text-[#ff4f00]">User Node.</span></h1>
-        <p className="text-[18px] font-medium text-[#939084] mt-4">Register a new personnel entity into the organizational matrix.</p>
+        <h1 className="zap-display-hero">Create <span className="text-[#ff4f00]">New Employee.</span></h1>
       </div>
 
       <div className="max-w-4xl mx-auto">
@@ -265,11 +353,11 @@ const CreateUser = () => {
           {/* AVATAR UPLOAD SECTION */}
           <div className="flex flex-col items-center mb-12 border-b border-[#eceae3] pb-12">
              <div className="relative group">
-                <div className="w-32 h-32 rounded-2xl bg-[#eceae3] border-2 border-dashed border-[#c5c0b1] flex items-center justify-center overflow-hidden transition-all group-hover:border-[#ff4f00]">
+                <div className={`w-32 h-32 rounded-2xl bg-[#eceae3] border-2 border-dashed ${errors.profilePicture ? 'border-red-500 bg-red-50' : 'border-[#c5c0b1]'} flex items-center justify-center overflow-hidden transition-all group-hover:border-[#ff4f00]`}>
                    {previewUrl ? (
                      <img src={previewUrl} alt="Preview" className="w-full h-full object-cover shadow-2xl" />
                    ) : (
-                     <User size={48} className="text-[#939084] opacity-30" />
+                     <User size={48} className={`${errors.profilePicture ? 'text-red-400' : 'text-[#939084]'} opacity-30`} />
                    )}
                 </div>
                 <label htmlFor="user-photo" className="absolute -bottom-3 -right-3 w-10 h-10 bg-[#ff4f00] text-white rounded-xl flex items-center justify-center shadow-xl cursor-pointer hover:scale-110 active:scale-95 transition-all">
@@ -278,83 +366,107 @@ const CreateUser = () => {
                     id="user-photo" 
                     type="file" 
                     className="hidden" 
-                    accept="image/*" 
+                    accept=".jpg,.jpeg,.png,image/jpeg,image/png" 
                     onChange={handleFileChange}
                    />
                 </label>
              </div>
-             <p className="zap-caption-upper !text-[#939084] mt-6">Node Visual Identity</p>
+             <p className="zap-caption-upper !text-[#939084] mt-6">Profile Picture <span className="text-xs normal-case opacity-70">(JPG/PNG)</span></p>
+             {errors.profilePicture && <p className="text-red-500 text-sm mt-2 text-center">{errors.profilePicture}</p>}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-10">
+          <form onSubmit={handleSubmit} className="space-y-10" noValidate>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               {/* First Name */}
               <div className="space-y-4">
-                <label className="zap-caption-upper text-[#201515]">First Name</label>
+                <label className="zap-caption-upper text-[#201515]">First Name <span className="text-[#ff4f00] ml-1">*</span></label>
                 <div className="relative">
                   <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
                   <input
                     required name="firstName" value={formData.firstName} onChange={handleChange}
-                    className="w-full h-14 pl-12 pr-4 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all"
+                    className={`w-full h-14 pl-12 pr-4 bg-white border ${errors.firstName ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all`}
                     placeholder="Enter first name..."
+                    maxLength="20"
                   />
                 </div>
+                {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
               </div>
 
               {/* Last Name */}
               <div className="space-y-4">
-                <label className="zap-caption-upper text-[#201515]">Last Name</label>
+                <label className="zap-caption-upper text-[#201515]">Last Name <span className="text-[#ff4f00] ml-1">*</span></label>
                 <div className="relative">
                   <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
                   <input
                     required name="lastName" value={formData.lastName} onChange={handleChange}
-                    className="w-full h-14 pl-12 pr-4 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all"
+                    className={`w-full h-14 pl-12 pr-4 bg-white border ${errors.lastName ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all`}
                     placeholder="Enter last name..."
+                    maxLength="20"
                   />
                 </div>
+                {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
               </div>
 
               {/* Email Address */}
               <div className="space-y-4">
-                <label className="zap-caption-upper text-[#201515]">Email Address</label>
+                <label className="zap-caption-upper text-[#201515]">Email Address <span className="text-[#ff4f00] ml-1">*</span></label>
                 <div className="relative">
                   <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
                   <input
                     required name="email" value={formData.email} onChange={handleChange}
-                    className="w-full h-14 pl-12 pr-4 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all"
+                    className={`w-full h-14 pl-12 pr-4 bg-white border ${errors.email ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all`}
                     placeholder="email@example.com"
                   />
                 </div>
+                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+              </div>
+
+              {/* Phone Number */}
+              <div className="space-y-4">
+                <label className="zap-caption-upper text-[#201515]">Phone Number <span className="text-[#ff4f00] ml-1">*</span></label>
+                <div className="relative">
+                  <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
+                  <input
+                    required name="phone" value={formData.phone} onChange={handleChange}
+                    className={`w-full h-14 pl-12 pr-4 bg-white border ${errors.phone ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all`}
+                    placeholder="Enter phone number..."
+                    maxLength="15"
+                  />
+                </div>
+                {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
               </div>
 
               {/* Password */}
               <div className="space-y-4">
-                <label className="zap-caption-upper text-[#201515]">Temporary Password</label>
+                <label className="zap-caption-upper text-[#201515]">Password <span className="text-[#ff4f00] ml-1">*</span></label>
                 <div className="relative">
                   <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
                   <input
-                    required name="password" value={formData.password} onChange={handleChange}
+                    required name="password" value={formData.password} onChange={handleChange} maxLength="20"
                     type={showPassword ? 'text' : 'password'}
-                    className="w-full h-14 pl-12 pr-12 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all"
+                    className={`w-full h-14 pl-12 pr-12 bg-white border ${errors.password ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all`}
                     placeholder="••••••••"
                   />
-                  <button
-                    type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#939084] hover:text-[#ff4f00] transition-all bg-transparent border-none cursor-pointer"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
+                  {formData.password && formData.password.length > 0 && (
+                    <button
+                      type="button" onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-[#939084] hover:text-[#ff4f00] transition-all bg-transparent border-none cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  )}
                 </div>
+                {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
               </div>
 
               {/* System Role */}
               <div className="space-y-4">
-                <label className="zap-caption-upper text-[#201515]">System Role</label>
+                <label className="zap-caption-upper text-[#201515]">System Role <span className="text-[#ff4f00] ml-1">*</span></label>
                 <div className="relative">
                   <Shield size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
                   <select
                     required name="role" value={formData.role} onChange={handleChange}
-                    className="w-full h-14 pl-12 pr-12 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] appearance-none cursor-pointer"
+                    className={`w-full h-14 pl-12 pr-12 bg-white border ${errors.role ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] appearance-none cursor-pointer`}
                   >
                     <option value="hr">HR</option>
                     <option value="manager">Manager</option>
@@ -363,16 +475,17 @@ const CreateUser = () => {
                   </select>
                   <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#939084] pointer-events-none" />
                 </div>
+                {errors.role && <p className="text-red-500 text-sm mt-1">{errors.role}</p>}
               </div>
 
               {/* Gender */}
               <div className="space-y-4">
-                <label className="zap-caption-upper text-[#201515]">Gender Identity</label>
+                <label className="zap-caption-upper text-[#201515]">Gender <span className="text-[#ff4f00] ml-1">*</span></label>
                 <div className="relative">
                   <Users size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
                   <select
                     required name="gender" value={formData.gender} onChange={handleChange}
-                    className="w-full h-14 pl-12 pr-12 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] appearance-none cursor-pointer"
+                    className={`w-full h-14 pl-12 pr-12 bg-white border ${errors.gender ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] appearance-none cursor-pointer`}
                   >
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
@@ -380,41 +493,49 @@ const CreateUser = () => {
                   </select>
                   <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#939084] pointer-events-none" />
                 </div>
+                {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender}</p>}
               </div>
 
               {/* Join Date */}
               <div className="space-y-4">
-                <label className="zap-caption-upper text-[#201515]">Entry Date</label>
+                <label className="zap-caption-upper text-[#201515]">Join Date <span className="text-[#ff4f00] ml-1">*</span></label>
                 <div className="relative">
-                  <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
-                  <input
-                    required type="date" name="joinDate" value={formData.joinDate} onChange={handleChange}
-                    className="w-full h-14 pl-12 pr-4 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00]"
+                  <CustomDatePicker
+                    name="joinDate"
+                    value={formData.joinDate}
+                    onChange={handleChange}
+                    placeholder="Select Date"
+                    className={`w-full h-14 bg-white border ${errors.joinDate ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-bold text-[#201515] transition-all hover:border-[#ff4f00]`}
                   />
                 </div>
+                {errors.joinDate && <p className="text-red-500 text-sm mt-1">{errors.joinDate}</p>}
               </div>
 
               {/* Birth Date */}
               <div className="space-y-4">
-                <label className="zap-caption-upper text-[#201515]">Birthdate Protocol</label>
+                <label className="zap-caption-upper text-[#201515]">Date of Birth <span className="text-[#ff4f00] ml-1">*</span></label>
                 <div className="relative">
-                  <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
-                  <input
-                    required type="date" name="dob" value={formData.dob} onChange={handleChange}
-                    className="w-full h-14 pl-12 pr-4 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00]"
+                  <CustomDatePicker
+                    name="dob"
+                    value={formData.dob}
+                    onChange={handleChange}
+                    placeholder="Select Date"
+                    maxDate={new Date().toISOString().split('T')[0]}
+                    className={`w-full h-14 bg-white border ${errors.dob ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-bold text-[#201515] transition-all hover:border-[#ff4f00]`}
                   />
                 </div>
+                {errors.dob && <p className="text-red-500 text-sm mt-1">{errors.dob}</p>}
               </div>
 
               {/* Reporting Manager */}
               {!['hr', 'manager', 'admin'].includes(formData.role) && (
-                <div className="space-y-4 col-span-full">
-                  <label className="zap-caption-upper text-[#201515]">Reporting Manager</label>
+                <div className="space-y-4">
+                  <label className="zap-caption-upper text-[#201515]">Reporting Manager <span className="text-[#ff4f00] ml-1">*</span></label>
                   <div className="relative">
                     <Users size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
                     <select
                       required name="reportingManager" value={formData.reportingManager} onChange={handleChange}
-                      className="w-full h-14 pl-12 pr-12 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] appearance-none cursor-pointer"
+                      className={`w-full h-14 pl-12 pr-12 bg-white border ${errors.reportingManager ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] appearance-none cursor-pointer`}
                     >
                       <option value="">Select Reporting Manager</option>
                       {managers
@@ -425,20 +546,25 @@ const CreateUser = () => {
                     </select>
                     <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#939084] pointer-events-none" />
                   </div>
+                  {errors.reportingManager && <p className="text-red-500 text-sm mt-1">{errors.reportingManager}</p>}
                 </div>
               )}
 
               {/* Address */}
               <div className="space-y-4 col-span-full">
-                <label className="zap-caption-upper text-[#201515]">Location Node (Address)</label>
+                <label className="zap-caption-upper text-[#201515]">Physical Address <span className="text-[#ff4f00] ml-1">*</span></label>
                 <div className="relative">
                   <MapPin size={18} className="absolute left-4 top-4 text-[#939084]" />
                   <textarea
-                    name="address" value={formData.address} onChange={handleChange}
-                    className="w-full h-32 pl-12 pr-4 pt-4 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all resize-none"
+                    required name="address" value={formData.address} onChange={handleChange} maxLength={250}
+                    className={`w-full h-32 pl-12 pr-4 pt-4 pb-8 bg-white border ${errors.address ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all resize-none`}
                     placeholder="Enter physical location address..."
                   />
+                  <div className="absolute bottom-3 right-4 text-[11px] font-bold text-[#939084]">
+                    {formData.address?.length || 0}/250
+                  </div>
                 </div>
+                {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
               </div>
             </div>
 
@@ -462,14 +588,14 @@ const CreateUser = () => {
                            </div>
                            <div className="flex-1 min-w-0">
                               <p className="text-[15px] font-bold text-[#201515] mb-0.5">Adharcard Registry</p>
-                              {!adharFile && <p className="text-[11px] text-[#939084] leading-tight">Identity Verification Protocol</p>}
+                              {!adharFile && <p className="text-[11px] text-[#939084] leading-tight">Upload Adharcard for Identity Verification</p>}
                            </div>
                         </div>
                         {adharFile && <span className="text-[10px] font-black text-[#24a148] uppercase tracking-widest bg-[#24a148]/10 px-2 py-1 rounded-[4px]">Ready</span>}
                      </div>
                      <label className="zap-btn !h-12 !text-[12px] !bg-[#201515] hover:!bg-[#ff4f00] !text-white w-full cursor-pointer flex items-center justify-center transition-colors">
                         {adharFile ? 'Change Document' : 'Upload Document'}
-                        <input type="file" className="hidden" onChange={(e) => setAdharFile(e.target.files[0])} />
+                        <input type="file" className="hidden" accept=".jpg,.jpeg,.png,image/jpeg,image/png" onChange={(e) => handleDocumentChange(e, setAdharFile, 'Adharcard')} />
                      </label>
                   </div>
 
@@ -489,14 +615,14 @@ const CreateUser = () => {
                            </div>
                            <div className="flex-1 min-w-0">
                               <p className="text-[15px] font-bold text-[#201515] mb-0.5">Bank Details Registry</p>
-                              {!bankFile && <p className="text-[11px] text-[#939084] leading-tight">Banking Verification Protocol</p>}
+                              {!bankFile && <p className="text-[11px] text-[#939084] leading-tight">Upload Passbook/Cheque for Bank Details</p>}
                            </div>
                         </div>
                         {bankFile && <span className="text-[10px] font-black text-[#24a148] uppercase tracking-widest bg-[#24a148]/10 px-2 py-1 rounded-[4px]">Ready</span>}
                      </div>
                      <label className="zap-btn !h-12 !text-[12px] !bg-[#201515] hover:!bg-[#ff4f00] !text-white w-full cursor-pointer flex items-center justify-center transition-colors">
                         {bankFile ? 'Change Document' : 'Upload Document'}
-                        <input type="file" className="hidden" onChange={(e) => setBankFile(e.target.files[0])} />
+                        <input type="file" className="hidden" accept=".jpg,.jpeg,.png,image/jpeg,image/png" onChange={(e) => handleDocumentChange(e, setBankFile, 'Bank Details')} />
                      </label>
                   </div>
 
@@ -516,14 +642,14 @@ const CreateUser = () => {
                            </div>
                            <div className="flex-1 min-w-0">
                               <p className="text-[15px] font-bold text-[#201515] mb-0.5">Pan Card Registry</p>
-                              {!panFile && <p className="text-[11px] text-[#939084] leading-tight">Tax Identity Verification</p>}
+                              {!panFile && <p className="text-[11px] text-[#939084] leading-tight">Upload PAN Card for Tax Verification</p>}
                            </div>
                         </div>
                         {panFile && <span className="text-[10px] font-black text-[#24a148] uppercase tracking-widest bg-[#24a148]/10 px-2 py-1 rounded-[4px]">Ready</span>}
                      </div>
                      <label className="zap-btn !h-12 !text-[12px] !bg-[#201515] hover:!bg-[#ff4f00] !text-white w-full cursor-pointer flex items-center justify-center transition-colors">
                         {panFile ? 'Change Document' : 'Upload Document'}
-                        <input type="file" className="hidden" onChange={(e) => setPanFile(e.target.files[0])} />
+                        <input type="file" className="hidden" accept=".jpg,.jpeg,.png,image/jpeg,image/png" onChange={(e) => handleDocumentChange(e, setPanFile, 'PAN Card')} />
                      </label>
                   </div>
                </div>
@@ -532,7 +658,7 @@ const CreateUser = () => {
             <div className="pt-10 border-t border-[#c5c0b1] flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-3 text-[#939084] text-[13px] font-medium">
                 <Info size={16} className="text-[#ff4f00]" />
-                User records will be distributed across organizational clusters.
+                User records will be securely saved in the system.
               </div>
               <div className="flex gap-4 w-full md:w-auto">
                 <button
@@ -540,7 +666,7 @@ const CreateUser = () => {
                   className="zap-btn !bg-[#ff4f00] !text-white h-14 px-12 min-w-[200px] whitespace-nowrap shadow-lg hover:brightness-110 transition-all font-bold rounded-lg"
                 >
                   {loading ? <RefreshCw className="animate-spin mr-3" size={18} /> : <Plus size={18} className="mr-3 text-white" />}
-                  {loading ? 'Creating...' : 'Create User'}
+                  {loading ? 'Saving...' : 'Save Employee'}
                 </button>
                 <button type="button" className="zap-btn zap-btn-light h-14 px-10">Cancel</button>
               </div>

@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { clockIn, clockOut, getMyAttendance, getAllAttendance } = require('../controllers/attendanceController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+const { checkIn, checkOut, getAttendance } = require('../controllers/attendanceController');
+const { protect } = require('../middleware/authMiddleware');
 
-router.post('/clock-in', protect, clockIn);
-router.put('/clock-out', protect, clockOut);
-router.get('/me', protect, getMyAttendance);
-router.get('/', protect, authorize('admin', 'hr'), getAllAttendance);
+// Check-in and Check-out are protected, any logged-in user can perform them
+router.post('/checkin', protect, checkIn);
+router.post('/checkout', protect, checkOut);
+
+// Get attendance fetches data based on the hierarchy defined in controller
+router.get('/', protect, getAttendance);
 
 module.exports = router;

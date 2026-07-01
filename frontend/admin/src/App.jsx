@@ -18,6 +18,9 @@ import LeaveManagement from './pages/hr/LeaveManagement';
 import TeamManagement from './pages/hr/TeamManagement';
 import HREmployees from './pages/hr/HREmployees';
 import EmployeeLeave from './pages/employee/LeaveManagement';
+import EmployeePayslips from './pages/employee/EmployeePayslips';
+import EmployeeDocuments from './pages/employee/EmployeeDocuments';
+import EmployeePerformance from './pages/employee/EmployeePerformance';
 import TimeTrackingDashboard from './pages/TimeTrackingDashboard';
 import Payroll from './pages/Payroll';
 import ManagerTasks from './pages/manager/ManagerTasks';
@@ -147,6 +150,9 @@ const App = () => {
           <Route path="projects" element={<EmployeeProjects />} />
           <Route path="time-tracker" element={<TimeTrackingDashboard />} />
           <Route path="leave" element={<EmployeeLeave />} />
+          <Route path="payslips" element={<EmployeePayslips />} />
+          <Route path="documents" element={<EmployeeDocuments />} />
+          <Route path="performance" element={<EmployeePerformance />} />
           <Route path="chat" element={<Chat />} />
           <Route path="profile" element={<Profile />} />
           <Route path="notifications/all" element={<AllNotifications />} />

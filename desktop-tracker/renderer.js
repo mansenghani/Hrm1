@@ -17,15 +17,15 @@
  */
 
 // ── Display state (set by backend only) ───────────────────
-let activeSeconds    = 0;
-let inactiveSeconds  = 0;
-let status           = 'OFFLINE';
-let isIdle           = false;
+let activeSeconds = 0;
+let inactiveSeconds = 0;
+let status = 'OFFLINE';
+let isIdle = false;
 let idleNotificationSent = false;
-let authToken        = '';
+let authToken = '';
 
 // ── Intervals ─────────────────────────────────────────────
-let pollInterval     = null;  // polls /status every 1s
+let pollInterval = null;  // polls /status every 1s
 let heartbeatInterval = null; // sends /activity every 10s
 
 // ── Screenshot ────────────────────────────────────────────
@@ -35,15 +35,16 @@ let screenshotTimeout = null;
 let socket = null;
 
 // ── Config ────────────────────────────────────────────────
-const API_BASE       = 'http://127.0.0.1:5000/api/time';
-const POLL_MS        = 1000;   // 1s display refresh
-const HEARTBEAT_MS   = 10000;  // 10s heartbeat to backend
+let BACKEND_HOST = 'http://localhost:5000';
+let API_BASE = `${BACKEND_HOST}/api/time`;
+const POLL_MS = 1000;   // 1s display refresh
+const HEARTBEAT_MS = 10000;  // 10s heartbeat to backend
 
 // ── DOM refs ──────────────────────────────────────────────
-const activeTimerEl   = document.getElementById('active-timer');
+const activeTimerEl = document.getElementById('active-timer');
 const inactiveTimerEl = document.getElementById('inactive-timer');
-const statusEl        = document.getElementById('status-display');
-const syncIndicator   = document.getElementById('sync-indicator');
+const statusEl = document.getElementById('status-display');
+const syncIndicator = document.getElementById('sync-indicator');
 
 // ============================================================
 // 🌐 SYSTEM-WIDE IDLE DETECTION
@@ -82,6 +83,19 @@ let lastSystemIdleSeconds = 0;
 // ============================================================
 async function loadSession() {
   requestNotificationPermission();
+
+  // Load saved server URL
+  const savedServer = await window.electronAPI.getStoreValue('serverUrl');
+  if (savedServer) {
+    BACKEND_HOST = savedServer;
+    API_BASE = `${BACKEND_HOST}/api/time`;
+  }
+
+  const serverInput = document.getElementById('server-input');
+  if (serverInput) {
+    serverInput.value = BACKEND_HOST;
+  }
+
   const savedToken = await window.electronAPI.getStoreValue('authToken');
   if (!savedToken) {
     showAuthSection();
@@ -130,8 +144,8 @@ function applyServerState(data) {
   }
 
   // Set display values directly from backend — no local math
-  activeSeconds   = data.activeTime  ?? 0;
-  inactiveSeconds = data.idleTime    ?? 0;
+  activeSeconds = data.activeTime ?? 0;
+  inactiveSeconds = data.idleTime ?? 0;
 
   const serverStatus = String(data.status || '').toLowerCase();
 
@@ -181,13 +195,13 @@ async function sendHeartbeat() {
 // ── Immediately fire idle signal to backend ───────────────
 async function triggerIdle(idleSeconds = 60) {
   if (!authToken || status !== 'ACTIVE') return;
-  
+
   // 🚀 OPTIMISTIC UI: Show idle state instantly on screen
   status = 'IDLE';
   isIdle = true;
   updateUI();
-  
-  idleNotificationSent = true; 
+
+  idleNotificationSent = true;
   try {
     syncIndicator?.classList.add('online');
     const res = await fetch(`${API_BASE}/activity`, {
@@ -309,7 +323,7 @@ async function stopSession() {
 // 🖥️ UI
 // ============================================================
 function updateDisplay() {
-  if (activeTimerEl)   activeTimerEl.innerText   = formatTime(activeSeconds);
+  if (activeTimerEl) activeTimerEl.innerText = formatTime(activeSeconds);
   if (inactiveTimerEl) inactiveTimerEl.innerText = formatTime(inactiveSeconds);
 }
 
@@ -320,9 +334,9 @@ function updateUI() {
 }
 
 function setControlState(currentStatus) {
-  const startBtn       = document.getElementById('start-btn');
-  const pauseBtn       = document.getElementById('pause-btn');
-  const resumeBtn      = document.getElementById('resume-btn');
+  const startBtn = document.getElementById('start-btn');
+  const pauseBtn = document.getElementById('pause-btn');
+  const resumeBtn = document.getElementById('resume-btn');
   const binaryControls = document.querySelector('.binary-controls');
   if (!startBtn || !pauseBtn || !resumeBtn || !binaryControls) return;
 
@@ -378,7 +392,7 @@ async function notifyDesktop(title, body) {
   if (now - lastNotificationTs < 60000) return;
   lastNotificationTs = now;
   if (window.electronAPI?.notifyNative) {
-    try { await window.electronAPI.notifyNative(title, body); return; } catch (_) {}
+    try { await window.electronAPI.notifyNative(title, body); return; } catch (_) { }
   }
   if (window.Notification?.permission === 'granted') {
     new window.Notification(title, { body });
@@ -396,9 +410,9 @@ async function showIdleNotification() {
   const alertEl = document.getElementById('desktop-alert');
   if (alertEl) {
     const titleEl = alertEl.querySelector('.alert-title');
-    const textEl  = alertEl.querySelector('.alert-text');
+    const textEl = alertEl.querySelector('.alert-text');
     if (titleEl) titleEl.innerText = 'Inactivity Detected';
-    if (textEl)  textEl.innerText  = 'Timer paused. Resume when ready.';
+    if (textEl) textEl.innerText = 'Timer paused. Resume when ready.';
     alertEl.style.display = 'flex';
   }
 }
@@ -413,13 +427,13 @@ async function takeScreenshot() {
     if (!dataUrl) return;
     const blob = await (await fetch(dataUrl)).blob();
     const formData = new FormData();
-    const userRes = await fetch('http://127.0.0.1:5000/api/auth/me', {
+    const userRes = await fetch(`${BACKEND_HOST}/api/auth/me`, {
       headers: { Authorization: `Bearer ${authToken}` }
     });
     const user = await userRes.json();
     formData.append('screenshot', blob, `screenshot-${Date.now()}.png`);
     formData.append('userId', user.id || user._id);
-    await fetch('http://127.0.0.1:5000/api/screenshot/upload', { method: 'POST', body: formData });
+    await fetch(`${BACKEND_HOST}/api/screenshot/upload`, { method: 'POST', body: formData });
     await notifyDesktop('Screenshot Captured', 'A monitoring trace has been recorded.');
   } catch (err) {
     console.error('[SCREENSHOT ERROR]', err);
@@ -445,16 +459,16 @@ function stopScreenshotLoop() {
 async function fetchUserProfile() {
   if (!authToken) return;
   try {
-    const res = await fetch('http://127.0.0.1:5000/api/auth/me', {
+    const res = await fetch(`${BACKEND_HOST}/api/auth/me`, {
       headers: { Authorization: `Bearer ${authToken}` }
     });
     if (!res.ok) return;
     const user = await res.json();
-    const nameEl    = document.getElementById('display-name');
-    const roleEl    = document.getElementById('display-role');
+    const nameEl = document.getElementById('display-name');
+    const roleEl = document.getElementById('display-role');
     const profileEl = document.getElementById('user-profile-display');
-    if (nameEl)    nameEl.innerText    = user.name || 'System User';
-    if (roleEl)    roleEl.innerText    = user.role || 'Personnel';
+    if (nameEl) nameEl.innerText = user.name || 'System User';
+    if (roleEl) roleEl.innerText = user.role || 'Personnel';
     if (profileEl) profileEl.style.display = 'block';
   } catch (err) {
     console.error('[PROFILE ERROR]', err);
@@ -467,26 +481,25 @@ async function fetchUserProfile() {
 async function initSocket() {
   if (socket || !authToken) return;
   try {
-    const res = await fetch('http://127.0.0.1:5000/api/auth/me', {
+    const res = await fetch(`${BACKEND_HOST}/api/auth/me`, {
       headers: { Authorization: `Bearer ${authToken}` }
     });
     const user = await res.json();
-    const userId = user.id || user._id;
-    if (!userId) return;
-    socket = io('http://127.0.0.1:5000');
+    if (!user?.id && !user?._id) return;
+    socket = io(BACKEND_HOST);
     socket.on('connect', () => {
-      socket.emit('join_notifications', { userId: userId, role: user.role });
+      socket.emit('join_notifications', { userId: user._id || user.id, role: user.role });
     });
-    socket.on('timer_paused',  (data) => { if (data) applyServerState(data); });
-    socket.on('timer_resumed', (data) => { 
-      idleNotificationSent = false; 
-      if (data) applyServerState(data); 
-      else pollSessionStatus(); 
+    socket.on('timer_paused', (data) => { if (data) applyServerState(data); });
+    socket.on('timer_resumed', (data) => {
+      idleNotificationSent = false;
+      if (data) applyServerState(data);
+      else pollSessionStatus();
     });
-    socket.on('timer_update',  (data) => { if (data) applyServerState(data); });
+    socket.on('timer_update', (data) => { if (data) applyServerState(data); });
     socket.on('new_notification', (notif) => {
       if (window.electronAPI?.notifyNative) {
-        window.electronAPI.notifyNative('New Announcement', notif.message).catch(() => {});
+        window.electronAPI.notifyNative('New Announcement', notif.message).catch(() => { });
       } else if (window.Notification?.permission === 'granted') {
         new window.Notification('New Announcement', { body: notif.message });
       }
@@ -502,6 +515,10 @@ async function initSocket() {
 function showAuthSection() {
   const authEl = document.getElementById('auth-section');
   if (authEl) authEl.style.display = 'flex';
+  const serverInput = document.getElementById('server-input');
+  if (serverInput) {
+    serverInput.value = BACKEND_HOST;
+  }
   status = 'OFFLINE';
   updateUI();
 }
@@ -512,16 +529,23 @@ function hideAuthSection() {
 }
 
 async function loginWithCredentials() {
-  const email    = document.getElementById('email-input')?.value.trim();
+  const serverUrl = document.getElementById('server-input')?.value.trim();
+  const email = document.getElementById('email-input')?.value.trim();
   const password = document.getElementById('password-input')?.value;
-  const errorEl  = document.getElementById('auth-error');
+  const errorEl = document.getElementById('auth-error');
   if (errorEl) errorEl.style.display = 'none';
   if (!email || !password) {
     if (errorEl) { errorEl.innerText = 'Email and password required'; errorEl.style.display = 'block'; }
     return;
   }
+  if (serverUrl) {
+    // Clean trailing slash
+    BACKEND_HOST = serverUrl.replace(/\/$/, '');
+    API_BASE = `${BACKEND_HOST}/api/time`;
+    await window.electronAPI.setStoreValue('serverUrl', BACKEND_HOST);
+  }
   try {
-    const res = await fetch('http://127.0.0.1:5000/api/auth/login', {
+    const res = await fetch(`${BACKEND_HOST}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -548,6 +572,10 @@ async function loginWithCredentials() {
 }
 
 async function logout() {
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+  }
   authToken = '';
   await window.electronAPI.setStoreValue('authToken', '');
   stopPolling();
@@ -568,10 +596,10 @@ async function logout() {
 // ============================================================
 function formatTime(s) {
   const total = Math.max(0, Math.round(s || 0));
-  const h   = Math.floor(total / 3600);
-  const m   = Math.floor((total % 3600) / 60);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
   const sec = total % 60;
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 }
 
 // ============================================================

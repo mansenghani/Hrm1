@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host --port 3000",
+    "dev": "vite --host --port 4000",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -14,7 +14,7 @@
     "axios": "^1.14.0",
     "emoji-picker-react": "^4.19.1",
     "lucide-react": "^1.8.0",
-    "postcss": "8.5.8",
+    "postcss": "^8.5.15",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hot-toast": "^2.6.0",

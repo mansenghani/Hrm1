@@ -1,22 +1,22 @@
 const Attendance = require('../models/Attendance');
+const Employee = require('../models/Employee');
 
-// @desc    Clock In
-// @route   POST /api/attendance/clock-in
-exports.clockIn = async (req, res) => {
+// @desc    Clock In / Check In
+// @route   POST /api/attendance/checkin
+exports.checkIn = async (req, res) => {
   try {
-    const { date, time, location } = req.body;
-
-    // Check if already clocked in today
-    const existing = await Attendance.findOne({ user: req.user.id, date });
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Check if already checked in today
+    const existing = await Attendance.findOne({ user: req.user.id, date: today });
     if (existing) {
-      return res.status(400).json({ message: 'Already clocked in for today' });
+      return res.status(400).json({ message: 'Already checked in for today.' });
     }
 
     const attendance = await Attendance.create({
       user: req.user.id,
-      date,
-      clockIn: time,
-      location,
+      date: today,
+      checkInTime: new Date(),
       status: 'Present'
     });
 
@@ -26,18 +26,27 @@ exports.clockIn = async (req, res) => {
   }
 };
 
-// @desc    Clock Out
-// @route   PUT /api/attendance/clock-out
-exports.clockOut = async (req, res) => {
+// @desc    Clock Out / Check Out
+// @route   POST /api/attendance/checkout
+exports.checkOut = async (req, res) => {
   try {
-    const { date, time } = req.body;
-    const attendance = await Attendance.findOne({ user: req.user.id, date });
+    const today = new Date().toISOString().split('T')[0];
+    const attendance = await Attendance.findOne({ user: req.user.id, date: today });
 
     if (!attendance) {
-      return res.status(404).json({ message: 'No clock-in record found for today' });
+      return res.status(404).json({ message: 'No check-in record found for today.' });
+    }
+    if (attendance.checkOutTime) {
+      return res.status(400).json({ message: 'Already checked out for today.' });
     }
 
-    attendance.clockOut = time;
+    const checkOutTime = new Date();
+    attendance.checkOutTime = checkOutTime;
+
+    // Calculate total hours
+    const diffMs = checkOutTime - new Date(attendance.checkInTime);
+    attendance.totalHours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(2));
+
     await attendance.save();
 
     res.json(attendance);
@@ -46,22 +55,36 @@ exports.clockOut = async (req, res) => {
   }
 };
 
-// @desc    Get My Attendance
-// @route   GET /api/attendance/me
-exports.getMyAttendance = async (req, res) => {
-  try {
-    const records = await Attendance.find({ user: req.user.id }).sort({ date: -1 });
-    res.json(records);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// @desc    Get All Attendance (Admin/HR)
+// @desc    Get Attendance based on Role Hierarchy
 // @route   GET /api/attendance
-exports.getAllAttendance = async (req, res) => {
+exports.getAttendance = async (req, res) => {
   try {
-    const records = await Attendance.find().populate('user', 'name role email').sort({ date: -1 });
+    const role = req.user.role.toLowerCase();
+    const userId = req.user.id;
+
+    let query = {};
+
+    if (role === 'admin') {
+      // Admin sees everyone
+      query = {};
+    } else if (role === 'hr') {
+      // HR sees everyone (or specific filtering if needed, but admin/hr usually identical here)
+      query = {};
+    } else if (role === 'manager') {
+      // Manager sees themselves + direct reports
+      const myTeam = await Employee.find({ managerId: userId }).select('userId');
+      const teamUserIds = myTeam.map(emp => emp.userId).filter(id => id);
+      teamUserIds.push(userId); // include manager themselves
+      query = { user: { $in: teamUserIds } };
+    } else {
+      // Employee sees only themselves
+      query = { user: userId };
+    }
+
+    const records = await Attendance.find(query)
+      .populate('user', 'name role email')
+      .sort({ date: -1 });
+
     res.json(records);
   } catch (error) {
     res.status(500).json({ message: error.message });

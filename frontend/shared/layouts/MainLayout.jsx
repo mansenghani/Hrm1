@@ -27,7 +27,12 @@ import {
   AlertCircle,
   Play,
   Camera,
-  PlusCircle
+  PlusCircle,
+  User,
+  Globe,
+  ChevronDown,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { API_BASE_URL } from '@shared/services/api';
@@ -36,11 +41,34 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark') {
+      document.documentElement.classList.add('dark');
+      return true;
+    } else if (saved === 'light') {
+      document.documentElement.classList.remove('dark');
+      return false;
+    }
+    return document.documentElement.classList.contains('dark');
+  });
   const [liveNotifications, setLiveNotifications] = useState([]);
   const notificationRef = React.useRef(null);
   const searchRef = React.useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
+
+  const toggleTheme = () => {
+    const nextDark = !isDarkMode;
+    document.documentElement.classList.add('theme-transitioning');
+    setIsDarkMode(nextDark);
+    document.documentElement.classList.toggle('dark', nextDark);
+    localStorage.setItem('theme', nextDark ? 'dark' : 'light');
+    setTimeout(() => {
+      document.documentElement.classList.remove('theme-transitioning');
+    }, 350);
+  };
 
   const role = sessionStorage.getItem('role') || 'admin';
   const token = sessionStorage.getItem('token');
@@ -87,7 +115,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
             path: `/${activeRole}/employees/view/${e._id || e.id}`,
             icon: '👤'
           }));
-        } catch (_) {}
+        } catch (_) { }
 
         // Search Leave Requests
         try {
@@ -105,7 +133,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
             path: `/${activeRole}/leave`,
             icon: '📅'
           }));
-        } catch (_) {}
+        } catch (_) { }
 
         // Search Payroll
         try {
@@ -121,7 +149,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
             path: `/${activeRole}/payroll`,
             icon: '💰'
           }));
-        } catch (_) {}
+        } catch (_) { }
 
         // Quick nav page suggestions — full list from all roles
         const allPages = [
@@ -254,13 +282,13 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     });
 
     socket.on('update_notification', (notif) => {
-      setLiveNotifications(prev => prev.map(n => 
+      setLiveNotifications(prev => prev.map(n =>
         (n.id === notif._id || (n.batchId && n.batchId === notif.batchId)) ? { ...n, text: notif.message } : n
       ));
     });
 
     socket.on('delete_notification', (notif) => {
-      setLiveNotifications(prev => prev.filter(n => 
+      setLiveNotifications(prev => prev.filter(n =>
         !(n.id === notif._id || (n.batchId && n.batchId === notif.batchId))
       ));
     });
@@ -326,8 +354,8 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
         return [
           { name: 'Dashboard', path: '/hr/dashboard', icon: LayoutDashboard },
           { name: 'Employees', path: '/hr/employees', icon: Users },
-          { name: 'Departments', path: '/hr/departments', icon: Layers },
-          { name: 'Leave Management', path: '/hr/leave', icon: FileText },
+          { name: 'Daily Tasks Board', path: '/hr/tasks', icon: CheckSquare },
+          // { name: 'Task Management', path: '/hr/task-management', icon: ClipboardList },
           { name: 'Attendance', path: '/hr/attendance', icon: Calendar },
           { name: 'Time Tracker', path: '/hr/time-tracker', icon: Clock },
           { name: 'Team Chat', path: '/hr/chat', icon: MessageSquare },
@@ -356,7 +384,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           // { name: 'Project Hub', path: '/manager/projects', icon: Briefcase },
           { name: 'Time Tracker', path: '/manager/time-tracker', icon: Clock },
           { name: 'Team Chat', path: '/manager/chat', icon: MessageSquare },
-          // { name: 'Team Attendance', path: '/manager/attendance', icon: Calendar },
+          { name: 'Team Attendance', path: '/manager/attendance', icon: Calendar },
           { name: 'Monitoring Logs', path: '/manager/screenshots', icon: Camera },
           { name: 'Notifications', path: '/manager/notifications', icon: Bell },
           // { name: 'Review Leaves', path: '/manager/leave', icon: FileText },
@@ -369,7 +397,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           { name: 'Daily Tasks Board', path: `/${currentRole}/tasks`, icon: CheckSquare },
           // { name: 'Task Management', path: `/${currentRole}/task-management`, icon: ClipboardList },
           // { name: 'Request For Leave', path: `/${currentRole}/leave`, icon: FileText },
-          // { name: 'Attendance', path: `/${currentRole}/attendance`, icon: Calendar },
+          { name: 'Attendance', path: `/${currentRole}/attendance`, icon: Calendar },
           { name: 'Time Tracker', path: `/${currentRole}/time-tracker`, icon: Clock },
           { name: 'Global Chat', path: `/${currentRole}/chat`, icon: MessageSquare },
           { name: 'Payroll', path: `/${currentRole}/payroll`, icon: Wallet },
@@ -584,16 +612,38 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     return normalized.startsWith('/') ? normalized : `/${normalized}`;
   };
 
+  const employeeOverviewItems = [
+    { name: 'Dashboard', path: '/employee/dashboard', icon: LayoutDashboard },
+  ];
+
+  const employeeMeItems = [
+    { name: 'My Profile', path: '/employee/profile', icon: User },
+    { name: 'My Attendance', path: '/employee/time-tracker', icon: Clock },
+    { name: 'My Leave', path: '/employee/leave', icon: Calendar },
+    { name: 'My Payslips', path: '/employee/payslips', icon: Wallet },
+    { name: 'My Documents', path: '/employee/documents', icon: FileText },
+    { name: 'My Performance', path: '/employee/performance', icon: Target },
+  ];
+
   return (
-    <div className="flex flex-col min-h-screen bg-[#fffefb]">
-      <header className="sticky top-0 w-full z-50 bg-[#fffefb] border-b border-[#c5c0b1]">
+    <div className="flex flex-col min-h-screen bg-[#fffefb] dark:bg-[#08100e] text-[#201515] dark:text-[#e2e8f0] transition-colors duration-300 ease-in-out">
+      <header className="sticky top-0 w-full z-50 border-b border-[#c5c0b1] dark:border-[#1a2d29] bg-white/80 dark:bg-[#08100e]/80 backdrop-blur-md transition-colors duration-300 ease-in-out">
         <div className="flex items-center h-[56px] w-full px-6">
-          <div className="flex items-center gap-6 mr-12">
+          <div className="flex items-center gap-6 mr-6">
             <Link to={`/${activeRole}/dashboard`} className="flex items-center gap-3 no-underline">
-              <div className="w-8 h-8 bg-[#ff4f00] rounded-[4px] flex items-center justify-center">
-                <ShieldCheck size={20} className="text-[#fffefb]" />
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-[#00a76b] rounded-full flex items-center justify-center">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="8" />
+                    <path d="M12 2v2M12 20v2M2 12h2M20 12h2" />
+                    <circle cx="12" cy="12" r="3" fill="white" />
+                  </svg>
+                </div>
+                <div className="flex flex-col items-start leading-tight">
+                  <span className="text-[17px] font-black text-[#201515] dark:text-white tracking-tight">FluidHR</span>
+                  <span className="text-[10px] font-bold text-[#939084] dark:text-[#a3b3af] uppercase tracking-wider">Workforce OS</span>
+                </div>
               </div>
-              <span className="text-[24px] font-bold tracking-tight text-[#201515]">FluidHR</span>
             </Link>
             <button
               onClick={toggleSidebar}
@@ -602,130 +652,95 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
               <Menu size={22} />
             </button>
           </div>
-          {/* Top Horizontal Menu Hidden per user request 
-          <nav className="hidden xl:flex items-center h-full gap-2">
-            {menuItems.slice(0, 4).map(item => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`zap-tab ${location.pathname === item.path ? 'zap-tab-active' : ''}`}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </nav>
-          */}
-          <div className="ml-auto flex items-center h-full gap-4">
+
+          {/* Search bar in the center-left */}
+          <div className="flex-1 max-w-[340px] relative mx-4">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+              <Search size={18} />
+            </div>
+            <input
+              type="text"
+              placeholder="Search employees, requests, payroll..."
+              className="w-full pl-10 pr-4 py-2 bg-[#f3f4f6] dark:bg-[#111c18] border-none rounded-full text-sm font-semibold text-gray-700 dark:text-[#a3b3af] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00a76b]/20 focus:bg-white dark:focus:bg-[#162722] transition-all"
+            />
+          </div>
+
+          {/* + Quick action button */}
+          <button className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#00b27a] to-[#00915c] hover:from-[#00c285] hover:to-[#00a368] text-white rounded-full font-bold text-xs transition-all cursor-pointer border-none shadow-sm mr-4">
+            <Plus size={15} strokeWidth={2.8} />
+            <span>Quick action</span>
+          </button>
+
+          <div className="ml-auto flex items-center h-full gap-2">
             {/* ⏱️ GLOBAL INACTIVITY TRACKER */}
             {isPausedByIdle && (
               <button
                 onClick={handleResume}
-                className="flex items-center gap-2 px-4 py-1.5 bg-[#ff4f00] text-white rounded-[5px] border-none cursor-pointer hover:bg-[#e64600] transition-all animate-pulse"
+                className="flex items-center gap-2 px-4 py-1.5 bg-[#ff4f00] text-white rounded-full border-none cursor-pointer hover:bg-[#e64600] transition-all animate-pulse mr-2"
               >
                 <Play size={14} fill="currentColor" />
                 <span className="text-[10px] font-black uppercase tracking-widest">Resume Timer</span>
               </button>
             )}
-            {isTrackingActive ? (
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#eceae3] rounded-[5px] border border-[#c5c0b1]">
+            {isTrackingActive && (
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#eceae3] rounded-full border border-[#c5c0b1] mr-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#24a148]"></div>
                 <span className="text-[10px] font-black text-[#201515] uppercase tracking-widest tabular-nums">
                   Active
                 </span>
               </div>
-            ) : trackerRawStatus === 'paused' && !isPausedByIdle ? (
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#eceae3] rounded-[5px] border border-[#c5c0b1]">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#f1c21b]"></div>
-                <span className="text-[10px] font-black text-[#201515] uppercase tracking-widest">Paused</span>
-              </div>
-            ) : !isTrackingActive && !isPausedByIdle ? (
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#eceae3] rounded-[5px] border border-[#c5c0b1] opacity-50">
+            )}
+            {!isTrackingActive && !isPausedByIdle && (
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#eceae3] rounded-full border border-[#c5c0b1] opacity-50 mr-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#939084]"></div>
                 <span className="text-[10px] font-black text-[#201515] uppercase tracking-widest">Offline</span>
               </div>
             ) : null}
 
-            <div className="relative hidden md:flex items-center ml-2" ref={searchRef}>
-              <Search size={16} className="absolute left-3 text-[#939084] z-10" />
-              {isSearching && (
-                <div className="absolute right-3 top-3 w-4 h-4 border-2 border-[#ff4f00] border-t-transparent rounded-full animate-spin z-10" />
-              )}
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => handleSearch(e.target.value)}
-                onFocus={() => { if (searchQuery.trim()) setIsSearchOpen(true); }}
-                placeholder="Search employees, attendance, leaves, payroll..."
-                className="w-[340px] h-10 pl-10 pr-4 bg-[#eceae3] border border-transparent rounded-[5px] text-[12px] font-bold text-[#201515] placeholder:text-[#939084] focus:outline-none focus:bg-white focus:border-[#ff4f00] transition-all"
-              />
-              {/* Search Dropdown */}
-              {isSearchOpen && (
-                <div className="absolute top-12 left-0 w-[420px] bg-white border border-[#eceae3] rounded-[8px] shadow-2xl z-[200] overflow-hidden">
-                  {searchResults.length === 0 && !isSearching ? (
-                    <div className="p-6 text-center">
-                      <p className="text-[12px] font-bold text-[#939084]">No results found for "{searchQuery}"</p>
-                      <p className="text-[10px] font-medium text-[#c5c0b1] mt-1">Try searching by name, ID, or department</p>
-                    </div>
-                  ) : (
-                    <div>
-                      {/* Group by category */}
-                      {['Employee', 'Leave', 'Payroll', 'Page'].map(cat => {
-                        const items = searchResults.filter(r => r.category === cat);
-                        if (!items.length) return null;
-                        return (
-                          <div key={cat}>
-                            <div className="px-4 py-2 bg-[#fffdf9] border-b border-[#eceae3]">
-                              <span className="text-[9px] font-black text-[#939084] uppercase tracking-widest">{cat}s</span>
-                            </div>
-                            {items.map((result, i) => (
-                              <button
-                                key={i}
-                                onMouseDown={(e) => {
-                                  e.preventDefault(); // prevent input blur closing dropdown before click fires
-                                  navigate(result.path);
-                                  setIsSearchOpen(false);
-                                  setSearchQuery('');
-                                  setSearchResults([]);
-                                }}
-                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#fffdf9] transition-colors text-left border-b border-[#eceae3] last:border-0"
-                              >
-                                <span className="text-[18px] shrink-0">{result.icon}</span>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-[13px] font-bold text-[#201515] truncate">{result.title}</p>
-                                  <p className="text-[10px] font-medium text-[#939084] truncate">{result.subtitle}</p>
-                                </div>
-                                <span className="text-[10px] font-black text-[#ff4f00] uppercase tracking-widest shrink-0">→</span>
-                              </button>
-                            ))}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            {/* Utility panel icons */}
+            <button className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 border-none bg-transparent cursor-pointer">
+              <Globe size={18} />
+            </button>
+
+            <button
+              onClick={toggleTheme}
+              className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 border-none bg-transparent cursor-pointer"
+            >
+              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
+            <button
+              onClick={() => navigate(`/${activeRole}/chat`)}
+              className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 border-none bg-transparent cursor-pointer"
+            >
+              <MessageSquare size={18} />
+            </button>
 
             <div className="relative" ref={notificationRef}>
               <button
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                className={`w-10 h-10 flex items-center justify-center rounded-[5px] transition-all relative ${isNotificationsOpen ? 'bg-[#ff4f00] text-white shadow-lg' : 'text-[#36342e] hover:bg-[#eceae3]'}`}
+                className={`w-9 h-9 flex items-center justify-center rounded-full transition-all relative border-none bg-transparent cursor-pointer ${isNotificationsOpen ? 'bg-[#00a76b] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-100'}`}
               >
-                <Bell size={20} />
-                {liveNotifications.filter(n => !n.read).length > 0 && (
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-[#ff4f00] border-2 border-[#fffefb] rounded-full"></span>
+                <Bell size={18} />
+                {liveNotifications.length > 0 && (
+                  <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
                 )}
               </button>
 
               {isNotificationsOpen && (
-                <div className="absolute top-[80px] right-0 w-80 bg-white border border-[#c5c0b1] rounded-[5px] shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[100]">
-                  <div className="p-4 border-b border-[#eceae3] bg-[#fffdf9] flex justify-between items-center">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-[#201515]">Notifications</span>
+                <div className="absolute top-[48px] right-0 w-80 bg-white dark:bg-[#111c18] border border-[#c5c0b1] dark:border-[#1a2d29] rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[100]">
+                  <div className="p-4 border-b border-[#eceae3] dark:border-[#1a2d29] bg-[#fffdf9] dark:bg-[#162722] flex justify-between items-center">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-[#201515] dark:text-white">Intelligence Alerts</span>
+                    {liveNotifications.length > 0 && (
+                      <span className="px-2 py-0.5 bg-[#00a76b]/10 text-[#00a76b] text-[8px] font-black rounded-full uppercase">
+                        {liveNotifications.length} New
+                      </span>
+                    )}
                   </div>
                   <div className="max-h-[320px] overflow-y-auto">
                     {liveNotifications.length === 0 ? (
                       <div className="p-8 text-center opacity-40">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-[#939084]">No Active Alerts</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[#939084] dark:text-[#a3b3af]">No Active Alerts</p>
                       </div>
                     ) : (
                       liveNotifications.map((n, i) => (
@@ -735,13 +750,13 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                             navigate(n.path);
                             setIsNotificationsOpen(false);
                           }}
-                          className="p-4 border-b border-[#eceae3] hover:bg-[#fffdf9] transition-all cursor-pointer group"
+                          className="p-4 border-b border-[#eceae3] dark:border-[#1a2d29] hover:bg-[#fffdf9] dark:hover:bg-[#162722]/50 transition-all cursor-pointer group"
                         >
-                          <div className="flex gap-3 overflow-hidden">
-                            <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${n.type === 'rework' ? 'bg-red-500' : 'bg-[#ff4f00]'}`}></div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-[12px] font-bold text-[#201515] leading-snug group-hover:text-[#ff4f00] transition-colors break-words overflow-hidden" style={{display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{n.text}</p>
-                              <p className="text-[9px] font-black text-[#939084] uppercase tracking-widest mt-1">{n.time}</p>
+                          <div className="flex gap-3">
+                            <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${n.type === 'rework' ? 'bg-red-500' : 'bg-[#00a76b]'}`}></div>
+                            <div>
+                              <p className="text-[12px] font-bold text-[#201515] dark:text-[#e2e8f0] leading-tight group-hover:text-[#00a76b] transition-colors">{n.text}</p>
+                              <p className="text-[9px] font-black text-[#939084] dark:text-[#a3b3af] uppercase tracking-widest mt-1">{n.time}</p>
                             </div>
                           </div>
                         </div>
@@ -749,8 +764,8 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                     )}
                   </div>
                   <button
-                    onClick={() => { navigate(`/${activeRole}/notifications/all`); setIsNotificationsOpen(false); }}
-                    className="w-full py-3 bg-[#eceae3] text-[10px] font-black text-[#201515] uppercase tracking-[0.2em] hover:bg-[#c5c0b1] transition-all border-none"
+                    onClick={() => { navigate(`/${role}/dashboard`); setIsNotificationsOpen(false); }}
+                    className="w-full py-3 bg-[#eceae3] dark:bg-[#162722] text-[10px] font-black text-[#201515] dark:text-white uppercase tracking-[0.2em] hover:bg-[#c5c0b1] dark:hover:bg-[#111c18] transition-all border-none cursor-pointer"
                   >
                     View All Notifications
                   </button>
@@ -758,82 +773,171 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
               )}
             </div>
 
-            <div
-              onClick={() => navigate(`/${role}/profile`)}
-              className="hidden md:flex items-center gap-3 px-4 h-12 hover:bg-[#eceae3] rounded-[4px] cursor-pointer transition-all"
-            >
-              <div className="w-8 h-8 bg-[#201515] rounded-full flex items-center justify-center text-[#fffefb] font-bold text-[13px] overflow-hidden">
-                {userProfile?.profileImage ? (
-                  <img src={getImageUrl(userProfile.profileImage)} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  initials
-                )}
+            {/* Profile Dropdown Component */}
+            <div className="relative">
+              <div
+                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                className="hidden md:flex items-center gap-3 px-3 h-11 hover:bg-gray-100 dark:hover:bg-[#111c18] rounded-full cursor-pointer transition-all select-none"
+              >
+                <div className="w-8 h-8 rounded-full border-2 border-[#00a76b] flex items-center justify-center bg-[#201515] text-[#fffefb] font-bold text-[13px] overflow-hidden">
+                  {userProfile?.profileImage ? (
+                    <img src={getImageUrl(userProfile.profileImage)} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    initials
+                  )}
+                </div>
+                <div className="flex flex-col items-start leading-none">
+                  <span className="text-[12px] font-bold text-[#201515] dark:text-white truncate max-w-[120px]">{displayName}</span>
+                  <span className="text-[9px] font-bold text-[#939084] dark:text-[#a3b3af] uppercase tracking-wider mt-1">{displayRole}</span>
+                </div>
+                <ChevronDown size={14} className="text-gray-500" />
               </div>
-              <div className="flex flex-col items-start leading-none">
-                <span className="text-[13px] font-bold text-[#201515] truncate max-w-[150px]">{displayName}</span>
-                <span className="text-[10px] font-bold text-[#939084] uppercase tracking-wider mt-1">{displayRole}</span>
-              </div>
+
+              {isProfileDropdownOpen && (
+                <div className="absolute top-[48px] right-0 w-48 bg-white dark:bg-[#111c18] border border-[#c5c0b1] dark:border-[#1a2d29] rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] overflow-hidden z-[100] py-1">
+                  <button
+                    onClick={() => { navigate(`/${activeRole}/profile`); setIsProfileDropdownOpen(false); }}
+                    className="w-full px-4 py-2.5 text-left text-sm font-semibold text-gray-700 dark:text-[#cbd5e1] hover:bg-[#f2fbf6] dark:hover:bg-[#162722] hover:text-[#00a76b] transition-all border-none bg-transparent cursor-pointer"
+                  >
+                    My Profile
+                  </button>
+                  <button
+                    onClick={() => { navigate(`/${activeRole}/settings`); setIsProfileDropdownOpen(false); }}
+                    className="w-full px-4 py-2.5 text-left text-sm font-semibold text-gray-700 dark:text-[#cbd5e1] hover:bg-[#f2fbf6] dark:hover:bg-[#162722] hover:text-[#00a76b] transition-all border-none bg-transparent cursor-pointer"
+                  >
+                    Settings
+                  </button>
+                  <div className="border-t border-[#eceae3] dark:border-[#1a2d29] my-1"></div>
+                  <button
+                    onClick={() => { handleLogout(); setIsProfileDropdownOpen(false); }}
+                    className="w-full px-4 py-2.5 text-left text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all border-none bg-transparent cursor-pointer"
+                  >
+                    Log out
+                  </button>
+                </div>
+              )}
             </div>
-            <button onClick={handleLogout} className="zap-btn zap-btn-orange">Log out</button>
           </div>
         </div>
       </header>
       <div className="flex flex-1 w-full relative">
         <aside
-          className="bg-transparent flex flex-col shrink-0 border-r border-[#c5c0b1] transition-[width] duration-300 ease-in-out overflow-y-auto scrollbar-hide hidden md:flex sticky top-[56px] h-[calc(100vh-56px)]"
-          style={{ width: isSidebarOpen ? '220px' : '64px' }}
+          className="flex flex-col shrink-0 border-r border-[#c5c0b1] dark:border-[#1a2d29] transition-[width] duration-300 ease-in-out overflow-y-auto scrollbar-hide hidden md:flex sticky top-[56px] h-[calc(100vh-56px)]"
+          style={{
+            width: isSidebarOpen ? '220px' : '64px',
+            backgroundColor: isDarkMode ? '#050c0a' : (activeRole === 'employee' ? '#f2fbf6' : '#fffefb'),
+            transition: 'width 0.3s ease-in-out, background-color 0.3s ease, border-color 0.3s ease'
+          }}
         >
           <div className="flex flex-col pb-12 w-full">
-            <nav className="flex-1 space-y-2 pt-[10px] px-3">
-              {menuItems.map((item) => {
-                const isActive = location.pathname === item.path;
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={`flex items-center h-12 text-[15px] font-bold no-underline rounded-[5px] transition-all border border-transparent group ${isSidebarOpen ? 'px-4 gap-3 w-full' : 'px-0 justify-center w-full'} ${isActive ? 'text-[#ff4f00] bg-[#fffdf9] !border-[#ff4f00] shadow-sm' : 'text-[#201515] hover:bg-[#eceae3] hover:border-[#c5c0b1]'}`}
-                    title={!isSidebarOpen ? item.name : ""}
-                  >
-                    <div className={`shrink-0 flex items-center justify-center transition-all ${isSidebarOpen ? 'w-5' : 'w-12'}`}>
-                      <Icon size={20} className={isActive ? 'text-[#ff4f00]' : 'text-[#939084]'} />
-                    </div>
-                    {isSidebarOpen && <span className="truncate whitespace-nowrap overflow-hidden transition-opacity duration-200">{item.name}</span>}
-                  </Link>
-                );
-              })}
-            </nav>
+            {activeRole === 'employee' ? (
+              <nav className="flex-1 space-y-4 pt-[10px] px-3">
+                {/* OVERVIEW Group */}
+                <div>
+                  {isSidebarOpen && (
+                    <p className="px-4 text-[10px] font-black text-[#939084] dark:text-[#527068] uppercase tracking-[0.2em] mb-2">
+                      Overview
+                    </p>
+                  )}
+                  <div className="space-y-1">
+                    {employeeOverviewItems.map((item) => {
+                      const isActive = location.pathname === item.path;
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          className={`flex items-center h-12 text-[15px] font-bold no-underline rounded-[999px] transition-all group ${isSidebarOpen ? 'px-4 gap-3 w-full' : 'px-0 justify-center w-full'} ${isActive ? 'text-white bg-[#00a76b] shadow-sm' : 'text-[#201515] dark:text-[#a3b3af] hover:bg-[#eceae3]/60 dark:hover:bg-[#111c18]'}`}
+                          title={!isSidebarOpen ? item.name : ""}
+                        >
+                          <div className={`shrink-0 flex items-center justify-center transition-all ${isSidebarOpen ? 'w-5' : 'w-12'}`}>
+                            <Icon size={20} className={isActive ? 'text-white' : 'text-[#36342e] dark:text-[#a3b3af]'} />
+                          </div>
+                          {isSidebarOpen && <span className="truncate whitespace-nowrap overflow-hidden transition-opacity duration-200">{item.name}</span>}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* ME Group */}
+                <div>
+                  {isSidebarOpen && (
+                    <p className="px-4 text-[10px] font-black text-[#939084] dark:text-[#527068] uppercase tracking-[0.2em] mb-2 mt-4">
+                      Me
+                    </p>
+                  )}
+                  <div className="space-y-1">
+                    {employeeMeItems.map((item) => {
+                      const isActive = location.pathname === item.path;
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.name}
+                          to={item.path}
+                          className={`flex items-center h-12 text-[15px] font-bold no-underline rounded-[999px] transition-all group ${isSidebarOpen ? 'px-4 gap-3 w-full' : 'px-0 justify-center w-full'} ${isActive ? 'text-white bg-[#00a76b] shadow-sm' : 'text-[#201515] dark:text-[#a3b3af] hover:bg-[#eceae3]/60 dark:hover:bg-[#111c18]'}`}
+                          title={!isSidebarOpen ? item.name : ""}
+                        >
+                          <div className={`shrink-0 flex items-center justify-center transition-all ${isSidebarOpen ? 'w-5' : 'w-12'}`}>
+                            <Icon size={20} className={isActive ? 'text-white' : 'text-[#36342e] dark:text-[#a3b3af]'} />
+                          </div>
+                          {isSidebarOpen && <span className="truncate whitespace-nowrap overflow-hidden transition-opacity duration-200">{item.name}</span>}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              </nav>
+            ) : (
+              <nav className="flex-1 space-y-2 pt-[10px] px-3">
+                {menuItems.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`flex items-center h-12 text-[15px] font-bold no-underline rounded-[5px] transition-all border border-transparent group ${isSidebarOpen ? 'px-4 gap-3 w-full' : 'px-0 justify-center w-full'} ${isActive ? 'text-[#ff4f00] bg-[#fffdf9] !border-[#ff4f00] shadow-sm' : 'text-[#201515] dark:text-[#a3b3af] hover:bg-[#eceae3] dark:hover:bg-[#111c18] hover:border-[#c5c0b1] dark:hover:border-[#1a2d29]'}`}
+                      title={!isSidebarOpen ? item.name : ""}
+                    >
+                      <div className={`shrink-0 flex items-center justify-center transition-all ${isSidebarOpen ? 'w-5' : 'w-12'}`}>
+                        <Icon size={20} className={isActive ? 'text-[#ff4f00]' : 'text-[#939084] dark:text-[#a3b3af]'} />
+                      </div>
+                      {isSidebarOpen && <span className="truncate whitespace-nowrap overflow-hidden transition-opacity duration-200">{item.name}</span>}
+                    </Link>
+                  );
+                })}
+              </nav>
+            )}
           </div>
         </aside>
-        <main className="flex-1 min-w-0 overflow-hidden bg-[#fffefb] relative flex flex-col">
+        <main className="flex-1 min-w-0 overflow-hidden bg-[#fffefb] dark:bg-[#08100e] relative flex flex-col">
           {location.pathname.endsWith('/chat') ? (
             <div className="h-[calc(100vh-56px)] relative overflow-hidden">
               <Outlet />
               {children}
             </div>
           ) : (
-            <div className="py-6 px-6 lg:px-8 max-w-[1600px] mx-auto animate-fade-in w-full min-h-full flex flex-col">
+            <div className="animate-fade-in w-full min-h-full flex flex-col">
               <div className="flex-1">
                 <Outlet />
                 {children}
               </div>
-              {/* LARGE VERTICAL SPACER */}
-              <div className="h-24 shrink-0"></div>
             </div>
           )}
         </main>
       </div>
       {!location.pathname.endsWith('/chat') && (
-      <footer className="py-6 px-12 border-t border-[#c5c0b1] bg-[#fffefb] flex justify-between items-center text-[11px] text-[#939084] font-bold uppercase tracking-widest z-50">
-        <div className="flex gap-10 items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-[#ff4f00] rounded-full animate-pulse"></div>
-            <span className="text-[#201515]">Connected</span>
+        <footer className="py-6 px-12 border-t border-[#c5c0b1] dark:border-[#1a2d29] bg-[#fffefb] dark:bg-[#08100e] flex justify-between items-center text-[11px] text-[#939084] dark:text-[#a3b3af] font-bold uppercase tracking-widest z-50">
+          <div className="flex gap-10 items-center">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 bg-[#ff4f00] rounded-full animate-pulse"></div>
+              <span className="text-[#201515] dark:text-white">Connected</span>
+            </div>
+            <span>v2.4.0 Automator</span>
           </div>
-          <span>v2.4.0 Automator</span>
-        </div>
-        <span>© 2026 Zapier HR Infrastructure</span>
-      </footer>
+          <span>© 2026 Zapier HR Infrastructure</span>
+        </footer>
       )}
     </div>
   );
