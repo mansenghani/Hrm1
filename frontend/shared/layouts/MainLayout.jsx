@@ -695,7 +695,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                 <div className="w-1.5 h-1.5 rounded-full bg-[#939084]"></div>
                 <span className="text-[10px] font-black text-[#201515] uppercase tracking-widest">Offline</span>
               </div>
-            ) : null}
+            )}
 
             {/* Utility panel icons */}
             <button className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 border-none bg-transparent cursor-pointer">
