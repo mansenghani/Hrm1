@@ -35,7 +35,7 @@ let screenshotTimeout = null;
 let socket = null;
 
 // ── Config ────────────────────────────────────────────────
-let BACKEND_HOST = 'http://localhost:5000';
+let BACKEND_HOST = 'https://hrm1.onrender.com';
 let API_BASE = `${BACKEND_HOST}/api/time`;
 const POLL_MS = 1000;   // 1s display refresh
 const HEARTBEAT_MS = 10000;  // 10s heartbeat to backend
@@ -84,17 +84,8 @@ let lastSystemIdleSeconds = 0;
 async function loadSession() {
   requestNotificationPermission();
 
-  // Load saved server URL
-  const savedServer = await window.electronAPI.getStoreValue('serverUrl');
-  if (savedServer) {
-    BACKEND_HOST = savedServer;
-    API_BASE = `${BACKEND_HOST}/api/time`;
-  }
-
-  const serverInput = document.getElementById('server-input');
-  if (serverInput) {
-    serverInput.value = BACKEND_HOST;
-  }
+  BACKEND_HOST = 'https://hrm1.onrender.com';
+  API_BASE = `${BACKEND_HOST}/api/time`;
 
   const savedToken = await window.electronAPI.getStoreValue('authToken');
   if (!savedToken) {
@@ -515,10 +506,6 @@ async function initSocket() {
 function showAuthSection() {
   const authEl = document.getElementById('auth-section');
   if (authEl) authEl.style.display = 'flex';
-  const serverInput = document.getElementById('server-input');
-  if (serverInput) {
-    serverInput.value = BACKEND_HOST;
-  }
   status = 'OFFLINE';
   updateUI();
 }
@@ -529,7 +516,6 @@ function hideAuthSection() {
 }
 
 async function loginWithCredentials() {
-  const serverUrl = document.getElementById('server-input')?.value.trim();
   const email = document.getElementById('email-input')?.value.trim();
   const password = document.getElementById('password-input')?.value;
   const errorEl = document.getElementById('auth-error');
@@ -537,12 +523,6 @@ async function loginWithCredentials() {
   if (!email || !password) {
     if (errorEl) { errorEl.innerText = 'Email and password required'; errorEl.style.display = 'block'; }
     return;
-  }
-  if (serverUrl) {
-    // Clean trailing slash
-    BACKEND_HOST = serverUrl.replace(/\/$/, '');
-    API_BASE = `${BACKEND_HOST}/api/time`;
-    await window.electronAPI.setStoreValue('serverUrl', BACKEND_HOST);
   }
   try {
     const res = await fetch(`${BACKEND_HOST}/api/auth/login`, {
