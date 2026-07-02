@@ -165,6 +165,15 @@ app.use('/api/users', userRoutes);
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'API is running' }));
 
+// 🌐 Serve Static Frontend Assets & Handle Routing Fallback (SPA)
+app.use(express.static(path.join(__dirname, '../frontend/admin/dist')));
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+    return res.status(404).json({ message: 'API route not found' });
+  }
+  res.sendFile(path.join(__dirname, '../frontend/admin/dist/index.html'));
+});
+
 // 🔌 Database Connection & Server Start
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/hrms';
 const PORT = process.env.PORT || 5000;
