@@ -515,6 +515,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
 
   const lastActivityRef = useRef(Date.now());
   const isTrackingActiveRef = useRef(isTrackingActive);
+  const idleTimerRef = useRef(null);
 
   useEffect(() => {
     isTrackingActiveRef.current = isTrackingActive;
@@ -523,6 +524,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   // 🛡️ REACTIVE IDLE TIMER
   useEffect(() => {
     if (isTrackingActive) {
+      console.log("[Inactivity Trace] User Became Active (Tracking Started)");
       resetIdleTimer(Date.now());
     }
   }, [isTrackingActive]);
@@ -550,39 +552,65 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   };
 
   const resetIdleTimer = (manualTime) => {
-    if (idleTimer) clearTimeout(idleTimer);
+    if (idleTimerRef.current) {
+      console.log("[Inactivity Trace] Timer Cleared");
+      clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = null;
+    }
 
     const referenceTime = manualTime || lastActivityRef.current;
     const timeSinceLast = Date.now() - referenceTime;
     const remaining = Math.max(0, (5 * 60 * 1000) - timeSinceLast);
 
+    console.log(`[Inactivity Trace] Timer Created (remaining: ${remaining}ms)`);
     const timer = setTimeout(() => {
       if (isTrackingActiveRef.current) {
+        console.log("[Inactivity Trace] User Became Inactive");
+        console.log("[Inactivity Trace] Notification Triggered");
         pauseTimer();
       }
     }, remaining);
 
+    idleTimerRef.current = timer;
     setIdleTimer(timer);
   };
 
   // 🔄 GLOBAL ACTIVITY TRACKER
   useEffect(() => {
     const handleActivity = (e) => {
+      if (e) {
+        console.log(`[Inactivity Trace] User Activity Detected: ${e.type}`);
+      }
       const now = Date.now();
       setLastActivity(now);
       lastActivityRef.current = now;
+      console.log("[Inactivity Trace] Timer Reset");
       resetIdleTimer(now);
       reportActivity(e?.type || 'active');
     };
 
-    window.addEventListener('mousemove', handleActivity);
-    window.addEventListener('keydown', handleActivity);
-    window.addEventListener('click', handleActivity);
-    window.addEventListener('scroll', handleActivity);
-    window.addEventListener('focus', handleActivity);
+    const events = [
+      'mousemove',
+      'mousedown',
+      'mouseup',
+      'click',
+      'touchstart',
+      'touchmove',
+      'keydown',
+      'keyup',
+      'scroll',
+      'wheel',
+      'pointermove',
+      'pointerdown'
+    ];
+
+    events.forEach(event => {
+      window.addEventListener(event, handleActivity, { passive: true });
+    });
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
+        console.log("[Inactivity Trace] User Became Active (Visibility Change)");
         handleActivity();
       }
     };
@@ -591,13 +619,15 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     resetIdleTimer(Date.now());
 
     return () => {
-      window.removeEventListener('mousemove', handleActivity);
-      window.removeEventListener('keydown', handleActivity);
-      window.removeEventListener('click', handleActivity);
-      window.removeEventListener('scroll', handleActivity);
-      window.removeEventListener('focus', handleActivity);
+      events.forEach(event => {
+        window.removeEventListener(event, handleActivity);
+      });
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (idleTimer) clearTimeout(idleTimer);
+      if (idleTimerRef.current) {
+        console.log("[Inactivity Trace] Logout Cleanup");
+        clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = null;
+      }
     };
   }, []);
 
