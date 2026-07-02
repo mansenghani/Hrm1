@@ -167,7 +167,7 @@ app.get('/health', (req, res) => res.json({ status: 'API is running' }));
 
 // 🌐 Serve Static Frontend Assets & Handle Routing Fallback (SPA)
 app.use(express.static(path.join(__dirname, '../frontend/admin/dist')));
-app.get('/(.*)', (req, res) => {
+app.get('/:catchAll(.*)', (req, res) => {
   if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
     return res.status(404).json({ message: 'API route not found' });
   }
