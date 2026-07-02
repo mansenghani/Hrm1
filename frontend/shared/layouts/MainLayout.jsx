@@ -480,7 +480,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     return () => s.disconnect();
   }, [token, activeRole]);
 
-  // 🛡️ INITIAL STATUS FETCH & POLLING
+  // 🛡️ STATUS FETCH & POLLING ONLY (Let desktop app handle tracking and idle events)
   useEffect(() => {
     const fetchStatus = async () => {
       if (!token) return;
@@ -490,7 +490,6 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
         if (res.data?.status === 'idle') setIsPausedByIdle(true);
         setTrackerRawStatus(res.data?.status || 'offline');
 
-        // 🔄 Sync last activity from server using clock skew compensation
         if (res.data?.lastActiveTime && res.data?.serverTime) {
           const serverNow = Date.parse(res.data.serverTime);
           const serverLast = Date.parse(res.data.lastActiveTime);
@@ -499,154 +498,22 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           if (!isNaN(serverNow) && !isNaN(serverLast)) {
             const sinceLast = serverNow - serverLast;
             const adjustedLastActivity = localNow - sinceLast;
-
             if (adjustedLastActivity > lastActivity) {
               setLastActivity(adjustedLastActivity);
-              resetIdleTimer(adjustedLastActivity);
             }
           }
         }
       } catch (err) { console.error('Status fetch failed:', err); }
     };
     fetchStatus();
-    const interval = setInterval(fetchStatus, 10000); // Poll every 10s
+    const interval = setInterval(fetchStatus, 10000); // Poll status every 10s
     return () => clearInterval(interval);
   }, [token, lastActivity]);
-
-  const lastActivityRef = useRef(Date.now());
-  const isTrackingActiveRef = useRef(isTrackingActive);
-  const idleTimerRef = useRef(null);
-
-  useEffect(() => {
-    isTrackingActiveRef.current = isTrackingActive;
-  }, [isTrackingActive]);
-
-  // 🛡️ REACTIVE IDLE TIMER
-  useEffect(() => {
-    if (isTrackingActive) {
-      console.log("[Inactivity Trace] User Became Active (Tracking Started)");
-      resetIdleTimer(Date.now());
-    }
-  }, [isTrackingActive]);
-
-  const [lastServerSync, setLastServerSync] = useState(0);
-
-  const reportActivity = async (type = 'heartbeat') => {
-    if (!token || !isTrackingActive) return;
-    const now = Date.now();
-    if (now - lastServerSync < 15000) return; // 15s throttle
-
-    try {
-      await axios.post('/api/time/activity', { type }, { headers: { Authorization: `Bearer ${token}` } });
-      setLastServerSync(now);
-    } catch (err) { console.error('Heartbeat failed:', err); }
-  };
-
-  // 🛡️ NOTIFICATION LOGIC REMOVED PER USER REQUEST
-  // Absolute silence protocol active. No browser notifications will be sent.
-
-  const pauseTimer = async () => {
-    try {
-      await axios.post('/api/time/activity', { type: 'idle' }, { headers: { Authorization: `Bearer ${token}` } });
-    } catch (err) { console.error('Pause failed:', err); }
-  };
-
-  const resetIdleTimer = (manualTime) => {
-    if (idleTimerRef.current) {
-      console.log("[Inactivity Trace] Timer Cleared");
-      clearTimeout(idleTimerRef.current);
-      idleTimerRef.current = null;
-    }
-
-    const referenceTime = manualTime || lastActivityRef.current;
-    const timeSinceLast = Date.now() - referenceTime;
-    const remaining = Math.max(0, (5 * 60 * 1000) - timeSinceLast);
-
-    console.log(`[Inactivity Trace] Timer Created (remaining: ${remaining}ms)`);
-    const timer = setTimeout(() => {
-      if (isTrackingActiveRef.current) {
-        console.log("[Inactivity Trace] User Became Inactive");
-        console.log("[Inactivity Trace] Notification Triggered");
-        pauseTimer();
-      }
-    }, remaining);
-
-    idleTimerRef.current = timer;
-    setIdleTimer(timer);
-  };
-
-  // 🔄 GLOBAL ACTIVITY TRACKER
-  useEffect(() => {
-    let lastActivityLogged = 0;
-
-    const handleActivity = (e) => {
-      const now = Date.now();
-      
-      // Throttle high-frequency events (mousemove, scroll, wheel, touchmove, pointermove)
-      // to execute at most once every 2 seconds.
-      if (e && ['mousemove', 'touchmove', 'pointermove', 'scroll', 'wheel'].includes(e.type)) {
-        if (now - lastActivityLogged < 2000) return;
-      }
-      lastActivityLogged = now;
-
-      if (e) {
-        console.log(`[Inactivity Trace] User Activity Detected: ${e.type}`);
-      }
-      setLastActivity(now);
-      lastActivityRef.current = now;
-      console.log("[Inactivity Trace] Timer Reset");
-      resetIdleTimer(now);
-      reportActivity(e?.type || 'active');
-    };
-
-    const events = [
-      'mousemove',
-      'mousedown',
-      'mouseup',
-      'click',
-      'touchstart',
-      'touchmove',
-      'keydown',
-      'keyup',
-      'scroll',
-      'wheel',
-      'pointermove',
-      'pointerdown'
-    ];
-
-    events.forEach(event => {
-      window.addEventListener(event, handleActivity, { passive: true });
-    });
-
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        console.log("[Inactivity Trace] User Became Active (Visibility Change)");
-        handleActivity();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    resetIdleTimer(Date.now());
-
-    return () => {
-      events.forEach(event => {
-        window.removeEventListener(event, handleActivity);
-      });
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (idleTimerRef.current) {
-        console.log("[Inactivity Trace] Logout Cleanup");
-        clearTimeout(idleTimerRef.current);
-        idleTimerRef.current = null;
-      }
-    };
-  }, []);
 
   const handleResume = async () => {
     try {
       await axios.post('/api/time/resume', {}, { headers: { Authorization: `Bearer ${token}` } });
-      const now = Date.now();
-      setLastActivity(now);
-      resetIdleTimer(now);
+      setLastActivity(Date.now());
       setIsPausedByIdle(false);
     } catch (err) { console.error('Resume failed:', err); }
   };
