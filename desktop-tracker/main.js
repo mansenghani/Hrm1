@@ -17,7 +17,7 @@ const store = new Store();
 let mainWindow;
 
 // ── MUST match backend IDLE_THRESHOLD_SECONDS ─────────────
-const IDLE_THRESHOLD = 600; // 10 minutes (600 seconds)
+const IDLE_THRESHOLD = 60; // 1 minute (60 seconds)
 
 function createWindow() {
   mainWindow = new BrowserWindow({

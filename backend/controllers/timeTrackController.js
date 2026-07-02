@@ -16,7 +16,7 @@ const User = require('../models/User');
 const mongoose = require('mongoose');
 
 // ── CONFIG // Constants for Idle tracking (MUST MATCH DESKTOP APP)
-const IDLE_THRESHOLD_SECONDS = 600; // 10 minutes (600 seconds)
+const IDLE_THRESHOLD_SECONDS = 60; // 1 minute (60 seconds)
 
 // ── HELPERS ───────────────────────────────────────────────
 const getToday = () => {
@@ -287,14 +287,14 @@ exports.updateActivity = async (req, res) => {
           const rewindAmount = Math.max(IDLE_THRESHOLD_SECONDS, req.body.idleSeconds || 0);
           
           session.activeTime += Math.max(0, sinceHeartbeat);
-          // Retain current elapsed value instead of resetting/rewinding to 0 (fixes timer reset bug)
-          // session.activeTime = Math.max(0, session.activeTime - rewindAmount);
+          // Subtract the idle period (1 minute) from active time and assign it to inactive time
+          session.activeTime = Math.max(0, session.activeTime - rewindAmount);
           
           session.inactivityCount += 1;
           session.idleTime = session.inactivityCount * IDLE_THRESHOLD_SECONDS;
           session.idleApplied = true;
 
-          console.log(`[IDLE DYNAMIC] User ${id} — status set to idle, activeTime preserved at ${session.activeTime}s`);
+          console.log(`[IDLE DYNAMIC] User ${id} — status set to idle, activeTime rewound by ${rewindAmount}s`);
         }
 
         session.status = 'idle';
