@@ -366,6 +366,24 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
     };
   }, [isRunning, fetchSummary, fetchRegistryTasks, pollStatus, registryDate, fetchCurrentUser, fetchMyTime, fetchLeaves]);
 
+  useEffect(() => {
+    const handleActivity = () => {
+      lastActivityRef.current = Date.now();
+    };
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+    window.addEventListener('click', handleActivity);
+    window.addEventListener('scroll', handleActivity);
+    window.addEventListener('focus', handleActivity);
+    return () => {
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('click', handleActivity);
+      window.removeEventListener('scroll', handleActivity);
+      window.removeEventListener('focus', handleActivity);
+    };
+  }, []);
+
   useEffect(() => { fetchSummary(viewDate, pulseFilter); }, [viewDate, pulseFilter, fetchSummary]);
   useEffect(() => { fetchRegistryTasks(registryDate); }, [registryDate, fetchRegistryTasks]);
 

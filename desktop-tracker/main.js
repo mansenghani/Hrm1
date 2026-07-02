@@ -1,6 +1,7 @@
-const { app, BrowserWindow, ipcMain, Notification, powerMonitor, desktopCapturer } = require('electron');
+const { app, BrowserWindow, ipcMain, Notification, powerMonitor, desktopCapturer, shell } = require('electron');
 const path = require('path');
 const Store = require('electron-store');
+const { autoUpdater } = require('electron-updater');
 
 if (process.platform === 'win32') {
   app.setAppUserModelId('com.fluidhr.tracker');
@@ -67,6 +68,9 @@ if (!gotTheLock) {
   app.whenReady().then(() => {
     createWindow();
 
+    // Check for updates
+    autoUpdater.checkForUpdatesAndNotify();
+
     // ============================================================
     // 🌐 SYSTEM-WIDE IDLE MONITOR — MAIN PROCESS ONLY
     // ============================================================
@@ -82,7 +86,7 @@ if (!gotTheLock) {
       const isIdle = idleSeconds >= IDLE_THRESHOLD;
 
       // Always log so you can verify in terminal
-      console.log(`SYSTEM IDLE: ${idleSeconds}`);
+      console.log(`[DEBUG] System Idle Seconds: ${idleSeconds} | Threshold: ${IDLE_THRESHOLD}`);
 
       // Send to renderer via IPC — renderer ONLY displays/reacts
       mainWindow.webContents.send('system-idle-status', {
@@ -150,4 +154,27 @@ ipcMain.handle('capture-screen', async () => {
     console.error('Capture Error:', err);
     return null;
   }
+});
+
+// ── AUTO-UPDATER EVENTS & HANDLERS ───────────────────────
+autoUpdater.on('update-available', () => {
+  console.log('[Updater] Update available. Downloading in background...');
+});
+
+autoUpdater.on('update-downloaded', () => {
+  const { dialog } = require('electron');
+  dialog.showMessageBox({
+    type: 'info',
+    title: 'Update Ready',
+    message: 'A new version of FluidHR Tracker has been downloaded. Restart now to apply the update?',
+    buttons: ['Restart', 'Later']
+  }).then(result => {
+    if (result.response === 0) {
+      autoUpdater.quitAndInstall();
+    }
+  });
+});
+
+ipcMain.handle('check-for-updates', () => {
+  autoUpdater.checkForUpdatesAndNotify();
 });

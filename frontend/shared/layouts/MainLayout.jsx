@@ -513,12 +513,19 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     return () => clearInterval(interval);
   }, [token, lastActivity]);
 
+  const lastActivityRef = useRef(Date.now());
+  const isTrackingActiveRef = useRef(isTrackingActive);
+
+  useEffect(() => {
+    isTrackingActiveRef.current = isTrackingActive;
+  }, [isTrackingActive]);
+
   // 🛡️ REACTIVE IDLE TIMER
   useEffect(() => {
     if (isTrackingActive) {
-      resetIdleTimer();
+      resetIdleTimer(Date.now());
     }
-  }, [lastActivity, isTrackingActive]);
+  }, [isTrackingActive]);
 
   const [lastServerSync, setLastServerSync] = useState(0);
 
@@ -545,12 +552,12 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   const resetIdleTimer = (manualTime) => {
     if (idleTimer) clearTimeout(idleTimer);
 
-    const referenceTime = manualTime || lastActivity;
+    const referenceTime = manualTime || lastActivityRef.current;
     const timeSinceLast = Date.now() - referenceTime;
     const remaining = Math.max(0, (5 * 60 * 1000) - timeSinceLast);
 
     const timer = setTimeout(() => {
-      if (isTrackingActive) {
+      if (isTrackingActiveRef.current) {
         pauseTimer();
       }
     }, remaining);
@@ -563,6 +570,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     const handleActivity = (e) => {
       const now = Date.now();
       setLastActivity(now);
+      lastActivityRef.current = now;
       resetIdleTimer(now);
       reportActivity(e?.type || 'active');
     };
@@ -574,15 +582,13 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     window.addEventListener('focus', handleActivity);
 
     const handleVisibilityChange = () => {
-      if (document.hidden) {
-        // handleHidden logic if needed, but we keep tracking
-      } else {
+      if (!document.hidden) {
         handleActivity();
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    resetIdleTimer();
+    resetIdleTimer(Date.now());
 
     return () => {
       window.removeEventListener('mousemove', handleActivity);
@@ -593,7 +599,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (idleTimer) clearTimeout(idleTimer);
     };
-  }, [isTrackingActive]);
+  }, []);
 
   const handleResume = async () => {
     try {

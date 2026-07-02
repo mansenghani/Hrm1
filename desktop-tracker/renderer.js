@@ -112,6 +112,10 @@ async function pollSessionStatus() {
     const res = await fetch(`${API_BASE}/status`, {
       headers: { Authorization: `Bearer ${authToken}` }
     });
+    if (res.status === 401) {
+      logout();
+      return;
+    }
     if (!res.ok) return;
     const data = await res.json();
     applyServerState(data);
@@ -219,16 +223,23 @@ async function startSession() {
       method: 'POST',
       headers: { Authorization: `Bearer ${authToken}` }
     });
+    if (res.status === 401) {
+      logout();
+      alert('Session expired. Please log in again.');
+      return;
+    }
     if (!res.ok) {
       const err = await res.json();
       return alert(err.message || 'Unable to start session.');
     }
+    // 🔔 Trigger notification IMMEDIATELY on success (fixes delayed notification bug)
+    notifyDesktop('Session Started', 'Your tracking session is now active.');
+
     idleNotificationSent = false;
     await pollSessionStatus();
     startPolling();
     startHeartbeat();
     initScreenshotLoop();
-    await notifyDesktop('Session Started', 'Your tracking session is now active.');
   } catch (err) {
     console.error('[START ERROR]', err);
     alert('Connection error. Is the server running?');
@@ -453,6 +464,10 @@ async function fetchUserProfile() {
     const res = await fetch(`${BACKEND_HOST}/api/auth/me`, {
       headers: { Authorization: `Bearer ${authToken}` }
     });
+    if (res.status === 401) {
+      logout();
+      return;
+    }
     if (!res.ok) return;
     const user = await res.json();
     const nameEl = document.getElementById('display-name');

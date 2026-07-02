@@ -287,13 +287,14 @@ exports.updateActivity = async (req, res) => {
           const rewindAmount = Math.max(IDLE_THRESHOLD_SECONDS, req.body.idleSeconds || 0);
           
           session.activeTime += Math.max(0, sinceHeartbeat);
-          session.activeTime = Math.max(0, session.activeTime - rewindAmount);
+          // Retain current elapsed value instead of resetting/rewinding to 0 (fixes timer reset bug)
+          // session.activeTime = Math.max(0, session.activeTime - rewindAmount);
           
           session.inactivityCount += 1;
           session.idleTime = session.inactivityCount * IDLE_THRESHOLD_SECONDS;
           session.idleApplied = true;
 
-          console.log(`[IDLE DYNAMIC] User ${id} — rewound by ${rewindAmount}s to ${session.activeTime}s`);
+          console.log(`[IDLE DYNAMIC] User ${id} — status set to idle, activeTime preserved at ${session.activeTime}s`);
         }
 
         session.status = 'idle';
