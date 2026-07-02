@@ -611,6 +611,15 @@ document.getElementById('logout-btn')?.addEventListener('click', logout);
 document.getElementById('auth-minimize-btn')?.addEventListener('click', () => window.electronAPI.minimizeApp());
 document.getElementById('auth-close-btn')?.addEventListener('click', () => window.electronAPI.closeApp());
 
+// Submit login form on pressing Enter key
+const handleLoginEnter = (e) => {
+  if (e.key === 'Enter') {
+    loginWithCredentials();
+  }
+};
+document.getElementById('email-input')?.addEventListener('keydown', handleLoginEnter);
+document.getElementById('password-input')?.addEventListener('keydown', handleLoginEnter);
+
 // Re-poll when window regains focus (catches state changes while minimized)
 window.addEventListener('focus', () => { if (authToken) pollSessionStatus(); });
 window.addEventListener('visibilitychange', () => {
