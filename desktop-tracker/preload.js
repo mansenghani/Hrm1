@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   // ── Persistence ───────────────────────────────────────
+  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   getStoreValue: (key) => ipcRenderer.invoke('get-store-value', key),
   setStoreValue: (key, value) => ipcRenderer.invoke('set-store-value', key, value),
 

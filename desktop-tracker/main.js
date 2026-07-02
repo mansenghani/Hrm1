@@ -103,6 +103,10 @@ app.on('window-all-closed', () => {
 });
 
 // ── IPC HANDLERS ─────────────────────────────────────────
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion();
+});
+
 ipcMain.handle('get-store-value', (event, key) => {
   return store.get(key);
 });

@@ -84,6 +84,16 @@ let lastSystemIdleSeconds = 0;
 async function loadSession() {
   requestNotificationPermission();
 
+  try {
+    const version = await window.electronAPI.getAppVersion();
+    const versionDisplayEl = document.getElementById('version-display');
+    if (versionDisplayEl && version) {
+      versionDisplayEl.innerText = `V${version} PRO`;
+    }
+  } catch (err) {
+    console.error('Failed to get app version:', err);
+  }
+
   BACKEND_HOST = 'https://hrm1.onrender.com';
   API_BASE = `${BACKEND_HOST}/api/time`;
 
