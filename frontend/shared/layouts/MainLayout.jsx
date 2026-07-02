@@ -577,11 +577,21 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
 
   // 🔄 GLOBAL ACTIVITY TRACKER
   useEffect(() => {
+    let lastActivityLogged = 0;
+
     const handleActivity = (e) => {
+      const now = Date.now();
+      
+      // Throttle high-frequency events (mousemove, scroll, wheel, touchmove, pointermove)
+      // to execute at most once every 2 seconds.
+      if (e && ['mousemove', 'touchmove', 'pointermove', 'scroll', 'wheel'].includes(e.type)) {
+        if (now - lastActivityLogged < 2000) return;
+      }
+      lastActivityLogged = now;
+
       if (e) {
         console.log(`[Inactivity Trace] User Activity Detected: ${e.type}`);
       }
-      const now = Date.now();
       setLastActivity(now);
       lastActivityRef.current = now;
       console.log("[Inactivity Trace] Timer Reset");
