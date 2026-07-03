@@ -18,19 +18,19 @@ router.get('/', protect, getEmployees);
 router.post('/', protect, authorize('admin', 'hr'), createEmployee);
 router.get('/:id', protect, getEmployeeById);
 router.put('/:id', protect, authorize('admin', 'hr'), updateEmployee);
-router.post('/:id/profile-image', protect, authorize('admin', 'hr'), upload.single('image'), (req, res) => {
+router.post('/:id/profile-image', protect, authorize('admin', 'hr'), (req, res) => {
   const { updateEmployeeProfileImage } = require('../controllers/employeeController');
   updateEmployeeProfileImage(req, res);
 });
-router.post('/:id/adhar-card', protect, authorize('admin', 'hr'), upload.single('document'), (req, res) => {
+router.post('/:id/adhar-card', protect, authorize('admin', 'hr'), (req, res) => {
   const { updateEmployeeDocument } = require('../controllers/employeeController');
   updateEmployeeDocument(req, res, 'adharCard');
 });
-router.post('/:id/bank-details', protect, authorize('admin', 'hr'), upload.single('document'), (req, res) => {
+router.post('/:id/bank-details', protect, authorize('admin', 'hr'), (req, res) => {
   const { updateEmployeeDocument } = require('../controllers/employeeController');
   updateEmployeeDocument(req, res, 'bankDetails');
 });
-router.post('/:id/pan-card', protect, authorize('admin', 'hr'), upload.single('document'), (req, res) => {
+router.post('/:id/pan-card', protect, authorize('admin', 'hr'), (req, res) => {
   const { updateEmployeeDocument } = require('../controllers/employeeController');
   updateEmployeeDocument(req, res, 'panCard');
 });

@@ -239,21 +239,23 @@ const EmployeeForm = () => {
                   onChange={async (e) => {
                     const file = e.target.files[0];
                     if (!file) return;
-                    const token = sessionStorage.getItem('token');
-                    const uploadData = new FormData();
-                    uploadData.append('image', file);
-                    try {
-                      setLoading(true);
-                       const res = await axios.post(`/api/employees/${id}/profile-image`, uploadData, {
-                         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
-                       });
-                       setFormData({ ...formData, profileImage: res.data.profileImage });
-                       window.dispatchEvent(new Event('profileUpdated'));
-                    } catch (err) {
-                      setError('Failed to update node visual identity');
-                    } finally {
-                      setLoading(false);
-                    }
+                    const reader = new FileReader();
+                    reader.onloadend = async () => {
+                      const token = sessionStorage.getItem('token');
+                      try {
+                        setLoading(true);
+                        const res = await axios.post(`/api/employees/${id}/profile-image`, { image: reader.result }, {
+                          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+                        });
+                        setFormData({ ...formData, profileImage: res.data.profileImage });
+                        window.dispatchEvent(new Event('profileUpdated'));
+                      } catch (err) {
+                        setError('Failed to update node visual identity');
+                      } finally {
+                        setLoading(false);
+                      }
+                    };
+                    reader.readAsDataURL(file);
                   }}
                  />
               </label>
@@ -290,21 +292,23 @@ const EmployeeForm = () => {
                     onChange={async (e) => {
                       const file = e.target.files[0];
                       if (!file) return;
-                      const token = sessionStorage.getItem('token');
-                      const uploadData = new FormData();
-                      uploadData.append('document', file);
-                      try {
-                        setLoading(true);
-                        const res = await axios.post(`/api/employees/${id}/adhar-card`, uploadData, {
-                          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
-                        });
-                        setFormData({ ...formData, adharCard: res.data.adharCard });
-                        toast.success('Adharcard Protocol Verified');
-                      } catch (err) {
-                        toast.error('Identity Verification Failed');
-                      } finally {
-                        setLoading(false);
-                      }
+                      const reader = new FileReader();
+                      reader.onloadend = async () => {
+                        const token = sessionStorage.getItem('token');
+                        try {
+                          setLoading(true);
+                          const res = await axios.post(`/api/employees/${id}/adhar-card`, { document: reader.result }, {
+                            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+                          });
+                          setFormData({ ...formData, adharCard: res.data.adharCard });
+                          toast.success('Adharcard Protocol Verified');
+                        } catch (err) {
+                          toast.error('Identity Verification Failed');
+                        } finally {
+                          setLoading(false);
+                        }
+                      };
+                      reader.readAsDataURL(file);
                     }}
                   />
                 </label>
@@ -337,21 +341,23 @@ const EmployeeForm = () => {
                     onChange={async (e) => {
                       const file = e.target.files[0];
                       if (!file) return;
-                      const token = sessionStorage.getItem('token');
-                      const uploadData = new FormData();
-                      uploadData.append('document', file);
-                      try {
-                        setLoading(true);
-                        const res = await axios.post(`/api/employees/${id}/bank-details`, uploadData, {
-                          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
-                        });
-                        setFormData({ ...formData, bankDetails: res.data.bankDetails });
-                        toast.success('Financial Asset Synchronized');
-                      } catch (err) {
-                        toast.error('Banking Verification Failed');
-                      } finally {
-                        setLoading(false);
-                      }
+                      const reader = new FileReader();
+                      reader.onloadend = async () => {
+                        const token = sessionStorage.getItem('token');
+                        try {
+                          setLoading(true);
+                          const res = await axios.post(`/api/employees/${id}/bank-details`, { document: reader.result }, {
+                            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+                          });
+                          setFormData({ ...formData, bankDetails: res.data.bankDetails });
+                          toast.success('Financial Asset Synchronized');
+                        } catch (err) {
+                          toast.error('Banking Verification Failed');
+                        } finally {
+                          setLoading(false);
+                        }
+                      };
+                      reader.readAsDataURL(file);
                     }}
                   />
                 </label>
@@ -384,21 +390,23 @@ const EmployeeForm = () => {
                     onChange={async (e) => {
                       const file = e.target.files[0];
                       if (!file) return;
-                      const token = sessionStorage.getItem('token');
-                      const uploadData = new FormData();
-                      uploadData.append('document', file);
-                      try {
-                        setLoading(true);
-                        const res = await axios.post(`/api/employees/${id}/pan-card`, uploadData, {
-                          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
-                        });
-                        setFormData({ ...formData, panCard: res.data.panCard });
-                        toast.success('PAN Card Protocol Synchronized');
-                      } catch (err) {
-                        toast.error('PAN Verification Failed');
-                      } finally {
-                        setLoading(false);
-                      }
+                      const reader = new FileReader();
+                      reader.onloadend = async () => {
+                        const token = sessionStorage.getItem('token');
+                        try {
+                          setLoading(true);
+                          const res = await axios.post(`/api/employees/${id}/pan-card`, { document: reader.result }, {
+                            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+                          });
+                          setFormData({ ...formData, panCard: res.data.panCard });
+                          toast.success('PAN Card Protocol Synchronized');
+                        } catch (err) {
+                          toast.error('PAN Verification Failed');
+                        } finally {
+                          setLoading(false);
+                        }
+                      };
+                      reader.readAsDataURL(file);
                     }}
                   />
                 </label>

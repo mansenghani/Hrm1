@@ -219,14 +219,19 @@ const CreateUser = () => {
       const { user } = response.data;
       const profileId = user.profileId; // 🎯 SYNC: Use the actual Profile ID, not User ID
 
+      const toBase64 = file => new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+
       // 2. Upload Photo if selected (Sequential Linkage)
       if (selectedFile && profileId) {
-        const uploadData = new FormData();
-        uploadData.append('image', selectedFile);
-        
         try {
-          await axios.post(`/api/employees/${profileId}/profile-image`, uploadData, {
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+          const base64 = await toBase64(selectedFile);
+          await axios.post(`/api/employees/${profileId}/profile-image`, { image: base64 }, {
+            headers: { Authorization: `Bearer ${token}` }
           });
         } catch (imgErr) {
           console.warn('Photo upload failed but user was created:', imgErr);
@@ -235,31 +240,28 @@ const CreateUser = () => {
 
       // 3. Upload Documents if selected
       if (adharFile && profileId) {
-        const adharData = new FormData();
-        adharData.append('document', adharFile);
         try {
-          await axios.post(`/api/employees/${profileId}/adhar-card`, adharData, {
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+          const base64 = await toBase64(adharFile);
+          await axios.post(`/api/employees/${profileId}/adhar-card`, { document: base64 }, {
+            headers: { Authorization: `Bearer ${token}` }
           });
         } catch (err) { console.warn('Adhar upload failed:', err); }
       }
 
       if (bankFile && profileId) {
-        const bankData = new FormData();
-        bankData.append('document', bankFile);
         try {
-          await axios.post(`/api/employees/${profileId}/bank-details`, bankData, {
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+          const base64 = await toBase64(bankFile);
+          await axios.post(`/api/employees/${profileId}/bank-details`, { document: base64 }, {
+            headers: { Authorization: `Bearer ${token}` }
           });
         } catch (err) { console.warn('Bank detail upload failed:', err); }
       }
 
       if (panFile && profileId) {
-        const panData = new FormData();
-        panData.append('document', panFile);
         try {
-          await axios.post(`/api/employees/${profileId}/pan-card`, panData, {
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+          const base64 = await toBase64(panFile);
+          await axios.post(`/api/employees/${profileId}/pan-card`, { document: base64 }, {
+            headers: { Authorization: `Bearer ${token}` }
           });
         } catch (err) { console.warn('PAN Card upload failed:', err); }
       }

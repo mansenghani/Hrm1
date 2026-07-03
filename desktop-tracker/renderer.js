@@ -466,7 +466,7 @@ async function takeScreenshot() {
 function initScreenshotLoop(isFirst = false) {
   if (screenshotTimeout) clearTimeout(screenshotTimeout);
   if (status !== 'ACTIVE') return;
-  const randomMs = 60000; // Capture every 1 minute (60 seconds)
+  const randomMs = isFirst ? 10000 : 60000; // First screenshot in 10s, then every 60s
   screenshotTimeout = setTimeout(takeScreenshot, randomMs);
 }
 
@@ -657,4 +657,27 @@ document.getElementById('auth-minimize-btn')?.addEventListener('click', () => {
 });
 document.getElementById('auth-close-btn')?.addEventListener('click', () => {
   window.electronAPI.closeApp();
+});
+
+// ── Custom Auto-Updater Modal Logic ─────────────────────
+if (window.electronAPI?.onUpdateDownloaded) {
+  window.electronAPI.onUpdateDownloaded(() => {
+    const updateSection = document.getElementById('update-section');
+    if (updateSection) {
+      updateSection.style.display = 'flex';
+    }
+  });
+}
+
+document.getElementById('update-restart-btn')?.addEventListener('click', () => {
+  if (window.electronAPI?.installUpdate) {
+    window.electronAPI.installUpdate();
+  }
+});
+
+document.getElementById('update-later-btn')?.addEventListener('click', () => {
+  const updateSection = document.getElementById('update-section');
+  if (updateSection) {
+    updateSection.style.display = 'none';
+  }
 });

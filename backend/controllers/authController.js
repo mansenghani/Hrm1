@@ -169,14 +169,13 @@ exports.updatePassword = async (req, res) => {
 // 🖼️ PROFILE: Upload Image
 exports.uploadProfileImage = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
+    const { image } = req.body;
+    if (!image) {
+      return res.status(400).json({ message: 'No image provided' });
     }
 
-    const imagePath = `/uploads/${req.file.filename}`;
-    
     // Update User
-    const user = await User.findByIdAndUpdate(req.user.id, { profileImage: imagePath }, { new: true });
+    const user = await User.findByIdAndUpdate(req.user.id, { profileImage: image }, { new: true });
     
     // Update Shadow Registry (Employee/HR/Manager)
     let shadowRegistry = 'Employee';
@@ -184,11 +183,11 @@ exports.uploadProfileImage = async (req, res) => {
     if (user.role === 'manager') shadowRegistry = 'Manager';
 
     const shadowModel = mongoose.model(shadowRegistry);
-    await shadowModel.findOneAndUpdate({ userId: req.user.id }, { profileImage: imagePath });
+    await shadowModel.findOneAndUpdate({ userId: req.user.id }, { profileImage: image });
 
     res.json({ 
       message: 'Profile image updated successfully',
-      profileImage: imagePath 
+      profileImage: image 
     });
   } catch (error) {
     console.error('🔥 Upload Error:', error);

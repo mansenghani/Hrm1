@@ -191,19 +191,18 @@ exports.getEmployeesByManager = async (req, res) => {
 // POST /api/employees/:id/profile-image
 exports.updateEmployeeProfileImage = async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ message: 'No file provided' });
+    const { image } = req.body;
+    if (!image) return res.status(400).json({ message: 'No image provided' });
     
     const employee = await Employee.findById(req.params.id);
     if (!employee) return res.status(404).json({ message: 'Employee not found' });
     
-    const imagePath = `/uploads/${req.file.filename}`;
-    
-    // Update Employee
-    employee.profileImage = imagePath;
+    // Save Base64 string directly
+    employee.profileImage = image;
     await employee.save();
     
     // Update User
-    await User.findByIdAndUpdate(employee.userId, { profileImage: imagePath });
+    await User.findByIdAndUpdate(employee.userId, { profileImage: image });
     
     res.json(employee);
   } catch (error) {
@@ -214,15 +213,14 @@ exports.updateEmployeeProfileImage = async (req, res) => {
 // POST /api/employees/:id/document (Generic for Adhar/Docs)
 exports.updateEmployeeDocument = async (req, res, field) => {
   try {
-    if (!req.file) return res.status(400).json({ message: 'No file provided' });
+    const { document } = req.body;
+    if (!document) return res.status(400).json({ message: 'No document provided' });
     
     const employee = await Employee.findById(req.params.id);
     if (!employee) return res.status(404).json({ message: 'Employee not found' });
     
-    const filePath = `/uploads/${req.file.filename}`;
-    
-    // Update the specific field (adharCard or additionalDoc)
-    employee[field] = filePath;
+    // Save Base64 string directly
+    employee[field] = document;
     await employee.save();
     
     res.json(employee);

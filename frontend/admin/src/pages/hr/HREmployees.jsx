@@ -11,6 +11,15 @@ const HREmployees = () => {
   const [filterRole, setFilterRole] = useState('');
   const navigate = useNavigate();
 
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const getImageUrl = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
+    const normalized = path.replace(/\\/g, '/');
+    return `${API_BASE_URL}${normalized.startsWith('/') ? normalized : `/${normalized}`}`;
+  };
+
   const fetchEmployees = async () => {
     try {
       const token = sessionStorage.getItem('token');
@@ -29,6 +38,10 @@ const HREmployees = () => {
     fetchEmployees();
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterRole]);
+
   const filteredEmployees = employees.filter(emp => {
     const fullName = emp.fullName?.toLowerCase() || emp.userId?.name?.toLowerCase() || '';
     const email = emp.email?.toLowerCase() || emp.userId?.email?.toLowerCase() || '';
@@ -42,6 +55,13 @@ const HREmployees = () => {
 
     return matchesSearch && matchesRole;
   });
+
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
+  const paginatedEmployees = filteredEmployees.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleDelete = async (id) => {
     if (window.confirm('Eject this node from the matrix (Deactivate)?')) {
@@ -98,131 +118,160 @@ const HREmployees = () => {
             Reject All Pending
           </button>
           <button
-            onClick={() => navigate('/hr/create-user')}
-            className="zap-btn zap-btn-orange h-14 px-8"
+            onClick={() => navigate('/hr/employees/create')}
+            className="zap-btn zap-btn-dark h-14 px-8 flex items-center gap-2"
           >
-            <UserPlus size={18} className="mr-3" />
-            Create User
+            <UserPlus size={18} />
+            Register Node
           </button>
         </div>
       </div>
 
-      {/* FILTER BAR */}
-      <div className="bg-[#fffdf9] p-6 border border-[#c5c0b1] rounded-[8px] flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
-        <div className="relative w-full md:w-96 flex items-center">
-          <Search size={18} className="absolute left-4 text-[#939084]" />
+      {/* FILTER CONTROLS */}
+      <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="relative">
+          <Search className="absolute left-4 top-4 text-[#939084]" size={18} />
           <input
             type="text"
-            placeholder="Filter by name, email, or ID..."
+            placeholder="FILTER PERSONNEL..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-12 bg-white border border-[#c5c0b1] rounded-[4px] pl-12 pr-4 text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all"
+            className="zap-input pl-12 h-12 uppercase font-black"
           />
         </div>
-
-        <div className="flex items-center gap-4 w-full md:w-auto">
+        <div>
           <select
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
-            className="h-12 bg-white border border-[#c5c0b1] rounded-[4px] pl-4 pr-10 text-[14px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%23201515%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22m19%209-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.75rem_center] bg-no-repeat"
+            className="zap-input h-12 uppercase font-black"
           >
-            <option value="">All Roles</option>
-            <option value="hr">HR</option>
-            <option value="manager">Manager</option>
-            <option value="employee">Employee</option>
+            <option value="">ALL ROLES</option>
+            <option value="admin">ADMINS</option>
+            <option value="hr">HR OFFICERS</option>
+            <option value="manager">MANAGERS</option>
+            <option value="employee">EMPLOYEES</option>
           </select>
-          <div className="px-6 border-l border-[#c5c0b1] h-10 flex items-center">
-            <span className="text-[13px] font-bold text-[#939084] uppercase tracking-wider">All Employees: <span className="text-[#201515] font-black">{filteredEmployees.length}</span></span>
-          </div>
         </div>
       </div>
 
-      {/* DATA TABLE */}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="border-b-2 border-[#201515] text-left">
-              <th className="py-4 px-4 text-[12px] font-bold text-[#939084] uppercase tracking-widest">ID</th>
-              <th className="py-4 px-4 text-[12px] font-bold text-[#939084] uppercase tracking-widest">Employee</th>
-              <th className="py-4 px-4 text-[12px] font-bold text-[#939084] uppercase tracking-widest">Role/Status</th>
-              <th className="py-4 px-4 text-[12px] font-bold text-[#939084] uppercase tracking-widest text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan="4" className="text-center py-24">
-                  <div className="flex flex-col items-center gap-4">
-                    <RefreshCw size={24} className="text-[#ff4f00] animate-spin" />
-                    <p className="zap-caption-upper text-[#939084]">Synchronizing Registry...</p>
-                  </div>
-                </td>
+      {/* MATRIX TABLE */}
+      <div className="zap-card p-0 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-[#fffdf9] border-b border-[#c5c0b1]">
+                <th className="py-5 px-4 text-[10px] font-black text-[#939084] uppercase tracking-[0.2em]">Matrix Node ID</th>
+                <th className="py-5 px-4 text-[10px] font-black text-[#939084] uppercase tracking-[0.2em]">Personnel Metadata</th>
+                <th className="py-5 px-4 text-[10px] font-black text-[#939084] uppercase tracking-[0.2em]">Privilege / Status</th>
+                <th className="py-5 px-4 text-[10px] font-black text-[#939084] uppercase tracking-[0.2em] text-right">Matrix Authority Actions</th>
               </tr>
-            ) : filteredEmployees.length === 0 ? (
-              <tr>
-                <td colSpan="4" className="text-center py-24 border border-[#c5c0b1] bg-[#fffdf9] rounded-[8px]">
-                  <p className="text-[16px] font-medium text-[#939084]">No active personnel nodes matching filter.</p>
-                </td>
-              </tr>
-            ) : (
-              filteredEmployees.map((emp) => (
-                <tr key={emp._id} className="border-b border-[#c5c0b1] hover:bg-[#fffdf9] transition-colors group">
-                  <td className="py-6 px-4">
-                    <span className="font-bold text-[#201515]">{emp.employeeId || 'NODE-UNDEF'}</span>
-                  </td>
-                  <td className="py-6 px-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] flex items-center justify-center overflow-hidden">
-                        {emp.profileImage ? <img src={`${API_BASE_URL}${emp.profileImage}`} alt="User" className="w-full h-full object-cover" /> : <User size={18} className="text-[#939084]" />}
-                      </div>
-                      <div>
-                        <p className="text-[15px] font-bold text-[#201515] leading-none mb-2">{emp.fullName || emp.userId?.name || 'Anonymous Node'}</p>
-                        <p className="text-[13px] font-medium text-[#939084] leading-none">{emp.email || emp.userId?.email}</p>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td className="py-6 px-4">
-                    <div className="flex flex-col gap-2">
-                      <span className={`w-fit px-3 py-1 rounded-[4px] text-[10px] font-bold uppercase tracking-widest ${emp.role === 'admin' ? 'bg-[#201515] text-white' : 'bg-[#eceae3] text-[#201515]'}`}>
-                        {emp.role?.toUpperCase() || emp.userId?.role?.toUpperCase() || 'NODE'}
-                      </span>
-                      <div className={`flex items-center gap-1 text-[11px] font-bold ${emp.status === 'active' || emp.userId?.status === 'active' ? 'text-[#24a148]' : 'text-[#ff4f00]'}`}>
-                        {(emp.status === 'active' || emp.userId?.status === 'active') ? <CheckCircle size={12} /> : <XCircle size={12} />}
-                        {(emp.status?.toUpperCase() || emp.userId?.status?.toUpperCase() || 'ACTIVE')}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-6 px-4 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => navigate(`/hr/employees/view/${emp._id}`)}
-                        className="w-10 h-10 flex items-center justify-center text-[#201515] hover:bg-[#201515] hover:text-[#fffefb] rounded-[4px] transition-all bg-transparent border-none cursor-pointer"
-                        title="View Node"
-                      >
-                        <Eye size={18} />
-                      </button>
-                      <button
-                        onClick={() => navigate(`/hr/employees/edit/${emp._id}`)}
-                        className="w-10 h-10 flex items-center justify-center text-[#201515] hover:bg-[#201515] hover:text-[#fffefb] rounded-[4px] transition-all bg-transparent border-none cursor-pointer"
-                        title="Edit Node"
-                      >
-                        <Edit3 size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(emp._id)}
-                        className="w-10 h-10 flex items-center justify-center text-[#ff4f00] hover:bg-[#ff4f00] hover:text-[#fffefb] rounded-[4px] transition-all bg-transparent border-none cursor-pointer"
-                        title="Delete Node"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
+            </thead>
+            <tbody className="divide-y divide-[#eceae3]">
+              {loading ? (
+                <tr>
+                  <td colSpan="4" className="py-16 text-center">
+                    <RefreshCw className="animate-spin text-[#ff4f00] mx-auto mb-4" size={24} />
+                    <p className="zap-caption-upper text-[#939084]">Syncing Matrix...</p>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : paginatedEmployees.length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="text-center py-24 border border-[#c5c0b1] bg-[#fffdf9] rounded-[8px]">
+                    <p className="text-[16px] font-medium text-[#939084]">No active personnel nodes matching filter.</p>
+                  </td>
+                </tr>
+              ) : (
+                paginatedEmployees.map((emp) => (
+                  <tr key={emp._id} className="border-b border-[#c5c0b1] hover:bg-[#fffdf9] transition-colors group">
+                    <td className="py-6 px-4">
+                      <span className="font-bold text-[#201515]">{emp.employeeId || 'NODE-UNDEF'}</span>
+                    </td>
+                    <td className="py-6 px-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] flex items-center justify-center overflow-hidden">
+                          {emp.profileImage ? <img src={getImageUrl(emp.profileImage)} alt="User" className="w-full h-full object-cover" /> : <User size={18} className="text-[#939084]" />}
+                        </div>
+                        <div>
+                          <p className="text-[15px] font-bold text-[#201515] leading-none mb-2">{emp.fullName || emp.userId?.name || 'Anonymous Node'}</p>
+                          <p className="text-[13px] font-medium text-[#939084] leading-none">{emp.email || emp.userId?.email}</p>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="py-6 px-4">
+                      <div className="flex flex-col gap-2">
+                        <span className={`w-fit px-3 py-1 rounded-[4px] text-[10px] font-bold uppercase tracking-widest ${emp.role === 'admin' ? 'bg-[#201515] text-white' : 'bg-[#eceae3] text-[#201515]'}`}>
+                          {emp.role?.toUpperCase() || emp.userId?.role?.toUpperCase() || 'NODE'}
+                        </span>
+                        <div className={`flex items-center gap-1 text-[11px] font-bold ${emp.status === 'active' || emp.userId?.status === 'active' ? 'text-[#24a148]' : 'text-[#ff4f00]'}`}>
+                          {(emp.status === 'active' || emp.userId?.status === 'active') ? <CheckCircle size={12} /> : <XCircle size={12} />}
+                          {(emp.status?.toUpperCase() || emp.userId?.status?.toUpperCase() || 'ACTIVE')}
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="py-6 px-4 text-right">
+                      <div className="flex items-center justify-end gap-3">
+                        <button
+                          onClick={() => navigate(`/hr/employees/view/${emp._id}`)}
+                          className="zap-btn zap-btn-outline w-10 h-10 flex items-center justify-center p-0"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button
+                          onClick={() => navigate(`/hr/employees/edit/${emp._id}`)}
+                          className="zap-btn zap-btn-outline w-10 h-10 flex items-center justify-center p-0"
+                        >
+                          <Edit3 size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(emp._id)}
+                          className="zap-btn zap-btn-outline w-10 h-10 flex items-center justify-center p-0 text-[#ff4f00]"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* PAGINATION CONTROLS */}
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center px-8 py-5 bg-gray-50 border-t border-[#eceae3]">
+            <span className="text-[11px] font-black uppercase tracking-widest text-[#939084]">
+              Page {currentPage} of {totalPages} ({filteredEmployees.length} total nodes)
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-[#eceae3] ${currentPage === 1 ? 'opacity-40 cursor-not-allowed bg-gray-100 text-gray-400' : 'bg-white text-[#201515] hover:border-[#ff4f00] hover:text-[#ff4f00] cursor-pointer'}`}
+              >
+                Prev
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNo) => (
+                <button
+                  key={pageNo}
+                  onClick={() => setCurrentPage(pageNo)}
+                  className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all border ${currentPage === pageNo ? 'bg-[#ff4f00] text-white border-[#ff4f00]' : 'bg-white text-[#201515] border-[#eceae3] hover:border-[#ff4f00] hover:text-[#ff4f00] cursor-pointer'}`}
+                >
+                  {pageNo}
+                </button>
+              ))}
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-[#eceae3] ${currentPage === totalPages ? 'opacity-40 cursor-not-allowed bg-gray-100 text-gray-400' : 'bg-white text-[#201515] hover:border-[#ff4f00] hover:text-[#ff4f00] cursor-pointer'}`}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

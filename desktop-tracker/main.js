@@ -188,17 +188,14 @@ autoUpdater.on('update-available', () => {
 });
 
 autoUpdater.on('update-downloaded', () => {
-  const { dialog } = require('electron');
-  dialog.showMessageBox({
-    type: 'info',
-    title: 'Update Ready',
-    message: 'A new version of FluidHR Tracker has been downloaded. Restart now to apply the update?',
-    buttons: ['Restart', 'Later']
-  }).then(result => {
-    if (result.response === 0) {
-      autoUpdater.quitAndInstall();
-    }
-  });
+  console.log('[Updater] Update downloaded. Notifying renderer...');
+  if (mainWindow) {
+    mainWindow.webContents.send('update-downloaded-ui');
+  }
+});
+
+ipcMain.on('install-update', () => {
+  autoUpdater.quitAndInstall();
 });
 
 ipcMain.handle('check-for-updates', () => {

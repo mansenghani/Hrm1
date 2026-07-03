@@ -14,6 +14,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   notifyNative: (title, body) => ipcRenderer.invoke('notify-native', { title, body }),
   captureScreen: () => ipcRenderer.invoke('capture-screen'),
 
+  // ── Auto-Updater ───────────────────────────────────────
+  onUpdateDownloaded: (callback) =>
+    ipcRenderer.on('update-downloaded-ui', callback),
+  installUpdate: () => ipcRenderer.send('install-update'),
+
   // ── SYSTEM-WIDE IDLE STATUS ───────────────────────────
   // Fired every second from main process using powerMonitor.getSystemIdleTime()
   // Covers ALL apps on the PC — not just the Electron window

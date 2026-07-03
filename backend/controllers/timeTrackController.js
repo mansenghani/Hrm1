@@ -416,13 +416,13 @@ exports.getTimeSummary = async (req, res) => {
 exports.getTimeByDate = async (req, res) => {
   try {
     const filter = { ...getRoleFilter(req.user), date: req.params.date };
-    res.json(await TimeTrack.find(filter).populate('employeeId', 'fullName email'));
+    res.json(await TimeTrack.find(filter).populate('employeeId', 'name fullName email'));
   } catch (err) { res.status(500).json({ message: 'Date fetch failed', error: err.message }); }
 };
 
 exports.getLogs = async (req, res) => {
   try {
-    res.json(await TimeTrack.find(getRoleFilter(req.user)).sort({ createdAt: -1 }).populate('employeeId', 'fullName email'));
+    res.json(await TimeTrack.find(getRoleFilter(req.user)).sort({ createdAt: -1 }).populate('employeeId', 'name fullName email'));
   } catch (err) { res.status(500).json({ message: 'Logs failed', error: err.message }); }
 };
 
@@ -434,19 +434,19 @@ exports.getMyTime = async (req, res) => {
 
 exports.getTeamTime = async (req, res) => {
   try {
-    res.json(await TimeTrack.find({ managerId: req.user.id }).sort({ date: -1 }).populate('employeeId', 'fullName email'));
+    res.json(await TimeTrack.find({ managerId: req.user.id }).sort({ date: -1 }).populate('employeeId', 'name fullName email'));
   } catch (err) { res.status(500).json({ message: 'Team logs failed', error: err.message }); }
 };
 
 exports.getHRTime = async (req, res) => {
   try {
-    res.json(await TimeTrack.find({ employeeRole: { $in: ['employee', 'manager'] } }).sort({ date: -1 }).populate('employeeId', 'fullName email'));
+    res.json(await TimeTrack.find({ employeeRole: { $in: ['employee', 'manager'] } }).sort({ date: -1 }).populate('employeeId', 'name fullName email'));
   } catch (err) { res.status(500).json({ message: 'HR logs failed', error: err.message }); }
 };
 
 exports.getAllTime = async (req, res) => {
   try {
-    res.json(await TimeTrack.find({}).sort({ date: -1 }).populate('employeeId', 'fullName email'));
+    res.json(await TimeTrack.find({}).sort({ date: -1 }).populate('employeeId', 'name fullName email'));
   } catch (err) { res.status(500).json({ message: 'All logs failed', error: err.message }); }
 };
 
@@ -469,7 +469,7 @@ exports.getDashboardData = async (req, res) => {
       filter.date = today;
     }
 
-    const sessions = await TimeTrack.find(filter).sort({ date: -1, createdAt: -1 }).populate('employeeId', 'fullName email role');
+    const sessions = await TimeTrack.find(filter).sort({ date: -1, createdAt: -1 }).populate('employeeId', 'name fullName email role');
     const stats = {
       totalTime: sessions.reduce((a, s) => a + (s.activeTime || 0) + (s.idleTime || 0), 0),
       activeTime: sessions.reduce((a, s) => a + (s.activeTime || 0), 0),
@@ -489,12 +489,12 @@ exports.getDashboardData = async (req, res) => {
       stats,
       chartData: Object.values(chartMap).sort((a, b) => a.date.localeCompare(b.date)),
       tableData: sessions.map(s => ({
-        id: s._id, name: s.employeeId?.fullName || 'Unknown',
+        id: s._id, name: s.employeeId?.name || s.employeeId?.fullName || 'Unknown',
         role: s.employeeId?.role || s.employeeRole || 'N/A',
         status: s.status, todayHours: s.activeTime, lastActivity: s.lastHeartbeat
       })),
       activityLogs: sessions.slice(0, 10).map(s => ({
-        name: s.employeeId?.fullName || 'Unknown', date: s.date,
+        name: s.employeeId?.name || s.employeeId?.fullName || 'Unknown', date: s.date,
         activeTime: s.activeTime, status: s.status
       }))
     });

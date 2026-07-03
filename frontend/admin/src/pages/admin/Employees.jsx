@@ -12,6 +12,14 @@ const Employees = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const getImageUrl = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
+    const normalized = path.replace(/\\/g, '/');
+    return `${API_BASE_URL}${normalized.startsWith('/') ? normalized : `/${normalized}`}`;
+  };
 
   const fetchEmployees = async () => {
     try {
@@ -30,6 +38,10 @@ const Employees = () => {
   useEffect(() => {
     fetchEmployees();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterRole]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -54,6 +66,13 @@ const Employees = () => {
 
     return matchesSearch && matchesRole;
   });
+
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
+  const paginatedEmployees = filteredEmployees.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleDelete = async (id) => {
     if (window.confirm('Eject this node from the matrix (Deactivate)?')) {
@@ -176,13 +195,13 @@ const Employees = () => {
                 </td>
               </tr>
             ) : (
-              filteredEmployees.map((emp) => (
+              paginatedEmployees.map((emp) => (
                 <tr key={emp._id} className="hover:bg-[#fffdf9] transition-colors group">
                   <td className="py-6 px-6"><span className="font-black text-[13px] text-[#201515]">{emp.employeeId || 'NODE-UNDEF'}</span></td>
                   <td className="py-6 px-6">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-[#eceae3] border border-[#c5c0b1] rounded-xl flex items-center justify-center overflow-hidden shadow-sm">
-                        {emp.profileImage ? <img src={`${API_BASE_URL}${emp.profileImage}`} alt="User" className="w-full h-full object-cover" /> : <User size={20} className="text-[#939084]" />}
+                        {emp.profileImage ? <img src={getImageUrl(emp.profileImage)} alt="User" className="w-full h-full object-cover" /> : <User size={20} className="text-[#939084]" />}
                       </div>
                       <div>
                         <p className="text-[16px] font-black text-[#201515] leading-none mb-1 group-hover:text-[#ff4f00] transition-colors">{emp.fullName || emp.userId?.name || 'Anonymous Node'}</p>
@@ -214,6 +233,39 @@ const Employees = () => {
           </tbody>
         </table>
       </div>
+        {/* PAGINATION CONTROLS */}
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center px-8 py-5 bg-gray-50 border-t border-[#eceae3]">
+            <span className="text-[11px] font-black uppercase tracking-widest text-[#939084]">
+              Page {currentPage} of {totalPages} ({filteredEmployees.length} total nodes)
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-[#eceae3] ${currentPage === 1 ? 'opacity-40 cursor-not-allowed bg-gray-100 text-gray-400' : 'bg-white text-[#201515] hover:border-[#ff4f00] hover:text-[#ff4f00] cursor-pointer'}`}
+              >
+                Prev
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNo) => (
+                <button
+                  key={pageNo}
+                  onClick={() => setCurrentPage(pageNo)}
+                  className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all border ${currentPage === pageNo ? 'bg-[#ff4f00] text-white border-[#ff4f00]' : 'bg-white text-[#201515] border-[#eceae3] hover:border-[#ff4f00] hover:text-[#ff4f00] cursor-pointer'}`}
+                >
+                  {pageNo}
+                </button>
+              ))}
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-[#eceae3] ${currentPage === totalPages ? 'opacity-40 cursor-not-allowed bg-gray-100 text-gray-400' : 'bg-white text-[#201515] hover:border-[#ff4f00] hover:text-[#ff4f00] cursor-pointer'}`}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
     </div>
   );
 };
