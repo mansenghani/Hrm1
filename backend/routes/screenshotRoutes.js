@@ -24,11 +24,11 @@ const upload = multer({ storage });
 
 // @route   POST /api/screenshot/upload
 // @desc    Upload a screenshot
-router.post('/upload', upload.single('screenshot'), async (req, res) => {
+router.post('/upload', async (req, res) => {
   try {
-    const { userId } = req.body;
-    if (!req.file || !userId) {
-      return res.status(400).json({ message: 'Missing file or userId' });
+    const { userId, screenshot } = req.body;
+    if (!screenshot || !userId) {
+      return res.status(400).json({ message: 'Missing screenshot data or userId' });
     }
 
     const user = await User.findById(userId);
@@ -38,7 +38,7 @@ router.post('/upload', upload.single('screenshot'), async (req, res) => {
       userId,
       employeeName: user.name || user.fullName,
       role: user.role,
-      imageUrl: `uploads/screenshots/${req.file.filename}`
+      imageUrl: screenshot
     });
 
     await newScreenshot.save();

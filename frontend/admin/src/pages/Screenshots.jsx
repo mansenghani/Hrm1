@@ -99,6 +99,7 @@ const Screenshots = () => {
 
   const getImageUrl = (path) => {
     if (!path) return '';
+    if (path.startsWith('data:')) return path;
     const normalized = path.replace(/\\/g, '/');
     return `${API_BASE_URL}/${normalized}`;
   };

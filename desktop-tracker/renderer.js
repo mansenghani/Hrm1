@@ -440,15 +440,21 @@ async function takeScreenshot() {
   try {
     const dataUrl = await window.electronAPI.captureScreen();
     if (!dataUrl) return;
-    const blob = await (await fetch(dataUrl)).blob();
-    const formData = new FormData();
     const userRes = await fetch(`${BACKEND_HOST}/api/auth/me`, {
       headers: { Authorization: `Bearer ${authToken}` }
     });
     const user = await userRes.json();
-    formData.append('screenshot', blob, `screenshot-${Date.now()}.png`);
-    formData.append('userId', user.id || user._id);
-    await fetch(`${BACKEND_HOST}/api/screenshot/upload`, { method: 'POST', body: formData });
+    await fetch(`${BACKEND_HOST}/api/screenshot/upload`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        screenshot: dataUrl,
+        userId: user.id || user._id
+      })
+    });
     await notifyDesktop('Screenshot Captured', 'A monitoring trace has been recorded.');
   } catch (err) {
     console.error('[SCREENSHOT ERROR]', err);
