@@ -84,12 +84,12 @@ const AnalyticsChart = ({ title = "Activity Pulse", type = "bar", days = 7 }) =>
     <div className={`border rounded-2xl p-8 shadow-sm h-full flex flex-col group transition-all ${
       isDark 
         ? 'bg-[#181612] border-[#38352e] hover:border-white' 
-        : 'bg-[#fffdf9] border-[#c5c0b1] hover:border-[#ff4f00]'
+        : 'bg-[#fffdf9] border-[#c5c0b1] hover:border-[#00a76b]'
     }`}>
       <div className="flex justify-between items-start mb-10">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ff4f00] mb-2 flex items-center gap-2">
-            <Zap size={12} fill="#ff4f00" /> Operational Analytics
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#00a76b] mb-2 flex items-center gap-2">
+            <Zap size={12} fill="#00a76b" /> Operational Analytics
           </p>
           <h3 className={`text-2xl font-black uppercase tracking-tighter italic transition-colors ${
             isDark ? 'text-white' : 'text-[#201515]'
@@ -100,8 +100,8 @@ const AnalyticsChart = ({ title = "Activity Pulse", type = "bar", days = 7 }) =>
              onClick={() => setIsMenuOpen(!isMenuOpen)}
              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-[0.15em] transition-all outline-none border-none cursor-pointer shadow-sm group/btn ${
                isDark 
-                 ? 'bg-[#282520] text-white hover:bg-[#ff4f00]' 
-                 : 'bg-[#eceae3] text-[#201515] hover:bg-[#ff4f00] hover:text-white'
+                 ? 'bg-[#282520] text-white hover:bg-[#00a76b]' 
+                 : 'bg-[#eceae3] text-[#201515] hover:bg-[#00a76b] hover:text-white'
              }`}
            >
              <span className="opacity-60">{metrics.find(m => m.val === metric)?.label}</span>
@@ -119,7 +119,7 @@ const AnalyticsChart = ({ title = "Activity Pulse", type = "bar", days = 7 }) =>
                    <button
                      key={m.val}
                      onClick={() => { setMetric(m.val); setIsMenuOpen(false); }}
-                     className={`w-full text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest transition-all ${metric === m.val ? 'text-[#ff4f00] bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
+                     className={`w-full text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest transition-all ${metric === m.val ? 'text-[#00a76b] bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
                    >
                      {m.label}
                    </button>
@@ -129,7 +129,7 @@ const AnalyticsChart = ({ title = "Activity Pulse", type = "bar", days = 7 }) =>
                    <button
                      key={r.val}
                      onClick={() => { setRange(r.val); setIsMenuOpen(false); }}
-                     className={`w-full text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest transition-all ${range === r.val ? 'text-[#ff4f00] bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
+                     className={`w-full text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest transition-all ${range === r.val ? 'text-[#00a76b] bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
                    >
                      {r.label}
                    </button>
@@ -158,7 +158,7 @@ const AnalyticsChart = ({ title = "Activity Pulse", type = "bar", days = 7 }) =>
                 tick={{ fill: resolvedTick, fontSize: 10, fontWeight: 700 }}
               />
               <Tooltip 
-                cursor={{ fill: isDark ? 'rgba(255, 79, 0, 0.15)' : 'rgba(255, 79, 0, 0.08)' }}
+                cursor={{ fill: isDark ? 'rgba(0, 167, 107, 0.15)' : 'rgba(0, 167, 107, 0.08)' }}
                 contentStyle={{ 
                   backgroundColor: isDark ? '#181612' : '#201515', 
                   border: isDark ? '1px solid #38352e' : 'none', 
@@ -170,7 +170,7 @@ const AnalyticsChart = ({ title = "Activity Pulse", type = "bar", days = 7 }) =>
               />
               <Bar dataKey={metric} radius={[6, 6, 0, 0]}>
                 {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry[metric] > 8 ? '#ff4f00' : (isDark ? '#ffffff' : '#201515')} />
+                  <Cell key={`cell-${index}`} fill={entry[metric] > 8 ? '#00a76b' : (isDark ? '#ffffff' : '#201515')} />
                 ))}
               </Bar>
             </BarChart>
@@ -178,8 +178,8 @@ const AnalyticsChart = ({ title = "Activity Pulse", type = "bar", days = 7 }) =>
             <AreaChart key={isDark ? 'dark' : 'light'} data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ff4f00" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#ff4f00" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#00a76b" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#00a76b" stopOpacity={0}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={resolvedGrid} />
@@ -195,7 +195,7 @@ const AnalyticsChart = ({ title = "Activity Pulse", type = "bar", days = 7 }) =>
                 itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
                 labelStyle={{ color: resolvedTick, fontSize: '10px', marginBottom: '4px', textTransform: 'uppercase' }}
               />
-              <Area type="monotone" dataKey={metric} stroke="#ff4f00" strokeWidth={3} fillOpacity={1} fill="url(#colorHours)" />
+              <Area type="monotone" dataKey={metric} stroke="#00a76b" strokeWidth={3} fillOpacity={1} fill="url(#colorHours)" />
             </AreaChart>
           )}
         </ResponsiveContainer>
@@ -219,7 +219,7 @@ const AnalyticsChart = ({ title = "Activity Pulse", type = "bar", days = 7 }) =>
                <span className="text-lg font-black text-[#24a148]">92%</span>
             </div>
          </div>
-         <TrendingUp size={24} className="text-[#ff4f00]" />
+         <TrendingUp size={24} className="text-[#00a76b]" />
       </div>
     </div>
   );

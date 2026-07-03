@@ -15,7 +15,6 @@ const HRDashboard = () => {
       setLoading(true);
       try {
          const token = sessionStorage.getItem('token');
-         // Using relative paths for proxy consistency
          const [empRes, leaveRes] = await Promise.all([
             axios.get('/api/employees', { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] })),
             axios.get('/api/leaves', { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: [] }))
@@ -43,7 +42,7 @@ const HRDashboard = () => {
    return (
       <div className="animate-fade-in pb-32">
 
-         {/* ZAPIER HERO SECTION */}
+         {/* VERDANT HERO SECTION */}
          <div className="mb-24 mt-8">
             <div className="w-full">
                <p className="zap-caption-upper mb-8 text-[var(--zap-orange)]">Personnel Automation Hub</p>
@@ -51,7 +50,7 @@ const HRDashboard = () => {
                   Automate your people <br />processes with <span className="text-[var(--zap-orange)]">effortless clarity.</span>
                </h1>
                <p className="zap-body-large text-[var(--zap-charcoal)] mb-12 max-w-2xl font-medium">
-                  The Zapier approach to HR: warm, approachable infrastructure that turns complex personnel logistics into simple workflows.
+                  The Verdant approach to HR: warm, approachable infrastructure that turns complex personnel logistics into simple workflows.
                </p>
                <div className="flex gap-4">
                   <button

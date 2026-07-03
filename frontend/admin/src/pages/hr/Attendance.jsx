@@ -440,8 +440,8 @@ const Attendance = () => {
       {/* 1. HEADING SECTION */}
       <div className="mb-16 flex flex-col md:flex-row justify-between items-end border-b border-[#c5c0b1] dark:border-slate-800 pb-10">
         <div>
-          <p className="zap-caption-upper text-[#ff4f00] mb-4">Personnel Analytics</p>
-          <h1 className="zap-display-hero">Attendance <span className="text-[#ff4f00]">Protocol.</span></h1>
+          <p className="zap-caption-upper text-[#00a76b] mb-4">Personnel Analytics</p>
+          <h1 className="zap-display-hero">Attendance <span className="text-[#00a76b]">Protocol.</span></h1>
         </div>
         <div className="flex gap-4">
           <button
@@ -449,7 +449,7 @@ const Attendance = () => {
             className="zap-btn zap-btn-light h-14 px-6 flex items-center justify-center bg-[#eceae3] dark:bg-slate-800 border border-[#c5c0b1] dark:border-transparent rounded-lg cursor-pointer"
             title="Synchronize Database Node"
           >
-            <RefreshCw size={20} className={loading ? 'animate-spin text-[#ff4f00]' : 'text-[#36342e] dark:text-[#cbd5e1]'} />
+            <RefreshCw size={20} className={loading ? 'animate-spin text-[#00a76b]' : 'text-[#36342e] dark:text-[#cbd5e1]'} />
           </button>
           <button
             onClick={() => {
@@ -544,7 +544,7 @@ const Attendance = () => {
                 <button
                   onClick={handleCheckIn}
                   disabled={actionLoading}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-[#ff4f00] hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-orange-500/10 border-none cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-[#00a76b] hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-emerald-500/10 border-none cursor-pointer"
                 >
                   <LogIn size={14} strokeWidth={2.5} />
                   <span>Check In</span>
@@ -560,7 +560,7 @@ const Attendance = () => {
               className="w-full flex items-center justify-between px-4 py-3.5 bg-[#eceae3] hover:bg-[#c5c0b1] dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold rounded-lg border border-[#c5c0b1] dark:border-transparent text-[#201515] dark:text-white transition-all cursor-pointer"
             >
               <div className="flex items-center gap-2">
-                <FileClock size={15} className="text-[#ff4f00]" />
+                <FileClock size={15} className="text-[#00a76b]" />
                 <span>Request Clock Correction</span>
               </div>
               <ChevronRight size={14} className="text-[#939084]" />
@@ -590,7 +590,7 @@ const Attendance = () => {
             <h3 className="text-[20px] font-bold text-[#201515] dark:text-white">Pending Attendance Corrections</h3>
             <p className="text-[12px] font-bold text-[#939084] dark:text-[#a3a094] uppercase tracking-widest mt-1">Review regularization petitions submitted by employees</p>
           </div>
-          <span className="px-3 py-1 bg-orange-50 border border-orange-200 dark:bg-orange-950/20 dark:border-transparent text-[#ff4f00] text-[10px] font-bold rounded-lg uppercase tracking-wider">
+          <span className="px-3 py-1 bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/20 dark:border-transparent text-[#00a76b] text-[10px] font-bold rounded-lg uppercase tracking-wider">
             {correctionRequests.filter(r => r.status === 'Pending').length} Pending Approval
           </span>
         </div>
@@ -607,7 +607,7 @@ const Attendance = () => {
                     <span className="px-2 py-0.5 border border-[#c5c0b1] dark:border-slate-800 rounded text-[9px] font-bold bg-white dark:bg-[#0c0a0a] text-[#939084] dark:text-[#a3a094]">{req.date}</span>
                   </div>
                   <p className="text-xs mt-1.5 text-[#36342e] dark:text-slate-300">
-                    Correction Times: <span className="text-[#ff4f00] font-bold">{req.clockIn}</span> to <span className="text-[#ff4f00] font-bold">{req.clockOut}</span>
+                    Correction Times: <span className="text-[#00a76b] font-bold">{req.clockIn}</span> to <span className="text-[#00a76b] font-bold">{req.clockOut}</span>
                   </p>
                   <p className="text-[10px] text-[#939084] italic mt-1">Reason: "{req.reason}"</p>
                 </div>
@@ -662,14 +662,14 @@ const Attendance = () => {
                 placeholder="Filter personnel..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-[#0c0a0a] border border-[#c5c0b1] dark:border-slate-800 rounded-lg text-xs font-bold text-[#201515] dark:text-white placeholder-[#939084] focus:outline-none focus:border-[#ff4f00]"
+                className="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-[#0c0a0a] border border-[#c5c0b1] dark:border-slate-800 rounded-lg text-xs font-bold text-[#201515] dark:text-white placeholder-[#939084] focus:outline-none focus:border-[#00a76b]"
               />
             </div>
 
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-1.5 bg-white dark:bg-[#0c0a0a] border border-[#c5c0b1] dark:border-slate-800 rounded-lg text-xs font-bold text-[#201515] dark:text-white focus:outline-none focus:border-[#ff4f00] cursor-pointer"
+              className="px-3 py-1.5 bg-white dark:bg-[#0c0a0a] border border-[#c5c0b1] dark:border-slate-800 rounded-lg text-xs font-bold text-[#201515] dark:text-white focus:outline-none focus:border-[#00a76b] cursor-pointer"
             >
               <option value="All">All Statuses</option>
               <option value="Present">Present</option>
@@ -697,7 +697,7 @@ const Attendance = () => {
               {loading ? (
                 <tr>
                   <td colSpan="6" className="text-center py-12">
-                    <RefreshCw size={24} className="text-[#ff4f00] animate-spin mx-auto" />
+                    <RefreshCw size={24} className="text-[#00a76b] animate-spin mx-auto" />
                     <p className="text-xs font-bold text-[#939084] uppercase tracking-widest mt-3">Reading Personnel Trace...</p>
                   </td>
                 </tr>
@@ -716,7 +716,7 @@ const Attendance = () => {
                           {getEmployeeName(row).charAt(0)}
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-xs font-bold text-[#201515] dark:text-white group-hover:text-[#ff4f00] transition-colors">{getEmployeeName(row)}</span>
+                          <span className="text-xs font-bold text-[#201515] dark:text-white group-hover:text-[#00a76b] transition-colors">{getEmployeeName(row)}</span>
                           <span className="text-[9px] text-[#939084] dark:text-[#a3a094] font-semibold">{row.user?.email || 'employee@fluidhr.com'}</span>
                         </div>
                       </div>
@@ -833,7 +833,7 @@ const Attendance = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#ff4f00] hover:brightness-110 text-white font-black text-xs uppercase tracking-wider rounded-lg transition-all border-none cursor-pointer"
+                  className="px-5 py-2 bg-[#00a76b] hover:brightness-110 text-white font-black text-xs uppercase tracking-wider rounded-lg transition-all border-none cursor-pointer"
                 >
                   Submit Request
                 </button>

@@ -180,7 +180,7 @@ const SmartTimeTracker = () => {
 
   if (loading) return (
     <div className="h-[60vh] flex flex-col items-center justify-center gap-6">
-      <RefreshCw size={32} className="text-[#ff4f00] animate-spin" />
+      <RefreshCw size={32} className="text-[#00a76b] animate-spin" />
       <p className="zap-caption-upper text-[#939084]">Initializing Time Protocol...</p>
     </div>
   );
@@ -194,8 +194,8 @@ const SmartTimeTracker = () => {
         isDark ? 'border-[#38352e]' : 'border-[#c5c0b1]'
       }`}>
         <div>
-          <p className="zap-caption-upper text-[#ff4f00] mb-4">Activity Monitoring Protocol</p>
-          <h1 className="zap-display-hero">Smart <span className="text-[#ff4f00]">Time Tracker.</span></h1>
+          <p className="zap-caption-upper text-[#00a76b] mb-4">Activity Monitoring Protocol</p>
+          <h1 className="zap-display-hero">Smart <span className="text-[#00a76b]">Time Tracker.</span></h1>
         </div>
         <div className="flex flex-wrap items-center gap-6 mt-6 md:mt-0">
           <div className="relative">
@@ -205,7 +205,7 @@ const SmartTimeTracker = () => {
               placeholder="Search personnel..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={`pl-12 pr-6 h-12 border rounded-[4px] text-[14px] font-medium focus:outline-none focus:border-[#ff4f00] w-64 shadow-sm ${
+              className={`pl-12 pr-6 h-12 border rounded-[4px] text-[14px] font-medium focus:outline-none focus:border-[#00a76b] w-64 shadow-sm ${
                 isDark 
                   ? 'bg-[#181612] border-[#38352e] text-white focus:bg-[#0f0d0a]' 
                   : 'bg-white border-[#c5c0b1] text-[#201515]'
@@ -214,7 +214,7 @@ const SmartTimeTracker = () => {
           </div>
           <button
             onClick={fetchData}
-            className={`h-12 px-6 rounded-[4px] text-[12px] font-black uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-[#ff4f00] transition-all shadow-lg cursor-pointer border-none ${
+            className={`h-12 px-6 rounded-[4px] text-[12px] font-black uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-[#00a76b] transition-all shadow-lg cursor-pointer border-none ${
               isDark 
                 ? 'bg-[#282520] text-white' 
                 : 'bg-[#201515] text-[#fffefb]'
@@ -241,14 +241,14 @@ const SmartTimeTracker = () => {
         <div className={`col-span-12 lg:col-span-8 zap-card p-10 transition-all duration-700 relative overflow-hidden shadow-xl ${
           session?.isRunning 
             ? (session.status === 'idle' 
-                ? (isDark ? 'bg-[#181612] border-[#ff4f00] text-white' : 'bg-[#fffdf9] border-[#ff4f00] text-[#201515]') 
+                ? (isDark ? 'bg-[#181612] border-[#00a76b] text-white' : 'bg-[#fffdf9] border-[#00a76b] text-[#201515]') 
                 : (isDark ? 'bg-[#181612] border-[#24a148] text-white' : 'bg-[#fffdf9] border-[#24a148] text-[#201515]')) 
             : (isDark ? 'bg-[#0f0d0a] border-[#38352e] text-white' : 'bg-[#201515] text-[#fffefb]')
         }`}>
           <div className="relative z-10 flex flex-col h-full justify-between">
             <div className="flex justify-between items-start mb-12">
               <div className="flex items-center gap-4">
-                <div className={`w-3 h-3 rounded-full ${session?.isRunning ? (session.status === 'idle' ? 'bg-[#ff4f00] animate-pulse' : 'bg-[#24a148] animate-pulse') : 'bg-[#939084]'}`}></div>
+                <div className={`w-3 h-3 rounded-full ${session?.isRunning ? (session.status === 'idle' ? 'bg-[#00a76b] animate-pulse' : 'bg-[#24a148] animate-pulse') : 'bg-[#939084]'}`}></div>
                 <span className={`zap-caption-upper !text-[11px] font-black tracking-widest ${(!session?.isRunning && !isDark) || (session?.isRunning && isDark) ? 'text-white' : 'text-[#201515]'}`}>
                   {session?.isRunning ? (session.status === 'idle' ? 'Idle — Sync Paused' : 'Actively Monitoring') : (session?.status === 'paused' ? 'Session Paused' : 'Timer Disconnected')}
                 </span>
@@ -275,7 +275,7 @@ const SmartTimeTracker = () => {
                 </div>
                 <div className={`border p-6 rounded-xl text-center ${isDark ? 'bg-white/5 border-white/10' : 'bg-[#fffdf9]/50 border-black/5'}`}>
                   <p className="text-[10px] font-black text-[#939084] uppercase tracking-widest mb-2">Idle</p>
-                  <p className="text-[20px] font-black text-[#ff4f00] tracking-tighter">{formatMinutes(idleTime)}</p>
+                  <p className="text-[20px] font-black text-[#00a76b] tracking-tighter">{formatMinutes(idleTime)}</p>
                 </div>
                 <div className={`border p-6 rounded-xl text-center ${isDark ? 'bg-white/5 border-white/10' : 'bg-[#fffdf9]/50 border-black/5'}`}>
                   <p className="text-[10px] font-black text-[#939084] uppercase tracking-widest mb-2">Yield</p>
@@ -288,7 +288,7 @@ const SmartTimeTracker = () => {
               {!session ? (
                 <button
                   onClick={() => handleAction('start')}
-                  className="bg-[#ff4f00] text-white h-16 flex-1 rounded-xl font-black text-[16px] uppercase tracking-widest flex items-center justify-center gap-3 hover:opacity-90 active:scale-95 transition-all cursor-pointer border-none"
+                  className="bg-[#00a76b] text-white h-16 flex-1 rounded-xl font-black text-[16px] uppercase tracking-widest flex items-center justify-center gap-3 hover:opacity-90 active:scale-95 transition-all cursor-pointer border-none"
                 >
                   <Play size={20} fill="white" /> START
                 </button>
@@ -306,7 +306,7 @@ const SmartTimeTracker = () => {
                       onClick={() => handleAction('pause')}
                       className={`h-16 flex-1 rounded-xl font-black text-[16px] uppercase tracking-widest flex items-center justify-center gap-3 transition-all cursor-pointer border-none ${
                         isDark 
-                          ? 'bg-[#282520] text-white hover:bg-[#ff4f00]' 
+                          ? 'bg-[#282520] text-white hover:bg-[#00a76b]' 
                           : 'bg-[#fffefb] text-[#201515] hover:bg-[#eceae3]'
                       }`}
                     >
@@ -315,7 +315,7 @@ const SmartTimeTracker = () => {
                   )}
                   <button
                     onClick={() => handleAction('stop')}
-                    className="bg-[#ff4f00] text-white h-16 flex-1 rounded-xl font-black text-[16px] uppercase tracking-widest flex items-center justify-center gap-3 hover:opacity-90 active:scale-95 transition-all cursor-pointer border-none"
+                    className="bg-[#00a76b] text-white h-16 flex-1 rounded-xl font-black text-[16px] uppercase tracking-widest flex items-center justify-center gap-3 hover:opacity-90 active:scale-95 transition-all cursor-pointer border-none"
                   >
                     <Square size={20} fill="white" /> STOP
                   </button>
@@ -358,7 +358,7 @@ const SmartTimeTracker = () => {
           <div className={`p-8 rounded-3xl shadow-2xl transition-colors ${
             isDark ? 'bg-[#0f0d0a] border border-[#38352e] text-white' : 'bg-[#201515] text-white'
           }`}>
-            <h3 className="text-[12px] font-black text-[#ff4f00] uppercase tracking-widest mb-8 italic">Historical Pulse</h3>
+            <h3 className="text-[12px] font-black text-[#00a76b] uppercase tracking-widest mb-8 italic">Historical Pulse</h3>
             <div className="space-y-4">
               {todaySessions.length === 0 ? (
                 <p className="text-[10px] text-white/40 uppercase font-black tracking-widest">No previous segments</p>
@@ -366,7 +366,7 @@ const SmartTimeTracker = () => {
                 todaySessions.slice(0, 4).map((s, i) => (
                   <div key={i} className="flex justify-between items-center border-b border-white/5 pb-4">
                     <span className="text-[10px] font-black text-white/40 uppercase tracking-tighter">Segment {todaySessions.length - i}</span>
-                    <span className="text-[16px] font-black text-[#ff4f00]">{formatTime(s.activeTime)}</span>
+                    <span className="text-[16px] font-black text-[#00a76b]">{formatTime(s.activeTime)}</span>
                   </div>
                 ))
               )}

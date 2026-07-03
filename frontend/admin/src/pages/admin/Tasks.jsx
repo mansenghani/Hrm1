@@ -592,7 +592,7 @@ const Tasks = () => {
 
   if (loading) return (
     <div className="h-[60vh] flex flex-col items-center justify-center gap-6">
-      <div className="w-12 h-12 border-4 border-t-[#ff4f00] border-[#eceae3] rounded-full animate-spin"></div>
+      <div className="w-12 h-12 border-4 border-t-[#00a76b] border-[#eceae3] rounded-full animate-spin"></div>
       <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#939084]">Loading Tasks...</p>
     </div>
   );
@@ -603,8 +603,8 @@ const Tasks = () => {
       {/* ─── PAGE HEADER ─── */}
       <div className="mb-10 flex flex-col md:flex-row justify-between items-end border-b border-[#c5c0b1] pb-8">
         <div>
-          <p className="zap-caption-upper text-[#ff4f00] mb-3">Daily Operations</p>
-          <h1 className="zap-display-hero">Task <span className="text-[#ff4f00]">Board.</span></h1>
+          <p className="zap-caption-upper text-[#00a76b] mb-3">Daily Operations</p>
+          <h1 className="zap-display-hero">Task <span className="text-[#00a76b]">Board.</span></h1>
         </div>
         <div className="flex items-center gap-3 mt-4 md:mt-0">
           <button
@@ -631,7 +631,7 @@ const Tasks = () => {
               placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="border border-[#c5c0b1] bg-[#fffdf9] hover:border-[#201515] focus:border-[#ff4f00] text-[11px] text-[#201515] placeholder:text-[#939084] pl-8 pr-4 py-1.5 rounded-[6px] outline-none transition-all w-44"
+              className="border border-[#c5c0b1] bg-[#fffdf9] hover:border-[#201515] focus:border-[#00a76b] text-[11px] text-[#201515] placeholder:text-[#939084] pl-8 pr-4 py-1.5 rounded-[6px] outline-none transition-all w-44"
             />
           </div>
 
@@ -641,7 +641,7 @@ const Tasks = () => {
               onClick={() => setShowClosedOnly(prev => !prev)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] border text-[11px] font-bold uppercase tracking-wider transition-colors ${
                 showClosedOnly
-                  ? 'bg-[#ff4f00] text-white border-[#ff4f00]'
+                  ? 'bg-[#00a76b] text-white border-[#00a76b]'
                   : 'hover:bg-[#eceae3] border-[#c5c0b1] text-[#939084]'
               }`}
             >
@@ -705,7 +705,7 @@ const Tasks = () => {
                         </p>
                       </div>
                       {filterAssignee === 'All' && (
-                        <div className="w-4 h-4 rounded-full bg-[#ff4f00] flex items-center justify-center shrink-0">
+                        <div className="w-4 h-4 rounded-full bg-[#00a76b] flex items-center justify-center shrink-0">
                           <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                         </div>
                       )}
@@ -732,7 +732,7 @@ const Tasks = () => {
                           }`}
                         >
                           <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black uppercase shrink-0 ${
-                            isSelected ? 'bg-[#ff4f00] text-white' : 'bg-[#201515] text-white'
+                            isSelected ? 'bg-[#00a76b] text-white' : 'bg-[#201515] text-white'
                           }`}>
                             {name.substring(0, 1)}
                           </div>
@@ -745,7 +745,7 @@ const Tasks = () => {
                             )}
                           </div>
                           {isSelected && (
-                            <div className="w-4 h-4 rounded-full bg-[#ff4f00] flex items-center justify-center shrink-0">
+                            <div className="w-4 h-4 rounded-full bg-[#00a76b] flex items-center justify-center shrink-0">
                               <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                             </div>
                           )}
@@ -816,7 +816,7 @@ const Tasks = () => {
                             <p className={`text-[9px] font-medium not-italic ${ isSelected ? 'text-white/60' : 'text-[#939084]'}`}>{opt.desc}</p>
                           </div>
                           {isSelected && (
-                            <div className="w-4 h-4 rounded-full bg-[#ff4f00] flex items-center justify-center shrink-0">
+                            <div className="w-4 h-4 rounded-full bg-[#00a76b] flex items-center justify-center shrink-0">
                               <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                             </div>
                           )}
@@ -892,7 +892,7 @@ const Tasks = () => {
                       setCollapsedGroups(prev => ({ ...prev, [statusVal]: false }));
                       setInlineActiveGroup(statusVal);
                     }}
-                    className="p-1.5 hover:bg-[#eceae3] rounded-[4px] text-[#939084] hover:text-[#ff4f00] transition-colors"
+                    className="p-1.5 hover:bg-[#eceae3] rounded-[4px] text-[#939084] hover:text-[#00a76b] transition-colors"
                     title="Quick Add Task"
                   >
                     <Plus size={13} />
@@ -929,7 +929,7 @@ const Tasks = () => {
                             <button
                               onClick={(e) => openColMenu(e, col)}
                               className={`flex items-center gap-1 group/col hover:text-[#201515] transition-colors ${
-                                colHeaderMenu?.col === col ? 'text-[#ff4f00]' : ''
+                                colHeaderMenu?.col === col ? 'text-[#00a76b]' : ''
                               }`}
                             >
                               <span>{col}</span>
@@ -970,7 +970,7 @@ const Tasks = () => {
                               >
                                 <Circle size={15} />
                               </button>
-                              <span className="font-bold text-[13px] text-[#201515] group-hover:text-[#ff4f00] transition-colors uppercase truncate max-w-xs">
+                              <span className="font-bold text-[13px] text-[#201515] group-hover:text-[#00a76b] transition-colors uppercase truncate max-w-xs">
                                 {task.title}
                               </span>
                             </td>
@@ -1031,7 +1031,7 @@ const Tasks = () => {
 
                             {/* Due Date */}
                             <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
-                              <div className="relative flex items-center gap-1.5 text-[11px] text-[#939084] font-bold hover:text-[#ff4f00] py-1 px-2 rounded-[4px] hover:bg-[#eceae3] max-w-fit transition-colors cursor-pointer">
+                              <div className="relative flex items-center gap-1.5 text-[11px] text-[#939084] font-bold hover:text-[#00a76b] py-1 px-2 rounded-[4px] hover:bg-[#eceae3] max-w-fit transition-colors cursor-pointer">
                                 <Calendar size={12} className="shrink-0" />
                                 <span>
                                   {task.date || task.dueDate
@@ -1115,7 +1115,7 @@ const Tasks = () => {
                                   }}
                                   className="inline-flex items-center gap-1 hover:bg-[#eceae3] py-1 px-2 rounded-[4px] transition-colors cursor-pointer border border-[#c5c0b1]/30"
                                 >
-                                  <MessageSquare size={13} className={task.comments?.length > 0 ? "text-[#ff4f00]" : "text-[#c5c0b1]"} />
+                                  <MessageSquare size={13} className={task.comments?.length > 0 ? "text-[#00a76b]" : "text-[#c5c0b1]"} />
                                   {task.comments?.length > 0 ? (
                                     <span className="text-[10px] text-[#201515] font-black">{task.comments.length}</span>
                                   ) : (
@@ -1368,7 +1368,7 @@ const Tasks = () => {
                                           e.preventDefault();
                                           handleAddInlineComment(task._id, task.comments);
                                         }}
-                                        className="p-1.5 bg-[#ff4f00] hover:bg-[#e04500] text-white rounded-[4px] transition-colors cursor-pointer shadow-sm flex items-center justify-center border-none"
+                                        className="p-1.5 bg-[#00a76b] hover:bg-[#e04500] text-white rounded-[4px] transition-colors cursor-pointer shadow-sm flex items-center justify-center border-none"
                                         title="Send comment"
                                       >
                                         <Send size={11} />
@@ -1383,7 +1383,7 @@ const Tasks = () => {
                             <td className="pr-4 pl-2 py-4 text-right" onClick={e => e.stopPropagation()}>
                               <button
                                 onClick={() => handleDeleteTask(task._id)}
-                                className="text-[#c5c0b1] hover:text-[#ff4f00] transition-colors opacity-0 group-hover:opacity-100"
+                                className="text-[#c5c0b1] hover:text-[#00a76b] transition-colors opacity-0 group-hover:opacity-100"
                                 title="Delete task"
                               >
                                 <Trash2 size={13} />
@@ -1398,7 +1398,7 @@ const Tasks = () => {
                         <tr className="border-t border-[#c5c0b1]/40">
                           <td colSpan="8" className="pl-10 pr-6 py-3">
                             <form onSubmit={(e) => handleInlineCreate(e, statusVal)} className="flex items-center gap-3">
-                              <Circle size={15} className="text-[#ff4f00] animate-pulse shrink-0" />
+                              <Circle size={15} className="text-[#00a76b] animate-pulse shrink-0" />
                               <input
                                 type="text"
                                 placeholder="Write task title & press Enter..."
@@ -1416,7 +1416,7 @@ const Tasks = () => {
                               <button
                                 type="button"
                                 onClick={() => { setInlineActiveGroup(null); setInlineCreateTitle(''); }}
-                                className="text-[#939084] hover:text-[#ff4f00] transition-colors"
+                                className="text-[#939084] hover:text-[#00a76b] transition-colors"
                               >
                                 <X size={13} />
                               </button>
@@ -1428,7 +1428,7 @@ const Tasks = () => {
                           <td colSpan="8" className="pl-10 pr-6 py-3">
                             <button
                               onClick={() => setInlineActiveGroup(statusVal)}
-                              className="text-[11px] font-black uppercase tracking-wider text-[#939084] hover:text-[#ff4f00] transition-colors flex items-center gap-1.5"
+                              className="text-[11px] font-black uppercase tracking-wider text-[#939084] hover:text-[#00a76b] transition-colors flex items-center gap-1.5"
                             >
                               <Plus size={13} />
                               <span>Add Task</span>
@@ -1465,7 +1465,7 @@ const Tasks = () => {
                             onClick={() => setGroupPages(prev => ({ ...prev, [statusVal]: pageNum }))}
                             className={`w-7 h-7 rounded-[4px] text-[11px] font-black border transition-all cursor-pointer ${
                               isPageActive
-                                ? 'bg-[#ff4f00] border-[#ff4f00] text-white shadow-sm shadow-[#ff4f00]/20'
+                                ? 'bg-[#00a76b] border-[#00a76b] text-white shadow-sm shadow-[#00a76b]/20'
                                 : 'bg-[#fffdf9] border-[#c5c0b1] text-[#939084] hover:text-[#201515] hover:bg-[#eceae3]'
                             }`}
                           >
@@ -1745,8 +1745,8 @@ const Tasks = () => {
           <div className="zap-card !bg-[#201515] border-none !px-8 !pt-6 !pb-5 flex flex-col gap-4 shadow-2xl rounded-[5px] min-h-[680px]">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                <div className="flex items-center gap-4">
-                 <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40 flex items-center gap-3"><ShieldCheck size={16} className="text-[#ff4f00]" /> Mission Registry</h4>
-                 <span className="bg-[#ff4f00] text-white text-[9px] font-black px-2 py-0.5 rounded-[5px] uppercase tracking-tighter">{filteredRegistryTasks.length} Nodes Detected</span>
+                 <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40 flex items-center gap-3"><ShieldCheck size={16} className="text-[#00a76b]" /> Mission Registry</h4>
+                 <span className="bg-[#00a76b] text-white text-[9px] font-black px-2 py-0.5 rounded-[5px] uppercase tracking-tighter">{filteredRegistryTasks.length} Nodes Detected</span>
                </div>
                
                <div className="flex flex-wrap items-center gap-4">
@@ -1754,9 +1754,9 @@ const Tasks = () => {
                     <div className="relative" ref={registryFilterRef}>
                         <div 
                         onClick={() => setShowRegistryRoleDropdown(!showRegistryRoleDropdown)}
-                        className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-[5px] px-5 py-1.5 h-12 cursor-pointer hover:border-[#ff4f00]/40 transition-all min-w-[180px]"
+                        className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-[5px] px-5 py-1.5 h-12 cursor-pointer hover:border-[#00a76b]/40 transition-all min-w-[180px]"
                         >
-                        <Users size={16} className="text-[#ff4f00]" />
+                        <Users size={16} className="text-[#00a76b]" />
                         <span className="text-[11px] font-black text-white uppercase tracking-widest flex-1">
                             {registryRoleOptions.find(o => o.value === registryRoleFilter)?.label || 'All Roles'}
                         </span>
@@ -1769,7 +1769,7 @@ const Tasks = () => {
                                 <div 
                                 key={opt.value}
                                 onClick={() => { setRegistryRoleFilter(opt.value); setShowRegistryRoleDropdown(false); }}
-                                className={`px-5 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all ${registryRoleFilter === opt.value ? 'bg-[#ff4f00] text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}
+                                className={`px-5 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all ${registryRoleFilter === opt.value ? 'bg-[#00a76b] text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}
                                 >
                                     {opt.label}
                                 </div>
@@ -1780,16 +1780,16 @@ const Tasks = () => {
                  )}
 
                  <div className="relative group cursor-pointer" onClick={(e) => e.currentTarget.querySelector('input').showPicker()}>
-                   <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-[#ff4f00]" size={16} />
+                   <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-[#00a76b]" size={16} />
                    <input 
                      type="date" 
                      value={registryDate}
                      max={today}
                      onChange={(e) => setRegistryDate(e.target.value)}
-                     className="h-12 pl-12 pr-6 bg-white/5 border border-white/10 rounded-[5px] text-[11px] font-black text-white focus:outline-none focus:border-[#ff4f00] transition-all cursor-pointer uppercase shadow-lg w-full"
+                     className="h-12 pl-12 pr-6 bg-white/5 border border-white/10 rounded-[5px] text-[11px] font-black text-white focus:outline-none focus:border-[#00a76b] transition-all cursor-pointer uppercase shadow-lg w-full"
                    />
                  </div>
-                 <button onClick={() => fetchRegistryTasks(registryDate)} className={`p-3 bg-white/5 hover:bg-[#ff4f00]/10 rounded-[5px] text-white/40 hover:text-[#ff4f00] transition-all border border-white/10 hover:border-[#ff4f00] cursor-pointer ${isRegistrySyncing ? 'animate-spin text-[#ff4f00]' : ''}`}><RefreshCw size={16} /></button>
+                 <button onClick={() => fetchRegistryTasks(registryDate)} className={`p-3 bg-white/5 hover:bg-[#00a76b]/10 rounded-[5px] text-white/40 hover:text-[#00a76b] transition-all border border-white/10 hover:border-[#00a76b] cursor-pointer ${isRegistrySyncing ? 'animate-spin text-[#00a76b]' : ''}`}><RefreshCw size={16} /></button>
                </div>
             </div>
             
@@ -1803,13 +1803,13 @@ const Tasks = () => {
                   <div 
                     key={task._id || (task.title + task.description)} 
                     onClick={() => { setSelectedTask(task); setIsDetailOpen(true); }}
-                    className="bg-white/5 border border-white/10 p-6 rounded-[5px] flex flex-col gap-6 group hover:border-[#ff4f00]/50 transition-all shadow-lg hover:shadow-[#ff4f00]/5 h-fit cursor-pointer"
+                    className="bg-white/5 border border-white/10 p-6 rounded-[5px] flex flex-col gap-6 group hover:border-[#00a76b]/50 transition-all shadow-lg hover:shadow-[#00a76b]/5 h-fit cursor-pointer"
                   >
                       <div className="min-w-0 pr-6">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-3">
-                               <div className="w-8 h-8 rounded-full bg-[#ff4f00]/10 border border-[#ff4f00]/30 flex items-center justify-center text-[#ff4f00] text-[10px] font-black uppercase shrink-0">
+                               <div className="w-8 h-8 rounded-full bg-[#00a76b]/10 border border-[#00a76b]/30 flex items-center justify-center text-[#00a76b] text-[10px] font-black uppercase shrink-0">
                                   {task.employeeName?.substring(0, 2) || '??'}
                                </div>
                                <div className="min-w-0">
@@ -1822,7 +1822,7 @@ const Tasks = () => {
 
                             <p className="text-[18px] font-black text-white truncate tracking-tight">{task.title}</p>
                             <div className="flex items-center gap-3 mt-2">
-                              <div className={`w-2 h-2 rounded-full ${task.status === 'Completed' ? 'bg-emerald-500' : task.status === 'Review' ? 'bg-[#ff4f00]' : task.status === 'Need to Improve' ? 'bg-rose-500 animate-pulse' : task.status === 'Ongoing' ? 'bg-blue-500' : 'bg-amber-500'}`}></div>
+                              <div className={`w-2 h-2 rounded-full ${task.status === 'Completed' ? 'bg-emerald-500' : task.status === 'Review' ? 'bg-[#00a76b]' : task.status === 'Need to Improve' ? 'bg-rose-500 animate-pulse' : task.status === 'Ongoing' ? 'bg-blue-500' : 'bg-amber-500'}`}></div>
                               <span className={`text-[10px] font-black uppercase tracking-widest ${task.status === 'Need to Improve' ? 'text-rose-400' : 'text-white/40'}`}>
                                 {task.status === 'Review' ? 'UNDER REVIEW' : task.status}
                               </span>
@@ -1833,7 +1833,7 @@ const Tasks = () => {
                             <div className="flex gap-2">
                               <div 
                                 onClick={(e) => { e.stopPropagation(); openRegistryGallery(task.attachments, 0); }}
-                                className="w-14 h-14 rounded-[5px] border-2 border-white/10 overflow-hidden bg-white/10 flex items-center justify-center transition-all cursor-pointer hover:scale-110 hover:border-[#ff4f00]/50 shadow-2xl relative group"
+                                className="w-14 h-14 rounded-[5px] border-2 border-white/10 overflow-hidden bg-white/10 flex items-center justify-center transition-all cursor-pointer hover:scale-110 hover:border-[#00a76b]/50 shadow-2xl relative group"
                               >
                                 {((task.attachments[0].fileName || task.attachments[0].path || '').match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i)) || (task.attachments[0].fileType?.startsWith('image/')) ? (
                                   <img 
@@ -1842,7 +1842,7 @@ const Tasks = () => {
                                     onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/201515/ff4f00?text=LOST'; }}
                                   />
                                 ) : (
-                                  <FileText size={18} className="text-white/40 group-hover:text-[#ff4f00] transition-colors" />
+                                  <FileText size={18} className="text-white/40 group-hover:text-[#00a76b] transition-colors" />
                                 )}
                                 <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-all flex items-center justify-center">
                                   <span className="text-[10px] font-black text-white">{task.attachments.length > 1 ? `+${task.attachments.length}` : 'VIEW'}</span>
@@ -1855,12 +1855,12 @@ const Tasks = () => {
                       
                       {registryStatusNote.taskId === task._id ? (
                         <div className="bg-white/10 p-4 rounded-[5px] animate-in zoom-in-95 duration-200">
-                          <label className="text-[9px] font-black uppercase tracking-widest text-[#ff4f00] mb-2 block flex items-center gap-2"><MessageSquare size={10} /> Reason for {registryStatusNote.nextStatus} Status</label>
+                          <label className="text-[9px] font-black uppercase tracking-widest text-[#00a76b] mb-2 block flex items-center gap-2"><MessageSquare size={10} /> Reason for {registryStatusNote.nextStatus} Status</label>
                           <textarea 
                             autoFocus
                             required
                             placeholder="Provide a brief update..." 
-                            className="w-full h-20 bg-black/20 border border-white/10 rounded-[5px] p-3 text-[12px] text-white focus:outline-none focus:border-[#ff4f00]/50 resize-none mb-3"
+                            className="w-full h-20 bg-black/20 border border-white/10 rounded-[5px] p-3 text-[12px] text-white focus:outline-none focus:border-[#00a76b]/50 resize-none mb-3"
                             value={registryStatusNote.note}
                             onChange={e => setRegistryStatusNote({...registryStatusNote, note: e.target.value})}
                           />
@@ -1869,7 +1869,7 @@ const Tasks = () => {
                             <button 
                               onClick={() => updateRegistryTaskStatus(task._id, registryStatusNote.nextStatus, registryStatusNote.note)}
                               disabled={!registryStatusNote.note.trim()}
-                              className="flex-[2] h-9 rounded-[5px] bg-[#ff4f00] text-white text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all border-none cursor-pointer disabled:opacity-50"
+                              className="flex-[2] h-9 rounded-[5px] bg-[#00a76b] text-white text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all border-none cursor-pointer disabled:opacity-50"
                             >
                               Confirm Status Update
                             </button>
@@ -1896,7 +1896,7 @@ const Tasks = () => {
                                 [
                                     { s: 'Pending', c: 'bg-amber-500' },
                                     { s: 'Ongoing', c: 'bg-blue-500' },
-                                    { s: 'Review', c: 'bg-[#ff4f00]' },
+                                    { s: 'Review', c: 'bg-[#00a76b]' },
                                     ...(isHigherRole ? [{ s: 'Completed', c: 'bg-emerald-500' }] : [])
                                 ].map((btn, idx) => (
                                     <button 
@@ -1920,7 +1920,7 @@ const Tasks = () => {
                  <button 
                    onClick={() => setRegistryCurrentPage(prev => Math.max(1, prev - 1))}
                    disabled={registryCurrentPage === 1}
-                   className="flex items-center gap-2 px-6 py-2 bg-white/5 hover:bg-[#ff4f00] text-white rounded-[5px] border border-white/10 transition-all disabled:opacity-20 disabled:hover:bg-white/5 cursor-pointer"
+                   className="flex items-center gap-2 px-6 py-2 bg-white/5 hover:bg-[#00a76b] text-white rounded-[5px] border border-white/10 transition-all disabled:opacity-20 disabled:hover:bg-white/5 cursor-pointer"
                  >
                   <ChevronLeft size={16} />
                   <span className="text-[10px] font-black uppercase tracking-widest">Previous</span>
@@ -1931,7 +1931,7 @@ const Tasks = () => {
                       <button 
                         key={i} 
                         onClick={() => setRegistryCurrentPage(i + 1)}
-                        className={`w-8 h-8 rounded-[5px] text-[10px] font-black border transition-all cursor-pointer ${registryCurrentPage === i + 1 ? 'bg-[#ff4f00] border-[#ff4f00] text-white' : 'bg-white/5 border-white/10 text-white/40 hover:text-white hover:border-white/20'}`}
+                        className={`w-8 h-8 rounded-[5px] text-[10px] font-black border transition-all cursor-pointer ${registryCurrentPage === i + 1 ? 'bg-[#00a76b] border-[#00a76b] text-white' : 'bg-white/5 border-white/10 text-white/40 hover:text-white hover:border-white/20'}`}
                       >
                          {i + 1}
                       </button>
@@ -1941,7 +1941,7 @@ const Tasks = () => {
                  <button 
                    onClick={() => setRegistryCurrentPage(prev => Math.min(totalRegistryPages, prev + 1))}
                    disabled={registryCurrentPage === totalRegistryPages}
-                   className="flex items-center gap-2 px-6 py-2 bg-white/5 hover:bg-[#ff4f00] text-white rounded-[5px] border border-white/10 transition-all disabled:opacity-20 disabled:hover:bg-white/5 cursor-pointer"
+                   className="flex items-center gap-2 px-6 py-2 bg-white/5 hover:bg-[#00a76b] text-white rounded-[5px] border border-white/10 transition-all disabled:opacity-20 disabled:hover:bg-white/5 cursor-pointer"
                  >
                   <span className="text-[10px] font-black uppercase tracking-widest">Next</span>
                   <ChevronRight size={16} />
@@ -1963,13 +1963,13 @@ const Tasks = () => {
             <>
               <button 
                 onClick={(e) => { e.stopPropagation(); setRegistryPreviewGallery(prev => ({ ...prev, index: (prev.index - 1 + prev.items.length) % prev.items.length })) }}
-                className="absolute left-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-[5px] bg-white/10 text-white flex items-center justify-center hover:bg-[#ff4f00] transition-all border-none cursor-pointer z-[10001]"
+                className="absolute left-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-[5px] bg-white/10 text-white flex items-center justify-center hover:bg-[#00a76b] transition-all border-none cursor-pointer z-[10001]"
               >
                 <ChevronLeft size={32} />
               </button>
               <button 
                 onClick={(e) => { e.stopPropagation(); setRegistryPreviewGallery(prev => ({ ...prev, index: (prev.index + 1) % prev.items.length })) }}
-                className="absolute right-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-[5px] bg-white/10 text-white flex items-center justify-center hover:bg-[#ff4f00] transition-all border-none cursor-pointer z-[10001]"
+                className="absolute right-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-[5px] bg-white/10 text-white flex items-center justify-center hover:bg-[#00a76b] transition-all border-none cursor-pointer z-[10001]"
               >
                 <ChevronRight size={32} />
               </button>
@@ -1992,7 +1992,7 @@ const Tasks = () => {
               />
             ) : (
               <div className="w-[400px] aspect-video bg-white/5 rounded-[5px] border border-white/10 flex flex-col items-center justify-center p-10 text-center gap-6 backdrop-blur-md">
-                <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center text-[#ff4f00]"><FileText size={40} /></div>
+                <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center text-[#00a76b]"><FileText size={40} /></div>
                 <div>
                   <p className="text-white text-[18px] font-black tracking-tight line-clamp-1">{registryPreviewGallery.items[registryPreviewGallery.index].name}</p>
                   <p className="text-white/40 text-[12px] font-bold uppercase tracking-widest mt-1">Non-Visual Document detected</p>
@@ -2002,7 +2002,7 @@ const Tasks = () => {
                   download 
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full h-14 bg-[#ff4f00] text-white rounded-[5px] font-black text-[12px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 no-underline hover:scale-105 transition-all"
+                  className="w-full h-14 bg-[#00a76b] text-white rounded-[5px] font-black text-[12px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 no-underline hover:scale-105 transition-all"
                 >
                   DOWNLOAD FILE <Download size={18} />
                 </a>
@@ -2018,16 +2018,16 @@ const Tasks = () => {
            <div className="bg-white rounded-[5px] p-10 w-full max-w-lg shadow-2xl relative animate-in zoom-in-95 duration-300">
               <button 
                 onClick={() => setRegistryStatusNote({ taskId: null, nextStatus: null, note: '' })} 
-                className="absolute top-6 right-6 text-[#939084] hover:text-[#ff4f00] border-none bg-transparent cursor-pointer"
+                className="absolute top-6 right-6 text-[#939084] hover:text-[#00a76b] border-none bg-transparent cursor-pointer"
               >
                 <X size={24} />
               </button>
               <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-[5px] bg-[#ff4f00]/10 flex items-center justify-center text-[#ff4f00]">
+                <div className="w-10 h-10 rounded-[5px] bg-[#00a76b]/10 flex items-center justify-center text-[#00a76b]">
                   <CheckCircle2 size={20} />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black tracking-tighter uppercase">Status <span className="text-[#ff4f00]">Report.</span></h2>
+                  <h2 className="text-2xl font-black tracking-tighter uppercase">Status <span className="text-[#00a76b]">Report.</span></h2>
                   <p className="text-[10px] font-bold text-[#939084] uppercase tracking-[0.2em]">Required for transition to {registryStatusNote.nextStatus}</p>
                 </div>
               </div>
@@ -2040,7 +2040,7 @@ const Tasks = () => {
                       <textarea 
                         autoFocus
                         placeholder="What is the current status of this objective?"
-                        className="w-full h-40 pl-12 pr-5 pt-4 bg-white rounded-[5px] text-[15px] font-medium focus:outline-none border border-[#eceae3] focus:border-[#ff4f00]/40 shadow-sm resize-none leading-relaxed" 
+                        className="w-full h-40 pl-12 pr-5 pt-4 bg-white rounded-[5px] text-[15px] font-medium focus:outline-none border border-[#eceae3] focus:border-[#00a76b]/40 shadow-sm resize-none leading-relaxed" 
                         value={registryStatusNote.note} 
                         onChange={e => setRegistryStatusNote({...registryStatusNote, note: e.target.value})} 
                       />
@@ -2049,7 +2049,7 @@ const Tasks = () => {
                  <button 
                    onClick={() => updateRegistryTaskStatus(registryStatusNote.taskId, registryStatusNote.nextStatus, registryStatusNote.note)}
                    disabled={!registryStatusNote.note.trim()}
-                   className="w-full h-14 bg-[#201515] hover:bg-[#ff4f00] text-white rounded-[5px] font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg"
+                   className="w-full h-14 bg-[#201515] hover:bg-[#00a76b] text-white rounded-[5px] font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg"
                  >
                     SEND UPDATE <Send size={18} />
                  </button>

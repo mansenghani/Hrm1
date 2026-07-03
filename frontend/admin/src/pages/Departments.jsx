@@ -42,8 +42,8 @@ const Departments = () => {
       {/* HEADER */}
       <div className="mb-16 flex flex-col md:flex-row justify-between items-end border-b border-[#c5c0b1] pb-10">
         <div>
-          <p className="zap-caption-upper text-[#ff4f00] mb-4">Structural Node Mapping</p>
-          <h1 className="zap-display-hero">Unit <span className="text-[#ff4f00]">Architecture.</span></h1>
+          <p className="zap-caption-upper text-[#00a76b] mb-4">Structural Node Mapping</p>
+          <h1 className="zap-display-hero">Unit <span className="text-[#00a76b]">Architecture.</span></h1>
         </div>
         <button className="zap-btn zap-btn-orange h-14 px-8">
           <Layers size={18} className="mr-3" />
@@ -56,7 +56,7 @@ const Departments = () => {
         {loading ? (
           <div className="col-span-full py-32 text-center">
              <div className="flex flex-col items-center gap-4">
-                <RefreshCw size={24} className="text-[#ff4f00] animate-spin" />
+                <RefreshCw size={24} className="text-[#00a76b] animate-spin" />
                 <p className="zap-caption-upper text-[#939084]">Mapping Hub Matrix...</p>
              </div>
           </div>
@@ -67,10 +67,10 @@ const Departments = () => {
         ) : (
           departments.map((dept, i) => (
             <div key={i} className="zap-card group hover:border-[#201515] transition-all relative overflow-hidden bg-[#fffdf9]">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-[#eceae3] rounded-full -mr-12 -mt-12 group-hover:bg-[#ff4f00]/5 transition-colors"></div>
+              <div className="absolute top-0 right-0 w-24 h-24 bg-[#eceae3] rounded-full -mr-12 -mt-12 group-hover:bg-[#00a76b]/5 transition-colors"></div>
               
               <div className="flex justify-between items-start mb-12 relative z-10">
-                <div className="w-14 h-14 bg-[#eceae3] border border-[#c5c0b1] rounded-[8px] flex items-center justify-center text-[#201515] group-hover:bg-[#ff4f00] group-hover:text-white transition-all shadow-sm">
+                <div className="w-14 h-14 bg-[#eceae3] border border-[#c5c0b1] rounded-[8px] flex items-center justify-center text-[#201515] group-hover:bg-[#00a76b] group-hover:text-white transition-all shadow-sm">
                   <Share2 size={24} />
                 </div>
                 <div className="flex flex-col items-end">
@@ -82,7 +82,7 @@ const Departments = () => {
                 </div>
               </div>
 
-              <h3 className="text-[24px] font-medium text-[#201515] mb-2 group-hover:text-[#ff4f00] transition-colors">{dept.name}</h3>
+              <h3 className="text-[24px] font-medium text-[#201515] mb-2 group-hover:text-[#00a76b] transition-colors">{dept.name}</h3>
               <p className="text-[13px] font-bold text-[#939084] uppercase tracking-wider mb-10">SaaS Operational Segment</p>
               
               <div className="grid grid-cols-2 gap-6 border-t border-[#c5c0b1] pt-10 mt-6">
@@ -101,7 +101,7 @@ const Departments = () => {
               
               <div className="mt-10 flex items-center justify-between text-[13px] font-bold uppercase tracking-widest text-[#939084] group-hover:text-[#201515] transition-colors cursor-pointer pt-6">
                  <span>View Cluster Map</span>
-                 <ArrowUpRight size={18} className="text-[#c5c0b1] group-hover:text-[#ff4f00]" />
+                 <ArrowUpRight size={18} className="text-[#c5c0b1] group-hover:text-[#00a76b]" />
               </div>
             </div>
           ))

@@ -14,7 +14,7 @@ const StatsCard = ({ title, value, icon: Icon, colorClass, isDark }) => (
   <div className={`border p-6 rounded-[5px] shadow-sm flex flex-col justify-between group transition-all ${
     isDark 
       ? 'bg-[#0f0d0a] border-[#38352e] hover:border-white' 
-      : 'bg-white border-[#E6E8EA] hover:border-[#ff4f00]'
+      : 'bg-white border-[#E6E8EA] hover:border-[#00a76b]'
   }`}>
     <div className="flex justify-between items-center mb-4">
       <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-[#a3a094]' : 'text-[#848E9C]'}`}>{title}</span>
@@ -33,7 +33,7 @@ const StatsCard = ({ title, value, icon: Icon, colorClass, isDark }) => (
 const StatusBadge = ({ status, isDark }) => {
   const statusColors = isDark ? {
     active: 'bg-green-950/30 text-green-400 border border-green-500/25',
-    idle: 'bg-orange-950/30 text-orange-400 border border-orange-500/25',
+    idle: 'bg-emerald-950/30 text-orange-400 border border-emerald-500/25',
     paused: 'bg-slate-900 text-slate-400 border border-slate-700/25',
     completed: 'bg-blue-950/30 text-blue-400 border border-blue-500/25'
   } : {
@@ -183,12 +183,12 @@ const UnifiedDashboardPanel = () => {
               onClick={() => setOpenDropdown(openDropdown === 'time' ? null : 'time')}
               className={`px-4 py-2.5 border rounded-[5px] text-[10px] font-black uppercase tracking-widest outline-none flex items-center gap-4 cursor-pointer transition-all min-w-[140px] justify-between shadow-sm ${
                 isDark 
-                  ? 'bg-[#181612] border-[#38352e] text-white hover:border-[#ff4f00]' 
-                  : 'bg-white border-[#eceae3] text-[#201515] hover:border-[#ff4f00]'
+                  ? 'bg-[#181612] border-[#38352e] text-white hover:border-[#00a76b]' 
+                  : 'bg-white border-[#eceae3] text-[#201515] hover:border-[#00a76b]'
               }`}
             >
               {filters.timeRange === 'today' ? 'Today' : filters.timeRange === 'weekly' ? 'This Week' : 'This Month'}
-              <ChevronDown size={14} className={`transition-transform ${openDropdown === 'time' ? 'rotate-180 text-[#ff4f00]' : 'rotate-0 text-[#939084]'}`} />
+              <ChevronDown size={14} className={`transition-transform ${openDropdown === 'time' ? 'rotate-180 text-[#00a76b]' : 'rotate-0 text-[#939084]'}`} />
             </button>
             {openDropdown === 'time' && (
               <div className={`absolute top-[calc(100%+8px)] left-0 w-full border rounded-[5px] shadow-xl z-[60] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 ${
@@ -202,8 +202,8 @@ const UnifiedDashboardPanel = () => {
                   <div key={opt.id} onClick={() => { setFilters(f => ({ ...f, timeRange: opt.id })); setOpenDropdown(null); }}
                     className={`px-4 py-3 text-[9px] font-black uppercase tracking-widest cursor-pointer transition-colors border-b last:border-none ${
                       isDark 
-                        ? 'text-white hover:bg-[#ff4f00]/10 hover:text-[#ff4f00] border-[#38352e]' 
-                        : 'text-[#201515] hover:bg-[#ff4f00]/5 hover:text-[#ff4f00] border-[#f8f8f8]'
+                        ? 'text-white hover:bg-[#00a76b]/10 hover:text-[#00a76b] border-[#38352e]' 
+                        : 'text-[#201515] hover:bg-[#00a76b]/5 hover:text-[#00a76b] border-[#f8f8f8]'
                     }`}>
                     {opt.label}
                   </div>
@@ -220,12 +220,12 @@ const UnifiedDashboardPanel = () => {
                   onClick={() => setOpenDropdown(openDropdown === 'role' ? null : 'role')}
                   className={`px-4 py-2.5 border rounded-[5px] text-[10px] font-black uppercase tracking-widest outline-none flex items-center gap-4 cursor-pointer transition-all min-w-[140px] justify-between shadow-sm ${
                     isDark 
-                      ? 'bg-[#181612] border-[#38352e] text-white hover:border-[#ff4f00]' 
-                      : 'bg-white border-[#eceae3] text-[#201515] hover:border-[#ff4f00]'
+                      ? 'bg-[#181612] border-[#38352e] text-white hover:border-[#00a76b]' 
+                      : 'bg-white border-[#eceae3] text-[#201515] hover:border-[#00a76b]'
                   }`}
                 >
                   {filters.roleFilter === '' ? 'All Roles' : filters.roleFilter === 'hr' ? 'HR' : filters.roleFilter === 'manager' ? 'Managers' : 'Employees'}
-                  <ChevronDown size={14} className={`transition-transform ${openDropdown === 'role' ? 'rotate-180 text-[#ff4f00]' : 'rotate-0 text-[#939084]'}`} />
+                  <ChevronDown size={14} className={`transition-transform ${openDropdown === 'role' ? 'rotate-180 text-[#00a76b]' : 'rotate-0 text-[#939084]'}`} />
                 </button>
                 {openDropdown === 'role' && (
                   <div className={`absolute top-[calc(100%+8px)] left-0 w-full border rounded-[5px] shadow-xl z-[60] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 ${
@@ -240,8 +240,8 @@ const UnifiedDashboardPanel = () => {
                       <div key={opt.id} onClick={() => { setFilters(f => ({ ...f, roleFilter: opt.id })); setOpenDropdown(null); }}
                         className={`px-4 py-3 text-[9px] font-black uppercase tracking-widest cursor-pointer transition-colors border-b last:border-none ${
                           isDark 
-                            ? 'text-white hover:bg-[#ff4f00]/10 hover:text-[#ff4f00] border-[#38352e]' 
-                            : 'text-[#201515] hover:bg-[#ff4f00]/5 hover:text-[#ff4f00] border-[#f8f8f8]'
+                            ? 'text-white hover:bg-[#00a76b]/10 hover:text-[#00a76b] border-[#38352e]' 
+                            : 'text-[#201515] hover:bg-[#00a76b]/5 hover:text-[#00a76b] border-[#f8f8f8]'
                         }`}>
                         {opt.label}
                       </div>
@@ -257,7 +257,7 @@ const UnifiedDashboardPanel = () => {
                   placeholder="USER ID..."
                   value={filters.userFilter}
                   onChange={(e) => setFilters(prev => ({ ...prev, userFilter: e.target.value }))}
-                  className={`pl-9 pr-4 py-2.5 w-40 rounded-[5px] border text-[11px] font-black uppercase tracking-widest focus:border-[#ff4f00] outline-none shadow-sm transition-all ${
+                  className={`pl-9 pr-4 py-2.5 w-40 rounded-[5px] border text-[11px] font-black uppercase tracking-widest focus:border-[#00a76b] outline-none shadow-sm transition-all ${
                     isDark 
                       ? 'bg-[#181612] border-[#38352e] text-white focus:bg-[#0f0d0a]' 
                       : 'bg-white border-[#E6E8EA] text-[#201515]'
@@ -271,8 +271,8 @@ const UnifiedDashboardPanel = () => {
             onClick={fetchData} 
             className={`w-10 h-10 flex items-center justify-center rounded-[5px] transition-all shadow-sm ${
               isDark 
-                ? 'bg-[#282520] text-white hover:bg-[#ff4f00]' 
-                : 'bg-[#F5F5F5] hover:bg-[#ff4f00] hover:text-white'
+                ? 'bg-[#282520] text-white hover:bg-[#00a76b]' 
+                : 'bg-[#F5F5F5] hover:bg-[#00a76b] hover:text-white'
             }`}
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
@@ -285,7 +285,7 @@ const UnifiedDashboardPanel = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard title="Total Time" value={formatHrs(data.stats.totalTime)} icon={Clock} colorClass="text-blue-500" isDark={isDark} />
           <StatsCard title="Active Time" value={formatHrs(data.stats.activeTime)} icon={Zap} colorClass="text-green-500" isDark={isDark} />
-          <StatsCard title="Idle Time" value={formatHrs(data.stats.idleTime)} icon={Clock} colorClass="text-orange-500" isDark={isDark} />
+          <StatsCard title="Idle Time" value={formatHrs(data.stats.idleTime)} icon={Clock} colorClass="text-emerald-500" isDark={isDark} />
           <StatsCard title="Total Sessions" value={data.stats.sessions} icon={Activity} colorClass="text-purple-500" isDark={isDark} />
         </div>
 
@@ -327,7 +327,7 @@ const UnifiedDashboardPanel = () => {
             <h3 className={`text-[12px] font-black uppercase tracking-[0.2em] mb-6 flex items-center gap-2 ${
               isDark ? 'text-white' : 'text-[#1E2026]'
             }`}>
-              <Activity size={16} className="text-[#ff4f00]" /> Recent Activity
+              <Activity size={16} className="text-[#00a76b]" /> Recent Activity
             </h3>
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               {data.activityLogs.length === 0 ? (
