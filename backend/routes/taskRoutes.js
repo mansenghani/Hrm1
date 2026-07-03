@@ -15,7 +15,7 @@ const {
 // ── FILE UPLOAD CONFIG ────────────────────────────────────
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = 'uploads/tasks';
+    const dir = path.join(__dirname, '../uploads/tasks');
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }

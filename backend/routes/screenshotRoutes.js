@@ -9,7 +9,7 @@ const User = require('../models/User');
 // Configure storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = 'uploads/screenshots';
+    const dir = path.join(__dirname, '../uploads/screenshots');
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
@@ -38,7 +38,7 @@ router.post('/upload', upload.single('screenshot'), async (req, res) => {
       userId,
       employeeName: user.name || user.fullName,
       role: user.role,
-      imageUrl: req.file.path
+      imageUrl: `uploads/screenshots/${req.file.filename}`
     });
 
     await newScreenshot.save();

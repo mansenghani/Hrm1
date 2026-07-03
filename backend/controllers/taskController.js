@@ -25,7 +25,7 @@ exports.createTask = async (req, res) => {
       req.files.forEach(file => {
         attachments.push({
           fileName: file.originalname,
-          fileUrl: file.path,
+          fileUrl: `uploads/tasks/${file.filename}`,
           fileType: file.mimetype
         });
       });
