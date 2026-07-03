@@ -1,6 +1,6 @@
 {
   "name": "fluidhr-desktop-tracker",
-  "version": "1.0.5.1",
+  "version": "1.0.6",
   "description": "Premium Time Tracking Node for FluidHR",
   "main": "main.js",
   "scripts": {
