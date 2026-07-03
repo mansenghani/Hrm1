@@ -20,6 +20,9 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": false
     },
+    "asarUnpack": [
+      "**/node_modules/screenshot-desktop/**/*"
+    ],
     "publish": {
       "provider": "github",
       "owner": "mansenghani",

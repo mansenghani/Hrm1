@@ -239,7 +239,17 @@ const UnifiedDashboardPanel = () => {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F5F5F5" />
                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#848E9C', fontWeight: 700 }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#848E9C', fontWeight: 700 }} />
-                  <Tooltip cursor={{ fill: '#F5F7FA' }} contentStyle={{ borderRadius: '5px', border: '1px solid #E6E8EA', fontWeight: 'bold' }} />
+                  <Tooltip 
+                    cursor={{ fill: '#F5F7FA' }} 
+                    contentStyle={{ borderRadius: '5px', border: '1px solid #E6E8EA', fontWeight: 'bold' }} 
+                    formatter={(value, name) => {
+                      const totalSecs = Math.round((Number(value) || 0) * 3600);
+                      const h = Math.floor(totalSecs / 3600);
+                      const m = Math.floor((totalSecs % 3600) / 60);
+                      const formattedName = name === 'active' ? 'Active' : (name === 'idle' ? 'Idle' : name);
+                      return [`${h}h ${m}m`, formattedName];
+                    }}
+                  />
                   <Bar dataKey="active" fill="#24A148" radius={[4, 4, 0, 0]} stackId="a" />
                   <Bar dataKey="idle" fill="#FF832B" radius={[4, 4, 0, 0]} stackId="a" />
                 </BarChart>
