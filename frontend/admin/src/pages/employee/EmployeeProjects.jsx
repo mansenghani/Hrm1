@@ -62,12 +62,12 @@ const EmployeeProjects = () => {
     const statusColors = {
         assigned: 'bg-gray-500',
         in_progress: 'bg-blue-500',
-        submitted: 'bg-orange-500',
+        submitted: 'bg-emerald-500',
         under_review: 'bg-purple-500',
         completed: 'bg-green-500',
         rework: 'bg-red-500',
         active: 'bg-green-500',
-        pending: 'bg-orange-500'
+        pending: 'bg-emerald-500'
     };
 
     if (loading) return (

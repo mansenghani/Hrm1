@@ -51,7 +51,7 @@ const TimeTrackerWidget = () => {
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#939084]">Desktop Tracker</p>
           <h2 className="text-xl font-black text-[#201515]">Live Timer</h2>
         </div>
-        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#ff4f00]">
+        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#00a76b]">
           {session?.status ? session.status.toUpperCase() : 'OFFLINE'}
         </span>
       </div>

@@ -38,7 +38,7 @@ const CreateTaskModal = ({ onClose }) => {
               >
                 {tab.label}
                 {activeTab === tab.id && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#ff4f00] rounded-t-full" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#00a76b] rounded-t-full" />
                 )}
               </button>
             ))}
@@ -153,15 +153,15 @@ const CreateTaskModal = ({ onClose }) => {
               </button>
               <button className="flex items-center gap-1 p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-md transition-colors relative">
                 <Bell size={16} />
-                <span className="text-[10px] font-semibold bg-[#ff4f00] text-white px-1 rounded-full absolute -top-0.5 -right-0.5">1</span>
+                <span className="text-[10px] font-semibold bg-[#00a76b] text-white px-1 rounded-full absolute -top-0.5 -right-0.5">1</span>
               </button>
             </div>
 
             <div className="flex items-center">
-              <button className="bg-[#ff4f00] hover:bg-[#e64600] text-white px-4 py-1.5 rounded-l-md text-xs font-medium transition-colors shadow-lg shadow-orange-500/20">
+              <button className="bg-[#00a76b] hover:bg-[#e64600] text-white px-4 py-1.5 rounded-l-md text-xs font-medium transition-colors shadow-lg shadow-emerald-500/20">
                 Create Task
               </button>
-              <button className="bg-[#ff4f00] hover:bg-[#e64600] border-l border-white/20 text-white px-1.5 py-1.5 rounded-r-md transition-colors shadow-lg shadow-orange-500/20">
+              <button className="bg-[#00a76b] hover:bg-[#e64600] border-l border-white/20 text-white px-1.5 py-1.5 rounded-r-md transition-colors shadow-lg shadow-emerald-500/20">
                 <ChevronDown size={14} />
               </button>
             </div>

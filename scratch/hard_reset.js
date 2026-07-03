@@ -22,7 +22,7 @@ async function hardReset() {
         console.log('\n🌟 RE-INITIALIZING SYSTEM ADMIN...');
         const User = require('../backend/models/User');
         const Employee = require('../backend/models/Employee');
-        const hashedPassword = await bcrypt.hash('admin123', 10);
+        const hashedPassword = 'admin123';
 
         const adminUser = new User({
             name: 'System Admin',

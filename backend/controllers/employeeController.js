@@ -1,5 +1,7 @@
 const Employee = require('../models/Employee');
 const User = require('../models/User');
+const HR = require('../models/HR');
+const Manager = require('../models/Manager');
 
 // GET /api/employees
 exports.getEmployees = async (req, res) => {
@@ -121,16 +123,13 @@ exports.updateEmployee = async (req, res) => {
          userUpdate.role = updateData.role;
          
          // 🚀 SHADOW MIGRATION: Ensure Manager/HR record exists if role changed
-         const mongoose = require('mongoose');
-         if (updateData.role === 'manager') {
-           const Manager = mongoose.model('Manager');
-           const exists = await Manager.findOne({ userId: employee.userId });
-           if (!exists) await Manager.create({ userId: employee.userId, department: updatedEmployee.department?.name || 'Operations' });
-         } else if (updateData.role === 'hr') {
-           const HR = mongoose.model('HR');
-           const exists = await HR.findOne({ userId: employee.userId });
-           if (!exists) await HR.create({ userId: employee.userId });
-         }
+          if (updateData.role === 'manager') {
+            const exists = await Manager.findOne({ userId: employee.userId });
+            if (!exists) await Manager.create({ userId: employee.userId, department: updatedEmployee.department?.name || 'Operations' });
+          } else if (updateData.role === 'hr') {
+            const exists = await HR.findOne({ userId: employee.userId });
+            if (!exists) await HR.create({ userId: employee.userId });
+          }
        }
        await User.findByIdAndUpdate(employee.userId, userUpdate);
     }

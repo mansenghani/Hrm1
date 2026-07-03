@@ -26,6 +26,7 @@ import Payroll from './pages/Payroll';
 import ManagerTasks from './pages/manager/ManagerTasks';
 import Performance from './pages/Performance';
 import Reports from './pages/Reports';
+import Recruitment from './pages/Recruitment';
 import Settings from './pages/admin/Settings';
 import CreateUser from './pages/admin/CreateUser';
 import MainLayout from '@shared/layouts/MainLayout';
@@ -92,6 +93,7 @@ const App = () => {
           <Route path="payroll" element={<Payroll />} />
           <Route path="performance" element={<Performance />} />
           <Route path="reports" element={<Reports />} />
+          <Route path="recruitment" element={<Recruitment />} />
           <Route path="settings" element={<Settings />} />
           <Route path="create-user" element={<CreateUser />} />
           <Route path="chat" element={<Chat />} />
@@ -118,6 +120,9 @@ const App = () => {
           <Route path="employees/edit/:id" element={<EmployeeForm />} />
           <Route path="create-user" element={<CreateUser />} />
           <Route path="teams" element={<TeamManagement />} />
+          <Route path="recruitment" element={<Recruitment />} />
+          <Route path="performance" element={<Performance />} />
+          <Route path="reports" element={<Reports />} />
           <Route path="projects" element={<ProjectManagement />} />
           <Route path="time-tracker" element={<TimeTrackingDashboard />} />
           <Route path="chat" element={<Chat />} />
@@ -141,6 +146,8 @@ const App = () => {
           <Route path="payslips" element={<EmployeePayslips />} />
           <Route path="documents" element={<EmployeeDocuments />} />
           <Route path="performance" element={<EmployeePerformance />} />
+          <Route path="recruitment" element={<Recruitment />} />
+          <Route path="reports" element={<Reports />} />
           <Route path="chat" element={<Chat />} />
           <Route path="profile" element={<Profile />} />
         </Route>
@@ -162,6 +169,9 @@ const App = () => {
           <Route path="leave" element={<LeaveManagement />} />
           <Route path="chat" element={<Chat />} />
           <Route path="screenshots" element={<Screenshots />} />
+          <Route path="recruitment" element={<Recruitment />} />
+          <Route path="performance" element={<Performance />} />
+          <Route path="reports" element={<Reports />} />
           <Route path="profile" element={<Profile />} />
           <Route path="time-tracker" element={<TimeTrackingDashboard />} />
         </Route>

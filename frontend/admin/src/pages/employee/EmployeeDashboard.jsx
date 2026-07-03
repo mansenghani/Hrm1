@@ -9,7 +9,7 @@ import {
   Sun, Moon, Sunrise, Bell, Star, Megaphone,
   CheckCircle, Play, Pause, Square, RefreshCw
 } from 'lucide-react';
-
+import WeeklyAttendanceChart from '@shared/components/WeeklyAttendanceChart';
 // ─── HELPERS ─────────────────────────────────────────────────
 const getAuth = () => {
   const t = sessionStorage.getItem('token');
@@ -96,7 +96,7 @@ const StatCard = ({ icon, iconColor, iconBg, label, value, trend }) => (
 );
 
 // ─── DEPARTMENT DONUT ─────────────────────────────────────────
-const DEPT_COLORS = ['#00a76b','#2563eb','#f59e0b','#dc2626','#7c3aed','#0891b2'];
+const DEPT_COLORS = ['#00a76b', '#2563eb', '#f59e0b', '#dc2626', '#7c3aed', '#0891b2'];
 const DEPT_DATA = [
   { name: 'Engineering', value: 62 },
   { name: 'Sales', value: 28 },
@@ -111,7 +111,7 @@ const DeptDonut = ({ isDark }) => (
     <h3 className="text-[#111827] dark:text-white" style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, marginTop: 0 }}>Department mix</h3>
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <ResponsiveContainer width="100%" height={160}>
-        <PieChart>
+        <PieChart key={isDark ? 'dark' : 'light'}>
           <Pie data={DEPT_DATA} cx="50%" cy="50%" innerRadius={46} outerRadius={72} paddingAngle={2} dataKey="value" startAngle={90} endAngle={450}>
             {DEPT_DATA.map((_, i) => <Cell key={i} fill={DEPT_COLORS[i % DEPT_COLORS.length]} stroke={isDark ? '#111c18' : 'none'} />)}
           </Pie>
@@ -168,7 +168,7 @@ const EmployeeDashboard = () => {
         axios.get('/api/time/status', auth),
         axios.get('/api/time/dashboard?timeRange=weekly', auth),
         axios.get('/api/payroll/me', auth),
-        axios.get('/api/leave/my', auth),
+        axios.get('/api/leaves/my', auth),
         axios.get('/api/tasks', auth),
         axios.get('/api/notifications', auth),
       ]);
@@ -180,7 +180,7 @@ const EmployeeDashboard = () => {
         const isRunning = s.isRunning !== undefined ? s.isRunning : s.status === 'active';
         const totalActive = s.activeTime || 0;
         setSession({ ...s, isRunning });
-        
+
         if (isRunning) {
           // Soft sync: only jump if difference > 2 seconds to avoid UI jitter
           setTimer(prev => {
@@ -215,7 +215,7 @@ const EmployeeDashboard = () => {
         }));
 
         // Headcount trend (last 6 months)
-        const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const now = new Date().getMonth();
         setHeadcountChart(Array.from({ length: 6 }, (_, i) => ({
           month: MONTHS[(now - 5 + i + 12) % 12],
@@ -320,7 +320,7 @@ const EmployeeDashboard = () => {
           </div>
           <div className="timer-container" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {session && (
-              <span style={{ fontFamily: 'monospace', fontSize: 15, fontWeight: 800, color: session.isRunning ? '#00a76b' : '#9ca3af', background: session.isRunning ? 'rgba(0,167,107,0.08)' : '#f3f4f6', padding: '8px 16px', borderRadius: 99, letterSpacing: 1 }}>
+              <span style={{ fontFamily: 'monospace', fontSize: 15, fontWeight: 800, color: session.isRunning ? '#00a76b' : (isDark ? '#a3b3af' : '#9ca3af'), background: session.isRunning ? 'rgba(0,167,107,0.08)' : (isDark ? '#1a2d29' : '#f3f4f6'), padding: '8px 16px', borderRadius: 99, letterSpacing: 1 }}>
                 {fmtTimer(timer)}
               </span>
             )}
@@ -405,7 +405,7 @@ const EmployeeDashboard = () => {
               <FileText size={20} color="#0284c7" />
             </div>
             <p className="text-[#111827] dark:text-white" style={{ fontSize: 34, fontWeight: 800, margin: '0 0 2px', letterSpacing: '-1px', lineHeight: 1.2 }}>
-              {loading ? '--' : (latestPayslip ? fmtCurrency(latestPayslip.netPay || latestPayslip.amount) : '$6,720')}
+              {loading ? '--' : (latestPayslip ? fmtCurrency(latestPayslip.netPay || latestPayslip.amount) : '$6000')}
             </p>
             <p className="text-[#6b7280] dark:text-[#a3b3af]" style={{ fontSize: 14, margin: 0, fontWeight: 500 }}>Latest Payslip</p>
           </div>
@@ -430,23 +430,10 @@ const EmployeeDashboard = () => {
         {/* ── ROW 2: WEEKLY CHART + DEPT MIX ─────────────── */}
         <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 14, marginBottom: 14 }}>
 
-          {/* Weekly Hours Chart */}
-          <Card isDark={isDark}>
-            <h3 className="text-[#111827] dark:text-white" style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, marginTop: 0 }}>My weekly hours</h3>
-            {loading ? <Skel h={200} r={10} /> : (
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={weeklyChart} barCategoryGap="35%" barGap={2}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1a2d29' : '#f3f4f6'} />
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: isDark ? '#a3b3af' : '#9ca3af', fontWeight: 500 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: isDark ? '#a3b3af' : '#9ca3af' }} />
-                  <Tooltip content={<ChartTip isDark={isDark} />} cursor={{ fill: isDark ? 'rgba(26,45,41,0.2)' : 'rgba(0,167,107,0.04)', radius: 6 }} />
-                  <Bar dataKey="active" name="Active" fill="#00a76b" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="idle" name="Idle" fill="#fbbf24" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="overtime" name="Overtime" fill="#f87171" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </Card>
+          {/* Weekly Attendance Chart */}
+          <div className="w-full flex">
+            {loading ? <Skel h={380} r={10} /> : <WeeklyAttendanceChart />}
+          </div>
 
           {/* Department Mix Donut */}
           <DeptDonut isDark={isDark} />
@@ -457,21 +444,43 @@ const EmployeeDashboard = () => {
 
           {/* Headcount trend (Monthly overview) */}
           <Card isDark={isDark}>
-            <h3 className="text-[#111827] dark:text-white" style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, marginTop: 0 }}>Headcount trend</h3>
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-[16px] font-bold text-gray-800 dark:text-white tracking-tight">
+                  Headcount Trend
+                </h3>
+                <p className="text-[11px] text-gray-400 dark:text-[#a3b3af] mt-1">
+                  Monthly overview of personnel growth
+                </p>
+              </div>
+            </div>
             {loading ? <Skel h={180} r={10} /> : (
               <ResponsiveContainer width="100%" height={180}>
-                <AreaChart data={headcountChart}>
+                <AreaChart 
+                  key={isDark ? 'dark' : 'light'} 
+                  data={headcountChart} 
+                  margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+                >
                   <defs>
                     <linearGradient id="hcGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00a76b" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#00a76b" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1a2d29' : '#f3f4f6'} />
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: isDark ? '#a3b3af' : '#9ca3af', fontWeight: 500 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: isDark ? '#a3b3af' : '#9ca3af' }} domain={['auto', 'auto']} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1a2d29' : '#E5E7EB'} />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: isDark ? '#a3b3af' : '#9CA3AF', fontWeight: 500 }} dy={8} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: isDark ? '#a3b3af' : '#9CA3AF', fontWeight: 500 }} dx={-5} domain={['auto', 'auto']} />
                   <Tooltip content={<ChartTip isDark={isDark} />} />
-                  <Area type="monotone" dataKey="count" name="Headcount" stroke="#00a76b" strokeWidth={2.5} fill="url(#hcGrad)" dot={false} activeDot={{ r: 4, fill: '#00a76b' }} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="count" 
+                    name="Headcount" 
+                    stroke="#10B981" 
+                    strokeWidth={2} 
+                    fill="url(#hcGrad)" 
+                    dot={false} 
+                    activeDot={{ r: 4, fill: '#10B981', stroke: isDark ? '#111c18' : '#fff', strokeWidth: 2 }} 
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             )}
@@ -485,7 +494,7 @@ const EmployeeDashboard = () => {
             </div>
             {loading ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {[...Array(3)].map((_,i) => <Skel key={i} h={52} />)}
+                {[...Array(3)].map((_, i) => <Skel key={i} h={52} />)}
               </div>
             ) : notifications.length === 0 ? (
               // Default announcements when API has no data
@@ -534,7 +543,7 @@ const EmployeeDashboard = () => {
             <h3 className="text-[#111827] dark:text-white" style={{ fontSize: 15, fontWeight: 700, marginBottom: 20, marginTop: 0 }}>My goals</h3>
             {loading ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {[...Array(3)].map((_,i) => <Skel key={i} h={32} />)}
+                {[...Array(3)].map((_, i) => <Skel key={i} h={32} />)}
               </div>
             ) : goals.length === 0 ? (
               // Fallback goals
@@ -599,7 +608,7 @@ const EmployeeDashboard = () => {
           <h3 className="text-[#111827] dark:text-white" style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, marginTop: 0 }}>Recent payslips</h3>
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {[...Array(4)].map((_,i) => <Skel key={i} h={56} r={0} />)}
+              {[...Array(4)].map((_, i) => <Skel key={i} h={56} r={0} />)}
             </div>
           ) : payroll.length === 0 ? (
             // Fallback demo payslips

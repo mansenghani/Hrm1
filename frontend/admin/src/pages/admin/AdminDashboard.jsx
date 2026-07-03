@@ -89,8 +89,8 @@ const AdminDashboard = () => {
       {/* 1. HEADER SECTION */}
       <div className="border-b border-[#c5c0b1] pb-10 flex justify-between items-end">
         <div>
-          <p className="zap-caption-upper text-[#ff4f00] mb-4">Ecosystem Intelligence</p>
-          <h1 className="zap-display-hero">Institutional <span className="text-[#ff4f00]">Control.</span></h1>
+          <p className="zap-caption-upper text-[#00a76b] mb-4">Workforce OS Intelligence</p>
+          <h1 className="zap-display-hero">Verdant <span className="text-[#00a76b]">Control.</span></h1>
         </div>
         <div className="flex gap-3">
           <button onClick={fetchData} className="zap-btn zap-btn-light h-14 px-6">
@@ -112,10 +112,10 @@ const AdminDashboard = () => {
         ].map((stat, i) => (
           <div key={i} className="zap-card group cursor-pointer hover:border-[#201515] transition-all">
             <div className="flex justify-between items-start mb-10">
-               <div className="w-12 h-12 bg-[#eceae3] rounded-[8px] flex items-center justify-center text-[#201515] group-hover:bg-[#ff4f00] group-hover:text-[#fffefb] transition-all">
+               <div className="w-12 h-12 bg-[#eceae3] rounded-[8px] flex items-center justify-center text-[#201515] group-hover:bg-[#00a76b] group-hover:text-[#fffefb] transition-all">
                   <stat.icon size={20} />
                </div>
-               <span className="text-[11px] font-bold text-[#ff4f00] uppercase tracking-widest">{stat.status}</span>
+               <span className="text-[11px] font-bold text-[#00a76b] uppercase tracking-widest">{stat.status}</span>
             </div>
             <p className="text-[13px] font-bold text-[#939084] uppercase tracking-wider mb-2">{stat.label}</p>
             <h3 className="text-[36px] font-medium text-[#201515] tabular-nums leading-none">{stat.val}</h3>
@@ -143,7 +143,7 @@ const AdminDashboard = () => {
                     <div className="relative" ref={dropdownRef}>
                       <button 
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        className="px-4 py-2 bg-[#fffdf9] border border-[#ff4f00] rounded-xl text-[10px] font-black uppercase tracking-widest text-[#ff4f00] outline-none flex items-center gap-2 cursor-pointer transition-all hover:bg-[#ff4f00]/5 min-w-[120px] justify-between"
+                        className="px-4 py-2 bg-[#fffdf9] border border-[#00a76b] rounded-xl text-[10px] font-black uppercase tracking-widest text-[#00a76b] outline-none flex items-center gap-2 cursor-pointer transition-all hover:bg-[#00a76b]/5 min-w-[120px] justify-between"
                       >
                         {filterRole === 'all' ? 'All Roles' : filterRole}
                         <ChevronRight size={12} className={`transition-transform ${isDropdownOpen ? 'rotate-90' : 'rotate-0'}`} />
@@ -159,7 +159,7 @@ const AdminDashboard = () => {
                                 setPage(0);
                                 setIsDropdownOpen(false);
                               }}
-                              className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-[#201515] hover:bg-[#ff4f00]/5 hover:text-[#ff4f00] cursor-pointer transition-colors border-b border-[#f8f8f8] last:border-none"
+                              className="px-4 py-3 text-[9px] font-black uppercase tracking-widest text-[#201515] hover:bg-[#00a76b]/5 hover:text-[#00a76b] cursor-pointer transition-colors border-b border-[#f8f8f8] last:border-none"
                             >
                               {role === 'all' ? 'All Roles' : role}
                             </div>
@@ -167,7 +167,7 @@ const AdminDashboard = () => {
                         </div>
                       )}
                     </div>
-                    <Users size={18} className="text-[#ff4f00]" />
+                    <Users size={18} className="text-[#00a76b]" />
                  </div>
               </div>
 
@@ -183,7 +183,7 @@ const AdminDashboard = () => {
                              )}
                           </div>
                           <div>
-                             <p className="text-[15px] font-bold text-[#201515] group-hover:text-[#ff4f00] transition-colors">{emp.fullName}</p>
+                             <p className="text-[15px] font-bold text-[#201515] group-hover:text-[#00a76b] transition-colors">{emp.fullName}</p>
                              <p className="text-[11px] font-bold text-[#939084] uppercase tracking-wider">{emp.role}</p>
                           </div>
                        </div>
@@ -194,7 +194,7 @@ const AdminDashboard = () => {
                           </div>
                           <button 
                             onClick={() => navigate(`/admin/employees/edit/${emp._id}`)}
-                            className="w-10 h-10 rounded-full bg-white border border-[#c5c0b1] flex items-center justify-center text-[#939084] hover:border-[#ff4f00] hover:text-[#ff4f00] transition-all"
+                            className="w-10 h-10 rounded-full bg-white border border-[#c5c0b1] flex items-center justify-center text-[#939084] hover:border-[#00a76b] hover:text-[#00a76b] transition-all"
                           >
                              <ChevronRight size={18} />
                           </button>
@@ -215,9 +215,9 @@ const AdminDashboard = () => {
 
         <div className="col-span-12 lg:col-span-4 flex flex-col gap-8">
            <div className="zap-card flex-1 p-10">
-              <div className="flex items-center gap-3 mb-10 text-[#ff4f00]">
+              <div className="flex items-center gap-3 mb-10 text-[#00a76b]">
                  <Zap size={20} />
-                 <h3 className="zap-caption-upper !text-[#ff4f00]">Node Diagnostics</h3>
+                 <h3 className="zap-caption-upper !text-[#00a76b]">Node Diagnostics</h3>
               </div>
               <div className="space-y-6">
                  {[
@@ -228,7 +228,7 @@ const AdminDashboard = () => {
                  ].map((node, i) => (
                    <div key={i} className="flex items-center justify-between border-b border-[#eceae3] pb-6 last:border-none">
                       <div className="flex items-center gap-4">
-                         <div className={`w-2 h-2 rounded-full ${node.up ? 'bg-[#24a148]' : 'bg-[#ff4f00]'}`}></div>
+                         <div className={`w-2 h-2 rounded-full ${node.up ? 'bg-[#24a148]' : 'bg-[#00a76b]'}`}></div>
                          <span className="text-[14px] font-bold text-[#201515]">{node.name}</span>
                       </div>
                       <span className="text-[11px] font-bold text-[#939084] uppercase tracking-wider">{node.status}</span>
@@ -238,7 +238,7 @@ const AdminDashboard = () => {
               <button className="zap-btn zap-btn-light w-full mt-10">Run Full Diagnostic</button>
            </div>
 
-           <div onClick={() => navigate('/admin/create-user')} className="zap-btn !bg-[#ff4f00] !h-auto p-10 flex flex-col items-start gap-4 group cursor-pointer border-none shadow-xl">
+           <div onClick={() => navigate('/admin/create-user')} className="zap-btn !bg-[#00a76b] !h-auto p-10 flex flex-col items-start gap-4 group cursor-pointer border-none shadow-xl">
               <div className="flex justify-between items-center w-full">
                  <p className="zap-caption-upper !text-white opacity-90 group-hover:opacity-100 transition-opacity">Global Initialization</p>
                  <Plus size={24} className="text-white" />

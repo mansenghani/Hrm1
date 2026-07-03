@@ -87,6 +87,11 @@
   box-sizing: border-box !important;
 }
 
+.dark .verdant-card {
+  background: #111c18 !important;
+  border-color: #1a2d29 !important;
+}
+
 /* Primary Action Pill Button (Sage Green) */
 .verdant-btn-primary {
   height: 44px !important;
@@ -137,8 +142,17 @@
   text-decoration: none !important;
 }
 
+.dark .verdant-btn-secondary {
+  background-color: #282520 !important;
+  color: #cbd5e1 !important;
+}
+
 .verdant-btn-secondary:hover {
   background-color: #e3e0d8 !important;
+}
+
+.dark .verdant-btn-secondary:hover {
+  background-color: #38352e !important;
 }
 
 /* Outline Action Pill Button (White w/ border) */
@@ -161,9 +175,20 @@
   text-decoration: none !important;
 }
 
+.dark .verdant-btn-outline {
+  border-color: #1a2d29 !important;
+  background-color: #111c18 !important;
+  color: #cbd5e1 !important;
+}
+
 .verdant-btn-outline:hover {
   border-color: #b8b6ad !important;
   background-color: #f9fdfc !important;
+}
+
+.dark .verdant-btn-outline:hover {
+  border-color: #00a76b !important;
+  background-color: #162722 !important;
 }
 
 /* Icon Action Button (Small Square Box) */
@@ -182,8 +207,20 @@
   outline: none !important;
 }
 
+.dark .verdant-btn-icon {
+  border-color: #1a2d29 !important;
+  background-color: #111c18 !important;
+  color: #cbd5e1 !important;
+}
+
 .verdant-btn-icon:hover {
   background-color: #f2fbf6 !important;
+  border-color: #00a76b !important;
+  color: #00a76b !important;
+}
+
+.dark .verdant-btn-icon:hover {
+  background-color: #162722 !important;
   border-color: #00a76b !important;
   color: #00a76b !important;
 }
@@ -204,6 +241,12 @@
   transition: all 0.2s ease-in-out !important;
 }
 
+.dark .verdant-input {
+  background-color: #111c18 !important;
+  color: #e2e8f0 !important;
+  border-color: #1a2d29 !important;
+}
+
 .verdant-input:focus {
   border-color: #00a76b !important;
   box-shadow: 0 0 0 3px rgba(0, 167, 107, 0.1) !important;
@@ -214,6 +257,10 @@
   cursor: default !important;
 }
 
+.dark .verdant-input[readonly] {
+  background-color: #162722 !important;
+}
+
 /* Inner Session / Highlight boxes */
 .verdant-highlight-box {
   background-color: #f2fbf6 !important;
@@ -221,4 +268,9 @@
   border-radius: 16px !important;
   padding: 20px !important;
   box-sizing: border-box !important;
+}
+
+.dark .verdant-highlight-box {
+  background-color: #162722 !important;
+  border-color: #1a2d29 !important;
 }

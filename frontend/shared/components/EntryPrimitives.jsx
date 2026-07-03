@@ -6,7 +6,7 @@ export const EntryButton = ({ children, variant = 'primary', className = '', ...
     primary: "zap-btn-orange",
     secondary: "zap-btn-dark",
     outline: "zap-btn-light",
-    ghost: "bg-transparent text-[#ff4f00] hover:bg-[#fffdf9] p-2"
+    ghost: "bg-transparent text-[#00a76b] hover:bg-[#fffdf9] p-2"
   };
 
   return (
@@ -20,9 +20,9 @@ export const EntryInput = ({ label, icon, ...props }) => (
   <div className="flex flex-col gap-3 w-full text-left">
     {label && <label className="zap-caption-upper text-[#201515] ml-1">{label}</label>}
     <div className="relative group">
-      {icon && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084] group-focus-within:text-[#ff4f00] transition-colors">{icon}</span>}
+      {icon && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084] group-focus-within:text-[#00a76b] transition-colors">{icon}</span>}
       <input 
-        className={`w-full h-[56px] bg-[#fffefb] border border-[#c5c0b1] rounded-[4px] px-4 text-[16px] font-medium text-[#201515] placeholder-[#939084] focus:outline-none focus:border-[#ff4f00] transition-all ${icon ? 'pl-12' : ''}`}
+        className={`w-full h-[56px] bg-[#fffefb] border border-[#c5c0b1] rounded-[4px] px-4 text-[16px] font-medium text-[#201515] placeholder-[#939084] focus:outline-none focus:border-[#00a76b] transition-all ${icon ? 'pl-12' : ''}`}
         {...props}
       />
     </div>
@@ -33,9 +33,9 @@ export const EntrySelect = ({ label, icon, options = [], ...props }) => (
   <div className="flex flex-col gap-3 w-full text-left">
     {label && <label className="zap-caption-upper text-[#201515] ml-1">{label}</label>}
     <div className="relative group">
-      {icon && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084] group-focus-within:text-[#ff4f00] transition-colors">{icon}</span>}
+      {icon && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084] group-focus-within:text-[#00a76b] transition-colors">{icon}</span>}
       <select 
-        className={`w-full h-[56px] bg-[#fffefb] border border-[#c5c0b1] rounded-[4px] px-4 text-[16px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all appearance-none cursor-pointer ${icon ? 'pl-12' : ''}`}
+        className={`w-full h-[56px] bg-[#fffefb] border border-[#c5c0b1] rounded-[4px] px-4 text-[16px] font-bold text-[#201515] focus:outline-none focus:border-[#00a76b] transition-all appearance-none cursor-pointer ${icon ? 'pl-12' : ''}`}
         {...props}
       >
         <option value="" disabled>Select access level</option>
@@ -55,9 +55,9 @@ export const EntrySelect = ({ label, icon, options = [], ...props }) => (
 export const RoleCard = ({ title, desc, icon, active, onClick }) => (
   <button 
     onClick={onClick}
-    className={`zap-card group flex flex-col items-start justify-between min-h-[220px] transition-all text-left border-2 ${active ? 'border-[#ff4f00] bg-[#fffdf9]' : 'border-[#c5c0b1] hover:border-[#201515]'}`}
+    className={`zap-card group flex flex-col items-start justify-between min-h-[220px] transition-all text-left border-2 ${active ? 'border-[#00a76b] bg-[#fffdf9]' : 'border-[#c5c0b1] hover:border-[#201515]'}`}
   >
-    <div className={`w-14 h-14 rounded-[8px] flex items-center justify-center transition-all duration-300 ${active ? 'bg-[#ff4f00] text-[#fffefb]' : 'bg-[#eceae3] text-[#201515] group-hover:bg-[#201515] group-hover:text-[#fffefb]'}`}>
+    <div className={`w-14 h-14 rounded-[8px] flex items-center justify-center transition-all duration-300 ${active ? 'bg-[#00a76b] text-[#fffefb]' : 'bg-[#eceae3] text-[#201515] group-hover:bg-[#201515] group-hover:text-[#fffefb]'}`}>
       {React.cloneElement(icon, { size: 24 })}
     </div>
     <div className="w-full">

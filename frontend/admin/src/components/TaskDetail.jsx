@@ -195,7 +195,7 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
   const statusColors = {
     assigned: 'bg-gray-500 text-white',
     in_progress: 'bg-blue-500 text-white',
-    submitted: 'bg-orange-500 text-white',
+    submitted: 'bg-emerald-500 text-white',
     under_review: 'bg-purple-500 text-white',
     completed: 'bg-green-500 text-white',
     rework: 'bg-red-500 text-white'
@@ -216,14 +216,14 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
                 <Clock size={12} /> Due: {new Date(task.dueDate).toLocaleDateString()}
               </span>
               {task.createdBy && (
-                <span className="text-[9px] font-black text-[#ff4f00] uppercase tracking-widest flex items-center gap-1.5 ml-4">
+                <span className="text-[9px] font-black text-[#00a76b] uppercase tracking-widest flex items-center gap-1.5 ml-4">
                   <Shield size={12} /> HR: {task.createdBy.name}
                 </span>
               )}
             </div>
             <h3 className="text-2xl font-black text-[#201515] uppercase italic tracking-tighter">{task.title}</h3>
           </div>
-          <button onClick={onClose} className="w-10 h-10 bg-white border border-[#eceae3] rounded-xl flex items-center justify-center text-[#939084] hover:bg-[#ff4f00] hover:text-white transition-all shadow-sm cursor-pointer border-none">
+          <button onClick={onClose} className="w-10 h-10 bg-white border border-[#eceae3] rounded-xl flex items-center justify-center text-[#939084] hover:bg-[#00a76b] hover:text-white transition-all shadow-sm cursor-pointer border-none">
             <X size={18} />
           </button>
         </div>
@@ -258,7 +258,7 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
                   <div className="flex flex-col gap-3">
                     {task.assignedManager ? (
                       <div className="flex items-center gap-3 p-4 bg-white border border-[#c5c0b1] rounded-xl shadow-sm">
-                        <div className="w-8 h-8 rounded-full bg-[#ff4f00] flex items-center justify-center text-[11px] font-black text-white">
+                        <div className="w-8 h-8 rounded-full bg-[#00a76b] flex items-center justify-center text-[11px] font-black text-white">
                           {task.assignedManager.name?.charAt(0).toUpperCase()}
                         </div>
                         <div>
@@ -275,7 +275,7 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
                     ) : (
                       <div className="flex gap-3">
                         <select
-                          className="flex-1 h-11 px-8 bg-white border border-[#c5c0b1] rounded-xl text-[11px] font-black uppercase tracking-widest focus:outline-none focus:border-[#ff4f00] cursor-pointer shadow-sm appearance-none"
+                          className="flex-1 h-11 px-8 bg-white border border-[#c5c0b1] rounded-xl text-[11px] font-black uppercase tracking-widest focus:outline-none focus:border-[#00a76b] cursor-pointer shadow-sm appearance-none"
                           value={selectedEmployee}
                           onChange={(e) => setSelectedEmployee(e.target.value)}
                         >
@@ -287,7 +287,7 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
                         <button
                           onClick={handleAssignEmployee}
                           disabled={!selectedEmployee}
-                          className={`px-6 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all italic border-none cursor-pointer ${selectedEmployee ? 'bg-[#ff4f00] text-white shadow-lg' : 'bg-[#eceae3] text-[#939084] cursor-not-allowed opacity-50'}`}
+                          className={`px-6 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all italic border-none cursor-pointer ${selectedEmployee ? 'bg-[#00a76b] text-white shadow-lg' : 'bg-[#eceae3] text-[#939084] cursor-not-allowed opacity-50'}`}
                         >
                           Assign
                         </button>
@@ -305,9 +305,9 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
                           <div 
                             key={emp._id} 
                             onContextMenu={(e) => handleContextMenu(e, emp._id)}
-                            className="flex items-center gap-2 bg-white border border-[#c5c0b1] px-4 py-2 rounded-xl shadow-sm hover:border-[#ff4f00] transition-all cursor-context-menu"
+                            className="flex items-center gap-2 bg-white border border-[#c5c0b1] px-4 py-2 rounded-xl shadow-sm hover:border-[#00a76b] transition-all cursor-context-menu"
                           >
-                            <div className="w-5 h-5 rounded-full bg-[#ff4f00]/10 flex items-center justify-center text-[10px] font-black text-[#ff4f00]">
+                            <div className="w-5 h-5 rounded-full bg-[#00a76b]/10 flex items-center justify-center text-[10px] font-black text-[#00a76b]">
                               {emp.name?.charAt(0).toUpperCase()}
                             </div>
                             <span className="text-[11px] font-black text-[#201515] uppercase tracking-wider">{emp.name}</span>
@@ -320,7 +320,7 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
 
                     <div className="flex gap-3 pt-4 border-t border-[#c5c0b1]/30">
                       <select
-                        className="flex-1 h-11 px-8 bg-white border border-[#c5c0b1] rounded-xl text-[11px] font-black uppercase tracking-widest focus:outline-none focus:border-[#ff4f00] cursor-pointer shadow-sm appearance-none"
+                        className="flex-1 h-11 px-8 bg-white border border-[#c5c0b1] rounded-xl text-[11px] font-black uppercase tracking-widest focus:outline-none focus:border-[#00a76b] cursor-pointer shadow-sm appearance-none"
                         value={selectedEmployee}
                         onChange={(e) => setSelectedEmployee(e.target.value)}
                       >
@@ -334,7 +334,7 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
                       <button
                         onClick={handleAssignEmployee}
                         disabled={!selectedEmployee}
-                        className={`px-6 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all italic border-none cursor-pointer ${selectedEmployee ? 'bg-[#ff4f00] text-white shadow-lg' : 'bg-[#eceae3] text-[#939084] cursor-not-allowed opacity-50'}`}
+                        className={`px-6 h-11 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all italic border-none cursor-pointer ${selectedEmployee ? 'bg-[#00a76b] text-white shadow-lg' : 'bg-[#eceae3] text-[#939084] cursor-not-allowed opacity-50'}`}
                       >
                         Assign
                       </button>
@@ -349,7 +349,7 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
               <div className="flex justify-between items-center">
                 <h4 className="text-[10px] font-black text-[#939084] uppercase tracking-[0.4em] italic">Attachments</h4>
                 {(userRole === 'employee' || userRole === 'manager' || userRole === 'hr') && task.status !== 'completed' && (
-                  <label className="cursor-pointer bg-[#201515] text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#ff4f00] transition-all">
+                  <label className="cursor-pointer bg-[#201515] text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#00a76b] transition-all">
                     {uploading ? 'Uploading...' : 'Upload File'}
                     <input type="file" className="hidden" onChange={handleFileUpload} disabled={uploading} />
                   </label>
@@ -364,7 +364,7 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
                     const fileUrl = `${window.location.protocol}//${window.location.hostname}:5000${file.fileUrl}`;
 
                     return (
-                      <div key={i} className="p-4 bg-white border border-[#c5c0b1] rounded-2xl space-y-4 group hover:border-[#ff4f00] transition-all shadow-sm">
+                      <div key={i} className="p-4 bg-white border border-[#c5c0b1] rounded-2xl space-y-4 group hover:border-[#00a76b] transition-all shadow-sm">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
                             <FileText size={18} className="text-[#939084]" />
@@ -373,7 +373,7 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
                               <p className="text-[9px] font-bold text-[#939084] uppercase">{new Date(file.uploadedAt).toLocaleString()}</p>
                             </div>
                           </div>
-                          <a href={fileUrl} target="_blank" rel="noreferrer" className="w-9 h-9 bg-[#eceae3] rounded-xl flex items-center justify-center text-[#201515] hover:bg-[#ff4f00] hover:text-white transition-all">
+                          <a href={fileUrl} target="_blank" rel="noreferrer" className="w-9 h-9 bg-[#eceae3] rounded-xl flex items-center justify-center text-[#201515] hover:bg-[#00a76b] hover:text-white transition-all">
                             <Download size={16} />
                           </a>
                         </div>
@@ -446,10 +446,10 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
               <form onSubmit={handleComment} className="flex gap-3">
                 <input
                   type="text" placeholder="Type tactical update..."
-                  className="flex-1 h-12 px-5 bg-[#eceae3] rounded-xl text-[13px] font-bold focus:outline-none focus:ring-2 focus:ring-[#ff4f00]/20 transition-all italic"
+                  className="flex-1 h-12 px-5 bg-[#eceae3] rounded-xl text-[13px] font-bold focus:outline-none focus:ring-2 focus:ring-[#00a76b]/20 transition-all italic"
                   value={comment} onChange={(e) => setComment(e.target.value)}
                 />
-                <button type="submit" className="w-12 h-12 bg-[#ff4f00] text-white rounded-xl flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all border-none cursor-pointer">
+                <button type="submit" className="w-12 h-12 bg-[#00a76b] text-white rounded-xl flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all border-none cursor-pointer">
                   <Send size={18} />
                 </button>
               </form>
@@ -459,7 +459,7 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
                 {userRole === 'employee' && (task.status === 'in_progress' || task.status === 'rework') && (
                   <button
                     onClick={() => handleStatusAction('submit')}
-                    className="flex-1 h-14 bg-[#201515] text-white rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#ff4f00] shadow-lg transition-all italic"
+                    className="flex-1 h-14 bg-[#201515] text-white rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#00a76b] shadow-lg transition-all italic"
                   >
                     Submit Task <CheckCircle2 size={16} />
                   </button>
@@ -478,7 +478,7 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
                         const fb = prompt('Provide rework instructions:');
                         if (fb) handleStatusAction('reject', { feedback: fb });
                       }}
-                      className="flex-1 h-14 bg-[#ff4f00] text-white rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-[1.02] transition-all italic shadow-lg"
+                      className="flex-1 h-14 bg-[#00a76b] text-white rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-[1.02] transition-all italic shadow-lg"
                     >
                       Rework <AlertCircle size={16} />
                     </button>
@@ -502,7 +502,7 @@ const TaskDetail = ({ task, isOpen, onClose, onUpdate, userRole }) => {
           </div>
           <button 
             onClick={() => handleUnassignEmployee(contextMenu.employeeId)}
-            className="w-full text-left px-5 py-3 text-[11px] font-bold text-[#ff4f00] hover:bg-[#ff4f00] hover:text-white transition-all flex items-center gap-3 border-none bg-transparent cursor-pointer"
+            className="w-full text-left px-5 py-3 text-[11px] font-bold text-[#00a76b] hover:bg-[#00a76b] hover:text-white transition-all flex items-center gap-3 border-none bg-transparent cursor-pointer"
           >
             <Trash2 size={14} /> Remove from Task
           </button>

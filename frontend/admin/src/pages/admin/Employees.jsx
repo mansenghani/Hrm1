@@ -97,7 +97,7 @@ const Employees = () => {
       {/* HEADER SECTION */}
       <div className="mb-8 flex flex-col md:flex-row justify-between items-end border-b border-[#c5c0b1] pb-6">
         <div>
-          <h1 className="zap-display-hero">Personnel <span className="text-[#ff4f00]">Registry</span></h1>
+          <h1 className="zap-display-hero">Personnel <span className="text-[#00a76b]">Registry</span></h1>
           <p className="zap-caption-upper text-[#939084] mt-2">Managing Institutional Personnel Matrix</p>
         </div>
         <div className="flex gap-4">
@@ -121,7 +121,7 @@ const Employees = () => {
             placeholder="Search by name, email, or ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-12 bg-white border border-[#c5c0b1] rounded-xl pl-12 pr-4 text-[14px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all shadow-sm"
+            className="w-full h-12 bg-white border border-[#c5c0b1] rounded-xl pl-12 pr-4 text-[14px] font-bold text-[#201515] focus:outline-none focus:border-[#00a76b] transition-all shadow-sm"
           />
         </div>
 
@@ -129,7 +129,7 @@ const Employees = () => {
           <div className="relative min-w-[180px]" ref={dropdownRef}>
             <button 
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="w-full h-12 px-6 bg-white border border-[#ff4f00] rounded-xl text-[12px] font-black uppercase tracking-widest text-[#ff4f00] outline-none flex items-center justify-between gap-4 cursor-pointer transition-all hover:bg-[#ff4f00]/5 shadow-sm"
+              className="w-full h-12 px-6 bg-white border border-[#00a76b] rounded-xl text-[12px] font-black uppercase tracking-widest text-[#00a76b] outline-none flex items-center justify-between gap-4 cursor-pointer transition-all hover:bg-[#00a76b]/5 shadow-sm"
             >
               {filterRole === '' ? 'All Roles' : filterRole.toUpperCase()}
               <ChevronDown size={16} className={`transition-transform ${isDropdownOpen ? 'rotate-180' : 'rotate-0'}`} />
@@ -143,7 +143,7 @@ const Employees = () => {
                   { id: 'manager', label: 'Manager' },
                   { id: 'employee', label: 'Employee' }
                 ].map((role) => (
-                  <div key={role.id} onClick={() => { setFilterRole(role.id); setIsDropdownOpen(false); }} className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-[#201515] hover:bg-[#ff4f00]/5 hover:text-[#ff4f00] cursor-pointer transition-colors border-b border-[#f8f8f8] last:border-none">
+                  <div key={role.id} onClick={() => { setFilterRole(role.id); setIsDropdownOpen(false); }} className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-[#201515] hover:bg-[#00a76b]/5 hover:text-[#00a76b] cursor-pointer transition-colors border-b border-[#f8f8f8] last:border-none">
                     {role.label}
                   </div>
                 ))}
@@ -171,7 +171,7 @@ const Employees = () => {
             {loading ? (
               <tr>
                 <td colSpan="4" className="text-center py-24">
-                  <RefreshCw size={24} className="text-[#ff4f00] animate-spin mx-auto mb-4" />
+                  <RefreshCw size={24} className="text-[#00a76b] animate-spin mx-auto mb-4" />
                   <p className="zap-caption-upper text-[#939084]">Syncing Matrix...</p>
                 </td>
               </tr>
@@ -185,17 +185,17 @@ const Employees = () => {
                         {emp.profileImage ? <img src={`${API_BASE_URL}${emp.profileImage}`} alt="User" className="w-full h-full object-cover" /> : <User size={20} className="text-[#939084]" />}
                       </div>
                       <div>
-                        <p className="text-[16px] font-black text-[#201515] leading-none mb-1 group-hover:text-[#ff4f00] transition-colors">{emp.fullName || emp.userId?.name || 'Anonymous Node'}</p>
+                        <p className="text-[16px] font-black text-[#201515] leading-none mb-1 group-hover:text-[#00a76b] transition-colors">{emp.fullName || emp.userId?.name || 'Anonymous Node'}</p>
                         <p className="text-[12px] font-bold text-[#939084] uppercase tracking-widest">{emp.email || emp.userId?.email}</p>
                       </div>
                     </div>
                   </td>
                   <td className="py-6 px-6">
                     <div className="flex flex-col items-center gap-2">
-                      <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${emp.role === 'admin' ? 'bg-[#201515] text-white' : 'bg-[#ff4f00]/10 text-[#ff4f00]'}`}>
+                      <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${emp.role === 'admin' ? 'bg-[#201515] text-white' : 'bg-[#00a76b]/10 text-[#00a76b]'}`}>
                         {emp.role?.toUpperCase() || emp.userId?.role?.toUpperCase() || 'NODE'}
                       </span>
-                      <div className={`flex items-center gap-1 text-[11px] font-bold ${emp.status === 'active' || emp.userId?.status === 'active' ? 'text-[#24a148]' : 'text-[#ff4f00]'}`}>
+                      <div className={`flex items-center gap-1 text-[11px] font-bold ${emp.status === 'active' || emp.userId?.status === 'active' ? 'text-[#24a148]' : 'text-[#00a76b]'}`}>
                         {(emp.status === 'active' || emp.userId?.status === 'active') ? <CheckCircle size={14} /> : <XCircle size={14} />}
                         {(emp.status?.toUpperCase() || emp.userId?.status?.toUpperCase() || 'ACTIVE')}
                       </div>
@@ -203,9 +203,9 @@ const Employees = () => {
                   </td>
                   <td className="py-6 px-6 text-right">
                     <div className="flex items-center justify-end gap-3 opacity-60 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => navigate(`/admin/employees/view/${emp._id}`)} className="w-10 h-10 flex items-center justify-center text-[#201515] bg-white border border-[#eceae3] rounded-xl hover:border-[#ff4f00] hover:text-[#ff4f00] transition-all shadow-sm"><Eye size={18} /></button>
-                      <button onClick={() => navigate(`/admin/employees/edit/${emp._id}`)} className="w-10 h-10 flex items-center justify-center text-[#201515] bg-white border border-[#eceae3] rounded-xl hover:border-[#ff4f00] hover:text-[#ff4f00] transition-all shadow-sm"><Edit3 size={18} /></button>
-                      <button onClick={() => handleDelete(emp._id)} className="w-10 h-10 flex items-center justify-center text-[#ff4f00] bg-white border border-[#eceae3] rounded-xl hover:bg-[#ff4f00] hover:text-white transition-all shadow-sm"><Trash2 size={18} /></button>
+                      <button onClick={() => navigate(`/admin/employees/view/${emp._id}`)} className="w-10 h-10 flex items-center justify-center text-[#201515] bg-white border border-[#eceae3] rounded-xl hover:border-[#00a76b] hover:text-[#00a76b] transition-all shadow-sm"><Eye size={18} /></button>
+                      <button onClick={() => navigate(`/admin/employees/edit/${emp._id}`)} className="w-10 h-10 flex items-center justify-center text-[#201515] bg-white border border-[#eceae3] rounded-xl hover:border-[#00a76b] hover:text-[#00a76b] transition-all shadow-sm"><Edit3 size={18} /></button>
+                      <button onClick={() => handleDelete(emp._id)} className="w-10 h-10 flex items-center justify-center text-[#00a76b] bg-white border border-[#eceae3] rounded-xl hover:bg-[#00a76b] hover:text-white transition-all shadow-sm"><Trash2 size={18} /></button>
                     </div>
                   </td>
                 </tr>
