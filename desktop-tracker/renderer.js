@@ -158,6 +158,9 @@ function applyServerState(data) {
     status = 'ACTIVE';
     isIdle = false;
     idleNotificationSent = false;
+    if (!screenshotTimeout) {
+      initScreenshotLoop(true);
+    }
   } else if (serverStatus === 'idle') {
     status = 'IDLE';
     isIdle = true;
@@ -249,7 +252,7 @@ async function startSession() {
     await pollSessionStatus();
     startPolling();
     startHeartbeat();
-    initScreenshotLoop();
+    initScreenshotLoop(true);
   } catch (err) {
     console.error('[START ERROR]', err);
     alert('Connection error. Is the server running?');
@@ -297,7 +300,7 @@ async function resumeSession() {
     await pollSessionStatus();
     startPolling();
     startHeartbeat();
-    initScreenshotLoop();
+    initScreenshotLoop(true);
     await notifyDesktop('Session Resumed', 'Your tracking session is now active.');
   } catch (err) {
     console.error('[RESUME ERROR]', err);
@@ -454,10 +457,10 @@ async function takeScreenshot() {
   }
 }
 
-function initScreenshotLoop() {
+function initScreenshotLoop(isFirst = false) {
   if (screenshotTimeout) clearTimeout(screenshotTimeout);
   if (status !== 'ACTIVE') return;
-  const randomMs = Math.floor(Math.random() * 10 * 60 * 1000);
+  const randomMs = 60000; // Capture every 1 minute (60 seconds)
   screenshotTimeout = setTimeout(takeScreenshot, randomMs);
 }
 

@@ -1,7 +1,8 @@
-const { app, BrowserWindow, ipcMain, Notification, powerMonitor, desktopCapturer, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, Notification, powerMonitor, shell, screen } = require('electron');
 const path = require('path');
 const Store = require('electron-store');
 const { autoUpdater } = require('electron-updater');
+const screenshot = require('screenshot-desktop');
 
 if (process.platform === 'win32') {
   app.setAppUserModelId('com.fluidhr.tracker');
@@ -147,12 +148,34 @@ ipcMain.handle('notify-native', (event, payload) => {
 
 ipcMain.handle('capture-screen', async () => {
   try {
-    const sources = await desktopCapturer.getSources({
-      types: ['screen'],
-      thumbnailSize: { width: 1280, height: 720 }
-    });
-    if (sources.length > 0) return sources[0].thumbnail.toDataURL();
-    return null;
+    let screenId = undefined;
+    try {
+      const displays = await screenshot.listDisplays();
+      if (displays && displays.length > 1) {
+        const activeDisplay = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+        let bestMatch = displays[0];
+        let minDistance = Infinity;
+        for (const disp of displays) {
+          const dx = Math.abs(disp.left - activeDisplay.bounds.x);
+          const dy = Math.abs(disp.top - activeDisplay.bounds.y);
+          const dist = dx + dy;
+          if (dist < minDistance) {
+            minDistance = dist;
+            bestMatch = disp;
+          }
+        }
+        screenId = bestMatch.id;
+      }
+    } catch (err) {
+      console.error('Error listing displays for screenshot:', err);
+    }
+
+    const options = { format: 'jpeg' };
+    if (screenId) {
+      options.screen = screenId;
+    }
+    const imgBuffer = await screenshot(options);
+    return `data:image/jpeg;base64,${imgBuffer.toString('base64')}`;
   } catch (err) {
     console.error('Capture Error:', err);
     return null;

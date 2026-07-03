@@ -1,6 +1,6 @@
 {
   "name": "fluidhr-desktop-tracker",
-  "version": "1.0.5",
+  "version": "1.0.5.1",
   "description": "Premium Time Tracking Node for FluidHR",
   "main": "main.js",
   "scripts": {
@@ -29,7 +29,8 @@
   "dependencies": {
     "axios": "^1.6.7",
     "electron-store": "^8.1.0",
-    "electron-updater": "^6.8.9"
+    "electron-updater": "^6.8.9",
+    "screenshot-desktop": "^1.15.4"
   },
   "devDependencies": {
     "electron": "^28.2.4",
