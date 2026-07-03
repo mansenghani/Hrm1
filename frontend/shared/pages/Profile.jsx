@@ -109,10 +109,6 @@ const Profile = () => {
     return normalized.startsWith('/') ? normalized : `/${normalized}`;
   };
 
-  const handleSave = () => {
-    alert('Profile configurations have been saved successfully.');
-  };
-
   return (
     <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: '#f9fdfc', minHeight: 'calc(100vh - 56px)', color: '#3b3e3c', width: '100%', boxSizing: 'border-box' }}>
       <div style={{ width: '100%', maxWidth: '100%', padding: '32px 32px 60px', boxSizing: 'border-box' }}>
@@ -133,9 +129,6 @@ const Profile = () => {
             <h1 style={{ fontSize: 28, fontWeight: 800, color: '#2c302e', margin: 0, letterSpacing: '-0.5px' }}>My profile</h1>
             <p style={{ fontSize: 14, color: '#8c918f', margin: '4px 0 0' }}>Personal information.</p>
           </div>
-          <button onClick={handleSave} className="verdant-btn-primary">
-            <Plus size={16} /> Save
-          </button>
         </div>
 
         {/* PROFILE METADATA GRID */}
@@ -145,7 +138,7 @@ const Profile = () => {
           <div className="verdant-card" style={{ textAlign: 'center', position: 'relative' }}>
             <p style={{ fontSize: 15, fontWeight: 700, color: '#3b3e3c', margin: '0 0 24px', textAlign: 'left' }}>Identity</p>
             
-            <label htmlFor="profile-upload" style={{ display: 'inline-flex', position: 'relative', cursor: 'pointer', margin: '0 auto 16px' }} className="group">
+            <div style={{ display: 'inline-flex', position: 'relative', margin: '0 auto 16px' }}>
               <div style={{ width: 100, height: 100, borderRadius: '50%', background: '#00a76b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 800, overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,167,107,0.1)' }}>
                 {userData?.profileImage ? (
                   <img src={getImageUrl(userData.profileImage)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -153,31 +146,7 @@ const Profile = () => {
                   initials
                 )}
               </div>
-              <input 
-                id="profile-upload"
-                type="file" 
-                style={{ display: 'none' }} 
-                accept="image/*"
-                onChange={async (e) => {
-                  const file = e.target.files[0];
-                  if (!file) return;
-                  const formData = new FormData();
-                  formData.append('image', file);
-                  try {
-                    const res = await axios.post('/api/auth/profile-image', formData, {
-                      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
-                    });
-                    const updatedUser = { ...userData, profileImage: res.data.profileImage };
-                    setUserData(updatedUser);
-                    sessionStorage.setItem('user', JSON.stringify(updatedUser));
-                    window.dispatchEvent(new Event('profileUpdated'));
-                    setStatus({ type: 'success', message: 'Profile identity image updated successfully' });
-                  } catch (err) {
-                    setStatus({ type: 'error', message: 'Upload failed: System rejected file protocol' });
-                  }
-                }}
-              />
-            </label>
+            </div>
 
             <h3 style={{ fontSize: 18, fontWeight: 800, color: '#3b3e3c', margin: '0 0 4px' }}>{fullName}</h3>
             <p style={{ fontSize: 13, color: '#8c918f', margin: '0 0 2px', fontWeight: 600 }}>{userRole.toUpperCase()}</p>

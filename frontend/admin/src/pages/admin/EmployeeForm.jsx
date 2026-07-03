@@ -152,6 +152,7 @@ const EmployeeForm = () => {
         await axios.put(`/api/employees/${id}`, submitData, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        window.dispatchEvent(new Event('profileUpdated'));
       } else {
         await axios.post('/api/employees', submitData, {
           headers: { Authorization: `Bearer ${token}` }
@@ -243,10 +244,11 @@ const EmployeeForm = () => {
                     uploadData.append('image', file);
                     try {
                       setLoading(true);
-                      const res = await axios.post(`/api/employees/${id}/profile-image`, uploadData, {
-                        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
-                      });
-                      setFormData({ ...formData, profileImage: res.data.profileImage });
+                       const res = await axios.post(`/api/employees/${id}/profile-image`, uploadData, {
+                         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+                       });
+                       setFormData({ ...formData, profileImage: res.data.profileImage });
+                       window.dispatchEvent(new Event('profileUpdated'));
                     } catch (err) {
                       setError('Failed to update node visual identity');
                     } finally {

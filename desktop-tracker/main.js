@@ -8,10 +8,9 @@ if (process.platform === 'win32') {
 }
 
 // Window transparency fixes for Windows 11
-// app.disableHardwareAcceleration();
-// app.commandLine.appendSwitch('disable-gpu-compositing');
-// app.commandLine.appendSwitch('disable-direct-composition');
-// app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
+app.disableHardwareAcceleration();
+app.commandLine.appendSwitch('disable-gpu');
+app.commandLine.appendSwitch('disable-gpu-rasterization');
 
 const store = new Store();
 let mainWindow;

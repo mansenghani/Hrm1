@@ -401,7 +401,7 @@ let lastNotificationTs = 0;
 
 async function notifyDesktop(title, body) {
   const now = Date.now();
-  if (now - lastNotificationTs < 60000) return;
+  if (now - lastNotificationTs < 5000) return;
   lastNotificationTs = now;
   if (window.electronAPI?.notifyNative) {
     try { await window.electronAPI.notifyNative(title, body); return; } catch (_) { }

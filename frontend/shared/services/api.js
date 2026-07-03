@@ -1,9 +1,13 @@
 import axios from 'axios';
 
 // 🛰️ DYNAMIC ENDPOINT CONFIGURATION
-export const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? window.location.origin
-  : 'https://hrm1.onrender.com';
+const isLocalHost = window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1' || 
+                      window.location.hostname.startsWith('192.168.') || 
+                      window.location.hostname.startsWith('10.') ||
+                      window.location.hostname.startsWith('172.');
+
+export const API_BASE_URL = isLocalHost ? window.location.origin : 'https://hrm1.onrender.com';
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
