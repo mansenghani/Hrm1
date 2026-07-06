@@ -257,6 +257,9 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     const insights = [
       { name: 'Reports', path: `/${roleKey}/reports`, icon: BarChart3 }
     ];
+    if (roleKey === 'admin' || roleKey === 'hr') {
+      insights.push({ name: 'Monitoring Logs', path: `/${roleKey}/screenshots`, icon: Camera });
+    }
 
     return {
       OVERVIEW: overview,
