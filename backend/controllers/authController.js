@@ -31,8 +31,7 @@ exports.login = async (req, res) => {
         { 
           id: user._id, 
           role: user.role, 
-          name: user.name, 
-          profileImage: user.profileImage 
+          name: user.name
         },
         process.env.JWT_SECRET || 'fallback_secret',
         { expiresIn: '30d' }
