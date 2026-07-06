@@ -363,6 +363,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           { name: 'Performance', path: '/hr/performance', icon: TrendingUp },
           { name: 'Tasks', path: '/hr/tasks', icon: CheckSquare },
           { name: 'Reports', path: '/hr/reports', icon: BarChart3 },
+          { name: 'Monitoring Logs', path: '/hr/screenshots', icon: Camera },
           { name: 'Notifications', path: '/hr/notifications', icon: Bell },
           { name: 'Settings', path: '/hr/settings', icon: Settings },
         ];
