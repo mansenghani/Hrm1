@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Search, UserPlus, Trash2, Edit3, User, Eye, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
-import { API_BASE_URL } from '@shared/services/api';
+import { API_BASE_URL, getImageUrl } from '@shared/services/api';
 
 const HREmployees = () => {
   const [employees, setEmployees] = useState([]);
@@ -13,12 +13,6 @@ const HREmployees = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
 
-  const getImageUrl = (path) => {
-    if (!path) return '';
-    if (path.startsWith('http') || path.startsWith('data:')) return path;
-    const normalized = path.replace(/\\/g, '/');
-    return `${API_BASE_URL}${normalized.startsWith('/') ? normalized : `/${normalized}`}`;
-  };
 
   const fetchEmployees = async () => {
     try {

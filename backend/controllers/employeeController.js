@@ -197,12 +197,15 @@ exports.updateEmployeeProfileImage = async (req, res) => {
     const employee = await Employee.findById(req.params.id);
     if (!employee) return res.status(404).json({ message: 'Employee not found' });
     
-    // Save Base64 string directly
-    employee.profileImage = image;
+    const { saveBase64Image } = require('../utils/fileUpload');
+    const imagePath = saveBase64Image(image, 'profile', `profile-${employee._id}`);
+    if (!imagePath) return res.status(400).json({ message: 'Invalid image data' });
+    
+    employee.profileImage = imagePath;
     await employee.save();
     
     // Update User
-    await User.findByIdAndUpdate(employee.userId, { profileImage: image });
+    await User.findByIdAndUpdate(employee.userId, { profileImage: imagePath });
     
     res.json(employee);
   } catch (error) {
@@ -219,8 +222,11 @@ exports.updateEmployeeDocument = async (req, res, field) => {
     const employee = await Employee.findById(req.params.id);
     if (!employee) return res.status(404).json({ message: 'Employee not found' });
     
-    // Save Base64 string directly
-    employee[field] = document;
+    const { saveBase64Image } = require('../utils/fileUpload');
+    const docPath = saveBase64Image(document, 'documents', `${field}-${employee._id}`);
+    if (!docPath) return res.status(400).json({ message: 'Invalid document data' });
+    
+    employee[field] = docPath;
     await employee.save();
     
     res.json(employee);

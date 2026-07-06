@@ -7,7 +7,7 @@ import {
   ChevronLeft, ChevronRight, LayoutGrid, List as ListIcon,
   Trash2, Eye, X, Folder, Users, Shield, History, ArrowLeft
 } from 'lucide-react';
-import { API_BASE_URL } from '@shared/services/api';
+import { API_BASE_URL, getImageUrl } from '@shared/services/api';
 
 const getToday = () => new Date().toISOString().split('T')[0];
 
@@ -95,13 +95,6 @@ const Screenshots = () => {
     if (type === 'role') return screenshots.filter(s => s.role === value).length;
     if (type === 'name') return screenshots.filter(s => s.role === navigationPath[0] && s.employeeName === value).length;
     return 0;
-  };
-
-  const getImageUrl = (path) => {
-    if (!path) return '';
-    if (path.startsWith('data:')) return path;
-    const normalized = path.replace(/\\/g, '/');
-    return `${API_BASE_URL}/${normalized}`;
   };
 
   // 📦 BULK DOWNLOAD ENGINE

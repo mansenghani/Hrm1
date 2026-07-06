@@ -35,7 +35,7 @@ import {
   Sun
 } from 'lucide-react';
 import { io } from 'socket.io-client';
-import { API_BASE_URL } from '@shared/services/api';
+import { API_BASE_URL, getImageUrl } from '@shared/services/api';
 
 const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -519,12 +519,6 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     } catch (err) { console.error('Resume failed:', err); }
   };
 
-  const getImageUrl = (path) => {
-    if (!path) return '';
-    if (path.startsWith('http') || path.startsWith('data:')) return path;
-    const normalized = path.replace(/\\/g, '/');
-    return normalized.startsWith('/') ? normalized : `/${normalized}`;
-  };
 
   const employeeOverviewItems = [
     { name: 'Dashboard', path: '/employee/dashboard', icon: LayoutDashboard },

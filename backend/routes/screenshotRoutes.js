@@ -34,11 +34,17 @@ router.post('/upload', async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
+    const { saveBase64Image } = require('../utils/fileUpload');
+    const screenshotPath = saveBase64Image(screenshot, 'screenshots', `screenshot-${userId}`);
+    if (!screenshotPath) {
+      return res.status(400).json({ message: 'Invalid screenshot data' });
+    }
+
     const newScreenshot = new Screenshot({
       userId,
       employeeName: user.name || user.fullName,
       role: user.role,
-      imageUrl: screenshot
+      imageUrl: screenshotPath
     });
 
     await newScreenshot.save();

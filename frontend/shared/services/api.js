@@ -37,4 +37,22 @@ api.interceptors.response.use(
   }
 );
 
+export const getImageUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('data:')) return path; // Base64 fallback
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  
+  const normalized = path.replace(/\\/g, '/');
+  const cleanPath = normalized.startsWith('/') ? normalized : `/${normalized}`;
+  
+  const isLocalHost = window.location.hostname === 'localhost' || 
+                        window.location.hostname === '127.0.0.1' || 
+                        window.location.hostname.startsWith('192.168.') || 
+                        window.location.hostname.startsWith('10.') ||
+                        window.location.hostname.startsWith('172.');
+  
+  const base = isLocalHost ? 'https://hrm1.onrender.com' : '';
+  return `${base}${cleanPath}`;
+};
+
 export default api;

@@ -173,8 +173,14 @@ exports.uploadProfileImage = async (req, res) => {
       return res.status(400).json({ message: 'No image provided' });
     }
 
+    const { saveBase64Image } = require('../utils/fileUpload');
+    const imagePath = saveBase64Image(image, 'profile', `profile-${req.user.id}`);
+    if (!imagePath) {
+      return res.status(400).json({ message: 'Invalid image data' });
+    }
+
     // Update User
-    const user = await User.findByIdAndUpdate(req.user.id, { profileImage: image }, { new: true });
+    const user = await User.findByIdAndUpdate(req.user.id, { profileImage: imagePath }, { new: true });
     
     // Update Shadow Registry (Employee/HR/Manager)
     let shadowRegistry = 'Employee';
@@ -182,11 +188,11 @@ exports.uploadProfileImage = async (req, res) => {
     if (user.role === 'manager') shadowRegistry = 'Manager';
 
     const shadowModel = mongoose.model(shadowRegistry);
-    await shadowModel.findOneAndUpdate({ userId: req.user.id }, { profileImage: image });
+    await shadowModel.findOneAndUpdate({ userId: req.user.id }, { profileImage: imagePath });
 
     res.json({ 
       message: 'Profile image updated successfully',
-      profileImage: image 
+      profileImage: imagePath 
     });
   } catch (error) {
     console.error('🔥 Upload Error:', error);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { API_BASE_URL } from '@shared/services/api';
+import { API_BASE_URL, getImageUrl } from '@shared/services/api';
 import { Eye, Shield, Lock, FileText, Upload, Trash2, Check, RefreshCw, Plus } from 'lucide-react';
 
 const Profile = () => {
@@ -102,12 +102,6 @@ const Profile = () => {
     setLoading(false);
   };
 
-  const getImageUrl = (path) => {
-    if (!path) return '';
-    if (path.startsWith('http') || path.startsWith('data:')) return path;
-    const normalized = path.replace(/\\/g, '/');
-    return normalized.startsWith('/') ? normalized : `/${normalized}`;
-  };
 
   return (
     <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: '#f9fdfc', minHeight: 'calc(100vh - 56px)', color: '#3b3e3c', width: '100%', boxSizing: 'border-box' }}>
