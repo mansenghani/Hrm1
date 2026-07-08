@@ -1,9 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import {
-  Plug, Mail, Calendar, Slack, Video, Activity, Key, Link2,
+  Plug, Mail, Calendar, Video, Activity, Key, Link2,
   Settings, RefreshCw, CheckCircle, XCircle, Plus, Eye, EyeOff, Trash2
 } from 'lucide-react';
+
+const Slack = (props) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <rect width="3" height="8" x="13" y="2" rx="1.5" />
+    <path d="M19 8.5a2.5 2.5 0 0 1-5 0" />
+    <path d="M14.5 10H19a2.5 2.5 0 0 1 0 5" />
+    <rect width="3" height="8" x="8" y="14" rx="1.5" />
+    <path d="M5 15.5a2.5 2.5 0 0 1 5 0" />
+    <path d="M9.5 14H5a2.5 2.5 0 0 1 0-5" />
+    <rect width="8" height="3" x="2" y="13" rx="1.5" />
+    <path d="M8.5 19a2.5 2.5 0 0 1 0-5" />
+    <path d="M10 14.5V19a2.5 2.5 0 0 1-5 0" />
+    <rect width="8" height="3" x="14" y="8" rx="1.5" />
+    <path d="M15.5 5a2.5 2.5 0 0 1 0 5" />
+    <path d="M14 9.5V5a2.5 2.5 0 0 1 5 0" />
+  </svg>
+);
 
 export default function Integrations() {
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));

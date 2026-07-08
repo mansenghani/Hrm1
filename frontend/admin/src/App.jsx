@@ -1,7 +1,6 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import Landing from '@shared/pages/Landing';
 import Login from '@shared/pages/Login';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import HRDashboard from './pages/hr/HRDashboard';
@@ -62,13 +61,31 @@ const ProtectedRoute = ({ children, allowedRole }) => {
   return children;
 };
 
+// ROOT REDIRECT LOGIC: Redirect to appropriate dashboard if logged in, otherwise to login
+const RootRedirect = () => {
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    const token = sessionStorage.getItem('token');
+    const role = sessionStorage.getItem('role');
+
+    if (token && role) {
+      navigate(`/${role}/dashboard`, { replace: true });
+    } else {
+      navigate('/login', { replace: true });
+    }
+  }, [navigate]);
+
+  return null;
+};
+
 const App = () => {
   return (
     <>
       <Toaster position="top-right" reverseOrder={false} />
       <Routes>
         {/* PUBLIC ROUTES */}
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<RootRedirect />} />
         <Route path="/login" element={<Login />} />
 
         {/* REDIRECTS FOR OLD PATHS */}
