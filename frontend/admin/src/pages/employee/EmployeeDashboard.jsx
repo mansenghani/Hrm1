@@ -9,7 +9,6 @@ import {
   Sun, Moon, Sunrise, Bell, Star, Megaphone,
   CheckCircle, Play, Pause, Square, RefreshCw
 } from 'lucide-react';
-import WeeklyAttendanceChart from '@shared/components/WeeklyAttendanceChart';
 // ─── HELPERS ─────────────────────────────────────────────────
 const getAuth = () => {
   const t = sessionStorage.getItem('token');
@@ -427,19 +426,7 @@ const EmployeeDashboard = () => {
           </div>
         </div>
 
-        {/* ── ROW 2: WEEKLY CHART + DEPT MIX ─────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 14, marginBottom: 14 }}>
-
-          {/* Weekly Attendance Chart */}
-          <div className="w-full flex">
-            {loading ? <Skel h={380} r={10} /> : <WeeklyAttendanceChart />}
-          </div>
-
-          {/* Department Mix Donut */}
-          <DeptDonut isDark={isDark} />
-        </div>
-
-        {/* ── ROW 3: HEADCOUNT TREND + ANNOUNCEMENTS ─────── */}
+        {/* ── ROW 2: HEADCOUNT TREND + DEPT MIX ─────────────── */}
         <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 14, marginBottom: 14 }}>
 
           {/* Headcount trend (Monthly overview) */}
@@ -485,6 +472,13 @@ const EmployeeDashboard = () => {
               </ResponsiveContainer>
             )}
           </Card>
+
+          {/* Department Mix Donut */}
+          <DeptDonut isDark={isDark} />
+        </div>
+
+        {/* ── ROW 3: ANNOUNCEMENTS ─────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14, marginBottom: 14 }}>
 
           {/* Announcements */}
           <Card isDark={isDark}>

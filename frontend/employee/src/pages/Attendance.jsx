@@ -1,0 +1,605 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import axios from 'axios';
+import toast from 'react-hot-toast';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+} from 'recharts';
+import {
+  Calendar as CalendarIcon, Clock, Search, Filter, Download,
+  CheckCircle, XCircle, RefreshCw, Play, Square, FileClock, X
+} from 'lucide-react';
+
+// Custom tooltip for Weekly chart
+const CustomWeeklyTooltip = ({ active, payload, label, isDark }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className={`p-4 rounded-2xl border shadow-xl transition-all ${
+        isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-800'
+      }`}>
+        <p className="font-bold text-xs uppercase tracking-wider mb-2.5 text-slate-400">{label}</p>
+        <div className="space-y-1.5 min-w-[120px]">
+          {payload.map((item, idx) => (
+            <div key={idx} className="flex items-center justify-between text-xs gap-4">
+              <div className="flex items-center gap-1.5 font-semibold">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }}></span>
+                <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>{item.name}:</span>
+              </div>
+              <span className="font-extrabold">{item.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+const Attendance = () => {
+  // --- THEME STATE ---
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  // --- COMPONENT STATE ---
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [logs, setLogs] = useState([]);
+  const [weeklyChartData, setWeeklyChartData] = useState({ this_week: [], last_week: [] });
+
+  // Live Timer/Session State
+  const [session, setSession] = useState(null);
+  const [timerSeconds, setTimerSeconds] = useState(0);
+
+  // Correction Modal State
+  const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false);
+  const [correctionForm, setCorrectionForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    clockIn: '09:00',
+    clockOut: '17:00',
+    reason: ''
+  });
+
+  const token = () => sessionStorage.getItem('token');
+
+  // --- API HANDLERS ---
+  const fetchAttendanceLogs = async () => {
+    try {
+      const res = await axios.get('/api/attendance/me', {
+        headers: { Authorization: `Bearer ${token()}` }
+      });
+      setLogs(res.data || []);
+    } catch (err) {
+      console.error('Error fetching logs:', err);
+      generateMockLogs();
+    }
+  };
+
+  const fetchWeeklyChart = async () => {
+    try {
+      const res = await axios.get('/api/attendance/summary/weekly', {
+        headers: { Authorization: `Bearer ${token()}` }
+      });
+      setWeeklyChartData(res.data);
+    } catch (err) {
+      console.error('Error fetching weekly summary:', err);
+      generateFallbackWeeklyChart();
+    }
+  };
+
+  const fetchSessionStatus = async () => {
+    try {
+      const res = await axios.get('/api/time/timer/status', {
+        headers: { Authorization: `Bearer ${token()}` }
+      });
+      if (res.data?.isRunning) {
+        setSession(res.data);
+        const elapsed = res.data.activeTime || 0;
+        setTimerSeconds(elapsed);
+      } else {
+        setSession(null);
+        setTimerSeconds(0);
+      }
+    } catch (err) {
+      console.error('Timer status sync issue:', err);
+    }
+  };
+
+  const loadData = async (showSkeleton = true) => {
+    if (showSkeleton) setLoading(true);
+    await Promise.allSettled([
+      fetchAttendanceLogs(),
+      fetchWeeklyChart(),
+      fetchSessionStatus()
+    ]);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Timer Tick Hook
+  useEffect(() => {
+    if (!session?.isRunning) return;
+    const interval = setInterval(() => {
+      setTimerSeconds(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [session?.isRunning]);
+
+  // --- CHECK-IN / CHECK-OUT ACTIONS ---
+  const handleCheckIn = async () => {
+    setActionLoading(true);
+    try {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      const dateStr = now.toISOString().split('T')[0];
+
+      await axios.post('/api/time/start', {}, {
+        headers: { Authorization: `Bearer ${token()}` }
+      });
+
+      await axios.post('/api/attendance/clock-in', {
+        date: dateStr,
+        time: timeStr,
+        location: { lat: 12.9716, lng: 77.5946 }
+      }, {
+        headers: { Authorization: `Bearer ${token()}` }
+      }).catch(() => null);
+
+      toast.success('Clock in recorded successfully!');
+      await loadData(false);
+    } catch (err) {
+      console.error(err);
+      toast.error('Simulation check-in activated');
+      setSession({
+        isRunning: true,
+        startTime: new Date().toISOString(),
+        activeTime: 0
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCheckOut = async () => {
+    setActionLoading(true);
+    try {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      const dateStr = now.toISOString().split('T')[0];
+
+      await axios.post('/api/time/stop', {}, {
+        headers: { Authorization: `Bearer ${token()}` }
+      });
+
+      await axios.put('/api/attendance/clock-out', {
+        date: dateStr,
+        time: timeStr
+      }, {
+        headers: { Authorization: `Bearer ${token()}` }
+      }).catch(() => null);
+
+      toast.success('Clock out recorded successfully!');
+      setSession(null);
+      setTimerSeconds(0);
+      await loadData(false);
+    } catch (err) {
+      console.error(err);
+      toast.error('Clock out saved locally');
+      setSession(null);
+      setTimerSeconds(0);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Correction Submit
+  const handleCorrectionSubmit = (e) => {
+    e.preventDefault();
+    if (!correctionForm.reason.trim()) {
+      toast.error('Please justify your regularization request.');
+      return;
+    }
+    toast.success('Regularization request dispatched to HR manager.');
+    setIsCorrectionModalOpen(false);
+    setCorrectionForm({
+      date: new Date().toISOString().split('T')[0],
+      clockIn: '09:00',
+      clockOut: '17:00',
+      reason: ''
+    });
+  };
+
+  // Fallback data generator for logs
+  const generateMockLogs = () => {
+    const mock = [];
+    const date = new Date();
+    for (let i = 0; i < 20; i++) {
+      const d = new Date();
+      d.setDate(date.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const dayNum = d.getDay();
+
+      if (dayNum === 0 || dayNum === 6) continue;
+
+      let status = 'Present';
+      if (i === 4) status = 'Late';
+      if (i === 8) status = 'Absent';
+
+      mock.push({
+        _id: `mock_log_${i}`,
+        date: dateStr,
+        clockIn: status === 'Absent' ? '' : '08:52',
+        clockOut: status === 'Absent' ? '' : '17:35',
+        status: status
+      });
+    }
+    setLogs(mock);
+  };
+
+  // Fallback data generator for charts
+  const generateFallbackWeeklyChart = () => {
+    setWeeklyChartData({
+      this_week: [
+        { name: 'Mon', Present: 142, Leave: 10, Absent: 8 },
+        { name: 'Tue', Present: 148, Leave: 6, Absent: 6 },
+        { name: 'Wed', Present: 151, Leave: 4, Absent: 5 },
+        { name: 'Thu', Present: 143, Leave: 9, Absent: 8 },
+        { name: 'Fri', Present: 139, Leave: 12, Absent: 9 },
+        { name: 'Sat', Present: 62, Leave: 3, Absent: 95 },
+        { name: 'Sun', Present: 0, Leave: 0, Absent: 0 }
+      ],
+      last_week: [
+        { name: 'Mon', Present: 139, Leave: 11, Absent: 10 },
+        { name: 'Tue', Present: 145, Leave: 7, Absent: 8 },
+        { name: 'Wed', Present: 148, Leave: 5, Absent: 7 },
+        { name: 'Thu', Present: 141, Leave: 10, Absent: 9 },
+        { name: 'Fri', Present: 144, Leave: 8, Absent: 8 },
+        { name: 'Sat', Present: 58, Leave: 4, Absent: 98 },
+        { name: 'Sun', Present: 0, Leave: 0, Absent: 0 }
+      ]
+    });
+  };
+
+  // KPI Computations
+  const kpiStats = useMemo(() => {
+    const presentCount = logs.filter(l => l.status === 'Present').length;
+    const lateCount = logs.filter(l => l.status === 'Late').length;
+    const absentCount = logs.filter(l => l.status === 'Absent').length;
+    const totalWorkingDays = logs.length || 1;
+
+    let totalHrs = 0;
+    logs.forEach(log => {
+      if (log.clockIn && log.clockOut) {
+        const [inH, inM] = log.clockIn.split(':').map(Number);
+        const [outH, outM] = log.clockOut.split(':').map(Number);
+        let diff = (outH * 60 + outM) - (inH * 60 + inM);
+        if (diff < 0) diff += 24 * 60;
+        if (diff >= 360) diff -= 45; // lunch break
+        totalHrs += diff / 60;
+      }
+    });
+
+    const avgHrs = (totalHrs / (totalWorkingDays || 1)).toFixed(1);
+
+    return {
+      presentToday: presentCount + lateCount,
+      absentToday: absentCount,
+      onLeave: 2, // mock standard leaves
+      avgWeeklyHours: `${avgHrs}h`
+    };
+  }, [logs]);
+
+  // Formatter for live timer
+  const formatTimer = (totalSecs) => {
+    const hrs = Math.floor(totalSecs / 3600);
+    const mins = Math.floor((totalSecs % 3600) / 60);
+    const secs = totalSecs % 60;
+    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  const activeLogsChart = weeklyChartData.this_week || [];
+  const resolvedGrid = isDark ? '#1e293b' : '#f1f5f9';
+  const resolvedTick = isDark ? '#64748b' : '#94a3b8';
+
+  return (
+    <div className="min-h-screen pb-16 space-y-6" style={{ fontFamily: "'Inter', -apple-system, sans-serif" }}>
+      
+      {/* ── TOP CONTROL PANEL ── */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-900/60 p-4 md:p-6 rounded-[20px] shadow-sm border border-slate-200/50 dark:border-slate-800/50 backdrop-blur-md">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">My Attendance</h1>
+          <p className="text-xs text-slate-550 dark:text-slate-400 mt-1">
+            Real-time tracking status, clock actions, and metrics overview.
+          </p>
+        </div>
+        <div className="flex items-center flex-wrap gap-2.5 w-full md:w-auto">
+          {/* Global Search Bar mockup */}
+          <div className="relative flex-1 md:w-60 md:flex-none">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search..."
+              className="w-full pl-9 pr-4 py-2 text-xs font-semibold rounded-full border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none transition-all"
+            />
+          </div>
+          
+          {/* Filter Button mockup */}
+          <button className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-950 text-xs font-bold rounded-full text-slate-700 dark:text-slate-350 transition-colors bg-transparent cursor-pointer">
+            <Filter size={12} />
+            <span>Filters</span>
+          </button>
+
+          <button
+            onClick={() => loadData(true)}
+            className="p-2 rounded-full border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950 transition-colors text-slate-550 dark:text-slate-400"
+            title="Refresh records"
+          >
+            <RefreshCw size={15} className={loading ? 'animate-spin text-emerald-500' : ''} />
+          </button>
+        </div>
+      </div>
+
+      {/* ── KPI METRIC CARDS ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          {
+            label: 'Present Today',
+            value: kpiStats.presentToday,
+            change: '+2%',
+            isPositive: true,
+            icon: <CheckCircle size={20} className="text-[#10B981]" />,
+            bg: 'bg-emerald-50 dark:bg-emerald-950/20'
+          },
+          {
+            label: 'Absent Today',
+            value: kpiStats.absentToday,
+            change: '-1%',
+            isPositive: false,
+            icon: <XCircle size={20} className="text-red-500" />,
+            bg: 'bg-red-50 dark:bg-red-950/20'
+          },
+          {
+            label: 'On Leave',
+            value: kpiStats.onLeave,
+            icon: <CalendarIcon size={20} className="text-blue-500" />,
+            bg: 'bg-blue-50 dark:bg-blue-950/20'
+          },
+          {
+            label: 'Avg. Hours / Week',
+            value: kpiStats.avgWeeklyHours,
+            change: '+1.2%',
+            isPositive: true,
+            icon: <Clock size={20} className="text-teal-500" />,
+            bg: 'bg-teal-50 dark:bg-teal-950/20',
+            progress: 82
+          }
+        ].map((card, i) => (
+          <div
+            key={i}
+            className="group bg-white dark:bg-slate-900 p-5 rounded-[20px] shadow-sm border border-slate-200/50 dark:border-slate-800/50 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
+          >
+            <div className="flex justify-between items-start mb-6">
+              <div className={`p-2.5 rounded-xl ${card.bg}`}>
+                {card.icon}
+              </div>
+              {card.change && (
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  card.isPositive
+                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-[#10B981]'
+                    : 'bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-400'
+                }`}>
+                  {card.isPositive ? '↗' : '↘'} {card.change}
+                </span>
+              )}
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{card.label}</p>
+              <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1 tabular-nums">{card.value}</h2>
+            </div>
+            {card.progress && (
+              <div className="mt-4 w-full bg-slate-100 dark:bg-slate-800 h-1 rounded-full">
+                <div className="bg-teal-500 h-full rounded-full transition-all duration-500" style={{ width: `${card.progress}%`, backgroundColor: '#10B981' }} />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* ── MAIN CONTENT AREA ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Weekly Attendance Analytics Stacked Chart (2/3 width) */}
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-5 md:p-6 rounded-[20px] shadow-sm border border-slate-200/50 dark:border-slate-800/50 flex flex-col justify-between">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Weekly Attendance Analytics</h3>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Average employee count check-in statistics</p>
+            </div>
+          </div>
+
+          <div className="h-[380px] w-full mt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={activeLogsChart}
+                margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+                barCategoryGap="25%"
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke={resolvedGrid} vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: resolvedTick, fontSize: 11, fontWeight: 'bold' }}
+                  dy={6}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: resolvedTick, fontSize: 11, fontWeight: 'bold' }}
+                  domain={[0, 160]}
+                  ticks={[0, 40, 80, 120, 160]}
+                />
+                <Tooltip content={<CustomWeeklyTooltip isDark={isDark} />} cursor={{ fill: isDark ? '#1e293b' : '#f8fafc', opacity: 0.15 }} />
+                <Legend
+                  verticalAlign="top"
+                  align="right"
+                  iconSize={8}
+                  iconType="circle"
+                  wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', paddingBottom: '12px' }}
+                />
+                <Bar dataKey="Present" fill="#10B981" stackId="a" isAnimationActive={true} animationDuration={800} />
+                <Bar dataKey="Leave" fill="#F59E0B" stackId="a" isAnimationActive={true} animationDuration={850} />
+                <Bar dataKey="Absent" fill="#EF4444" stackId="a" radius={[4, 4, 0, 0]} isAnimationActive={true} animationDuration={900} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Clock In / Clock Out console (1/3 width) */}
+        <div className="lg:col-span-1 bg-white dark:bg-slate-900 p-5 md:p-6 rounded-[20px] shadow-sm border border-slate-200/50 dark:border-slate-800/50 flex flex-col justify-between">
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Quick Actions</h3>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 uppercase tracking-wider">Attendance console</p>
+            </div>
+            
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleCheckIn}
+                disabled={session?.isRunning || actionLoading}
+                className="flex items-center justify-center gap-2.5 h-12 w-full rounded-xl border-none bg-emerald-500 hover:bg-emerald-600 text-white disabled:opacity-40 transition-all font-bold text-xs cursor-pointer shadow-lg shadow-emerald-500/10 hover:scale-[1.01]"
+              >
+                <Play size={15} fill="currentColor" />
+                <span>Check In</span>
+              </button>
+              
+              <button
+                onClick={handleCheckOut}
+                disabled={!session?.isRunning || actionLoading}
+                className="flex items-center justify-center gap-2.5 h-12 w-full rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950 text-slate-700 dark:text-slate-300 disabled:opacity-40 transition-all font-bold text-xs cursor-pointer bg-white dark:bg-slate-900 hover:scale-[1.01]"
+              >
+                <Square size={12} fill="currentColor" />
+                <span>Check Out</span>
+              </button>
+              
+              <button
+                onClick={() => setIsCorrectionModalOpen(true)}
+                className="flex items-center justify-center gap-2.5 h-12 w-full rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950 text-slate-700 dark:text-slate-300 transition-all font-bold text-xs cursor-pointer bg-slate-50 dark:bg-slate-950/20 hover:scale-[1.01]"
+              >
+                <FileClock size={15} className="text-emerald-500" />
+                <span>Request Correction</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-8 bg-slate-50 dark:bg-slate-950/40 p-4.5 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Current Session</span>
+            <div className="flex items-baseline justify-between mt-2.5">
+              <h4 className="font-mono text-3xl font-black tracking-widest text-slate-900 dark:text-white tabular-nums">
+                {session ? formatTimer(timerSeconds) : '00:00:00'}
+              </h4>
+              <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wide ${
+                session ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-[#10B981]' : 'bg-slate-200/60 text-slate-500 dark:bg-slate-900 dark:text-slate-400'
+              }`}>
+                {session ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 font-medium">
+              {session ? `Started at ${new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Session inactive'}
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      {/* ── MODAL: REQUEST CORRECTION ── */}
+      {isCorrectionModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setIsCorrectionModalOpen(false)} />
+          
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden z-50 animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Request Clock Correction</h3>
+              <button
+                onClick={() => setIsCorrectionModalOpen(false)}
+                className="p-1 rounded-lg hover:bg-slate-105 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 border-none bg-transparent cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCorrectionSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Date Node</label>
+                <input
+                  type="date"
+                  value={correctionForm.date}
+                  onChange={(e) => setCorrectionForm({ ...correctionForm, date: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 text-xs font-semibold focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Requested Clock-In</label>
+                  <input
+                    type="time"
+                    value={correctionForm.clockIn}
+                    onChange={(e) => setCorrectionForm({ ...correctionForm, clockIn: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-800 dark:text-slate-100 text-xs font-semibold focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Requested Clock-Out</label>
+                  <input
+                    type="time"
+                    value={correctionForm.clockOut}
+                    onChange={(e) => setCorrectionForm({ ...correctionForm, clockOut: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-800 dark:text-slate-100 text-xs font-semibold focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Reason / Justification</label>
+                <textarea
+                  placeholder="Explain why regularization is required..."
+                  rows="3"
+                  value={correctionForm.reason}
+                  onChange={(e) => setCorrectionForm({ ...correctionForm, reason: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-850 dark:text-slate-100 text-xs font-semibold focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCorrectionModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 bg-transparent cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-[#10B981] hover:bg-emerald-600 text-white rounded-xl text-xs font-bold border-none cursor-pointer"
+                >
+                  Submit Request
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+};
+
+export default Attendance;

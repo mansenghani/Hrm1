@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import ErrorBoundary from '@shared/components/ErrorBoundary';
 import App from './App';
 import './index.css';
 import axios from 'axios';
@@ -29,7 +30,9 @@ axios.interceptors.response.use(
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
     </BrowserRouter>
   </React.StrictMode>
 );

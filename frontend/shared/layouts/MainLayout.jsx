@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
+import ErrorBoundary from '@shared/components/ErrorBoundary';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import {
@@ -33,7 +34,14 @@ import {
   ChevronDown,
   Moon,
   Sun,
-  LogOut
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  Building2,
+  GraduationCap,
+  IdCard,
+  Plug,
+  Award
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { API_BASE_URL } from '@shared/services/api';
@@ -59,6 +67,17 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   const profileRef = React.useRef(null);
   const triggerRef = React.useRef(null);
   const dropdownRef = React.useRef(null);
+  const searchRef = React.useRef(null);
+  const quickActionRef = React.useRef(null);
+  const languageRef = React.useRef(null);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
+  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+  const [currentLang, setCurrentLang] = useState('English');
+
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -114,10 +133,41 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setIsProfileDropdownOpen(false);
       }
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setSearchResults(null);
+      }
+      if (quickActionRef.current && !quickActionRef.current.contains(event.target)) {
+        setIsQuickActionOpen(false);
+      }
+      if (languageRef.current && !languageRef.current.contains(event.target)) {
+        setIsLanguageOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // 🔍 REAL-TIME GLOBAL SEARCH DEBOUNCE HOOK
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults(null);
+      return;
+    }
+    const delayDebounce = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await axios.get(`/api/search/global?q=${encodeURIComponent(searchQuery)}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setSearchResults(res.data);
+      } catch (err) {
+        console.error('Search failed:', err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery, token]);
 
   // 🛡️ KEYBOARD ACCESSIBILITY HANDLERS
   const handleDropdownKeyDown = (e) => {
@@ -243,30 +293,56 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     if (roleKey === 'admin' || roleKey === 'hr') {
       people.push({ name: 'Employees', path: `/${roleKey}/employees`, icon: Users });
     } else {
-      people.push({ name: 'Employees', path: `/${roleKey}/profile`, icon: User });
+      people.push({ name: 'Employees', path: `/${roleKey}/profile`, icon: Users });
     }
-
-    people.push({ name: 'Attendance', path: roleKey === 'employee' ? `/employee/time-tracker` : `/${roleKey}/time-tracker`, icon: Clock });
+    people.push({ name: 'Attendance', path: `/${roleKey}/attendance`, icon: Clock });
     people.push({ name: 'Leave', path: `/${roleKey}/leave`, icon: Calendar });
+    const menuItems = {
+      OVERVIEW: overview,
+      PEOPLE: people
+    };
 
-    const talent = [
-      { name: 'Recruitment', path: `/${roleKey}/recruitment`, icon: Briefcase },
-      { name: 'Performance', path: `/${roleKey}/performance`, icon: Target }
+    // TALENT Section
+    const talent = [];
+    talent.push({ name: 'Recruitment', path: `/${roleKey}/recruitment`, icon: Briefcase });
+    talent.push({ name: 'Performance', path: `/${roleKey}/performance`, icon: Target });
+    talent.push({ name: 'Training', path: `/${roleKey}/training`, icon: GraduationCap });
+    menuItems.TALENT = talent;
+
+    // FINANCE Section
+    menuItems.FINANCE = [
+      { name: 'Payroll', path: roleKey === 'employee' ? `/employee/payslips` : `/${roleKey}/payroll`, icon: Wallet }
     ];
 
-    const insights = [
-      { name: 'Reports', path: `/${roleKey}/reports`, icon: BarChart3 }
+    // INSIGHTS Section
+    menuItems.INSIGHTS = [
+      { name: 'Reports', path: `/${roleKey}/reports`, icon: BarChart3 },
+      { name: 'Documents', path: `/${roleKey}/documents`, icon: FileText }
     ];
+
     if (roleKey === 'admin' || roleKey === 'hr') {
-      insights.push({ name: 'Monitoring Logs', path: `/${roleKey}/screenshots`, icon: Camera });
+      menuItems.INSIGHTS.push({ name: 'Monitoring Logs', path: `/${roleKey}/screenshots`, icon: Camera });
     }
 
-    return {
-      OVERVIEW: overview,
-      PEOPLE: people,
-      TALENT: talent,
-      INSIGHTS: insights
-    };
+    // ORGANIZATION Section
+    const organization = [];
+    organization.push({ name: 'Departments', path: `/${roleKey}/departments`, icon: Building2 });
+    organization.push({ name: 'Designations', path: `/${roleKey}/designations`, icon: Award });
+    menuItems.ORGANIZATION = organization;
+
+    // SYSTEM Section
+    const system = [];
+    system.push({ name: 'Roles & Permissions', path: `/${roleKey}/roles-permissions`, icon: ShieldCheck });
+    system.push({ name: 'Audit Logs', path: `/${roleKey}/audit-logs`, icon: FileText });
+    system.push({ name: 'Integrations', path: `/${roleKey}/integrations`, icon: Plug });
+    menuItems.SYSTEM = system;
+
+    menuItems.ACCOUNT = [
+      { name: 'Settings', path: roleKey === 'admin' || roleKey === 'hr' ? `/${roleKey}/settings` : `/${roleKey}/profile`, icon: Settings },
+      { name: 'Profile', path: `/${roleKey}/profile`, icon: User }
+    ];
+
+    return menuItems;
   };
 
   const handleLogout = () => {
@@ -482,14 +558,24 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
 
   return (
     <div className="flex min-h-screen bg-[#f8fafc] dark:bg-[#08100e] text-[#201515] dark:text-[#e2e8f0] transition-colors duration-300 ease-in-out">
-      {/* 1. LEFT SIDEBAR (Full height sticky sidebar) */}
+      {/* Mobile Drawer Overlay */}
+      {isSidebarOpen && (
+        <div 
+          onClick={toggleSidebar} 
+          className="fixed inset-0 bg-black/40 z-30 md:hidden animate-in fade-in duration-200"
+        />
+      )}
+
+      {/* 1. LEFT SIDEBAR (Full height sticky sidebar / slide-out drawer on mobile) */}
       <aside
-        className="flex flex-col shrink-0 border-r transition-[width] duration-300 ease-in-out hidden md:flex sticky top-0 h-screen overflow-hidden z-40"
+        className={`flex flex-col shrink-0 border-r transition-all duration-300 ease-in-out h-screen overflow-hidden z-40 fixed md:sticky top-0 ${
+          isSidebarOpen 
+            ? 'left-0 w-[250px] translate-x-0' 
+            : '-left-[250px] md:left-0 md:translate-x-0 md:w-[72px]'
+        }`}
         style={{
-          width: isSidebarOpen ? '250px' : '72px',
           backgroundColor: isDarkMode ? '#050c0a' : '#f4f9f6',
-          borderColor: isDarkMode ? '#1a2d29' : '#e2eae7',
-          transition: 'width 0.3s ease-in-out, background-color 0.3s ease, border-color 0.3s ease'
+          borderColor: isDarkMode ? '#1a2d29' : '#e2eae7'
         }}
       >
         {/* Brand Block */}
@@ -521,12 +607,40 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                 )}
                 <div className="space-y-1.5">
                   {items.map((item) => {
-                    const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+                    const isSettingsPath = item.path.includes('/settings');
+                    const hasTabParam = item.path.includes('?tab=');
+                    
+                    let isActive = false;
+                    if (isSettingsPath) {
+                      const params = new URLSearchParams(location.search);
+                      const currentTab = params.get('tab') || 'company-settings';
+                      if (hasTabParam) {
+                        const tabVal = item.path.split('?tab=')[1];
+                        isActive = currentTab === tabVal;
+                      } else {
+                        isActive = currentTab === 'company-settings';
+                      }
+                    } else {
+                      const isDashboard = item.name === 'Dashboard';
+                      if (isDashboard) {
+                        isActive = location.pathname === item.path || 
+                                   location.pathname === `/${activeRole}` || 
+                                   location.pathname === `/${activeRole}/` ||
+                                   location.pathname.startsWith(item.path + '/');
+                      } else {
+                        isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+                      }
+                    }
                     const Icon = item.icon;
                     return (
                       <Link
                         key={item.path}
                         to={item.path}
+                        onClick={() => {
+                          if (window.innerWidth < 768) {
+                            setIsSidebarOpen(false);
+                          }
+                        }}
                         className={`flex items-center h-12 text-[15px] font-semibold no-underline rounded-full transition-all group ${isSidebarOpen ? 'px-4 gap-3.5 w-full' : 'px-0 justify-center w-full'} ${isActive ? 'text-white bg-[#00a76b] shadow-sm' : 'text-[#475569] dark:text-[#a3b3af] hover:bg-[#eceae3]/40 dark:hover:bg-[#111c18]/50 hover:text-[#00a76b]'}`}
                         title={!isSidebarOpen ? item.name : ""}
                       >
@@ -555,23 +669,173 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
               <Menu size={22} />
             </button>
 
-            {/* Search bar in the center-left */}
-            <div className="flex-1 max-w-[340px] relative">
+            {/* Search bar in the center-left (hidden on mobile) */}
+            <div className="hidden sm:block flex-1 max-w-[340px] relative" ref={searchRef}>
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                 <Search size={18} />
               </div>
               <input
                 type="text"
                 placeholder="Search employees, requests, payroll..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-[#f3f4f6] dark:bg-[#111c18] border-none rounded-full text-sm font-semibold text-gray-700 dark:text-[#a3b3af] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00a76b]/20 focus:bg-white dark:focus:bg-[#162722] transition-all"
               />
+              {isSearching && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <RefreshCw size={14} className="animate-spin text-[#00a76b]" />
+                </div>
+              )}
+
+              {/* SEARCH RESULTS DROPDOWN */}
+              {searchResults && (searchQuery.trim().length > 0) && (
+                <div className="absolute top-[45px] left-0 w-[450px] bg-white dark:bg-[#0c1512] border border-[#eceae3] dark:border-[#1a2d29] rounded-[20px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden z-[110] max-h-[400px] overflow-y-auto p-4 space-y-4">
+                  {/* Category: Employees */}
+                  {searchResults.employees && searchResults.employees.length > 0 && (
+                    <div>
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-[#00a76b] mb-1.5">Employees</h4>
+                      <div className="space-y-1">
+                        {searchResults.employees.map(emp => (
+                          <div 
+                            key={emp._id} 
+                            onClick={() => { navigate(`/${activeRole}/employees/view/${emp._id}`); setSearchQuery(''); }}
+                            className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-[#162722] cursor-pointer"
+                          >
+                            <span className="text-xs font-bold text-gray-800 dark:text-white">{emp.fullName}</span>
+                            <span className="text-[10px] text-gray-400 dark:text-[#829e92] font-semibold">{emp.position || emp.role}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Category: Leave Requests */}
+                  {searchResults.leaves && searchResults.leaves.length > 0 && (
+                    <div>
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-1.5">Leave Requests</h4>
+                      <div className="space-y-1">
+                        {searchResults.leaves.map(l => (
+                          <div 
+                            key={l._id} 
+                            onClick={() => { navigate(`/${activeRole}/leave`); setSearchQuery(''); }}
+                            className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-[#162722] cursor-pointer"
+                          >
+                            <span className="text-xs font-bold text-gray-800 dark:text-white">
+                              {l.user?.name || 'Employee'} - {l.leaveType}
+                            </span>
+                            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
+                              l.status === 'approved' ? 'bg-green-100 text-green-700 dark:bg-green-950/20 dark:text-green-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400'
+                            }`}>
+                              {l.status}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Category: Payroll */}
+                  {searchResults.payroll && searchResults.payroll.length > 0 && (
+                    <div>
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-1.5">Payroll</h4>
+                      <div className="space-y-1">
+                        {searchResults.payroll.map(p => (
+                          <div 
+                            key={p._id} 
+                            onClick={() => { navigate(activeRole === 'employee' ? '/employee/payslips' : `/${activeRole}/payroll`); setSearchQuery(''); }}
+                            className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-[#162722] cursor-pointer"
+                          >
+                            <span className="text-xs font-bold text-gray-800 dark:text-white">
+                              {p.user?.name || 'Employee'} ({p.month} {p.year})
+                            </span>
+                            <span className="text-xs font-extrabold text-[#00a76b]">${p.netSalary}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Category: Documents */}
+                  {searchResults.documents && searchResults.documents.length > 0 && (
+                    <div>
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-purple-500 mb-1.5">Documents</h4>
+                      <div className="space-y-1">
+                        {searchResults.documents.map(d => (
+                          <div 
+                            key={d.id} 
+                            onClick={() => { navigate(`/${activeRole}/documents`); setSearchQuery(''); }}
+                            className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-[#162722] cursor-pointer"
+                          >
+                            <span className="text-xs font-bold text-gray-800 dark:text-white truncate max-w-[280px]">{d.name}</span>
+                            <span className="text-[10px] text-gray-400 dark:text-[#829e92] font-semibold">{d.date}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Empty state */}
+                  {(!searchResults.employees || searchResults.employees.length === 0) &&
+                   (!searchResults.leaves || searchResults.leaves.length === 0) &&
+                   (!searchResults.payroll || searchResults.payroll.length === 0) &&
+                   (!searchResults.documents || searchResults.documents.length === 0) && (
+                     <p className="text-xs text-center text-gray-400 py-4 font-bold uppercase tracking-widest">No matching records found</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* + Quick Action button */}
-            <button className="ml-4 flex items-center gap-1.5 px-4 py-2 bg-[#00a76b] hover:bg-[#00915c] text-white rounded-full font-bold text-xs transition-all cursor-pointer border-none shadow-sm mr-4">
-              <Plus size={15} strokeWidth={2.8} />
-              <span>Quick action</span>
-            </button>
+            <div className="relative" ref={quickActionRef}>
+              <button 
+                onClick={() => setIsQuickActionOpen(!isQuickActionOpen)}
+                className="ml-4 flex items-center justify-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 bg-[#00a76b] hover:bg-[#00915c] text-white rounded-full font-bold text-xs transition-all cursor-pointer border-none shadow-sm mr-2 sm:mr-4 shrink-0"
+              >
+                <Plus size={15} strokeWidth={2.8} />
+                <span className="hidden sm:inline">Quick action</span>
+              </button>
+
+              {isQuickActionOpen && (
+                <div className="absolute top-[45px] left-4 w-56 bg-white dark:bg-[#0c1512] border border-[#eceae3] dark:border-[#1a2d29] rounded-[20px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden z-[110] p-2 flex flex-col">
+                  <button 
+                    onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/employees/add`); }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
+                  >
+                    Add Employee
+                  </button>
+                  <button 
+                    onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/leave`); }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
+                  >
+                    Apply Leave
+                  </button>
+                  <button 
+                    onClick={() => { setIsQuickActionOpen(false); toast.success('Announcement Drafted'); }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
+                  >
+                    Create Announcement
+                  </button>
+                  <button 
+                    onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/payroll`); }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
+                  >
+                    Generate Payroll
+                  </button>
+                  <button 
+                    onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/recruitment`); }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
+                  >
+                    Schedule Interview
+                  </button>
+                  <button 
+                    onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/task-management/create`); }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
+                  >
+                    Assign Task
+                  </button>
+                </div>
+              )}
+            </div>
 
             <div className="ml-auto flex items-center h-full gap-2">
               {/* ⏱️ GLOBAL INACTIVITY TRACKER */}
@@ -599,10 +863,34 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                 </div>
               )}
 
-              {/* Utility panel icons */}
-              <button className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 border-none bg-transparent cursor-pointer">
-                <Globe size={18} />
-              </button>
+              {/* Language Selector */}
+              <div className="relative" ref={languageRef}>
+                <button 
+                  onClick={() => setIsLanguageOpen(!isLanguageOpen)}
+                  className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-white transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 border-none bg-transparent cursor-pointer"
+                >
+                  <Globe size={18} />
+                </button>
+                {isLanguageOpen && (
+                  <div className="absolute top-[45px] right-0 w-36 bg-white dark:bg-[#0c1512] border border-[#eceae3] dark:border-[#1a2d29] rounded-[20px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden z-[110] p-1 flex flex-col">
+                    {['English', 'Spanish', 'French', 'German'].map(lang => (
+                      <button
+                        key={lang}
+                        onClick={() => {
+                          setCurrentLang(lang);
+                          setIsLanguageOpen(false);
+                          toast.success(`Language set to ${lang}`);
+                        }}
+                        className={`w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold rounded-xl transition-colors border-none bg-transparent cursor-pointer ${
+                          currentLang === lang ? 'text-[#00a76b]' : 'text-gray-700 dark:text-slate-300'
+                        }`}
+                      >
+                        {lang}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <button
                 onClick={toggleTheme}
@@ -679,14 +967,14 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
               <div className="relative" ref={profileRef}>
                 {isProfileLoading ? (
                   <div
-                    className="hidden md:flex items-center gap-3 px-3 h-11 rounded-full select-none opacity-60 animate-pulse bg-gray-50 dark:bg-[#111c18]"
+                    className="flex items-center gap-3 px-1 md:px-3 h-11 rounded-full select-none opacity-60 animate-pulse bg-gray-50 dark:bg-[#111c18]"
                   >
                     <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-700 shrink-0"></div>
-                    <div className="flex flex-col gap-1 items-start leading-none">
+                    <div className="hidden md:flex flex-col gap-1 items-start leading-none">
                       <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-16"></div>
                       <div className="h-2 bg-gray-200 dark:bg-slate-700 rounded w-10 mt-1"></div>
                     </div>
-                    <ChevronDown size={14} className="text-gray-400" />
+                    <ChevronDown size={14} className="hidden md:block text-gray-400" />
                   </div>
                 ) : (
                   <button
@@ -699,22 +987,22 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                         setIsProfileDropdownOpen(!isProfileDropdownOpen);
                       }
                     }}
-                    className={`hidden md:flex items-center gap-3 px-3 h-11 rounded-full cursor-pointer transition-all select-none border-none bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-[#00a76b]/50 ${isProfileDropdownOpen ? 'bg-gray-100 dark:bg-[#111c18]' : 'hover:bg-gray-100 dark:hover:bg-[#111c18]'}`}
+                    className={`flex items-center gap-3 px-1 md:px-3 h-11 rounded-full cursor-pointer transition-all select-none border-none bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-[#00a76b]/50 ${isProfileDropdownOpen ? 'bg-gray-100 dark:bg-[#111c18]' : 'hover:bg-gray-100 dark:hover:bg-[#111c18]'}`}
                     aria-expanded={isProfileDropdownOpen}
                     aria-haspopup="true"
                   >
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[#00a76b] text-white font-bold text-[13px] overflow-hidden">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[#00a76b] text-white font-bold text-[13px] overflow-hidden shrink-0">
                       {userProfile?.profileImage ? (
                         <img src={getImageUrl(userProfile.profileImage)} alt="" className="w-full h-full object-cover" />
                       ) : (
                         initials
                       )}
                     </div>
-                    <div className="flex flex-col items-start leading-none">
+                    <div className="hidden md:flex flex-col items-start leading-none">
                       <span className="text-[12px] font-bold text-[#201515] dark:text-white truncate max-w-[120px]">{displayName}</span>
                       <span className="text-[9px] font-bold text-[#939084] dark:text-[#a3b3af] uppercase tracking-wider mt-1">{activeRoleTitle}</span>
                     </div>
-                    <ChevronDown size={14} className={`text-gray-500 transition-transform duration-200 ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={14} className={`hidden md:block text-gray-500 transition-transform duration-200 ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
                 )}
 
@@ -748,20 +1036,69 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                     <div className="h-px bg-slate-100 dark:bg-slate-800/80 w-full" />
 
                     {/* Dropdown Options */}
-                    <div className="flex flex-col">
+                    <div className="flex flex-col animate-fade-in">
                       <button
                         role="menuitem"
                         onClick={() => {
                           setIsProfileDropdownOpen(false);
                           navigate(`/${activeRole}/profile`);
                         }}
-                        className="w-full px-6 py-3 flex items-center gap-3.5 text-left text-[14px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#162722]/50 hover:text-slate-900 dark:hover:text-white transition-colors duration-150 border-none bg-transparent cursor-pointer select-none outline-none focus-visible:bg-slate-50 dark:focus-visible:bg-[#162722]/50"
+                        className="w-full px-6 py-2.5 flex items-center gap-3.5 text-left text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#162722]/50 hover:text-slate-900 dark:hover:text-white transition-colors border-none bg-transparent cursor-pointer outline-none"
                       >
-                        <User size={18} className="text-slate-400 dark:text-slate-500" />
-                        <span>Employee Information</span>
+                        <User size={16} className="text-slate-400 dark:text-[#829e92]" />
+                        <span>My Profile</span>
                       </button>
 
-                      <div className="h-px bg-slate-100 dark:bg-slate-800/80 w-full" />
+                      <button
+                        role="menuitem"
+                        onClick={() => {
+                          setIsProfileDropdownOpen(false);
+                          const empId = userProfile?.employeeId || userProfile?._id || '';
+                          navigate(empId ? `/${activeRole}/employees/view/${empId}` : `/${activeRole}/profile`);
+                        }}
+                        className="w-full px-6 py-2.5 flex items-center gap-3.5 text-left text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#162722]/50 hover:text-slate-900 dark:hover:text-white transition-colors border-none bg-transparent cursor-pointer outline-none"
+                      >
+                        <User size={16} className="text-slate-400 dark:text-[#829e92]" />
+                        <span>Employee Info</span>
+                      </button>
+
+                      <button
+                        role="menuitem"
+                        onClick={() => {
+                          setIsProfileDropdownOpen(false);
+                          navigate(`/${activeRole}/settings`);
+                        }}
+                        className="w-full px-6 py-2.5 flex items-center gap-3.5 text-left text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#162722]/50 hover:text-slate-900 dark:hover:text-white transition-colors border-none bg-transparent cursor-pointer outline-none"
+                      >
+                        <Settings size={16} className="text-slate-400 dark:text-[#829e92]" />
+                        <span>Settings</span>
+                      </button>
+
+                      <button
+                        role="menuitem"
+                        onClick={() => {
+                          setIsProfileDropdownOpen(false);
+                          navigate(`/${activeRole}/profile?tab=security`);
+                        }}
+                        className="w-full px-6 py-2.5 flex items-center gap-3.5 text-left text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#162722]/50 hover:text-slate-900 dark:hover:text-white transition-colors border-none bg-transparent cursor-pointer outline-none"
+                      >
+                        <ShieldCheck size={16} className="text-slate-400 dark:text-[#829e92]" />
+                        <span>Change Password</span>
+                      </button>
+
+                      <button
+                        role="menuitem"
+                        onClick={() => {
+                          setIsProfileDropdownOpen(false);
+                          navigate(`/${activeRole}/settings?tab=audit-logs`);
+                        }}
+                        className="w-full px-6 py-2.5 flex items-center gap-3.5 text-left text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#162722]/50 hover:text-slate-900 dark:hover:text-white transition-colors border-none bg-transparent cursor-pointer outline-none"
+                      >
+                        <FileText size={16} className="text-slate-400 dark:text-[#829e92]" />
+                        <span>Activity Log</span>
+                      </button>
+
+                      <div className="h-px bg-slate-100 dark:bg-slate-800/80 w-full my-1" />
 
                       <button
                         role="menuitem"
@@ -771,10 +1108,10 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                             setIsProfileDropdownOpen(false);
                           }
                         }}
-                        className="w-full px-6 py-3.5 flex items-center gap-3.5 text-left text-[14px] font-semibold text-[#EF4444] dark:text-red-400 hover:bg-red-50/50 dark:hover:bg-red-950/20 transition-colors duration-150 border-none bg-transparent cursor-pointer outline-none focus-visible:bg-red-50/50 dark:focus-visible:bg-red-950/20"
+                        className="w-full px-6 py-3 flex items-center gap-3.5 text-left text-[13px] font-semibold text-[#EF4444] dark:text-red-400 hover:bg-red-50/50 dark:hover:bg-red-950/20 transition-colors border-none bg-transparent cursor-pointer outline-none"
                       >
-                        <LogOut size={18} className="text-[#EF4444] dark:text-red-400" />
-                        <span>Sign Out</span>
+                        <LogOut size={16} className="text-[#EF4444] dark:text-red-400" />
+                        <span>Logout</span>
                       </button>
                     </div>
                   </div>
@@ -788,13 +1125,17 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
         <main className="flex-1 min-w-0 overflow-y-auto bg-[#f8fafc] dark:bg-[#08100e] relative flex flex-col p-6 md:p-8">
           {location.pathname.endsWith('/chat') ? (
             <div className="h-[calc(100vh-70px)] relative overflow-hidden">
-              <Outlet />
+              <ErrorBoundary>
+                <Outlet />
+              </ErrorBoundary>
               {children}
             </div>
           ) : (
             <div className="animate-fade-in w-full min-h-full flex flex-col">
               <div className="flex-1 max-w-[1440px] mx-auto w-full">
-                <Outlet />
+                <ErrorBoundary>
+                  <Outlet />
+                </ErrorBoundary>
                 {children}
               </div>
             </div>

@@ -4,6 +4,7 @@ import {
   Calendar, Clock, Plane, CheckCircle2, Plus, Search, 
   SlidersHorizontal, Download, X, AlertCircle, Info 
 } from 'lucide-react';
+import { io } from 'socket.io-client';
 
 const LeaveManagement = () => {
   const [leaves, setLeaves] = useState([]);
@@ -19,9 +20,16 @@ const LeaveManagement = () => {
     reason: ''
   });
 
+  const [filterType, setFilterType] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+
   const token = sessionStorage.getItem('token');
   const user = JSON.parse(sessionStorage.getItem('user') || '{}');
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+  
   useEffect(() => {
     const observer = new MutationObserver(() => {
       setIsDark(document.documentElement.classList.contains('dark'));
@@ -40,6 +48,20 @@ const LeaveManagement = () => {
   useEffect(() => {
     fetchMyLeaves();
   }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    const socket = io(window.location.origin, { withCredentials: true });
+    socket.on('connect', () => {
+      socket.emit('join_notifications', { userId: user._id || user.id, role: user.role });
+    });
+    socket.on('leave_updated', (data) => {
+      fetchMyLeaves();
+    });
+    return () => {
+      socket.disconnect();
+    };
+  }, [token, user._id, user.id, user.role]);
 
   const fetchMyLeaves = async () => {
     try {
@@ -93,16 +115,6 @@ const LeaveManagement = () => {
     }
   };
 
-  const getInitials = (name) => {
-    if (!name) return 'ME';
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
-  };
-
   // Dynamic Metrics calculations
   const approvedLeaves = leaves.filter(l => l.status === 'approved');
   
@@ -128,11 +140,27 @@ const LeaveManagement = () => {
   // Filter requests
   const filteredLeaves = leaves.filter(l => {
     const query = searchQuery.toLowerCase();
-    return (
+    const matchesQuery = !query || 
       l.leaveType.toLowerCase().includes(query) ||
       (l.reason && l.reason.toLowerCase().includes(query)) ||
-      l.status.toLowerCase().includes(query)
-    );
+      l.status.toLowerCase().includes(query);
+
+    const matchesType = filterType === 'all' || l.leaveType.toLowerCase() === filterType.toLowerCase();
+    const matchesStatus = filterStatus === 'all' || l.status.toLowerCase() === filterStatus.toLowerCase();
+
+    let matchesDateRange = true;
+    if (filterStartDate) {
+      const fStart = new Date(filterStartDate);
+      const lEnd = new Date(l.endDate);
+      if (lEnd < fStart) matchesDateRange = false;
+    }
+    if (filterEndDate) {
+      const fEnd = new Date(filterEndDate);
+      const lStart = new Date(l.startDate);
+      if (lStart > fEnd) matchesDateRange = false;
+    }
+
+    return matchesQuery && matchesType && matchesStatus && matchesDateRange;
   });
 
   const handleExport = () => {
@@ -167,17 +195,104 @@ const LeaveManagement = () => {
             <Search size={18} color={isDark ? '#a3b3af' : '#9ca3af'} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }} />
             <input 
               type="text" 
-              placeholder="Search..." 
+              placeholder="Search by type, reason, or status..." 
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="verdant-input"
               style={{ paddingLeft: 46 }}
             />
           </div>
-          <button className="verdant-btn-outline" style={{ gap: 8, height: 44 }}>
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className="verdant-btn-outline" 
+            style={{ 
+              gap: 8, 
+              height: 44, 
+              borderColor: showFilters ? '#00a76b' : undefined,
+              color: showFilters ? '#00a76b' : undefined,
+              background: showFilters ? (isDark ? 'rgba(0,167,107,0.05)' : '#f0fdf4') : undefined 
+            }}
+          >
             <SlidersHorizontal size={16} /> Filters
           </button>
         </div>
+
+        {showFilters && (
+          <div className="verdant-card animate-in fade-in duration-200" style={{ padding: 20, marginBottom: 24, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
+            {/* Filter by Type */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#a3b3af' : '#8c918f' }}>Leave Type</label>
+              <select 
+                value={filterType}
+                onChange={e => setFilterType(e.target.value)}
+                className="verdant-input"
+                style={{ cursor: 'pointer' }}
+              >
+                <option value="all">All Types</option>
+                <option value="sick">Sick Leave</option>
+                <option value="casual">Casual Leave</option>
+                <option value="earned">Earned Leave</option>
+                <option value="emergency">Emergency Leave</option>
+              </select>
+            </div>
+
+            {/* Filter by Status */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#a3b3af' : '#8c918f' }}>Status</label>
+              <select 
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value)}
+                className="verdant-input"
+                style={{ cursor: 'pointer' }}
+              >
+                <option value="all">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+
+            {/* Filter Start Date */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#a3b3af' : '#8c918f' }}>From Date</label>
+              <input 
+                type="date"
+                value={filterStartDate}
+                onChange={e => setFilterStartDate(e.target.value)}
+                className="verdant-input"
+              />
+            </div>
+
+            {/* Filter End Date */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#a3b3af' : '#8c918f' }}>To Date</label>
+              <input 
+                type="date"
+                value={filterEndDate}
+                onChange={e => setFilterEndDate(e.target.value)}
+                className="verdant-input"
+              />
+            </div>
+
+            {/* Reset Filters */}
+            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <button 
+                onClick={() => {
+                  setFilterType('all');
+                  setFilterStatus('all');
+                  setFilterStartDate('');
+                  setFilterEndDate('');
+                  setSearchQuery('');
+                }}
+                className="verdant-btn-outline" 
+                style={{ width: '100%', height: 44, justifyContent: 'center' }}
+              >
+                Reset Filters
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* METRIC CARDS */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, marginBottom: 32 }}>
@@ -238,58 +353,115 @@ const LeaveManagement = () => {
         </div>
 
         {/* MY REQUESTS */}
-        <h2 style={{ fontSize: 18, fontWeight: 800, color: isDark ? '#fff' : '#2c302e', marginBottom: 16, marginTop: 0 }}>My requests</h2>
+        <h2 style={{ fontSize: 18, fontWeight: 800, color: isDark ? '#fff' : '#2c302e', marginBottom: 16, marginTop: 0 }}>My Requests</h2>
         
         <div className="verdant-card" style={{ padding: 0, overflow: 'hidden' }}>
           {loading ? (
             <p style={{ padding: '40px 24px', textAlign: 'center', color: isDark ? '#a3b3af' : '#8c918f', fontSize: 14, margin: 0 }} className="animate-pulse">
               Synchronizing leaves...
             </p>
+          ) : leaves.length === 0 ? (
+            <div style={{ padding: '60px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 16 }}>
+              <div style={{ width: 80, height: 80, borderRadius: '50%', background: isDark ? 'rgba(0,167,107,0.05)' : '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                <Calendar size={40} color="#00a76b" />
+              </div>
+              <div>
+                <h3 style={{ fontSize: 16, fontWeight: 800, color: isDark ? '#fff' : '#2c302e', margin: '0 0 4px' }}>No Leave Requests Yet</h3>
+                <p style={{ fontSize: 13, color: isDark ? '#a3b3af' : '#8c918f', margin: 0, maxWidth: 300 }}>
+                  You have not submitted any leave requests. Apply for your time-off using the button below.
+                </p>
+              </div>
+              <button onClick={() => setIsRequestModalOpen(true)} className="verdant-btn-primary" style={{ gap: 8, height: 40, marginTop: 8 }}>
+                <Plus size={16} /> Request Leave
+              </button>
+            </div>
           ) : filteredLeaves.length === 0 ? (
-            <p style={{ padding: '40px 24px', textAlign: 'center', color: isDark ? '#a3b3af' : '#8c918f', fontSize: 14, margin: 0 }}>
-              No leave requests found.
-            </p>
+            <div style={{ padding: '60px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 8 }}>
+              <Info size={32} color={isDark ? '#a3b3af' : '#8c918f'} />
+              <p style={{ fontSize: 13, color: isDark ? '#a3b3af' : '#8c918f', margin: 0 }}>
+                No leave requests matches your filter criteria.
+              </p>
+            </div>
           ) : (
-            [...filteredLeaves].reverse().map((lv, idx) => (
+            [...filteredLeaves].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map((lv, idx) => (
               <div 
                 key={lv._id || idx} 
                 onClick={() => { setSelectedLeave(lv); setIsModalOpen(true); }} 
                 style={{ 
                   display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between', 
-                  padding: '16px 24px', 
+                  flexDirection: 'column',
+                  padding: '20px 24px', 
                   borderBottom: idx === filteredLeaves.length - 1 ? 'none' : (isDark ? '1px solid #1a2d29' : '1px solid #e2eae7'), 
                   cursor: 'pointer', 
-                  transition: 'background 0.2s' 
+                  transition: 'background 0.2s',
+                  gap: 12
                 }} 
                 className={isDark ? "hover:bg-[#162722]" : "hover:bg-[#f9fdfc]"}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(0,167,107,0.08)' : '#e6f7f0', color: '#00a76b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800 }}>
-                    {getInitials(user.name || 'My Request')}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: '12px', background: isDark ? 'rgba(0,167,107,0.08)' : '#e6f7f0', color: '#00a76b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+                        <Calendar size={22} />
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <h4 style={{ fontSize: 16, fontWeight: 800, color: isDark ? '#fff' : '#2c302e', margin: 0, textTransform: 'capitalize' }}>
+                          {lv.leaveType} Leave
+                        </h4>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#00a76b', background: isDark ? 'rgba(0,167,107,0.08)' : '#e6f7f0', padding: '2px 8px', borderRadius: '6px' }}>
+                          {lv.totalDays} {lv.totalDays === 1 ? 'Day' : 'Days'}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: 13, color: isDark ? '#a3b3af' : '#8c918f', margin: '4px 0 0' }}>
+                        {new Date(lv.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                        <span style={{ margin: '0 8px', opacity: 0.5 }}>→</span>
+                        {new Date(lv.endDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', margin: '0 0 4px' }}>{user.name || 'My Request'}</h4>
-                    <p style={{ fontSize: 13, color: isDark ? '#a3b3af' : '#8c918f', margin: 0 }}>
-                      <span style={{ textTransform: 'capitalize' }}>{lv.leaveType} leave</span> • {new Date(lv.startDate).toLocaleDateString()} → {new Date(lv.endDate).toLocaleDateString()} • {lv.totalDays} day(s)
-                    </p>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                    <span style={{
+                      padding: '6px 12px',
+                      borderRadius: 99,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      textTransform: 'capitalize',
+                      background: lv.status === 'approved' ? (isDark ? 'rgba(0,167,107,0.1)' : '#e6f7f0') : 
+                                  lv.status === 'rejected' ? (isDark ? 'rgba(239,68,68,0.1)' : '#fee2e2') : 
+                                  lv.status === 'cancelled' ? (isDark ? 'rgba(156,163,175,0.1)' : '#f3f4f6') : 
+                                  (isDark ? 'rgba(249,115,22,0.1)' : '#fff7ed'),
+                      color: lv.status === 'approved' ? '#00a76b' : 
+                             lv.status === 'rejected' ? '#ef4444' : 
+                             lv.status === 'cancelled' ? '#6b7280' : 
+                             '#f97316',
+                      display: 'inline-block'
+                    }}>
+                      {lv.status}
+                    </span>
+                    <span style={{ fontSize: 11, color: isDark ? '#527068' : '#9ca3af', fontWeight: 600 }}>
+                      Submitted: {lv.createdAt ? new Date(lv.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                    </span>
                   </div>
                 </div>
-                <div>
-                  <span style={{
-                    padding: '6px 12px',
-                    borderRadius: 99,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    textTransform: 'capitalize',
-                    background: lv.status === 'approved' ? (isDark ? 'rgba(0,167,107,0.08)' : '#e6f7f0') : lv.status === 'rejected' ? (isDark ? 'rgba(225,29,72,0.08)' : '#fde8e8') : (isDark ? 'rgba(107,114,128,0.08)' : '#f3f4f6'),
-                    color: lv.status === 'approved' ? '#00a76b' : lv.status === 'rejected' ? '#e11d48' : (isDark ? '#cbd5e1' : '#6b7280'),
-                    display: 'inline-block'
+
+                {lv.reason && (
+                  <div style={{ 
+                    fontSize: 13, 
+                    color: isDark ? '#a3b3af' : '#5c6360', 
+                    background: isDark ? 'rgba(0,167,107,0.03)' : '#fcfdfe', 
+                    padding: '10px 16px', 
+                    borderRadius: 8, 
+                    borderLeft: '3px solid #00a76b',
+                    margin: '0 0 0 60px',
+                    lineHeight: 1.4
                   }}>
-                    {lv.status}
-                  </span>
-                </div>
+                    <span style={{ fontWeight: 700, marginRight: 6, color: isDark ? '#fff' : '#2c302e' }}>Reason:</span>
+                    {lv.reason}
+                  </div>
+                )}
               </div>
             ))
           )}
@@ -323,7 +495,7 @@ const LeaveManagement = () => {
                 </select>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div style={{ gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <label style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#a3b3af' : '#8c918f' }}>Start Date</label>
                   <input 

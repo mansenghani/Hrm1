@@ -7,7 +7,7 @@ import {
   FolderOpen, TrendingUp, MessageSquare, Bell, Search,
   LogOut, ChevronLeft, ChevronRight, Sun, Moon, Menu, X,
   Play, Zap, PlusCircle, Calendar, Wallet, Target,
-  Globe, ChevronDown
+  Globe, ChevronDown, Briefcase, BarChart3
 } from 'lucide-react';
 import useAuthStore from '@shared/store/authStore';
 
@@ -43,27 +43,20 @@ const useTheme = () => {
   return [dark, setDark];
 };
 
-// ─── TOP TABS ─────────────────────────────────────────────────
-const NAV_ITEMS = [
-  { label: 'Dashboard',    path: '/employee/dashboard',           icon: LayoutDashboard },
-  { label: 'Time Tracker', path: '/employee/time-tracker',        icon: Clock },
-  { label: 'Team Chat',    path: '/employee/chat',                icon: MessageSquare },
-  { label: 'Create Task',  path: '/employee/task-management/create', icon: PlusCircle },
-];
-
 // ─── SIDEBAR GROUPS ──────────────────────────────────────────
-const SIDEBAR_OVERVIEW_ITEMS = [
-  { label: 'Dashboard', path: '/employee/dashboard', icon: LayoutDashboard },
-];
-
-const SIDEBAR_ME_ITEMS = [
-  { label: 'My Profile', path: '/employee/profile', icon: User },
-  { label: 'My Attendance', path: '/employee/attendance', icon: Clock },
-  { label: 'My Leave', path: '/employee/leave', icon: Calendar },
-  { label: 'My Payslips', path: '/employee/payslips', icon: Wallet },
-  { label: 'My Documents', path: '/employee/documents', icon: FileText },
-  { label: 'My Performance', path: '/employee/performance', icon: Target },
-];
+const SIDEBAR_ITEMS = {
+  OVERVIEW: [
+    { label: 'Dashboard', path: '/employee/dashboard', icon: LayoutDashboard },
+  ],
+  ME: [
+    { label: 'My Profile', path: '/employee/profile', icon: User },
+    { label: 'My Attendance', path: '/employee/attendance', icon: Clock },
+    { label: 'My Leave', path: '/employee/leave', icon: Calendar },
+    { label: 'My Payslips', path: '/employee/payslips', icon: Wallet },
+    { label: 'My Documents', path: '/employee/documents', icon: FileText },
+    { label: 'My Performance', path: '/employee/performance', icon: Target },
+  ]
+};
 
 // ─── AVATAR ───────────────────────────────────────────────────
 const Avatar = ({ name = '', image, size = 32 }) => {
@@ -271,86 +264,86 @@ const EmployeeLayout = () => {
 
   // ── SIDEBAR CONTENT ────────────────────────────────────────
   const SidebarContent = ({ mobile = false }) => (
-    <div className="flex flex-col h-full" style={{ backgroundColor: dark ? '#050c0a' : '#f2fbf6' }}>
-      {/* Mobile brand header (logo shown inside sidebar on mobile only) */}
-      {mobile && (
-        <div className="flex items-center gap-3 px-4 py-5 border-b border-[#eceae3] dark:border-[#1a2d29]">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-[#00a76b]">
+    <div className="flex flex-col h-full" style={{ backgroundColor: '#071A17', fontFamily: "'Inter', sans-serif" }}>
+      {/* Brand Header */}
+      {(!collapsed || mobile) ? (
+        <div className="flex items-center gap-3 px-6 py-5">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-[#10b981]">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="8" />
               <path d="M12 2v2M12 20v2M2 12h2M20 12h2" />
               <circle cx="12" cy="12" r="3" fill="white" />
             </svg>
           </div>
-          <span className="font-bold text-[17px] text-[#201515] dark:text-white">Verdant HR</span>
-          <button onClick={() => setMobileOpen(false)} className="ml-auto p-1 rounded-lg text-[#939084] dark:text-[#a3b3af] cursor-pointer bg-transparent border-none">
-            <X size={20} />
-          </button>
+          <div className="flex flex-col items-start leading-tight">
+            <span className="font-bold text-[16px] text-white tracking-tight">Verdant HR</span>
+            <span className="text-[10px] font-bold text-[#527068] uppercase tracking-wider">Workforce OS</span>
+          </div>
+          {mobile && (
+            <button onClick={() => setMobileOpen(false)} className="ml-auto p-1 rounded-lg text-[#527068] cursor-pointer bg-transparent border-none hover:text-white">
+              <X size={20} />
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="flex items-center justify-center py-5">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-[#10b981]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="8" />
+              <path d="M12 2v2M12 20v2M2 12h2M20 12h2" />
+              <circle cx="12" cy="12" r="3" fill="white" />
+            </svg>
+          </div>
         </div>
       )}
 
       {/* Nav links */}
       <nav className="flex-1 overflow-y-auto p-3 space-y-4 scrollbar-hide">
-        {/* OVERVIEW Group */}
-        <div>
-          {(!collapsed || mobile) && (
-            <p className="px-4 text-[10px] font-black text-[#939084] dark:text-[#527068] uppercase tracking-[0.2em] mb-2">
-              Overview
-            </p>
-          )}
-          <div className="space-y-1">
-            {SIDEBAR_OVERVIEW_ITEMS.map(item => {
-              const Icon = item.icon;
-              const active = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => mobile && setMobileOpen(false)}
-                  title={collapsed && !mobile ? item.label : ''}
-                  className={`flex items-center h-12 text-[15px] font-bold no-underline rounded-[999px] transition-all group ${collapsed && !mobile ? 'justify-center px-0 w-full' : 'px-4 gap-3 w-full'} ${active ? 'text-white bg-[#00a76b] shadow-sm' : 'text-[#201515] dark:text-[#a3b3af] hover:bg-[#eceae3]/60 dark:hover:bg-[#111c18]'}`}
-                >
-                  <div className={`shrink-0 flex items-center justify-center transition-all ${collapsed && !mobile ? 'w-12' : 'w-5'}`}>
-                    <Icon size={20} className={active ? 'text-white' : 'text-[#36342e] dark:text-[#a3b3af]'} />
-                  </div>
-                  {(!collapsed || mobile) && <span className="truncate whitespace-nowrap overflow-hidden">{item.label}</span>}
-                </Link>
-              );
-            })}
+        {Object.entries(SIDEBAR_ITEMS).map(([groupName, items]) => (
+          <div key={groupName} className="space-y-2">
+            {(!collapsed || mobile) && (
+              <p className="px-4 text-[11px] font-black text-[#527068] uppercase tracking-[0.2em] mb-2 mt-2">
+                {groupName}
+              </p>
+            )}
+            <div className="space-y-1">
+              {items.map(item => {
+                const Icon = item.icon;
+                const active = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => mobile && setMobileOpen(false)}
+                    title={collapsed && !mobile ? item.label : ''}
+                    style={{ transition: 'all 200ms ease-in-out' }}
+                    className={`flex items-center h-12 text-[14px] font-medium no-underline rounded-[14px] group ${collapsed && !mobile ? 'justify-center px-0 w-full' : 'px-4 gap-3 w-full'} ${active ? 'text-white bg-[#10b981] shadow-sm' : 'text-[#a3b3af] hover:bg-[#102d29] hover:text-white'}`}
+                  >
+                    <div className={`shrink-0 flex items-center justify-center transition-all ${collapsed && !mobile ? 'w-12' : 'w-5'}`}>
+                      <Icon size={20} className={active ? 'text-white' : 'text-[#a3b3af] group-hover:text-white'} style={{ transition: 'color 200ms ease-in-out' }} />
+                    </div>
+                    {(!collapsed || mobile) && <span className="truncate whitespace-nowrap overflow-hidden">{item.label}</span>}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-        </div>
-
-        {/* ME Group */}
-        <div>
-          {(!collapsed || mobile) && (
-            <p className="px-4 text-[10px] font-black text-[#939084] dark:text-[#527068] uppercase tracking-[0.2em] mb-2 mt-4">
-              Me
-            </p>
-          )}
-          <div className="space-y-1">
-            {SIDEBAR_ME_ITEMS.map(item => {
-              const Icon = item.icon;
-              const active = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => mobile && setMobileOpen(false)}
-                  title={collapsed && !mobile ? item.label : ''}
-                  className={`flex items-center h-12 text-[15px] font-bold no-underline rounded-[999px] transition-all group ${collapsed && !mobile ? 'justify-center px-0 w-full' : 'px-4 gap-3 w-full'} ${active ? 'text-white bg-[#00a76b] shadow-sm' : 'text-[#201515] dark:text-[#a3b3af] hover:bg-[#eceae3]/60 dark:hover:bg-[#111c18]'}`}
-                >
-                  <div className={`shrink-0 flex items-center justify-center transition-all ${collapsed && !mobile ? 'w-12' : 'w-5'}`}>
-                    <Icon size={20} className={active ? 'text-white' : 'text-[#36342e] dark:text-[#a3b3af]'} />
-                  </div>
-                  {(!collapsed || mobile) && <span className="truncate whitespace-nowrap overflow-hidden">{item.label}</span>}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
+        ))}
       </nav>
 
-
+      {/* Collapse button at bottom */}
+      <div className="p-3 mt-auto">
+        <button
+          onClick={() => setCollapsed(c => !c)}
+          className={`flex items-center h-12 text-[14px] font-medium no-underline rounded-[14px] transition-all w-full bg-transparent border-none cursor-pointer text-[#a3b3af] hover:bg-[#102d29] hover:text-white ${collapsed && !mobile ? 'justify-center px-0' : 'px-4 gap-3'}`}
+          style={{ transition: 'all 200ms ease-in-out' }}
+        >
+          <div className="shrink-0 flex items-center justify-center w-5">
+            {collapsed && !mobile ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          </div>
+          {(!collapsed || mobile) && <span>Collapse</span>}
+        </button>
+      </div>
     </div>
   );
 
@@ -614,9 +607,9 @@ const EmployeeLayout = () => {
         <aside
           className="hidden md:flex flex-col border-r flex-shrink-0 transition-all duration-300 ease-in-out relative"
           style={{
-            width: collapsed ? '64px' : '220px',
-            borderColor: dark ? '#1a2d29' : 'var(--border)',
-            backgroundColor: dark ? '#050c0a' : '#f2fbf6',
+            width: collapsed ? '80px' : '280px',
+            borderColor: '#102a26',
+            backgroundColor: '#071A17',
           }}
         >
           <SidebarContent />
@@ -626,8 +619,8 @@ const EmployeeLayout = () => {
         {mobileOpen && (
           <div className="fixed inset-0 z-50 md:hidden">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-            <aside className="absolute left-0 top-0 bottom-0 w-64 border-r animate-slide-in-left"
-              style={{ background: dark ? '#050c0a' : '#f2fbf6', borderColor: dark ? '#1a2d29' : 'var(--border)' }}>
+            <aside className="absolute left-0 top-0 bottom-0 w-[280px] border-r animate-slide-in-left"
+              style={{ background: '#071A17', borderColor: '#102a26' }}>
               <SidebarContent mobile />
             </aside>
           </div>
