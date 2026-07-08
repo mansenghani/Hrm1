@@ -72,19 +72,8 @@ const EmployeeDocuments = () => {
     }
   };
 
-  const policies = [
-    { name: 'FluidHR Employee Handbook 2026', desc: 'Core guidelines, code of conduct, and organizational rules.', file: 'Handbook_2026.pdf', size: '2.4 MB' },
-    { name: 'Leave & Attendance Policy v3.2', desc: 'Rules governing leaves, holidays, time-tracking, and approvals.', file: 'Leave_Policy.pdf', size: '1.1 MB' },
-    { name: 'IT Security & Acceptable Use Policy', desc: 'Required compliance standards for access protocols and hardware usage.', file: 'IT_Policy.pdf', size: '950 KB' },
-    { name: 'Prevention of Sexual Harassment (POSH)', desc: 'Security protocols, conduct standards, and reporting directives.', file: 'POSH_Policy.pdf', size: '1.5 MB' }
-  ];
-
   const filteredDossier = dossierFiles.filter(f => 
     f.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredPolicies = policies.filter(p => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleExport = () => {
@@ -181,55 +170,6 @@ const EmployeeDocuments = () => {
                       <Trash2 size={15} />
                     </button>
                   )}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* POLICIES CARD */}
-        <div className="verdant-card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '20px 24px', borderBottom: isDark ? '1px solid #1a2d29' : '1px solid #e2eae7' }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: isDark ? '#fff' : '#2c302e', margin: 0 }}>Company Policies</h3>
-          </div>
-
-          {filteredPolicies.length === 0 ? (
-            <p style={{ padding: '40px 24px', textAlign: 'center', color: isDark ? '#a3b3af' : '#8c918f', fontSize: 14, margin: 0 }}>
-              No policies found.
-            </p>
-          ) : (
-            filteredPolicies.map((p, idx) => (
-              <div 
-                key={idx} 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between', 
-                  padding: '16px 24px', 
-                  borderBottom: idx === filteredPolicies.length - 1 ? 'none' : (isDark ? '1px solid #1a2d29' : '1px solid #e2eae7'), 
-                  transition: 'background 0.2s' 
-                }} 
-                className={isDark ? "hover:bg-[#162722]" : "hover:bg-[#f9fdfc]"}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(0, 167, 107, 0.08)' : '#e6f7f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <FileText size={20} color="#00a76b" />
-                  </div>
-                  <div>
-                    <h4 style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', margin: '0 0 4px' }}>{p.name}</h4>
-                    <p style={{ fontSize: 13, color: isDark ? '#a3b3af' : '#8c918f', margin: 0 }}>
-                      {p.desc} • {p.size}
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <button 
-                    onClick={() => triggerDownload(p.file)}
-                    className="verdant-btn-outline" 
-                    style={{ gap: 6, height: 36, padding: '0 16px', fontSize: 12 }}
-                  >
-                    <Download size={14} /> Download
-                  </button>
                 </div>
               </div>
             ))
