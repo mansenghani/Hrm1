@@ -42,8 +42,8 @@ const Screenshots = () => {
     fetchData();
 
     // 📡 REAL-TIME SYNC ENGINE
-    const socket = io(API_BASE_URL.replace('/api', ''), {
-       transports: ['websocket']
+    const socket = io(window.location.origin, {
+       transports: ['websocket', 'polling']
     });
 
     socket.on('connect', () => {
