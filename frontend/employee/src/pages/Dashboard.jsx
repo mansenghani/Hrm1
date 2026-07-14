@@ -9,6 +9,7 @@ import {
   LogIn, LogOut, Sun, Moon, Sunrise, Briefcase, Target,
   ChevronRight, AlertCircle, Star, Bell, Zap
 } from 'lucide-react';
+import WeeklyAttendanceChart from '@shared/components/WeeklyAttendanceChart';
 
 // ─── HELPERS ─────────────────────────────────────────────────
 const token = () => sessionStorage.getItem('token');
@@ -131,10 +132,10 @@ const Dashboard = () => {
     try {
       const [profileRes, timerRes, dashRes, payrollRes, leaveRes, taskRes, notifRes] = await Promise.allSettled([
         api('/api/auth/me'),
-        api('/api/timer/status'),
+        api('/api/time/timer/status'),
         api('/api/time/dashboard?timeRange=weekly'),
         api('/api/payroll/me'),
-        api('/api/leave/my'),
+        api('/api/leaves/my'),
         api('/api/tasks'),
         api('/api/notifications'),
       ]);
@@ -337,36 +338,10 @@ const Dashboard = () => {
       {/* ─ CHARTS ROW ────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
 
-        {/* Weekly Hours Bar Chart */}
-        <Card title="My Weekly Hours" className="lg:col-span-3"
-          action={
-            <span className="badge badge-green">This Week</span>
-          }>
-          {loading ? <Skeleton h="220px" /> : (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={weeklyChart} barCategoryGap="30%">
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1e2d3d' : '#e2e8f0'} />
-                <XAxis dataKey="day" axisLine={false} tickLine={false}
-                  tick={{ fontSize: 11, fill: isDark ? '#94a3b8' : '#64748b', fontWeight: 500 }} />
-                <YAxis axisLine={false} tickLine={false}
-                  tick={{ fontSize: 11, fill: isDark ? '#94a3b8' : '#64748b' }} unit="h" />
-                <Tooltip content={<ChartTooltip isDark={isDark} />} cursor={{ fill: isDark ? 'rgba(34,197,94,0.1)' : '#f0faf6', radius: 6 }} />
-                <Bar dataKey="active" name="Active" fill="var(--accent)" radius={[6,6,0,0]} />
-                <Bar dataKey="idle" name="Idle" fill="rgba(217,119,6,0.4)" radius={[6,6,0,0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-          <div className="flex items-center gap-4 mt-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-            <span className="flex items-center gap-1.5">
-              <span className="w-3 h-2 rounded-sm inline-block" style={{ background: 'var(--accent)' }} />
-              Active
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-3 h-2 rounded-sm inline-block" style={{ background: 'rgba(217,119,6,0.4)' }} />
-              Idle
-            </span>
-          </div>
-        </Card>
+        {/* Weekly Attendance Chart */}
+        <div className="lg:col-span-3 flex">
+          {loading ? <Skeleton h="380px" /> : <WeeklyAttendanceChart />}
+        </div>
 
         {/* Announcements */}
         <Card title="Announcements" className="lg:col-span-2"

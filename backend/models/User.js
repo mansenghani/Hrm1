@@ -3,26 +3,26 @@ const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  email: { type: String, required: true, unique: true, trim: true, lowercase: true },
+  email: { type: String, required: true, unique: true, trim: true, lowercase: true, lowercase: true, trim: true },
   password: { type: String, required: true },
-  role: { 
-    type: String, 
+  role: {
+    type: String,
     enum: ['admin', 'hr', 'manager', 'employee'],
-    required: true 
+    required: true
   },
-   employeeId: { type: String },
+  employeeId: { type: String },
   profileImage: { type: String, default: null },
   teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null },
   reportingManager: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   status: { type: String, enum: ['active', 'inactive'], default: 'active' }
 }, { timestamps: true });
 
-userSchema.pre('save', async function() {
+userSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
   this.password = await bcrypt.hash(this.password, 10);
 });
 
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 

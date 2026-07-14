@@ -81,7 +81,7 @@ const TaskUpdate = () => {
         </button>
         <div className="text-right">
           <h1 className="text-3xl font-black text-[#201515] tracking-tighter uppercase">
-            End-of-Day <span className="text-[#ff4f00]">Update.</span>
+            End-of-Day <span className="text-[#00a76b]">Update.</span>
           </h1>
           <p className="text-[10px] font-black text-[#939084] uppercase tracking-widest mt-1">Daily Work Status Reporting</p>
         </div>
@@ -94,7 +94,7 @@ const TaskUpdate = () => {
             {/* TASK CONTEXT PREVIEW */}
             <div className="bg-[#f8f9fa] p-6 rounded-3xl border border-[#eceae3] border-dashed mb-4">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#ff4f00] animate-pulse"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-[#00a76b] animate-pulse"></div>
                 <span className="text-[10px] font-black text-[#939084] uppercase tracking-widest">Active Task Node</span>
               </div>
               <h2 className="text-xl font-black text-[#201515] uppercase">{task.title}</h2>
@@ -103,7 +103,7 @@ const TaskUpdate = () => {
 
             <div className="space-y-4">
               <label className="text-[11px] font-black uppercase tracking-widest text-[#939084] ml-1 flex items-center gap-2">
-                <Clock size={14} className="text-[#ff4f00]" /> Select Current Lifecycle State
+                <Clock size={14} className="text-[#00a76b]" /> Select Current Lifecycle State
               </label>
               <div className="grid grid-cols-3 gap-4">
                 {[
@@ -117,7 +117,7 @@ const TaskUpdate = () => {
                     onClick={() => setStatus(s.id)}
                     className={`flex flex-col items-center gap-3 p-6 rounded-3xl border-2 transition-all cursor-pointer bg-transparent ${
                       status === s.id 
-                        ? `border-[#ff4f00] shadow-lg ${s.color}` 
+                        ? `border-[#00a76b] shadow-lg ${s.color}` 
                         : 'border-[#eceae3] text-[#939084] hover:border-[#c5c0b1]'
                     } ${s.bg}`}
                   >
@@ -130,12 +130,12 @@ const TaskUpdate = () => {
 
             <div className="space-y-4">
               <label className="text-[11px] font-black uppercase tracking-widest text-[#939084] ml-1 flex items-center gap-2">
-                <MessageSquare size={14} className="text-[#ff4f00]" /> Progress Report Narrative {status !== 'Completed' && '(Required)'}
+                <MessageSquare size={14} className="text-[#00a76b]" /> Progress Report Narrative {status !== 'Completed' && '(Required)'}
               </label>
               <textarea 
                 required={status !== 'Completed'}
                 placeholder={status === 'Completed' ? "What did you achieve? (Optional)" : "Provide a detailed update on progress or blockers..."}
-                className="w-full h-48 p-6 bg-[#f8f9fa] rounded-[32px] text-[15px] font-medium text-[#201515] focus:outline-none border-2 border-transparent focus:border-[#ff4f00]/20 shadow-inner transition-all leading-relaxed"
+                className="w-full h-48 p-6 bg-[#f8f9fa] rounded-[32px] text-[15px] font-medium text-[#201515] focus:outline-none border-2 border-transparent focus:border-[#00a76b]/20 shadow-inner transition-all leading-relaxed"
                 value={progressNote} 
                 onChange={e => setProgressNote(e.target.value)}
               />
@@ -144,7 +144,7 @@ const TaskUpdate = () => {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full h-16 bg-[#201515] hover:bg-[#ff4f00] text-white rounded-[24px] font-black text-[13px] uppercase tracking-[0.4em] transition-all shadow-2xl mt-8 italic flex items-center justify-center gap-3 disabled:opacity-50"
+              className="w-full h-16 bg-[#201515] hover:bg-[#00a76b] text-white rounded-[24px] font-black text-[13px] uppercase tracking-[0.4em] transition-all shadow-2xl mt-8 italic flex items-center justify-center gap-3 disabled:opacity-50"
             >
               {loading ? 'COMMITTING CHANGES...' : (
                 <>COMMIT DAILY UPDATE <Save size={16} /></>
@@ -157,7 +157,7 @@ const TaskUpdate = () => {
         <div className="space-y-6">
           <div className="bg-[#fffdf9] p-8 rounded-[40px] border border-[#c5c0b1] shadow-sm">
             <h3 className="text-[11px] font-black uppercase tracking-widest text-[#201515] mb-6 flex items-center gap-2">
-              <Target size={16} className="text-[#ff4f00]" /> Morning Log Meta
+              <Target size={16} className="text-[#00a76b]" /> Morning Log Meta
             </h3>
             <div className="space-y-6">
               <div className="flex gap-4">
@@ -181,7 +181,7 @@ const TaskUpdate = () => {
             </div>
           </div>
 
-          <div className="bg-[#ff4f00]/5 p-8 rounded-[32px] border border-[#ff4f00]/20">
+          <div className="bg-[#00a76b]/5 p-8 rounded-[32px] border border-[#00a76b]/20">
             <p className="text-[11px] font-bold text-[#201515] leading-relaxed">
               "Honest reporting drives team transparency. Your EOD update helps us maintain focus and velocity."
             </p>

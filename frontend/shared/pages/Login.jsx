@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ShieldCheck, ArrowRight, Lock, Mail, Globe, AlertCircle, Zap, UserCircle } from 'lucide-react';
+import { ShieldCheck, ArrowRight, Lock, Mail, AlertCircle, Zap } from 'lucide-react';
 import { EntryButton, EntryInput, EntrySelect } from '../components/EntryPrimitives';
 
 const Login = () => {

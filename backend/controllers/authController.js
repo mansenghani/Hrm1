@@ -1,5 +1,7 @@
 const User = require('../models/User');
 const Employee = require('../models/Employee');
+const HR = require('../models/HR');
+const Manager = require('../models/Manager');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
@@ -108,18 +110,18 @@ exports.createUser = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password').lean();
+    const user = await User.findById(req.user.id).select('-password').populate('reportingManager', 'name email').lean();
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     // 👤 MASTER REGISTRY BRIDGE: Always fetch from the Employee model for personnel details
-    const employeeData = await Employee.findOne({ userId: req.user.id }).lean();
+    const employeeData = await Employee.findOne({ userId: req.user.id }).populate('reportingManager', 'name email').lean();
     
     // 🛰️ DYNAMIC SHADOW LOOKUP: Fetch role-specific metadata if needed
     let roleMetadata = {};
     if (user.role === 'hr') {
-      roleMetadata = await mongoose.model('HR').findOne({ userId: req.user.id }).lean() || {};
+      roleMetadata = await HR.findOne({ userId: req.user.id }).lean() || {};
     } else if (user.role === 'manager') {
-      roleMetadata = await mongoose.model('Manager').findOne({ userId: req.user.id }).lean() || {};
+      roleMetadata = await Manager.findOne({ userId: req.user.id }).lean() || {};
     }
 
     console.log(`[PROFILE TRACE] User Role: ${user.role} | Master Registry: ${!!employeeData} | Shadow: ${!!roleMetadata}`);
@@ -184,11 +186,15 @@ exports.uploadProfileImage = async (req, res) => {
     const user = await User.findByIdAndUpdate(req.user.id, { profileImage: imagePath }, { new: true });
     
     // Update Shadow Registry (Employee/HR/Manager)
-    let shadowRegistry = 'Employee';
-    if (user.role === 'hr') shadowRegistry = 'HR';
-    if (user.role === 'manager') shadowRegistry = 'Manager';
+    let shadowModel;
+    if (user.role === 'hr') {
+      shadowModel = HR;
+    } else if (user.role === 'manager') {
+      shadowModel = Manager;
+    } else {
+      shadowModel = Employee;
+    }
 
-    const shadowModel = mongoose.model(shadowRegistry);
     await shadowModel.findOneAndUpdate({ userId: req.user.id }, { profileImage: imagePath });
 
     res.json({ 

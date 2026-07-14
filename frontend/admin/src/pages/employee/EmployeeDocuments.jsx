@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { API_BASE_URL, getImageUrl } from '@shared/services/api';
 import { FileText, Download, Upload, Trash2, Check, RefreshCw, Search, X, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const EmployeeDocuments = () => {
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
   const [dossierFiles, setDossierFiles] = useState([
     { id: 1, name: 'Offer letter.pdf', size: '182 KB', date: 'Mar 14, 2022', type: 'offer_letter', dummy: true },
     { id: 2, name: 'Employment contract.pdf', size: '254 KB', date: 'Mar 14, 2022', type: 'contract', dummy: true },
@@ -29,31 +35,31 @@ const EmployeeDocuments = () => {
       if (response.data) {
         setUserData(response.data);
         const u = response.data;
-        
+
         const fetchedFiles = [
-          { 
-            id: 'adharCard', 
-            name: u.adharCard ? 'Adhar Card Document' : 'Adhar Card (Missing)', 
-            size: u.adharCard ? 'Uploaded' : '--', 
-            date: u.adharCard ? 'Verified' : 'Pending', 
-            type: 'adharCard', 
-            url: u.adharCard 
+          {
+            id: 'adharCard',
+            name: u.adharCard ? 'Adhar Card Document' : 'Adhar Card (Missing)',
+            size: u.adharCard ? 'Uploaded' : '--',
+            date: u.adharCard ? 'Verified' : 'Pending',
+            type: 'adharCard',
+            url: u.adharCard
           },
-          { 
-            id: 'bankDetails', 
-            name: u.bankDetails ? 'Bank Details Document' : 'Bank Details (Missing)', 
-            size: u.bankDetails ? 'Uploaded' : '--', 
-            date: u.bankDetails ? 'Verified' : 'Pending', 
-            type: 'bankDetails', 
-            url: u.bankDetails 
+          {
+            id: 'bankDetails',
+            name: u.bankDetails ? 'Bank Details Document' : 'Bank Details (Missing)',
+            size: u.bankDetails ? 'Uploaded' : '--',
+            date: u.bankDetails ? 'Verified' : 'Pending',
+            type: 'bankDetails',
+            url: u.bankDetails
           },
-          { 
-            id: 'panCard', 
-            name: u.panCard ? 'PAN Card Document' : 'PAN Card (Missing)', 
-            size: u.panCard ? 'Uploaded' : '--', 
-            date: u.panCard ? 'Verified' : 'Pending', 
-            type: 'panCard', 
-            url: u.panCard 
+          {
+            id: 'panCard',
+            name: u.panCard ? 'PAN Card Document' : 'PAN Card (Missing)',
+            size: u.panCard ? 'Uploaded' : '--',
+            date: u.panCard ? 'Verified' : 'Pending',
+            type: 'panCard',
+            url: u.panCard
           }
         ];
 
@@ -88,7 +94,7 @@ const EmployeeDocuments = () => {
     reader.onloadend = async () => {
       try {
         setUploadingField(fieldName);
-        
+
         let endpoint = '';
         if (fieldName === 'adharCard') endpoint = `/api/employees/${userData.employeeRecordId}/adhar-card`;
         if (fieldName === 'bankDetails') endpoint = `/api/employees/${userData.employeeRecordId}/bank-details`;
@@ -97,15 +103,15 @@ const EmployeeDocuments = () => {
         await axios.post(endpoint, { document: reader.result }, {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
-        
+
         toast.success(`Document updated successfully`, {
           style: { background: '#24a148', color: '#fff', fontWeight: 'bold' }
         });
-        
+
         await fetchProfile();
       } catch (err) {
         toast.error('Verification Failed', {
-           style: { background: '#ff4f00', color: '#fff', fontWeight: 'bold' }
+          style: { background: '#ff4f00', color: '#fff', fontWeight: 'bold' }
         });
         console.error('Upload Error:', err);
       } finally {
@@ -172,19 +178,8 @@ const EmployeeDocuments = () => {
     }
   };
 
-  const policies = [
-    { name: 'FluidHR Employee Handbook 2026', desc: 'Core guidelines, code of conduct, and organizational rules.', file: 'Handbook_2026.pdf', size: '2.4 MB' },
-    { name: 'Leave & Attendance Policy v3.2', desc: 'Rules governing leaves, holidays, time-tracking, and approvals.', file: 'Leave_Policy.pdf', size: '1.1 MB' },
-    { name: 'IT Security & Acceptable Use Policy', desc: 'Required compliance standards for access protocols and hardware usage.', file: 'IT_Policy.pdf', size: '950 KB' },
-    { name: 'Prevention of Sexual Harassment (POSH)', desc: 'Security protocols, conduct standards, and reporting directives.', file: 'POSH_Policy.pdf', size: '1.5 MB' }
-  ];
-
-  const filteredDossier = dossierFiles.filter(f => 
+  const filteredDossier = dossierFiles.filter(f =>
     f.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredPolicies = policies.filter(p => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleExport = () => {
@@ -192,16 +187,16 @@ const EmployeeDocuments = () => {
   };
 
   return (
-    <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: '#f9fdfc', minHeight: 'calc(100vh - 56px)', color: '#3b3e3c', width: '100%', boxSizing: 'border-box' }}>
+    <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: isDark ? '#08100e' : '#f9fdfc', minHeight: 'calc(100vh - 56px)', color: isDark ? '#cbd5e1' : '#3b3e3c', width: '100%', boxSizing: 'border-box', transition: 'background-color 0.3s ease, color 0.3s ease' }}>
       <div style={{ width: '100%', maxWidth: '100%', padding: '32px 32px 60px', boxSizing: 'border-box' }}>
-        
+
         {/* HEADER */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
           <div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#2c302e', margin: 0, letterSpacing: '-0.5px' }}>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: isDark ? '#fff' : '#2c302e', margin: 0, letterSpacing: '-0.5px' }}>
               My documents
             </h1>
-            <p style={{ fontSize: 14, color: '#8c918f', margin: '4px 0 0' }}>Personal files shared with HR.</p>
+            <p style={{ fontSize: 14, color: isDark ? '#a3b3af' : '#8c918f', margin: '4px 0 0' }}>Personal files shared with HR.</p>
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
             <button onClick={handleExport} className="verdant-btn-outline" style={{ gap: 8, height: 44 }}>
@@ -216,10 +211,10 @@ const EmployeeDocuments = () => {
         {/* SEARCH BAR */}
         <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
           <div style={{ position: 'relative', flex: 1 }}>
-            <Search size={18} color="#9ca3af" style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }} />
-            <input 
-              type="text" 
-              placeholder="Search..." 
+            <Search size={18} color={isDark ? '#a3b3af' : '#9ca3af'} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }} />
+            <input
+              type="text"
+              placeholder="Search..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="verdant-input"
@@ -230,38 +225,35 @@ const EmployeeDocuments = () => {
 
         {/* FILES CARD */}
         <div className="verdant-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 28 }}>
-          <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2eae7' }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: '#2c302e', margin: 0 }}>Files</h3>
+          <div style={{ padding: '20px 24px', borderBottom: isDark ? '1px solid #1a2d29' : '1px solid #e2eae7' }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: isDark ? '#fff' : '#2c302e', margin: 0 }}>Files</h3>
           </div>
 
           {filteredDossier.length === 0 ? (
-            <p style={{ padding: '40px 24px', textAlign: 'center', color: '#8c918f', fontSize: 14, margin: 0 }}>
+            <p style={{ padding: '40px 24px', textAlign: 'center', color: isDark ? '#a3b3af' : '#8c918f', fontSize: 14, margin: 0 }}>
               No dossier files found.
             </p>
           ) : (
             filteredDossier.map((file, idx) => (
-              <div 
-                key={file.id || idx} 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between', 
-                  padding: '16px 24px', 
-                  borderBottom: idx === filteredDossier.length - 1 ? 'none' : '1px solid #e2eae7', 
-                  transition: 'background 0.2s' 
-                }} 
-                className="hover:bg-[#f9fdfc]"
+              <div
+                key={file.id || idx}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '16px 24px',
+                  borderBottom: idx === filteredDossier.length - 1 ? 'none' : (isDark ? '1px solid #1a2d29' : '1px solid #e2eae7'),
+                  transition: 'background 0.2s'
+                }}
+                className={isDark ? "hover:bg-[#162722]" : "hover:bg-[#f9fdfc]"}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#e6f7f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {uploadingField === file.type ? <RefreshCw size={20} className="animate-spin text-[#00a76b]" /> : <FileText size={20} color={file.url ? "#00a76b" : "#8c918f"} />}
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(0, 167, 107, 0.08)' : '#e6f7f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <FileText size={20} color="#00a76b" />
                   </div>
                   <div>
-                    <h4 style={{ fontSize: 15, fontWeight: 700, color: '#3b3e3c', margin: '0 0 4px' }}>
-                      {file.name}
-                      {file.url && <span style={{ marginLeft: 8, fontSize: 10, background: '#00a76b', color: 'white', padding: '2px 6px', borderRadius: 10 }}>Uploaded</span>}
-                    </h4>
-                    <p style={{ fontSize: 13, color: '#8c918f', margin: 0 }}>
+                    <h4 style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', margin: '0 0 4px' }}>{file.name}</h4>
+                    <p style={{ fontSize: 13, color: isDark ? '#a3b3af' : '#8c918f', margin: 0 }}>
                       {file.size} • {file.date}
                     </p>
                   </div>
@@ -269,23 +261,23 @@ const EmployeeDocuments = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   {/* Download button for all files */}
                   {(file.dummy || file.url) && (
-                    <button 
+                    <button
                       onClick={() => triggerDownload(file.name, file.url)}
-                      className="verdant-btn-outline" 
+                      className="verdant-btn-outline"
                       style={{ gap: 6, height: 36, padding: '0 16px', fontSize: 12 }}
                     >
                       <Download size={14} /> Download
                     </button>
                   )}
-                  
+
                   {/* Replace/Upload button for actual backend documents */}
                   {['adharCard', 'bankDetails', 'panCard'].includes(file.type) && (
                     <label className="verdant-btn-outline" style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36, padding: '0 16px', fontSize: 12, cursor: 'pointer', margin: 0 }}>
                       <Upload size={14} /> {file.url ? 'Replace' : 'Upload'}
-                      <input 
-                        type="file" 
-                        className="hidden" 
-                        accept=".jpg,.jpeg,.png,image/jpeg,image/png,application/pdf" 
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".jpg,.jpeg,.png,image/jpeg,image/png,application/pdf"
                         onChange={(e) => handleRealUpload(e, file.type)}
                         disabled={uploadingField === file.type}
                       />
@@ -294,63 +286,14 @@ const EmployeeDocuments = () => {
 
                   {/* Option to delete user-added dummy dossier files */}
                   {file.dummy && file.id > 4 && (
-                    <button 
+                    <button
                       onClick={() => handleDelete(file.id)}
-                      className="verdant-btn-outline" 
+                      className="verdant-btn-outline"
                       style={{ height: 36, width: 36, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderColor: '#f87171', color: '#ef4444' }}
                     >
                       <Trash2 size={15} />
                     </button>
                   )}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* POLICIES CARD */}
-        <div className="verdant-card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2eae7' }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: '#2c302e', margin: 0 }}>Company Policies</h3>
-          </div>
-
-          {filteredPolicies.length === 0 ? (
-            <p style={{ padding: '40px 24px', textAlign: 'center', color: '#8c918f', fontSize: 14, margin: 0 }}>
-              No policies found.
-            </p>
-          ) : (
-            filteredPolicies.map((p, idx) => (
-              <div 
-                key={idx} 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between', 
-                  padding: '16px 24px', 
-                  borderBottom: idx === filteredPolicies.length - 1 ? 'none' : '1px solid #e2eae7', 
-                  transition: 'background 0.2s' 
-                }} 
-                className="hover:bg-[#f9fdfc]"
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#e6f7f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <FileText size={20} color="#00a76b" />
-                  </div>
-                  <div>
-                    <h4 style={{ fontSize: 15, fontWeight: 700, color: '#3b3e3c', margin: '0 0 4px' }}>{p.name}</h4>
-                    <p style={{ fontSize: 13, color: '#8c918f', margin: 0 }}>
-                      {p.desc} • {p.size}
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <button 
-                    onClick={() => triggerDownload(p.file, null)}
-                    className="verdant-btn-outline" 
-                    style={{ gap: 6, height: 36, padding: '0 16px', fontSize: 12 }}
-                  >
-                    <Download size={14} /> Download
-                  </button>
                 </div>
               </div>
             ))
@@ -366,18 +309,18 @@ const EmployeeDocuments = () => {
             <button onClick={() => setIsUploadModalOpen(false)} style={{ position: 'absolute', top: 20, right: 20, border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}>
               <X size={20} />
             </button>
-            <h3 style={{ fontSize: 20, fontWeight: 800, color: '#2c302e', margin: '0 0 24px' }}>Upload Dossier Document</h3>
-            
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: isDark ? '#fff' : '#2c302e', margin: '0 0 24px' }}>Upload Dossier Document</h3>
+
             <div className="verdant-highlight-box" style={{ borderStyle: 'dashed', borderWidth: '2px', borderColor: '#00a76b', textAlign: 'center', position: 'relative', cursor: 'pointer', padding: '32px 16px' }}>
               <input type="file" onChange={handleDummyUpload} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} disabled={uploading} />
               {uploading ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                   <RefreshCw size={24} className="animate-spin text-[#00a76b]" />
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#3b3e3c', margin: 0 }}>Securing document connection...</p>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', margin: 0 }}>Securing document connection...</p>
                 </div>
               ) : uploadSuccess ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#e6f7f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: isDark ? 'rgba(0, 167, 107, 0.08)' : '#e6f7f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Check size={16} color="#00a76b" />
                   </div>
                   <p style={{ fontSize: 13, fontWeight: 700, color: '#00a76b', margin: 0 }}>Dossier updated successfully!</p>
@@ -385,8 +328,8 @@ const EmployeeDocuments = () => {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                   <Upload size={24} color="#00a76b" />
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#3b3e3c', margin: 0 }}>Drag file here or click to browse</p>
-                  <p style={{ fontSize: 11, color: '#8c918f', margin: 0 }}>PDF, DOCX, or PNG formats up to 10MB</p>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', margin: 0 }}>Drag file here or click to browse</p>
+                  <p style={{ fontSize: 11, color: isDark ? '#a3b3af' : '#8c918f', margin: 0 }}>PDF, DOCX, or PNG formats up to 10MB</p>
                 </div>
               )}
             </div>

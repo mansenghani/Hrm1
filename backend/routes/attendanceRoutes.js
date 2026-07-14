@@ -1,13 +1,31 @@
 const express = require('express');
 const router = express.Router();
-const { checkIn, checkOut, getAttendance } = require('../controllers/attendanceController');
-const { protect } = require('../middleware/authMiddleware');
+const { 
+  checkIn, 
+  checkOut, 
+  getAttendance, 
+  clockIn, 
+  clockOut, 
+  getMyAttendance, 
+  getAllAttendance, 
+  getWeeklySummary 
+} = require('../controllers/attendanceController');
+const { protect, authorize } = require('../middleware/authMiddleware');
 
-// Check-in and Check-out are protected, any logged-in user can perform them
+// Check-in and Check-out (Original)
 router.post('/checkin', protect, checkIn);
 router.post('/checkout', protect, checkOut);
 
-// Get attendance fetches data based on the hierarchy defined in controller
+// Clock-in and Clock-out (Designer)
+router.post('/clock-in', protect, clockIn);
+router.put('/clock-out', protect, clockOut);
+
+// Additional endpoints
+router.get('/me', protect, getMyAttendance);
+router.get('/summary/weekly', protect, getWeeklySummary);
+router.get('/all', protect, authorize('admin', 'hr'), getAllAttendance);
+
+// Hierarchy-based attendance query
 router.get('/', protect, getAttendance);
 
 module.exports = router;

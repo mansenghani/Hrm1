@@ -19,6 +19,4 @@ const screenshotSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-// Ensure cleanup index is active - handled by expires property in schema
-
 module.exports = mongoose.model('Screenshot', screenshotSchema);

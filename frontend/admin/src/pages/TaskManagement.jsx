@@ -127,13 +127,13 @@ const TaskManagement = () => {
             <>
               <button 
                 onClick={(e) => { e.stopPropagation(); setPreviewGallery(prev => ({ ...prev, index: (prev.index - 1 + prev.items.length) % prev.items.length })) }}
-                className="absolute left-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-[5px] bg-white/10 text-white flex items-center justify-center hover:bg-[#ff4f00] transition-all border-none cursor-pointer z-[10001]"
+                className="absolute left-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-[5px] bg-white/10 text-white flex items-center justify-center hover:bg-[#00a76b] transition-all border-none cursor-pointer z-[10001]"
               >
                 <ChevronLeft size={32} />
               </button>
               <button 
                 onClick={(e) => { e.stopPropagation(); setPreviewGallery(prev => ({ ...prev, index: (prev.index + 1) % prev.items.length })) }}
-                className="absolute right-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-[5px] bg-white/10 text-white flex items-center justify-center hover:bg-[#ff4f00] transition-all border-none cursor-pointer z-[10001]"
+                className="absolute right-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-[5px] bg-white/10 text-white flex items-center justify-center hover:bg-[#00a76b] transition-all border-none cursor-pointer z-[10001]"
               >
                 <ChevronRight size={32} />
               </button>
@@ -153,7 +153,7 @@ const TaskManagement = () => {
               />
             ) : (
               <div className="w-[400px] aspect-video bg-white/5 rounded-[5px] border border-white/10 flex flex-col items-center justify-center p-10 text-center gap-6 backdrop-blur-md">
-                <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center text-[#ff4f00]"><FileText size={40} /></div>
+                <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center text-[#00a76b]"><FileText size={40} /></div>
                 <div>
                   <p className="text-white text-[18px] font-black tracking-tight line-clamp-1">{previewGallery.items[previewGallery.index].name}</p>
                   <p className="text-white/40 text-[12px] font-bold uppercase tracking-widest mt-1">Non-Visual Document detected</p>
@@ -163,7 +163,7 @@ const TaskManagement = () => {
                   download 
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full h-14 bg-[#ff4f00] text-white rounded-[5px] font-black text-[12px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 no-underline hover:scale-105 transition-all"
+                  className="w-full h-14 bg-[#00a76b] text-white rounded-[5px] font-black text-[12px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 no-underline hover:scale-105 transition-all"
                 >
                   DOWNLOAD FILE <Download size={18} />
                 </a>
@@ -176,12 +176,12 @@ const TaskManagement = () => {
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-8 rounded-[5px] border border-[#eceae3] shadow-sm">
           <div>
-            <h1 className="text-4xl font-black text-[#201515] tracking-tighter uppercase leading-none">Mission <span className="text-[#ff4f00]">Control.</span></h1>
-            <p className="text-[12px] font-bold text-[#939084] uppercase tracking-[0.2em] mt-2 flex items-center gap-2 ml-1"><Briefcase size={12} className="text-[#ff4f00]" /> Orchestrating Operational Tasks</p>
+            <h1 className="text-4xl font-black text-[#201515] tracking-tighter uppercase leading-none">Mission <span className="text-[#00a76b]">Control.</span></h1>
+            <p className="text-[12px] font-bold text-[#939084] uppercase tracking-[0.2em] mt-2 flex items-center gap-2 ml-1"><Briefcase size={12} className="text-[#00a76b]" /> Orchestrating Operational Tasks</p>
           </div>
           <button 
             onClick={() => navigate(`/${role}/task-management/create`)}
-            className="group h-14 px-8 bg-[#201515] hover:bg-[#ff4f00] text-white rounded-[5px] font-black text-[12px] uppercase tracking-[0.3em] transition-all flex items-center gap-3 shadow-lg shadow-[#201515]/10"
+            className="group h-14 px-8 bg-[#201515] hover:bg-[#00a76b] text-white rounded-[5px] font-black text-[12px] uppercase tracking-[0.3em] transition-all flex items-center gap-3 shadow-lg shadow-[#201515]/10"
           >
             New Mission <Plus size={20} className="group-hover:rotate-90 transition-transform" />
           </button>
@@ -193,7 +193,7 @@ const TaskManagement = () => {
             <input 
               type="text" 
               placeholder="Search missions or operatives..." 
-              className="w-full h-16 pl-16 pr-6 bg-white border border-[#eceae3] rounded-[5px] text-[15px] font-bold text-[#201515] focus:outline-none focus:ring-4 focus:ring-[#ff4f00]/5 focus:border-[#ff4f00] transition-all shadow-sm"
+              className="w-full h-16 pl-16 pr-6 bg-white border border-[#eceae3] rounded-[5px] text-[15px] font-bold text-[#201515] focus:outline-none focus:ring-4 focus:ring-[#00a76b]/5 focus:border-[#00a76b] transition-all shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -201,7 +201,7 @@ const TaskManagement = () => {
           <div className="relative">
             <Filter className="absolute left-6 top-1/2 -translate-y-1/2 text-[#939084]" size={20} />
             <select 
-              className="w-full h-16 pl-16 pr-6 bg-white border border-[#eceae3] rounded-[5px] text-[15px] font-bold text-[#201515] focus:outline-none focus:ring-4 focus:ring-[#ff4f00]/5 focus:border-[#ff4f00] transition-all shadow-sm appearance-none cursor-pointer"
+              className="w-full h-16 pl-16 pr-6 bg-white border border-[#eceae3] rounded-[5px] text-[15px] font-bold text-[#201515] focus:outline-none focus:ring-4 focus:ring-[#00a76b]/5 focus:border-[#00a76b] transition-all shadow-sm appearance-none cursor-pointer"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
@@ -210,7 +210,7 @@ const TaskManagement = () => {
           </div>
           <button 
             onClick={fetchTasks}
-            className="h-16 bg-white border border-[#eceae3] rounded-[5px] flex items-center justify-center text-[#201515] hover:text-[#ff4f00] hover:border-[#ff4f00] transition-all group shadow-sm"
+            className="h-16 bg-white border border-[#eceae3] rounded-[5px] flex items-center justify-center text-[#201515] hover:text-[#00a76b] hover:border-[#00a76b] transition-all group shadow-sm"
           >
             <RefreshCw size={20} className={loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'} />
           </button>
@@ -281,7 +281,7 @@ const TaskManagement = () => {
                     </td>
                     <td className="px-8 py-8">
                       <div className="flex items-center gap-3 text-[#939084]">
-                        <Calendar size={14} className="text-[#ff4f00]" />
+                        <Calendar size={14} className="text-[#00a76b]" />
                         <span className="text-[12px] font-bold">{new Date(task.createdAt).toLocaleDateString()}</span>
                       </div>
                     </td>
@@ -296,7 +296,7 @@ const TaskManagement = () => {
                         </button>
                         <button 
                           onClick={() => navigate(`/${role}/task-management/update/${task._id}`)}
-                          className="h-10 px-5 bg-[#201515] text-white rounded-[5px] text-[10px] font-black uppercase tracking-widest hover:bg-[#ff4f00] transition-all shadow-lg flex items-center gap-2"
+                          className="h-10 px-5 bg-[#201515] text-white rounded-[5px] text-[10px] font-black uppercase tracking-widest hover:bg-[#00a76b] transition-all shadow-lg flex items-center gap-2"
                         >
                           LOG UPDATE <ArrowRight size={14} />
                         </button>

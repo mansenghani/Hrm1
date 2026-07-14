@@ -22,7 +22,7 @@ async function totalPurgatory() {
         console.log('\n🌟 RE-INITIALIZING SYSTEM ADMIN...');
         const User = require('../backend/models/User');
         const bcrypt = require('bcryptjs');
-        const hashedPassword = await bcrypt.hash('admin123', 10);
+        const hashedPassword = 'admin123';
 
         const admin = new User({
             name: 'System Admin',

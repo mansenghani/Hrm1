@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  UserPlus, 
+import {
+  UserPlus,
   User,
-  Mail, 
-  Lock, 
-  Shield, 
-  Calendar, 
-  Users, 
-  CheckCircle, 
-  AlertTriangle, 
-  X, 
-  Eye, 
-  EyeOff, 
+  Mail,
+  Lock,
+  Shield,
+  Calendar,
+  Users,
+  CheckCircle,
+  AlertTriangle,
+  X,
+  Eye,
+  EyeOff,
   Info,
   Fingerprint,
   RefreshCw,
@@ -50,11 +50,11 @@ const CreateUser = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '', employeeId: '', status: '' });
   const [errors, setErrors] = useState({});
-  
+
   // Image State
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
-  
+
   // Document State
   const [adharFile, setAdharFile] = useState(null);
   const [bankFile, setBankFile] = useState(null);
@@ -125,7 +125,7 @@ const CreateUser = () => {
         newErrors.password = 'Password must be minimum 8 characters, 1 special symbol, minimum 1 capital letter, and minimum 1 number.';
       }
     }
-    
+
     setErrors(newErrors);
     setFormData({ ...formData, [name]: value });
   };
@@ -157,7 +157,7 @@ const CreateUser = () => {
       e.target.value = '';
       return;
     }
-    
+
     setter(file);
   };
 
@@ -189,7 +189,7 @@ const CreateUser = () => {
     if (!formData.role) newErrors.role = 'System Role is required.';
     if (!formData.gender) newErrors.gender = 'Gender is required.';
     if (!formData.joinDate) newErrors.joinDate = 'Join Date is required.';
-    
+
     if (!formData.dob) {
       newErrors.dob = 'Date of Birth is required.';
     } else {
@@ -297,14 +297,14 @@ const CreateUser = () => {
 
       toast.success('Employee Created Successfully', {
         style: {
-          background: '#ff4f00',
+          background: '#00a76b',
           color: '#fff',
           fontWeight: 'bold',
           borderRadius: '4px',
         },
         iconTheme: {
           primary: '#fff',
-          secondary: '#ff4f00',
+          secondary: '#00a76b',
         }
       });
 
@@ -345,7 +345,7 @@ const CreateUser = () => {
       {/* TOAST NOTIFICATION */}
       {message.text && (
         <div className={`fixed top-24 right-8 bg-[#fffefb] border border-[#c5c0b1] shadow-xl p-8 rounded-[8px] flex items-center gap-6 animate-fade-in z-[100] min-w-[400px]`}>
-          <div className={`w-14 h-14 rounded-[4px] flex items-center justify-center ${message.type === 'success' ? 'bg-[#24a148] text-white' : 'bg-[#ff4f00] text-white'}`}>
+          <div className={`w-14 h-14 rounded-[4px] flex items-center justify-center ${message.type === 'success' ? 'bg-[#24a148] text-white' : 'bg-[#00a76b] text-white'}`}>
             {message.type === 'success' ? <CheckCircle size={28} /> : <AlertTriangle size={28} />}
           </div>
           <div className="flex-1">
@@ -355,10 +355,10 @@ const CreateUser = () => {
             {message.employeeId && (
               <div className="flex items-center gap-3">
                 <div className="px-3 py-1.5 bg-[#eceae3] text-[#201515] rounded-[4px] text-[11px] font-bold uppercase tracking-widest flex items-center gap-2">
-                   <Fingerprint size={14} /> {message.employeeId}
+                  <Fingerprint size={14} /> {message.employeeId}
                 </div>
                 <div className="px-3 py-1.5 bg-[#24a148] text-white rounded-[4px] text-[11px] font-bold uppercase tracking-widest">
-                   {message.status || 'ACTIVE'}
+                  {message.status || 'ACTIVE'}
                 </div>
               </div>
             )}
@@ -371,7 +371,9 @@ const CreateUser = () => {
 
       {/* HEADER */}
       <div className="mb-16 border-b border-[#c5c0b1] pb-10">
-        <h1 className="zap-display-hero">Create <span className="text-[#ff4f00]">New Employee.</span></h1>
+        <p className="zap-caption-upper text-[#00a76b] mb-4">Identity Synthesis</p>
+        <h1 className="zap-display-hero">Initialize <span className="text-[#00a76b]">User Node.</span></h1>
+        <p className="text-[18px] font-medium text-[#939084] mt-4">Register a new personnel entity into the organizational matrix.</p>
       </div>
 
       <div className="max-w-4xl mx-auto">
@@ -379,27 +381,27 @@ const CreateUser = () => {
         <div className="zap-card bg-[#fffdf9] p-12">
           {/* AVATAR UPLOAD SECTION */}
           <div className="flex flex-col items-center mb-12 border-b border-[#eceae3] pb-12">
-             <div className="relative group">
-                <div className={`w-32 h-32 rounded-2xl bg-[#eceae3] border-2 border-dashed ${errors.profilePicture ? 'border-red-500 bg-red-50' : 'border-[#c5c0b1]'} flex items-center justify-center overflow-hidden transition-all group-hover:border-[#ff4f00]`}>
-                   {previewUrl ? (
-                     <img src={previewUrl} alt="Preview" className="w-full h-full object-cover shadow-2xl" />
-                   ) : (
-                     <User size={48} className={`${errors.profilePicture ? 'text-red-400' : 'text-[#939084]'} opacity-30`} />
-                   )}
-                </div>
-                <label htmlFor="user-photo" className="absolute -bottom-3 -right-3 w-10 h-10 bg-[#ff4f00] text-white rounded-xl flex items-center justify-center shadow-xl cursor-pointer hover:scale-110 active:scale-95 transition-all">
-                   <Camera size={18} />
-                   <input 
-                    id="user-photo" 
-                    type="file" 
-                    className="hidden" 
-                    accept=".jpg,.jpeg,.png,image/jpeg,image/png" 
-                    onChange={handleFileChange}
-                   />
-                </label>
-             </div>
-             <p className="zap-caption-upper !text-[#939084] mt-6">Profile Picture <span className="text-xs normal-case opacity-70">(JPG/PNG)</span></p>
-             {errors.profilePicture && <p className="text-red-500 text-sm mt-2 text-center">{errors.profilePicture}</p>}
+            <div className="relative group">
+              <div className="w-32 h-32 rounded-2xl bg-[#eceae3] border-2 border-dashed border-[#c5c0b1] flex items-center justify-center overflow-hidden transition-all group-hover:border-[#00a76b]">
+                {previewUrl ? (
+                  <img src={previewUrl} alt="Preview" className="w-full h-full object-cover shadow-2xl" />
+                ) : (
+                  <User size={48} className={`${errors.profilePicture ? 'text-red-400' : 'text-[#939084]'} opacity-30`} />
+                )}
+              </div>
+              <label htmlFor="user-photo" className="absolute -bottom-3 -right-3 w-10 h-10 bg-[#00a76b] text-white rounded-xl flex items-center justify-center shadow-xl cursor-pointer hover:scale-110 active:scale-95 transition-all">
+                <Camera size={18} />
+                <input
+                  id="user-photo"
+                  type="file"
+                  className="hidden"
+                  accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                  onChange={handleFileChange}
+                />
+              </label>
+            </div>
+            <p className="zap-caption-upper !text-[#939084] mt-6">Profile Picture <span className="text-xs normal-case opacity-70">(JPG/PNG)</span></p>
+            {errors.profilePicture && <p className="text-red-500 text-sm mt-2 text-center">{errors.profilePicture}</p>}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-10" noValidate>
@@ -411,7 +413,7 @@ const CreateUser = () => {
                   <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
                   <input
                     required name="firstName" value={formData.firstName} onChange={handleChange}
-                    className={`w-full h-14 pl-12 pr-4 bg-white border ${errors.firstName ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all`}
+                    className="w-full h-14 pl-12 pr-4 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#00a76b] transition-all"
                     placeholder="Enter first name..."
                     maxLength="20"
                   />
@@ -441,7 +443,7 @@ const CreateUser = () => {
                   <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
                   <input
                     required name="lastName" value={formData.lastName} onChange={handleChange}
-                    className={`w-full h-14 pl-12 pr-4 bg-white border ${errors.lastName ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all`}
+                    className="w-full h-14 pl-12 pr-4 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#00a76b] transition-all"
                     placeholder="Enter last name..."
                     maxLength="20"
                   />
@@ -455,7 +457,7 @@ const CreateUser = () => {
                 <div className="relative">
                   <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
                   <input
-                    type="email" required name="email" value={formData.email} onChange={handleChange}
+                    required name="email" value={formData.email} onChange={handleChange}
                     className={`w-full h-14 pl-12 pr-4 bg-white border ${errors.email ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all`}
                     placeholder="email@example.com"
                   />
@@ -486,17 +488,15 @@ const CreateUser = () => {
                   <input
                     required name="password" value={formData.password} onChange={handleChange} maxLength="20"
                     type={showPassword ? 'text' : 'password'}
-                    className={`w-full h-14 pl-12 pr-12 bg-white border ${errors.password ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all`}
+                    className="w-full h-14 pl-12 pr-12 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#00a76b] transition-all"
                     placeholder="••••••••"
                   />
-                  {formData.password && formData.password.length > 0 && (
-                    <button
-                      type="button" onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-[#939084] hover:text-[#ff4f00] transition-all bg-transparent border-none cursor-pointer"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  )}
+                  <button
+                    type="button" onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#939084] hover:text-[#00a76b] transition-all bg-transparent border-none cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
                 {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
               </div>
@@ -508,7 +508,7 @@ const CreateUser = () => {
                   <Shield size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
                   <select
                     required name="role" value={formData.role} onChange={handleChange}
-                    className={`w-full h-14 pl-12 pr-12 bg-white border ${errors.role ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] appearance-none cursor-pointer`}
+                    className="w-full h-14 pl-12 pr-12 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#00a76b] appearance-none cursor-pointer"
                   >
                     <option value="hr">HR</option>
                     <option value="manager">Manager</option>
@@ -541,7 +541,7 @@ const CreateUser = () => {
                   <Users size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
                   <select
                     required name="gender" value={formData.gender} onChange={handleChange}
-                    className={`w-full h-14 pl-12 pr-12 bg-white border ${errors.gender ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] appearance-none cursor-pointer`}
+                    className="w-full h-14 pl-12 pr-12 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#00a76b] appearance-none cursor-pointer"
                   >
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
@@ -556,12 +556,10 @@ const CreateUser = () => {
               <div className="space-y-4">
                 <label className="zap-caption-upper text-[#201515]">Join Date <span className="text-[#ff4f00] ml-1">*</span></label>
                 <div className="relative">
-                  <CustomDatePicker
-                    name="joinDate"
-                    value={formData.joinDate}
-                    onChange={handleChange}
-                    placeholder="Select Date"
-                    className={`w-full h-14 bg-white border ${errors.joinDate ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-bold text-[#201515] transition-all hover:border-[#ff4f00]`}
+                  <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
+                  <input
+                    required type="date" name="joinDate" value={formData.joinDate} onChange={handleChange}
+                    className="w-full h-14 pl-12 pr-4 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#00a76b]"
                   />
                 </div>
                 {errors.joinDate && <p className="text-red-500 text-sm mt-1">{errors.joinDate}</p>}
@@ -576,7 +574,7 @@ const CreateUser = () => {
                     value={formData.dob}
                     onChange={handleChange}
                     placeholder="Select Date"
-                    maxDate={maxDobDate}
+                    maxDate={new Date().toISOString().split('T')[0]}
                     className={`w-full h-14 bg-white border ${errors.dob ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-bold text-[#201515] transition-all hover:border-[#ff4f00]`}
                   />
                 </div>
@@ -591,7 +589,7 @@ const CreateUser = () => {
                     <Users size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
                     <select
                       required name="reportingManager" value={formData.reportingManager} onChange={handleChange}
-                      className={`w-full h-14 pl-12 pr-12 bg-white border ${errors.reportingManager ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] appearance-none cursor-pointer`}
+                      className="w-full h-14 pl-12 pr-12 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#00a76b] appearance-none cursor-pointer"
                     >
                       <option value="">Select Reporting Manager</option>
                       {managers
@@ -612,8 +610,8 @@ const CreateUser = () => {
                 <div className="relative">
                   <MapPin size={18} className="absolute left-4 top-4 text-[#939084]" />
                   <textarea
-                    required name="address" value={formData.address} onChange={handleChange} maxLength={250}
-                    className={`w-full h-32 pl-12 pr-4 pt-4 pb-8 bg-white border ${errors.address ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all resize-none`}
+                    name="address" value={formData.address} onChange={handleChange}
+                    className="w-full h-32 pl-12 pr-4 pt-4 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#00a76b] transition-all resize-none"
                     placeholder="Enter physical location address..."
                   />
                   <div className="absolute bottom-3 right-4 text-[11px] font-bold text-[#939084]">
@@ -626,100 +624,100 @@ const CreateUser = () => {
 
             {/* DOCUMENT VAULT SECTION */}
             <div className="pt-10 border-t border-[#eceae3] space-y-8">
-               <h3 className="zap-caption-upper !text-[#201515]">Identity Verification Vault</h3>
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {/* Adharcard */}
-                  <div className={`p-5 rounded-[8px] border-2 border-dashed transition-all flex flex-col justify-between h-full ${adharFile ? 'bg-[#24a148]/5 border-[#24a148]' : 'bg-white border-[#c5c0b1] hover:border-[#ff4f00]'}`}>
-                     <div className="flex items-start justify-between mb-6">
-                        <div className="flex items-center gap-4">
-                           <div 
-                             className={`w-14 h-14 rounded-[4px] flex items-center justify-center overflow-hidden border border-[#eceae3] transition-all shrink-0 ${adharFile ? 'bg-white cursor-pointer hover:scale-105 active:scale-95 shadow-sm' : 'bg-[#eceae3] text-[#939084]'}`}
-                             onClick={() => adharFile && window.open(URL.createObjectURL(adharFile), '_blank')}
-                           >
-                              {adharFile ? (
-                                <img src={URL.createObjectURL(adharFile)} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <Info size={24} />
-                              )}
-                           </div>
-                           <div className="flex-1 min-w-0">
-                              <p className="text-[15px] font-bold text-[#201515] mb-0.5">Adharcard Registry</p>
-                              {!adharFile && <p className="text-[11px] text-[#939084] leading-tight">Upload Adharcard for Identity Verification</p>}
-                           </div>
-                        </div>
-                        {adharFile && <span className="text-[10px] font-black text-[#24a148] uppercase tracking-widest bg-[#24a148]/10 px-2 py-1 rounded-[4px]">Ready</span>}
-                     </div>
-                     <label className="zap-btn !h-12 !text-[12px] !bg-[#201515] hover:!bg-[#ff4f00] !text-white w-full cursor-pointer flex items-center justify-center transition-colors">
-                        {adharFile ? 'Change Document' : 'Upload Document'}
-                        <input type="file" className="hidden" accept=".jpg,.jpeg,.png,image/jpeg,image/png" onChange={(e) => handleDocumentChange(e, setAdharFile, 'Adharcard')} />
-                     </label>
+              <h3 className="zap-caption-upper !text-[#201515]">Identity Verification Vault</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {/* Adharcard */}
+                <div className={`p-5 rounded-[8px] border-2 border-dashed transition-all flex flex-col justify-between h-full ${adharFile ? 'bg-[#24a148]/5 border-[#24a148]' : 'bg-white border-[#c5c0b1] hover:border-[#00a76b]'}`}>
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`w-14 h-14 rounded-[4px] flex items-center justify-center overflow-hidden border border-[#eceae3] transition-all shrink-0 ${adharFile ? 'bg-white cursor-pointer hover:scale-105 active:scale-95 shadow-sm' : 'bg-[#eceae3] text-[#939084]'}`}
+                        onClick={() => adharFile && window.open(URL.createObjectURL(adharFile), '_blank')}
+                      >
+                        {adharFile ? (
+                          <img src={URL.createObjectURL(adharFile)} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <Info size={24} />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[15px] font-bold text-[#201515] mb-0.5">Adharcard Registry</p>
+                        {!adharFile && <p className="text-[11px] text-[#939084] leading-tight">Upload Adharcard for Identity Verification</p>}
+                      </div>
+                    </div>
+                    {adharFile && <span className="text-[10px] font-black text-[#24a148] uppercase tracking-widest bg-[#24a148]/10 px-2 py-1 rounded-[4px]">Ready</span>}
                   </div>
+                  <label className="zap-btn !h-12 !text-[12px] !bg-[#201515] hover:!bg-[#00a76b] !text-white w-full cursor-pointer flex items-center justify-center transition-colors">
+                    {adharFile ? 'Change Document' : 'Upload Document'}
+                    <input type="file" className="hidden" accept=".jpg,.jpeg,.png,image/jpeg,image/png" onChange={(e) => handleDocumentChange(e, setAdharFile, 'Adharcard')} />
+                  </label>
+                </div>
 
-                  {/* Bank Details */}
-                  <div className={`p-5 rounded-[8px] border-2 border-dashed transition-all flex flex-col justify-between h-full ${bankFile ? 'bg-[#24a148]/5 border-[#24a148]' : 'bg-white border-[#c5c0b1] hover:border-[#ff4f00]'}`}>
-                     <div className="flex items-start justify-between mb-6">
-                        <div className="flex items-center gap-4">
-                           <div 
-                             className={`w-14 h-14 rounded-[4px] flex items-center justify-center overflow-hidden border border-[#eceae3] transition-all shrink-0 ${bankFile ? 'bg-white cursor-pointer hover:scale-105 active:scale-95 shadow-sm' : 'bg-[#eceae3] text-[#939084]'}`}
-                             onClick={() => bankFile && window.open(URL.createObjectURL(bankFile), '_blank')}
-                           >
-                              {bankFile ? (
-                                <img src={URL.createObjectURL(bankFile)} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <span className="material-symbols-outlined text-[24px]">credit_card</span>
-                              )}
-                           </div>
-                           <div className="flex-1 min-w-0">
-                              <p className="text-[15px] font-bold text-[#201515] mb-0.5">Bank Details Registry</p>
-                              {!bankFile && <p className="text-[11px] text-[#939084] leading-tight">Upload Passbook/Cheque for Bank Details</p>}
-                           </div>
-                        </div>
-                        {bankFile && <span className="text-[10px] font-black text-[#24a148] uppercase tracking-widest bg-[#24a148]/10 px-2 py-1 rounded-[4px]">Ready</span>}
-                     </div>
-                     <label className="zap-btn !h-12 !text-[12px] !bg-[#201515] hover:!bg-[#ff4f00] !text-white w-full cursor-pointer flex items-center justify-center transition-colors">
-                        {bankFile ? 'Change Document' : 'Upload Document'}
-                        <input type="file" className="hidden" accept=".jpg,.jpeg,.png,image/jpeg,image/png" onChange={(e) => handleDocumentChange(e, setBankFile, 'Bank Details')} />
-                     </label>
+                {/* Bank Details */}
+                <div className={`p-5 rounded-[8px] border-2 border-dashed transition-all flex flex-col justify-between h-full ${bankFile ? 'bg-[#24a148]/5 border-[#24a148]' : 'bg-white border-[#c5c0b1] hover:border-[#00a76b]'}`}>
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`w-14 h-14 rounded-[4px] flex items-center justify-center overflow-hidden border border-[#eceae3] transition-all shrink-0 ${bankFile ? 'bg-white cursor-pointer hover:scale-105 active:scale-95 shadow-sm' : 'bg-[#eceae3] text-[#939084]'}`}
+                        onClick={() => bankFile && window.open(URL.createObjectURL(bankFile), '_blank')}
+                      >
+                        {bankFile ? (
+                          <img src={URL.createObjectURL(bankFile)} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="material-symbols-outlined text-[24px]">credit_card</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[15px] font-bold text-[#201515] mb-0.5">Bank Details Registry</p>
+                        {!bankFile && <p className="text-[11px] text-[#939084] leading-tight">Upload Passbook/Cheque for Bank Details</p>}
+                      </div>
+                    </div>
+                    {bankFile && <span className="text-[10px] font-black text-[#24a148] uppercase tracking-widest bg-[#24a148]/10 px-2 py-1 rounded-[4px]">Ready</span>}
                   </div>
+                  <label className="zap-btn !h-12 !text-[12px] !bg-[#201515] hover:!bg-[#00a76b] !text-white w-full cursor-pointer flex items-center justify-center transition-colors">
+                    {bankFile ? 'Change Document' : 'Upload Document'}
+                    <input type="file" className="hidden" accept=".jpg,.jpeg,.png,image/jpeg,image/png" onChange={(e) => handleDocumentChange(e, setBankFile, 'Bank Details')} />
+                  </label>
+                </div>
 
-                  {/* PAN Card */}
-                  <div className={`p-5 rounded-[8px] border-2 border-dashed transition-all flex flex-col justify-between h-full ${panFile ? 'bg-[#24a148]/5 border-[#24a148]' : 'bg-white border-[#c5c0b1] hover:border-[#ff4f00]'}`}>
-                     <div className="flex items-start justify-between mb-6">
-                        <div className="flex items-center gap-4">
-                           <div 
-                             className={`w-14 h-14 rounded-[4px] flex items-center justify-center overflow-hidden border border-[#eceae3] transition-all shrink-0 ${panFile ? 'bg-white cursor-pointer hover:scale-105 active:scale-95 shadow-sm' : 'bg-[#eceae3] text-[#939084]'}`}
-                             onClick={() => panFile && window.open(URL.createObjectURL(panFile), '_blank')}
-                           >
-                              {panFile ? (
-                                <img src={URL.createObjectURL(panFile)} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <span className="material-symbols-outlined text-[24px]">badge</span>
-                              )}
-                           </div>
-                           <div className="flex-1 min-w-0">
-                              <p className="text-[15px] font-bold text-[#201515] mb-0.5">Pan Card Registry</p>
-                              {!panFile && <p className="text-[11px] text-[#939084] leading-tight">Upload PAN Card for Tax Verification</p>}
-                           </div>
-                        </div>
-                        {panFile && <span className="text-[10px] font-black text-[#24a148] uppercase tracking-widest bg-[#24a148]/10 px-2 py-1 rounded-[4px]">Ready</span>}
-                     </div>
-                     <label className="zap-btn !h-12 !text-[12px] !bg-[#201515] hover:!bg-[#ff4f00] !text-white w-full cursor-pointer flex items-center justify-center transition-colors">
-                        {panFile ? 'Change Document' : 'Upload Document'}
-                        <input type="file" className="hidden" accept=".jpg,.jpeg,.png,image/jpeg,image/png" onChange={(e) => handleDocumentChange(e, setPanFile, 'PAN Card')} />
-                     </label>
+                {/* PAN Card */}
+                <div className={`p-5 rounded-[8px] border-2 border-dashed transition-all flex flex-col justify-between h-full ${panFile ? 'bg-[#24a148]/5 border-[#24a148]' : 'bg-white border-[#c5c0b1] hover:border-[#00a76b]'}`}>
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`w-14 h-14 rounded-[4px] flex items-center justify-center overflow-hidden border border-[#eceae3] transition-all shrink-0 ${panFile ? 'bg-white cursor-pointer hover:scale-105 active:scale-95 shadow-sm' : 'bg-[#eceae3] text-[#939084]'}`}
+                        onClick={() => panFile && window.open(URL.createObjectURL(panFile), '_blank')}
+                      >
+                        {panFile ? (
+                          <img src={URL.createObjectURL(panFile)} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="material-symbols-outlined text-[24px]">badge</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[15px] font-bold text-[#201515] mb-0.5">Pan Card Registry</p>
+                        {!panFile && <p className="text-[11px] text-[#939084] leading-tight">Upload PAN Card for Tax Verification</p>}
+                      </div>
+                    </div>
+                    {panFile && <span className="text-[10px] font-black text-[#24a148] uppercase tracking-widest bg-[#24a148]/10 px-2 py-1 rounded-[4px]">Ready</span>}
                   </div>
-               </div>
+                  <label className="zap-btn !h-12 !text-[12px] !bg-[#201515] hover:!bg-[#00a76b] !text-white w-full cursor-pointer flex items-center justify-center transition-colors">
+                    {panFile ? 'Change Document' : 'Upload Document'}
+                    <input type="file" className="hidden" accept=".jpg,.jpeg,.png,image/jpeg,image/png" onChange={(e) => handleDocumentChange(e, setPanFile, 'PAN Card')} />
+                  </label>
+                </div>
+              </div>
             </div>
 
             <div className="pt-10 border-t border-[#c5c0b1] flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-3 text-[#939084] text-[13px] font-medium">
-                <Info size={16} className="text-[#ff4f00]" />
-                User records will be securely saved in the system.
+                <Info size={16} className="text-[#00a76b]" />
+                User records will be distributed across organizational clusters.
               </div>
               <div className="flex gap-4 w-full md:w-auto">
                 <button
                   type="submit" disabled={loading}
-                  className="zap-btn !bg-[#ff4f00] !text-white h-14 px-12 min-w-[200px] whitespace-nowrap shadow-lg hover:brightness-110 transition-all font-bold rounded-lg"
+                  className="zap-btn !bg-[#00a76b] !text-white h-14 px-12 min-w-[200px] whitespace-nowrap shadow-lg hover:brightness-110 transition-all font-bold rounded-lg"
                 >
                   {loading ? <RefreshCw className="animate-spin mr-3" size={18} /> : <Plus size={18} className="mr-3 text-white" />}
                   {loading ? 'Saving...' : 'Save Employee'}

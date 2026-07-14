@@ -21,7 +21,7 @@ const ModalWrapper = ({ isModal, onClose, children }) => {
         <button 
           type="button" 
           onClick={onClose} 
-          className="absolute top-4 right-4 text-[#939084] hover:text-[#ff4f00] z-[100] transition-colors border-none bg-transparent cursor-pointer"
+          className="absolute top-4 right-4 text-[#939084] hover:text-[#00a76b] z-[100] transition-colors border-none bg-transparent cursor-pointer"
         >
           <X size={24} />
         </button>
@@ -717,13 +717,13 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
             <>
               <button 
                 onClick={(e) => { e.stopPropagation(); setPreviewGallery(prev => ({ ...prev, index: (prev.index - 1 + prev.items.length) % prev.items.length })) }}
-                className="absolute left-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-[5px] bg-white/10 text-white flex items-center justify-center hover:bg-[#ff4f00] transition-all border-none cursor-pointer z-[10001]"
+                className="absolute left-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-[5px] bg-white/10 text-white flex items-center justify-center hover:bg-[#00a76b] transition-all border-none cursor-pointer z-[10001]"
               >
                 <ChevronLeft size={32} />
               </button>
               <button 
                 onClick={(e) => { e.stopPropagation(); setPreviewGallery(prev => ({ ...prev, index: (prev.index + 1) % prev.items.length })) }}
-                className="absolute right-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-[5px] bg-white/10 text-white flex items-center justify-center hover:bg-[#ff4f00] transition-all border-none cursor-pointer z-[10001]"
+                className="absolute right-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-[5px] bg-white/10 text-white flex items-center justify-center hover:bg-[#00a76b] transition-all border-none cursor-pointer z-[10001]"
               >
                 <ChevronRight size={32} />
               </button>
@@ -746,7 +746,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
               />
             ) : (
               <div className="w-[400px] aspect-video bg-white/5 rounded-[5px] border border-white/10 flex flex-col items-center justify-center p-10 text-center gap-6 backdrop-blur-md">
-                <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center text-[#ff4f00]"><FileText size={40} /></div>
+                <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center text-[#00a76b]"><FileText size={40} /></div>
                 <div>
                   <p className="text-white text-[18px] font-black tracking-tight line-clamp-1">{previewGallery.items[previewGallery.index].name}</p>
                   <p className="text-white/40 text-[12px] font-bold uppercase tracking-widest mt-1">Non-Visual Document detected</p>
@@ -756,7 +756,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                   download 
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full h-14 bg-[#ff4f00] text-white rounded-[5px] font-black text-[12px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 no-underline hover:scale-105 transition-all"
+                  className="w-full h-14 bg-[#00a76b] text-white rounded-[5px] font-black text-[12px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 no-underline hover:scale-105 transition-all"
                 >
                   DOWNLOAD FILE <Download size={18} />
                 </a>
@@ -772,16 +772,16 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
            <div className="bg-white rounded-[5px] p-10 w-full max-w-lg shadow-2xl relative animate-in zoom-in-95 duration-300">
               <button 
                 onClick={() => setStatusNote({ taskId: null, nextStatus: null, note: '' })} 
-                className="absolute top-6 right-6 text-[#939084] hover:text-[#ff4f00] border-none bg-transparent cursor-pointer"
+                className="absolute top-6 right-6 text-[#939084] hover:text-[#00a76b] border-none bg-transparent cursor-pointer"
               >
                 <X size={24} />
               </button>
               <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-[5px] bg-[#ff4f00]/10 flex items-center justify-center text-[#ff4f00]">
+                <div className="w-10 h-10 rounded-[5px] bg-[#00a76b]/10 flex items-center justify-center text-[#00a76b]">
                   <ClipboardList size={20} />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black tracking-tighter uppercase">Status <span className="text-[#ff4f00]">Report.</span></h2>
+                  <h2 className="text-2xl font-black tracking-tighter uppercase">Status <span className="text-[#00a76b]">Report.</span></h2>
                   <p className="text-[10px] font-bold text-[#939084] uppercase tracking-[0.2em]">Required for transition to {statusNote.nextStatus}</p>
                 </div>
               </div>
@@ -794,7 +794,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                       <textarea 
                         autoFocus
                         placeholder="What is the current status of this objective?"
-                        className="w-full h-40 pl-12 pr-5 pt-4 bg-white rounded-[5px] text-[15px] font-medium focus:outline-none border border-[#eceae3] focus:border-[#ff4f00]/40 shadow-sm resize-none leading-relaxed" 
+                        className="w-full h-40 pl-12 pr-5 pt-4 bg-white rounded-[5px] text-[15px] font-medium focus:outline-none border border-[#eceae3] focus:border-[#00a76b]/40 shadow-sm resize-none leading-relaxed" 
                         value={statusNote.note} 
                         onChange={e => setStatusNote({...statusNote, note: e.target.value})} 
                       />
@@ -803,7 +803,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                  <button 
                    onClick={() => updateTaskStatus(statusNote.taskId, statusNote.nextStatus, statusNote.note)}
                    disabled={!statusNote.note.trim()}
-                   className="w-full h-14 bg-[#201515] hover:bg-[#ff4f00] text-white rounded-[5px] font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg"
+                   className="w-full h-14 bg-[#201515] hover:bg-[#00a76b] text-white rounded-[5px] font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg"
                  >
                     SEND UPDATE <Send size={18} />
                  </button>
@@ -818,7 +818,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
             <div className="flex items-center justify-between w-full mb-2">
               <div>
                 <h1 className="text-3xl font-black text-[#201515] tracking-tighter uppercase">
-                  Hello {currentUser?.fullName?.split(' ')[0] || 'Man'}, <span className="text-[#ff4f00]">{new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 18 ? 'Good afternoon' : 'Good evening'}.</span>
+                  Hello {currentUser?.fullName?.split(' ')[0] || 'Man'}, <span className="text-[#00a76b]">{new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 18 ? 'Good afternoon' : 'Good evening'}.</span>
                 </h1>
               </div>
               <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-[#939084] hover:text-[#201515] font-black text-[10px] uppercase tracking-widest transition-all bg-transparent border-none cursor-pointer"><ArrowLeft size={14} /> Back</button>
@@ -831,7 +831,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
             <form onSubmit={handleSubmit} className="w-full bg-[#fffefb] rounded-[5px] shadow-xl overflow-hidden border border-[#c5c0b1] flex flex-col">
               
               {/* Header Tabs */}
-              <div className="flex items-center justify-between px-4 bg-[#ff4f00] border-b border-[#ff4f00]/80 shrink-0">
+              <div className="flex items-center justify-between px-4 bg-[#00a76b] border-b border-[#00a76b]/80 shrink-0">
                 <div className="flex items-center gap-6 overflow-x-auto no-scrollbar">
                   {tabs.map((tab) => (
                     <button
@@ -866,7 +866,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                           onClick={() => setOpenProjectDrop(!openProjectDrop)}
                           className="flex items-center gap-1.5 px-2.5 py-1 bg-[#eceae3] hover:bg-[#c5c0b1] border border-[#c5c0b1] rounded-[4px] text-[#201515] text-[11px] font-bold transition-colors"
                         >
-                          <CheckCircle2 size={12} className="text-[#ff4f00]" />
+                          <CheckCircle2 size={12} className="text-[#00a76b]" />
                           {selectedProject?.projectName || 'Project 1'}
                           <ChevronDown size={12} className="text-[#939084] ml-0.5" />
                         </button>
@@ -954,7 +954,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                           onClick={() => setOpenStatusDrop(!openStatusDrop)}
                           className="flex items-center gap-1.5 px-2.5 py-1 bg-[#201515] hover:bg-[#201515]/80 rounded-[4px] text-white text-[11px] font-bold transition-colors border border-transparent"
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full ${statusVal === 'Completed' ? 'bg-green-400' : statusVal === 'Review' ? 'bg-[#ff4f00]' : statusVal === 'Need to Improve' ? 'bg-red-400' : 'bg-[#c5c0b1]'}`}></span>
+                          <span className={`w-1.5 h-1.5 rounded-full ${statusVal === 'Completed' ? 'bg-green-400' : statusVal === 'Review' ? 'bg-[#00a76b]' : statusVal === 'Need to Improve' ? 'bg-red-400' : 'bg-[#c5c0b1]'}`}></span>
                           {statusVal === 'Ongoing' ? 'TO DO' : statusVal === 'Pending' ? 'IN PROGRESS' : statusVal === 'Review' ? 'UNDER REVIEW' : statusVal}
                         </button>
                         {openStatusDrop && (
@@ -964,7 +964,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                                 key={st}
                                 type="button"
                                 onClick={() => { setStatusVal(st); setOpenStatusDrop(false); }}
-                                className="w-full text-left px-2 py-1.5 text-xs text-[#36342e] hover:bg-[#ff4f00] hover:text-white rounded font-semibold transition-colors"
+                                className="w-full text-left px-2 py-1.5 text-xs text-[#36342e] hover:bg-[#00a76b] hover:text-white rounded font-semibold transition-colors"
                               >
                                 {st === 'Ongoing' ? 'TO DO' : st === 'Pending' ? 'IN PROGRESS' : st === 'Review' ? 'UNDER REVIEW' : st}
                               </button>
@@ -990,7 +990,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                                 key={p._id}
                                 type="button"
                                 onClick={() => { setAssignedUser(p); setOpenAssigneeDrop(false); }}
-                                className="w-full text-left px-2 py-1.5 text-xs text-[#36342e] hover:bg-[#ff4f00] hover:text-white rounded font-semibold transition-colors"
+                                className="w-full text-left px-2 py-1.5 text-xs text-[#36342e] hover:bg-[#00a76b] hover:text-white rounded font-semibold transition-colors"
                               >
                                 {p.fullName || p.name}
                               </button>
@@ -1031,7 +1031,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                                 key={prio}
                                 type="button"
                                 onClick={() => { setPriorityVal(prio); setOpenPriorityDrop(false); }}
-                                className="w-full text-left px-2 py-1.5 text-xs text-[#36342e] hover:bg-[#ff4f00] hover:text-white rounded font-semibold transition-colors"
+                                className="w-full text-left px-2 py-1.5 text-xs text-[#36342e] hover:bg-[#00a76b] hover:text-white rounded font-semibold transition-colors"
                               >
                                 {prio}
                               </button>
@@ -1073,7 +1073,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                     {tagsList.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {tagsList.map(tag => (
-                          <span key={tag} className="flex items-center gap-1 px-2 py-0.5 rounded-[4px] bg-[#201515] text-[#ff4f00] text-[10px] font-bold border border-[#201515]/80 uppercase">
+                          <span key={tag} className="flex items-center gap-1 px-2 py-0.5 rounded-[4px] bg-[#201515] text-[#00a76b] text-[10px] font-bold border border-[#201515]/80 uppercase">
                             {tag}
                             <button type="button" onClick={() => removeTag(tag)} className="text-white/40 hover:text-red-400">
                               <X size={10} />
@@ -1095,7 +1095,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                               placeholder={`Enter ${f.name}`}
                               value={f.value}
                               onChange={(e) => updateCustomFieldValue(index, e.target.value)}
-                              className="bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] px-2.5 py-1 text-xs text-[#201515] placeholder:text-[#939084] focus:outline-none focus:border-[#ff4f00] w-48"
+                              className="bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] px-2.5 py-1 text-xs text-[#201515] placeholder:text-[#939084] focus:outline-none focus:border-[#00a76b] w-48"
                             />
                             <button type="button" onClick={() => removeCustomField(index)} className="text-[#939084] hover:text-red-500">
                               <Trash2 size={13} />
@@ -1111,7 +1111,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                       <button 
                         type="button" 
                         onClick={handleAddCustomField}
-                        className="flex items-center gap-1.5 px-2.5 py-1 bg-[#eceae3] hover:bg-[#ff4f00] hover:text-white border border-[#c5c0b1] hover:border-[#ff4f00] rounded-[4px] text-[#36342e] text-[11px] font-bold transition-colors w-max"
+                        className="flex items-center gap-1.5 px-2.5 py-1 bg-[#eceae3] hover:bg-[#00a76b] hover:text-white border border-[#c5c0b1] hover:border-[#00a76b] rounded-[4px] text-[#36342e] text-[11px] font-bold transition-colors w-max"
                       >
                         <Plus size={12} />
                         Create new field
@@ -1153,7 +1153,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                             toast.error("Please enter a title and content first");
                           }
                         }}
-                        className="px-4 py-1.5 bg-[#ff4f00] hover:bg-[#e64600] text-white rounded-[4px] text-xs font-bold"
+                        className="px-4 py-1.5 bg-[#00a76b] hover:bg-[#e64600] text-white rounded-[4px] text-xs font-bold"
                       >
                         Append to Task
                       </button>
@@ -1171,7 +1171,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                         placeholder="E.g. Check database metrics, Ping HR lead..."
                         value={reminderTitle}
                         onChange={(e) => setReminderTitle(e.target.value)}
-                        className="w-full bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] p-2 text-xs text-[#201515] placeholder:text-[#939084] focus:outline-none focus:border-[#ff4f00]"
+                        className="w-full bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] p-2 text-xs text-[#201515] placeholder:text-[#939084] focus:outline-none focus:border-[#00a76b]"
                       />
                     </div>
                     <div>
@@ -1180,7 +1180,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                         type="datetime-local"
                         value={reminderTime}
                         onChange={(e) => setReminderTime(e.target.value)}
-                        className="bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] p-2 text-xs text-[#201515] focus:outline-none focus:border-[#ff4f00]"
+                        className="bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] p-2 text-xs text-[#201515] focus:outline-none focus:border-[#00a76b]"
                       />
                     </div>
                     <div className="flex justify-end gap-2 pt-3 border-t border-[#eceae3]">
@@ -1200,7 +1200,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                             toast.error("Please enter action and choose time");
                           }
                         }}
-                        className="px-4 py-1.5 bg-[#ff4f00] hover:bg-[#e64600] text-white rounded-[4px] text-xs font-bold"
+                        className="px-4 py-1.5 bg-[#00a76b] hover:bg-[#e64600] text-white rounded-[4px] text-xs font-bold"
                       >
                         Set Reminder
                       </button>
@@ -1229,7 +1229,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                             type="button"
                             onClick={() => setBrushColor(color)}
                             className={`w-5 h-5 rounded-full ${bg} border-2 transition-all ${
-                              brushColor === color ? 'border-[#ff4f00] scale-125' : 'border-[#c5c0b1]'
+                              brushColor === color ? 'border-[#00a76b] scale-125' : 'border-[#c5c0b1]'
                             }`}
                           />
                         ))}
@@ -1243,7 +1243,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                           max="15"
                           value={brushSize}
                           onChange={(e) => setBrushSize(Number(e.target.value))}
-                          className="w-20 accent-[#ff4f00]"
+                          className="w-20 accent-[#00a76b]"
                         />
                         <span className="w-4 text-center font-bold text-[#201515]">{brushSize}</span>
                       </div>
@@ -1255,7 +1255,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                         <button
                           type="button"
                           onClick={saveWhiteboardAsAttachment}
-                          className="px-3 py-1 bg-[#ff4f00] hover:bg-[#e64600] text-white rounded-[4px] text-xs font-bold transition-colors"
+                          className="px-3 py-1 bg-[#00a76b] hover:bg-[#e64600] text-white rounded-[4px] text-xs font-bold transition-colors"
                         >
                           Save drawing
                         </button>
@@ -1273,7 +1273,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                           <Layers size={13} />
                           {showDrawingSidebar ? 'Hide' : 'Gallery'}
                           {savedDrawings.length > 0 && (
-                            <span className="bg-[#ff4f00] text-white text-[9px] font-black px-1.5 rounded-full">
+                            <span className="bg-[#00a76b] text-white text-[9px] font-black px-1.5 rounded-full">
                               {savedDrawings.length}
                             </span>
                           )}
@@ -1299,7 +1299,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                       {showDrawingSidebar && (
                         <div className="absolute top-0 right-0 h-full w-44 border-l border-[#c5c0b1] bg-[#fffefb] flex flex-col overflow-hidden shadow-xl animate-in slide-in-from-right-2 duration-200 z-10">
                           {/* Sidebar header */}
-                          <div className="flex items-center justify-between px-3 py-2 bg-[#ff4f00] shrink-0">
+                          <div className="flex items-center justify-between px-3 py-2 bg-[#00a76b] shrink-0">
                             <div className="flex items-center gap-1.5">
                               <Layers size={12} className="text-white" />
                               <span className="text-[10px] font-black uppercase tracking-widest text-white">Saved</span>
@@ -1324,7 +1324,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                               savedDrawings.map((drawing) => (
                                 <div
                                   key={drawing.id}
-                                  className="group relative border border-[#eceae3] rounded-[4px] overflow-hidden cursor-pointer hover:border-[#ff4f00] transition-all bg-white shadow-sm"
+                                  className="group relative border border-[#eceae3] rounded-[4px] overflow-hidden cursor-pointer hover:border-[#00a76b] transition-all bg-white shadow-sm"
                                 >
                                   <img
                                     src={drawing.dataUrl}
@@ -1337,7 +1337,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                                     <button
                                       type="button"
                                       onClick={() => loadDrawingToCanvas(drawing.dataUrl)}
-                                      className="flex items-center gap-1 px-2 py-1 bg-[#ff4f00] text-white rounded-[3px] text-[9px] font-black uppercase tracking-widest hover:bg-[#e64600] transition-colors"
+                                      className="flex items-center gap-1 px-2 py-1 bg-[#00a76b] text-white rounded-[3px] text-[9px] font-black uppercase tracking-widest hover:bg-[#e64600] transition-colors"
                                     >
                                       <Monitor size={10} /> Load
                                     </button>
@@ -1377,7 +1377,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                     </div>
                     <div className="bg-[#eceae3] border border-[#c5c0b1] p-4 rounded-[5px] text-center">
                       <p className="text-[#939084] text-[10px] font-bold uppercase tracking-wider mb-1">Under Review</p>
-                      <h4 className="text-2xl font-black text-[#ff4f00]">
+                      <h4 className="text-2xl font-black text-[#00a76b]">
                         {tasks.filter(t => t.status === 'Review').length}
                       </h4>
                     </div>
@@ -1388,7 +1388,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
 
               {/* Footer controls */}
               {activeTab !== 'Whiteboard' && (
-                <div className="flex items-center justify-between p-3 bg-[#ff4f00] border-t border-[#ff4f00]/80 shrink-0">
+                <div className="flex items-center justify-between p-3 bg-[#00a76b] border-t border-[#00a76b]/80 shrink-0">
                   <div className="relative" ref={templatesRef}>
                     <button 
                       type="button" 
@@ -1406,7 +1406,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                             key={tpl.name}
                             type="button"
                             onClick={() => applyTemplate(tpl)}
-                            className="w-full text-left px-2 py-1.5 text-xs text-[#36342e] hover:bg-[#ff4f00] hover:text-white rounded-[4px] font-semibold transition-colors"
+                            className="w-full text-left px-2 py-1.5 text-xs text-[#36342e] hover:bg-[#00a76b] hover:text-white rounded-[4px] font-semibold transition-colors"
                           >
                             {tpl.name}
                           </button>
@@ -1464,18 +1464,18 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
 
           {/* Right Protocol/Guidelines column */}
           <div className="space-y-4 flex flex-col">
-            <div className="text-center"><h1 className="text-xl font-black text-[#201515] tracking-tighter uppercase leading-none">Morning <span className="text-[#ff4f00]">Creation.</span></h1></div>
+            <div className="text-center"><h1 className="text-xl font-black text-[#201515] tracking-tighter uppercase leading-none">Morning <span className="text-[#00a76b]">Creation.</span></h1></div>
             <div className="bg-[#201515] text-white p-5 rounded-[5px] shadow-xl relative overflow-hidden flex-1 min-h-[220px]">
-              <div className="absolute top-0 right-0 w-36 h-36 bg-[#ff4f00]/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
+              <div className="absolute top-0 right-0 w-36 h-36 bg-[#00a76b]/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
               <div className="relative h-full flex flex-col">
-                <div className="flex items-center gap-2 mb-4 shrink-0"><Info size={16} className="text-[#ff4f00]" /><h3 className="text-[11px] font-black uppercase tracking-widest text-[#ff4f00]">Protocol.</h3></div>
+                <div className="flex items-center gap-2 mb-4 shrink-0"><Info size={16} className="text-[#00a76b]" /><h3 className="text-[11px] font-black uppercase tracking-widest text-[#00a76b]">Protocol.</h3></div>
                 <ul className="space-y-4 text-[11px] font-bold text-white/80 p-0 list-none flex-1">
-                  <li className="flex gap-3"><div className="w-6 h-6 rounded-[3px] bg-[#ff4f00] flex items-center justify-center text-white shrink-0 text-[10px]">1</div><span className="leading-tight">Log within first hour of shift.</span></li>
-                  <li className="flex gap-3"><div className="w-6 h-6 rounded-[3px] bg-[#ff4f00] flex items-center justify-center text-white shrink-0 text-[10px]">2</div><span className="leading-tight">Upload all visual references.</span></li>
-                  <li className="flex gap-3"><div className="w-6 h-6 rounded-[3px] bg-[#ff4f00] flex items-center justify-center text-white shrink-0 text-[10px]">3</div><span className="leading-tight">Update status at EOD.</span></li>
+                  <li className="flex gap-3"><div className="w-6 h-6 rounded-[3px] bg-[#00a76b] flex items-center justify-center text-white shrink-0 text-[10px]">1</div><span className="leading-tight">Log within first hour of shift.</span></li>
+                  <li className="flex gap-3"><div className="w-6 h-6 rounded-[3px] bg-[#00a76b] flex items-center justify-center text-white shrink-0 text-[10px]">2</div><span className="leading-tight">Upload all visual references.</span></li>
+                  <li className="flex gap-3"><div className="w-6 h-6 rounded-[3px] bg-[#00a76b] flex items-center justify-center text-white shrink-0 text-[10px]">3</div><span className="leading-tight">Update status at EOD.</span></li>
                 </ul>
                 <div className="mt-6 pt-4 border-t border-white/10 shrink-0">
-                   <div className="flex items-center gap-2 mb-2"><CheckCircle2 size={13} className="text-[#ff4f00]" /><h4 className="text-[10px] font-black uppercase tracking-widest text-[#ff4f00]">Mission.</h4></div>
+                   <div className="flex items-center gap-2 mb-2"><CheckCircle2 size={13} className="text-[#00a76b]" /><h4 className="text-[10px] font-black uppercase tracking-widest text-[#00a76b]">Mission.</h4></div>
                    <p className="text-[12px] font-bold text-white italic leading-relaxed">"Clear mission wins days. Precision execution defines success."</p>
                 </div>
               </div>
@@ -1488,15 +1488,15 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
         {(isHigherRole || userRole === 'employee') && (
            <div className="mt-10 animate-in slide-in-from-right-8 duration-500">
               <div className="zap-card !bg-[#201515] border-none !p-8 shadow-2xl relative !overflow-visible group rounded-[5px]">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-[#ff4f00]/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-[#ff4f00]/10 transition-colors"></div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#00a76b]/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-[#00a76b]/10 transition-colors"></div>
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-[5px] bg-[#ff4f00] flex items-center justify-center text-white shadow-lg shadow-[#ff4f00]/20">
+                        <div className="w-12 h-12 rounded-[5px] bg-[#00a76b] flex items-center justify-center text-white shadow-lg shadow-[#00a76b]/20">
                             <UserCheck size={24} />
                         </div>
                         <div>
                             <h3 className="text-[18px] font-black text-white uppercase tracking-tighter">Personal Mission Control</h3>
-                            <p className="text-[10px] font-bold text-[#ff4f00] uppercase tracking-[0.3em]">Direct Command Objectives — {registryDate}</p>
+                            <p className="text-[10px] font-bold text-[#00a76b] uppercase tracking-[0.3em]">Direct Command Objectives — {registryDate}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -1505,9 +1505,9 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                           <button
                             type="button"
                             onClick={() => setShowPersonalCalendar(!showPersonalCalendar)}
-                            className="flex items-center gap-3 bg-white/5 border border-white/10 hover:border-[#ff4f00]/40 rounded-[5px] px-4 h-10 text-[11px] font-black text-white transition-all cursor-pointer uppercase shadow-lg select-none"
+                            className="flex items-center gap-3 bg-white/5 border border-white/10 hover:border-[#00a76b]/40 rounded-[5px] px-4 h-10 text-[11px] font-black text-white transition-all cursor-pointer uppercase shadow-lg select-none"
                           >
-                            <Calendar className="text-[#ff4f00]" size={14} />
+                            <Calendar className="text-[#00a76b]" size={14} />
                             <span>{formatDateDisplay(registryDate)}</span>
                           </button>
 
@@ -1564,7 +1564,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                                       }}
                                       className={`w-8 h-8 rounded-[5px] flex items-center justify-center text-[10px] font-bold transition-all border-none cursor-pointer ${
                                         isSelected
-                                          ? 'bg-[#ff4f00] text-white shadow-lg shadow-[#ff4f00]/20'
+                                          ? 'bg-[#00a76b] text-white shadow-lg shadow-[#00a76b]/20'
                                           : isFuture
                                           ? 'text-white/10 cursor-not-allowed pointer-events-none'
                                           : 'text-white/70 hover:bg-white/5 hover:text-white'
@@ -1590,13 +1590,13 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                         <div 
                             key={task._id} 
                             onClick={() => setSelectedTask(task)}
-                            className="bg-white/5 border border-white/10 p-6 rounded-[5px] flex flex-col gap-6 group hover:border-[#ff4f00]/50 transition-all shadow-lg hover:shadow-[#ff4f00]/5 h-fit cursor-pointer"
+                            className="bg-white/5 border border-white/10 p-6 rounded-[5px] flex flex-col gap-6 group hover:border-[#00a76b]/50 transition-all shadow-lg hover:shadow-[#00a76b]/5 h-fit cursor-pointer"
                         >
                             <div className="min-w-0 pr-6">
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-3">
-                                           <div className="w-8 h-8 rounded-full bg-[#ff4f00]/10 border border-[#ff4f00]/30 flex items-center justify-center text-[#ff4f00] text-[10px] font-black uppercase shrink-0">
+                                           <div className="w-8 h-8 rounded-full bg-[#00a76b]/10 border border-[#00a76b]/30 flex items-center justify-center text-[#00a76b] text-[10px] font-black uppercase shrink-0">
                                               {task.employeeName?.substring(0, 2) || '??'}
                                            </div>
                                            <div className="min-w-0">
@@ -1609,15 +1609,15 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
 
                                         <p className="text-[18px] font-black text-white truncate tracking-tight">{task.title}</p>
                                         <div className="flex items-center gap-3 mt-2">
-                                          <div className={`w-2 h-2 rounded-full ${task.status === 'Completed' ? 'bg-emerald-500' : task.status === 'Review' ? 'bg-[#ff4f00]' : task.status === 'Need to Improve' ? 'bg-rose-500 animate-pulse' : task.status === 'Ongoing' ? 'bg-blue-500' : 'bg-amber-500'}`}></div>
+                                          <div className={`w-2 h-2 rounded-full ${task.status === 'Completed' ? 'bg-emerald-500' : task.status === 'Review' ? 'bg-[#00a76b]' : task.status === 'Need to Improve' ? 'bg-rose-500 animate-pulse' : task.status === 'Ongoing' ? 'bg-blue-500' : 'bg-amber-500'}`}></div>
                                           <span className={`text-[10px] font-black uppercase tracking-widest ${task.status === 'Need to Improve' ? 'text-rose-400' : 'text-white/40'}`}>
                                             {task.status === 'Review' ? 'UNDER REVIEW' : task.status}
                                           </span>
                                         </div>
 
                                         {task.progressNote && (
-                                          <div className="mt-4 p-3 bg-white/5 border-l-2 border-[#ff4f00] rounded-r-[5px] animate-in fade-in slide-in-from-left-2">
-                                            <p className="text-[8px] font-black text-[#ff4f00] uppercase tracking-[0.2em] mb-1">Progress Intel</p>
+                                          <div className="mt-4 p-3 bg-white/5 border-l-2 border-[#00a76b] rounded-r-[5px] animate-in fade-in slide-in-from-left-2">
+                                            <p className="text-[8px] font-black text-[#00a76b] uppercase tracking-[0.2em] mb-1">Progress Intel</p>
                                             <p className="text-[11px] font-medium text-white/70 line-clamp-3 leading-relaxed italic">"{task.progressNote}"</p>
                                           </div>
                                         )}
@@ -1627,7 +1627,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                                         <div className="flex gap-2">
                                             <div 
                                                 onClick={(e) => { e.stopPropagation(); openGallery(task.attachments, 0); }}
-                                                className="w-14 h-14 rounded-[5px] border-2 border-white/10 overflow-hidden bg-white/10 flex items-center justify-center transition-all cursor-pointer hover:scale-110 hover:border-[#ff4f00]/50 shadow-2xl relative group"
+                                                className="w-14 h-14 rounded-[5px] border-2 border-white/10 overflow-hidden bg-white/10 flex items-center justify-center transition-all cursor-pointer hover:scale-110 hover:border-[#00a76b]/50 shadow-2xl relative group"
                                             >
                                                 {((task.attachments[0].fileName || task.attachments[0].path || '').match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i)) || (task.attachments[0].fileType?.startsWith('image/')) ? (
                                                     <img 
@@ -1636,7 +1636,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                                                         onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/201515/ff4f00?text=LOST'; }}
                                                     />
                                                 ) : (
-                                                    <FileText size={18} className="text-white/40 group-hover:text-[#ff4f00] transition-colors" />
+                                                    <FileText size={18} className="text-white/40 group-hover:text-[#00a76b] transition-colors" />
                                                 )}
                                                 <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-all flex items-center justify-center">
                                                     <span className="text-[10px] font-black text-white">{task.attachments.length > 1 ? `+${task.attachments.length}` : 'VIEW'}</span>
@@ -1651,7 +1651,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                                 {[
                                     { s: 'Pending', c: 'bg-amber-500' },
                                     { s: 'Ongoing', c: 'bg-blue-500' },
-                                    { s: 'Review', c: 'bg-[#ff4f00]' }
+                                    { s: 'Review', c: 'bg-[#00a76b]' }
                                 ].map((btn, idx) => (
                                     <button 
                                         key={btn.s}
@@ -1676,8 +1676,8 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
             <div className="zap-card !bg-[#201515] border-none !px-8 !pt-6 !pb-5 flex flex-col gap-4 shadow-2xl rounded-[5px] min-h-[680px]">
               <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                  <div className="flex items-center gap-4">
-                   <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40 flex items-center gap-3"><ShieldCheck size={16} className="text-[#ff4f00]" /> Mission Registry</h4>
-                   <span className="bg-[#ff4f00] text-white text-[9px] font-black px-2 py-0.5 rounded-[5px] uppercase tracking-tighter">{filteredTasks.length} Nodes Detected</span>
+                   <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40 flex items-center gap-3"><ShieldCheck size={16} className="text-[#00a76b]" /> Mission Registry</h4>
+                   <span className="bg-[#00a76b] text-white text-[9px] font-black px-2 py-0.5 rounded-[5px] uppercase tracking-tighter">{filteredTasks.length} Nodes Detected</span>
                  </div>
                  
                  <div className="flex flex-wrap items-center gap-4">
@@ -1685,9 +1685,9 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                       <div className="relative" ref={registryFilterRef}>
                           <div 
                           onClick={() => setShowRoleDropdown(!showRoleDropdown)}
-                          className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-[5px] px-5 py-1.5 h-12 cursor-pointer hover:border-[#ff4f00]/40 transition-all min-w-[180px]"
+                          className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-[5px] px-5 py-1.5 h-12 cursor-pointer hover:border-[#00a76b]/40 transition-all min-w-[180px]"
                           >
-                          <Users size={16} className="text-[#ff4f00]" />
+                          <Users size={16} className="text-[#00a76b]" />
                           <span className="text-[11px] font-black text-white uppercase tracking-widest flex-1">
                               {roleOptions.find(o => o.value === roleFilter)?.label || 'All Roles'}
                           </span>
@@ -1700,7 +1700,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                                   <div 
                                   key={opt.value}
                                   onClick={() => { setRoleFilter(opt.value); setShowRoleDropdown(false); }}
-                                  className={`px-5 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all ${roleFilter === opt.value ? 'bg-[#ff4f00] text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}
+                                  className={`px-5 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all ${roleFilter === opt.value ? 'bg-[#00a76b] text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}
                                   >
                                       {opt.label}
                                   </div>
@@ -1714,9 +1714,9 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                       <button
                         type="button"
                         onClick={() => setShowRegistryCalendar(!showRegistryCalendar)}
-                        className="flex items-center gap-3 bg-white/5 border border-white/10 hover:border-[#ff4f00]/40 rounded-[5px] px-5 h-12 text-[11px] font-black text-white transition-all cursor-pointer uppercase shadow-lg select-none min-w-[150px]"
+                        className="flex items-center gap-3 bg-white/5 border border-white/10 hover:border-[#00a76b]/40 rounded-[5px] px-5 h-12 text-[11px] font-black text-white transition-all cursor-pointer uppercase shadow-lg select-none min-w-[150px]"
                       >
-                        <Calendar className="text-[#ff4f00]" size={16} />
+                        <Calendar className="text-[#00a76b]" size={16} />
                         <span>{formatDateDisplay(registryDate)}</span>
                       </button>
 
@@ -1773,7 +1773,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                                   }}
                                   className={`w-8 h-8 rounded-[5px] flex items-center justify-center text-[10px] font-bold transition-all border-none cursor-pointer ${
                                     isSelected
-                                      ? 'bg-[#ff4f00] text-white shadow-lg shadow-[#ff4f00]/20'
+                                      ? 'bg-[#00a76b] text-white shadow-lg shadow-[#00a76b]/20'
                                       : isFuture
                                       ? 'text-white/10 cursor-not-allowed pointer-events-none'
                                       : 'text-white/70 hover:bg-white/5 hover:text-white'
@@ -1787,7 +1787,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                         </div>
                       )}
                     </div>
-                   <button onClick={() => fetchTasks(registryDate)} className={`p-3 bg-white/5 hover:bg-[#ff4f00]/10 rounded-[5px] text-white/40 hover:text-[#ff4f00] transition-all border border-white/10 hover:border-[#ff4f00] cursor-pointer ${isSyncing ? 'animate-spin text-[#ff4f00]' : ''}`}><RefreshCw size={16} /></button>
+                   <button onClick={() => fetchTasks(registryDate)} className={`p-3 bg-white/5 hover:bg-[#00a76b]/10 rounded-[5px] text-white/40 hover:text-[#00a76b] transition-all border border-white/10 hover:border-[#00a76b] cursor-pointer ${isSyncing ? 'animate-spin text-[#00a76b]' : ''}`}><RefreshCw size={16} /></button>
                  </div>
               </div>
               
@@ -1801,13 +1801,13 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                     <div 
                       key={task._id || (task.title + task.description)} 
                       onClick={() => setSelectedTask(task)}
-                      className="bg-white/5 border border-white/10 p-6 rounded-[5px] flex flex-col gap-6 group hover:border-[#ff4f00]/50 transition-all shadow-lg hover:shadow-[#ff4f00]/5 h-fit cursor-pointer"
+                      className="bg-white/5 border border-white/10 p-6 rounded-[5px] flex flex-col gap-6 group hover:border-[#00a76b]/50 transition-all shadow-lg hover:shadow-[#00a76b]/5 h-fit cursor-pointer"
                     >
                         <div className="min-w-0 pr-6">
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-3">
-                                 <div className="w-8 h-8 rounded-full bg-[#ff4f00]/10 border border-[#ff4f00]/30 flex items-center justify-center text-[#ff4f00] text-[10px] font-black uppercase shrink-0">
+                                 <div className="w-8 h-8 rounded-full bg-[#00a76b]/10 border border-[#00a76b]/30 flex items-center justify-center text-[#00a76b] text-[10px] font-black uppercase shrink-0">
                                     {task.employeeName?.substring(0, 2) || '??'}
                                  </div>
                                  <div className="min-w-0">
@@ -1820,7 +1820,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
 
                               <p className="text-[18px] font-black text-white truncate tracking-tight">{task.title}</p>
                               <div className="flex items-center gap-3 mt-2">
-                                <div className={`w-2 h-2 rounded-full ${task.status === 'Completed' ? 'bg-emerald-500' : task.status === 'Review' ? 'bg-[#ff4f00]' : task.status === 'Need to Improve' ? 'bg-rose-500 animate-pulse' : task.status === 'Ongoing' ? 'bg-blue-500' : 'bg-amber-500'}`}></div>
+                                <div className={`w-2 h-2 rounded-full ${task.status === 'Completed' ? 'bg-emerald-500' : task.status === 'Review' ? 'bg-[#00a76b]' : task.status === 'Need to Improve' ? 'bg-rose-500 animate-pulse' : task.status === 'Ongoing' ? 'bg-blue-500' : 'bg-amber-500'}`}></div>
                                 <span className={`text-[10px] font-black uppercase tracking-widest ${task.status === 'Need to Improve' ? 'text-rose-400' : 'text-white/40'}`}>
                                   {task.status === 'Review' ? 'UNDER REVIEW' : task.status}
                                 </span>
@@ -1831,7 +1831,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                               <div className="flex gap-2">
                                 <div 
                                   onClick={() => openGallery(task.attachments, 0)}
-                                  className="w-14 h-14 rounded-[5px] border-2 border-white/10 overflow-hidden bg-white/10 flex items-center justify-center transition-all cursor-pointer hover:scale-110 hover:border-[#ff4f00]/50 shadow-2xl relative group"
+                                  className="w-14 h-14 rounded-[5px] border-2 border-white/10 overflow-hidden bg-white/10 flex items-center justify-center transition-all cursor-pointer hover:scale-110 hover:border-[#00a76b]/50 shadow-2xl relative group"
                                 >
                                   {((task.attachments[0].fileName || task.attachments[0].path || '').match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i)) || (task.attachments[0].fileType?.startsWith('image/')) ? (
                                     <img 
@@ -1840,7 +1840,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                                       onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100/201515/ff4f00?text=LOST'; }}
                                     />
                                   ) : (
-                                    <FileText size={18} className="text-white/40 group-hover:text-[#ff4f00] transition-colors" />
+                                    <FileText size={18} className="text-white/40 group-hover:text-[#00a76b] transition-colors" />
                                   )}
                                   <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-all flex items-center justify-center">
                                     <span className="text-[10px] font-black text-white">{task.attachments.length > 1 ? `+${task.attachments.length}` : 'VIEW'}</span>
@@ -1853,12 +1853,12 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                         
                         {statusNote.taskId === task._id ? (
                           <div className="bg-white/10 p-4 rounded-[5px] animate-in zoom-in-95 duration-200">
-                            <label className="text-[9px] font-black uppercase tracking-widest text-[#ff4f00] mb-2 block flex items-center gap-2"><MessageSquare size={10} /> Reason for {statusNote.nextStatus} Status</label>
+                            <label className="text-[9px] font-black uppercase tracking-widest text-[#00a76b] mb-2 block flex items-center gap-2"><MessageSquare size={10} /> Reason for {statusNote.nextStatus} Status</label>
                             <textarea 
                               autoFocus
                               required
                               placeholder="Provide a brief update..." 
-                              className="w-full h-20 bg-black/20 border border-white/10 rounded-[5px] p-3 text-[12px] text-white focus:outline-none focus:border-[#ff4f00]/50 resize-none mb-3"
+                              className="w-full h-20 bg-black/20 border border-white/10 rounded-[5px] p-3 text-[12px] text-white focus:outline-none focus:border-[#00a76b]/50 resize-none mb-3"
                               value={statusNote.note}
                               onChange={e => setStatusNote({...statusNote, note: e.target.value})}
                             />
@@ -1867,7 +1867,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                               <button 
                                 onClick={() => updateTaskStatus(task._id, statusNote.nextStatus, statusNote.note)}
                                 disabled={!statusNote.note.trim()}
-                                className="flex-[2] h-9 rounded-[5px] bg-[#ff4f00] text-white text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all border-none cursor-pointer disabled:opacity-50"
+                                className="flex-[2] h-9 rounded-[5px] bg-[#00a76b] text-white text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all border-none cursor-pointer disabled:opacity-50"
                               >
                                 Confirm Status Update
                               </button>
@@ -1894,7 +1894,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                                   [
                                       { s: 'Pending', c: 'bg-amber-500' },
                                       { s: 'Ongoing', c: 'bg-blue-500' },
-                                      { s: 'Review', c: 'bg-[#ff4f00]' },
+                                      { s: 'Review', c: 'bg-[#00a76b]' },
                                       ...(isHigherRole ? [{ s: 'Completed', c: 'bg-emerald-500' }] : [])
                                   ].map((btn, idx) => (
                                       <button 
@@ -1918,7 +1918,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                    <button 
                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                      disabled={currentPage === 1}
-                     className="flex items-center gap-2 px-6 py-2 bg-white/5 hover:bg-[#ff4f00] text-white rounded-[5px] border border-white/10 transition-all disabled:opacity-20 disabled:hover:bg-white/5 cursor-pointer"
+                     className="flex items-center gap-2 px-6 py-2 bg-white/5 hover:bg-[#00a76b] text-white rounded-[5px] border border-white/10 transition-all disabled:opacity-20 disabled:hover:bg-white/5 cursor-pointer"
                    >
                     <ChevronLeft size={16} />
                     <span className="text-[10px] font-black uppercase tracking-widest">Previous</span>
@@ -1929,7 +1929,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                         <button 
                           key={i} 
                           onClick={() => setCurrentPage(i + 1)}
-                          className={`w-8 h-8 rounded-[5px] text-[10px] font-black border transition-all cursor-pointer ${currentPage === i + 1 ? 'bg-[#ff4f00] border-[#ff4f00] text-white' : 'bg-white/5 border-white/10 text-white/40 hover:text-white hover:border-white/20'}`}
+                          className={`w-8 h-8 rounded-[5px] text-[10px] font-black border transition-all cursor-pointer ${currentPage === i + 1 ? 'bg-[#00a76b] border-[#00a76b] text-white' : 'bg-white/5 border-white/10 text-white/40 hover:text-white hover:border-white/20'}`}
                         >
                            {i + 1}
                         </button>
@@ -1939,7 +1939,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                    <button 
                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                      disabled={currentPage === totalPages}
-                     className="flex items-center gap-2 px-6 py-2 bg-white/5 hover:bg-[#ff4f00] text-white rounded-[5px] border border-white/10 transition-all disabled:opacity-20 disabled:hover:bg-white/5 cursor-pointer"
+                     className="flex items-center gap-2 px-6 py-2 bg-white/5 hover:bg-[#00a76b] text-white rounded-[5px] border border-white/10 transition-all disabled:opacity-20 disabled:hover:bg-white/5 cursor-pointer"
                    >
                     <span className="text-[10px] font-black uppercase tracking-widest">Next</span>
                     <ChevronRight size={16} />

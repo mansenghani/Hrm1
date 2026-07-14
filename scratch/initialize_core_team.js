@@ -32,7 +32,7 @@ async function initializeCoreTeam() {
             { name: 'Bhavik Kukadiya', email: 'bhavik.kukadiya@fluidhr.com', id: 'AT_EMP_6', role: 'employee' }
         ];
 
-        const plainPassword = 'pass123';
+        const password = 'pass123';
 
         for (const member of coreTeam) {
             console.log(`📡 Registering Node: ${member.id} | ${member.name}...`);
