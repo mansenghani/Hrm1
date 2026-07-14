@@ -459,13 +459,20 @@ exports.getDashboardData = async (req, res) => {
 
     const now = new Date();
     const today = getToday();
-    if (timeRange === 'weekly') {
+    
+    if (timeRange === 'weekly' || timeRange === 'week') {
       const d = new Date(); d.setDate(now.getDate() - 7);
       filter.date = { $gte: d.toISOString().split('T')[0] };
-    } else if (timeRange === 'monthly') {
+    } else if (timeRange === 'monthly' || timeRange === 'month') {
       const d = new Date(); d.setMonth(now.getMonth() - 1);
       filter.date = { $gte: d.toISOString().split('T')[0] };
-    } else {
+    } else if (timeRange === 'quarterly' || timeRange === 'quarter') {
+      const d = new Date(); d.setMonth(now.getMonth() - 3);
+      filter.date = { $gte: d.toISOString().split('T')[0] };
+    } else if (timeRange === 'yearly' || timeRange === 'year') {
+      const d = new Date(); d.setFullYear(now.getFullYear() - 1);
+      filter.date = { $gte: d.toISOString().split('T')[0] };
+    } else if (timeRange === 'today') {
       filter.date = today;
     }
 

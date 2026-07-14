@@ -7,7 +7,7 @@ import {
   FolderOpen, TrendingUp, MessageSquare, Bell, Search,
   LogOut, ChevronLeft, ChevronRight, Sun, Moon, Menu, X,
   Play, Zap, PlusCircle, Calendar, Wallet, Target,
-  Globe, ChevronDown
+  Globe, ChevronDown, Briefcase, BarChart3
 } from 'lucide-react';
 import useAuthStore from '@shared/store/authStore';
 
@@ -43,27 +43,20 @@ const useTheme = () => {
   return [dark, setDark];
 };
 
-// ─── TOP TABS ─────────────────────────────────────────────────
-const NAV_ITEMS = [
-  { label: 'Dashboard',    path: '/employee/dashboard',           icon: LayoutDashboard },
-  { label: 'Time Tracker', path: '/employee/time-tracker',        icon: Clock },
-  { label: 'Team Chat',    path: '/employee/chat',                icon: MessageSquare },
-  { label: 'Create Task',  path: '/employee/task-management/create', icon: PlusCircle },
-];
-
 // ─── SIDEBAR GROUPS ──────────────────────────────────────────
-const SIDEBAR_OVERVIEW_ITEMS = [
-  { label: 'Dashboard', path: '/employee/dashboard', icon: LayoutDashboard },
-];
-
-const SIDEBAR_ME_ITEMS = [
-  { label: 'My Profile', path: '/employee/profile', icon: User },
-  { label: 'My Attendance', path: '/employee/attendance', icon: Clock },
-  { label: 'My Leave', path: '/employee/leave', icon: Calendar },
-  { label: 'My Payslips', path: '/employee/payslips', icon: Wallet },
-  { label: 'My Documents', path: '/employee/documents', icon: FileText },
-  { label: 'My Performance', path: '/employee/performance', icon: Target },
-];
+const SIDEBAR_ITEMS = {
+  OVERVIEW: [
+    { label: 'Dashboard', path: '/employee/dashboard', icon: LayoutDashboard },
+  ],
+  ME: [
+    { label: 'My Profile', path: '/employee/profile', icon: User },
+    { label: 'My Attendance', path: '/employee/attendance', icon: Clock },
+    { label: 'My Leave', path: '/employee/leave', icon: Calendar },
+    { label: 'My Payslips', path: '/employee/payslips', icon: Wallet },
+    { label: 'My Documents', path: '/employee/documents', icon: FileText },
+    { label: 'My Performance', path: '/employee/performance', icon: Target },
+  ]
+};
 
 // ─── AVATAR ───────────────────────────────────────────────────
 const Avatar = ({ name = '', image, size = 32 }) => {
@@ -99,6 +92,8 @@ const EmployeeLayout = () => {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState(null);
   const [timerActive, setTimerActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -107,17 +102,43 @@ const EmployeeLayout = () => {
   const { logout } = useAuthStore();
   const token = sessionStorage.getItem('token');
   const notifRef = useRef(null);
+  const profileRef = useRef(null);
+  const triggerRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   const isChat = location.pathname.endsWith('/chat');
 
   // ── Fetch Profile ──────────────────────────────────────────
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setIsProfileLoading(false);
+      return;
+    }
+    setIsProfileLoading(true);
+    setProfileError(null);
     axios.get('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => { setProfile(r.data); sessionStorage.setItem('user', JSON.stringify(r.data)); })
+      .then(r => {
+        if (r.data) {
+          setProfile(r.data);
+          sessionStorage.setItem('user', JSON.stringify(r.data));
+        } else {
+          throw new Error('No profile data');
+        }
+      })
       .catch(() => {
         const s = sessionStorage.getItem('user');
-        if (s) try { setProfile(JSON.parse(s)); } catch {}
+        if (s && s !== 'undefined' && s !== 'null') {
+          try {
+            setProfile(JSON.parse(s));
+          } catch {
+            setProfileError('Unable to load profile');
+          }
+        } else {
+          setProfileError('Unable to load profile');
+        }
+      })
+      .finally(() => {
+        setIsProfileLoading(false);
       });
   }, [token]);
 
@@ -137,7 +158,7 @@ const EmployeeLayout = () => {
   // ── Timer Status ───────────────────────────────────────────
   useEffect(() => {
     if (!token) return;
-    axios.get('/api/timer/status', { headers: { Authorization: `Bearer ${token}` } })
+    axios.get('/api/time/timer/status', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => { setTimerActive(!!r.data?.isRunning); if (r.data?.status === 'idle') setIsPaused(true); })
       .catch(() => {});
   }, [token]);
@@ -156,21 +177,86 @@ const EmployeeLayout = () => {
     return () => s.disconnect();
   }, [token]);
 
-  // ── Click Outside Notif ────────────────────────────────────
+  // ── Click Outside Notif & Profile ─────────────────────────
   useEffect(() => {
-    const h = e => { if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false); };
+    const h = e => {
+      if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
+      if (profileRef.current && !profileRef.current.contains(e.target)) setIsProfileDropdownOpen(false);
+    };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, []);
+
+  // 🛡️ KEYBOARD ACCESSIBILITY HANDLERS
+  const handleDropdownKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      setIsProfileDropdownOpen(false);
+      triggerRef.current?.focus();
+      return;
+    }
+    
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const focusableElements = dropdownRef.current?.querySelectorAll('button, [role="menuitem"]');
+      if (!focusableElements || focusableElements.length === 0) return;
+      
+      const activeElement = document.activeElement;
+      const index = Array.from(focusableElements).indexOf(activeElement);
+      
+      let nextIndex = index;
+      if (e.key === 'ArrowDown') {
+        nextIndex = (index + 1) % focusableElements.length;
+      } else if (e.key === 'ArrowUp') {
+        nextIndex = (index - 1 + focusableElements.length) % focusableElements.length;
+      }
+      
+      focusableElements[nextIndex]?.focus();
+    }
+  };
+
+  useEffect(() => {
+    if (isProfileDropdownOpen) {
+      // Focus on the first item in dropdown for keyboard accessibility
+      const firstItem = dropdownRef.current?.querySelector('button, [role="menuitem"]');
+      firstItem?.focus();
+    }
+  }, [isProfileDropdownOpen]);
 
   const handleLogout = () => { logout(); navigate('/login'); };
   const handleResume = () =>
     axios.post('/api/time/resume', {}, { headers: { Authorization: `Bearer ${token}` } })
       .then(() => { setTimerActive(true); setIsPaused(false); }).catch(() => {});
 
-  const displayName = profile?.name ||
-    (profile?.profile ? `${profile.profile.firstName || ''} ${profile.profile.lastName || ''}`.trim() : '') ||
-    'Employee';
+  const displayName = profile?.name || profile?.fullName || 'Employee';
+  const displayEmail = profile?.email || 'employee@fluidhr.com';
+  const userRealRole = profile?.position || (
+    profile?.role === 'admin' ? 'Super Admin' :
+    profile?.role === 'hr' ? 'HR Manager' :
+    profile?.role === 'manager' ? 'Team Manager' :
+    profile?.role === 'employee' ? 'Employee' : 'User'
+  );
+  const activeRole = sessionStorage.getItem('role') || 'employee';
+  const activeRoleTitle = activeRole === 'admin' ? 'Super Admin' :
+                          activeRole === 'hr' ? 'HR Manager' :
+                          activeRole === 'manager' ? 'Team Manager' :
+                          activeRole === 'employee' ? 'Employee' : 'User';
+
+  const handleRoleSwitch = (targetRole) => {
+    sessionStorage.setItem('role', targetRole);
+    const storedUser = sessionStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const userObj = JSON.parse(storedUser);
+        userObj.role = targetRole;
+        sessionStorage.setItem('user', JSON.stringify(userObj));
+      } catch (e) {
+        console.error('Failed to sync user role in session:', e);
+      }
+    }
+    setIsProfileDropdownOpen(false);
+    navigate(`/${targetRole}/dashboard`);
+    window.location.reload();
+  };
 
   const initials = displayName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'BK';
 
@@ -178,93 +264,84 @@ const EmployeeLayout = () => {
 
   // ── SIDEBAR CONTENT ────────────────────────────────────────
   const SidebarContent = ({ mobile = false }) => (
-    <div className="flex flex-col h-full" style={{ backgroundColor: dark ? '#050c0a' : '#f2fbf6' }}>
-      {/* Mobile brand header (logo shown inside sidebar on mobile only) */}
-      {mobile && (
-        <div className="flex items-center gap-3 px-4 py-5 border-b border-[#eceae3] dark:border-[#1a2d29]">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-[#00a76b]">
+    <div className="flex flex-col h-full" style={{ backgroundColor: '#071A17', fontFamily: "'Inter', sans-serif" }}>
+      {/* Brand Header */}
+      {(!collapsed || mobile) ? (
+        <div className="flex items-center gap-3 px-6 py-5">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-[#10b981]">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="8" />
               <path d="M12 2v2M12 20v2M2 12h2M20 12h2" />
               <circle cx="12" cy="12" r="3" fill="white" />
             </svg>
           </div>
-          <span className="font-bold text-[17px] text-[#201515] dark:text-white">FluidHR</span>
-          <button onClick={() => setMobileOpen(false)} className="ml-auto p-1 rounded-lg text-[#939084] dark:text-[#a3b3af] cursor-pointer bg-transparent border-none">
-            <X size={20} />
-          </button>
+          <div className="flex flex-col items-start leading-tight">
+            <span className="font-bold text-[16px] text-white tracking-tight">Verdant HR</span>
+            <span className="text-[10px] font-bold text-[#527068] uppercase tracking-wider">Workforce OS</span>
+          </div>
+          {mobile && (
+            <button onClick={() => setMobileOpen(false)} className="ml-auto p-1 rounded-lg text-[#527068] cursor-pointer bg-transparent border-none hover:text-white">
+              <X size={20} />
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="flex items-center justify-center py-5">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-[#10b981]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="8" />
+              <path d="M12 2v2M12 20v2M2 12h2M20 12h2" />
+              <circle cx="12" cy="12" r="3" fill="white" />
+            </svg>
+          </div>
         </div>
       )}
 
       {/* Nav links */}
       <nav className="flex-1 overflow-y-auto p-3 space-y-4 scrollbar-hide">
-        {/* OVERVIEW Group */}
-        <div>
-          {(!collapsed || mobile) && (
-            <p className="px-4 text-[10px] font-black text-[#939084] dark:text-[#527068] uppercase tracking-[0.2em] mb-2">
-              Overview
-            </p>
-          )}
-          <div className="space-y-1">
-            {SIDEBAR_OVERVIEW_ITEMS.map(item => {
-              const Icon = item.icon;
-              const active = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => mobile && setMobileOpen(false)}
-                  title={collapsed && !mobile ? item.label : ''}
-                  className={`flex items-center h-12 text-[15px] font-bold no-underline rounded-[999px] transition-all group ${collapsed && !mobile ? 'justify-center px-0 w-full' : 'px-4 gap-3 w-full'} ${active ? 'text-white bg-[#00a76b] shadow-sm' : 'text-[#201515] dark:text-[#a3b3af] hover:bg-[#eceae3]/60 dark:hover:bg-[#111c18]'}`}
-                >
-                  <div className={`shrink-0 flex items-center justify-center transition-all ${collapsed && !mobile ? 'w-12' : 'w-5'}`}>
-                    <Icon size={20} className={active ? 'text-white' : 'text-[#36342e] dark:text-[#a3b3af]'} />
-                  </div>
-                  {(!collapsed || mobile) && <span className="truncate whitespace-nowrap overflow-hidden">{item.label}</span>}
-                </Link>
-              );
-            })}
+        {Object.entries(SIDEBAR_ITEMS).map(([groupName, items]) => (
+          <div key={groupName} className="space-y-2">
+            {(!collapsed || mobile) && (
+              <p className="px-4 text-[11px] font-black text-[#527068] uppercase tracking-[0.2em] mb-2 mt-2">
+                {groupName}
+              </p>
+            )}
+            <div className="space-y-1">
+              {items.map(item => {
+                const Icon = item.icon;
+                const active = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => mobile && setMobileOpen(false)}
+                    title={collapsed && !mobile ? item.label : ''}
+                    style={{ transition: 'all 200ms ease-in-out' }}
+                    className={`flex items-center h-12 text-[14px] font-medium no-underline rounded-[14px] group ${collapsed && !mobile ? 'justify-center px-0 w-full' : 'px-4 gap-3 w-full'} ${active ? 'text-white bg-[#10b981] shadow-sm' : 'text-[#a3b3af] hover:bg-[#102d29] hover:text-white'}`}
+                  >
+                    <div className={`shrink-0 flex items-center justify-center transition-all ${collapsed && !mobile ? 'w-12' : 'w-5'}`}>
+                      <Icon size={20} className={active ? 'text-white' : 'text-[#a3b3af] group-hover:text-white'} style={{ transition: 'color 200ms ease-in-out' }} />
+                    </div>
+                    {(!collapsed || mobile) && <span className="truncate whitespace-nowrap overflow-hidden">{item.label}</span>}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-        </div>
-
-        {/* ME Group */}
-        <div>
-          {(!collapsed || mobile) && (
-            <p className="px-4 text-[10px] font-black text-[#939084] dark:text-[#527068] uppercase tracking-[0.2em] mb-2 mt-4">
-              Me
-            </p>
-          )}
-          <div className="space-y-1">
-            {SIDEBAR_ME_ITEMS.map(item => {
-              const Icon = item.icon;
-              const active = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => mobile && setMobileOpen(false)}
-                  title={collapsed && !mobile ? item.label : ''}
-                  className={`flex items-center h-12 text-[15px] font-bold no-underline rounded-[999px] transition-all group ${collapsed && !mobile ? 'justify-center px-0 w-full' : 'px-4 gap-3 w-full'} ${active ? 'text-white bg-[#00a76b] shadow-sm' : 'text-[#201515] dark:text-[#a3b3af] hover:bg-[#eceae3]/60 dark:hover:bg-[#111c18]'}`}
-                >
-                  <div className={`shrink-0 flex items-center justify-center transition-all ${collapsed && !mobile ? 'w-12' : 'w-5'}`}>
-                    <Icon size={20} className={active ? 'text-white' : 'text-[#36342e] dark:text-[#a3b3af]'} />
-                  </div>
-                  {(!collapsed || mobile) && <span className="truncate whitespace-nowrap overflow-hidden">{item.label}</span>}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
+        ))}
       </nav>
 
-      {/* Dark mode toggle at bottom */}
-      <div className="p-3 border-t border-[#c5c0b1] dark:border-[#1a2d29] space-y-2">
+      {/* Collapse button at bottom */}
+      <div className="p-3 mt-auto">
         <button
-          onClick={() => setDark(d => !d)}
-          className={`flex items-center gap-2 p-2 rounded-lg text-sm font-medium w-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 ${collapsed && !mobile ? 'justify-center px-0' : ''}`}
+          onClick={() => setCollapsed(c => !c)}
+          className={`flex items-center h-12 text-[14px] font-medium no-underline rounded-[14px] transition-all w-full bg-transparent border-none cursor-pointer text-[#a3b3af] hover:bg-[#102d29] hover:text-white ${collapsed && !mobile ? 'justify-center px-0' : 'px-4 gap-3'}`}
+          style={{ transition: 'all 200ms ease-in-out' }}
         >
-          {dark ? <Sun size={18} /> : <Moon size={18} />}
-          {(!collapsed || mobile) && <span>{dark ? 'Light Mode' : 'Dark Mode'}</span>}
+          <div className="shrink-0 flex items-center justify-center w-5">
+            {collapsed && !mobile ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          </div>
+          {(!collapsed || mobile) && <span>Collapse</span>}
         </button>
       </div>
     </div>
@@ -286,7 +363,7 @@ const EmployeeLayout = () => {
                   </svg>
                 </div>
                 <div className="flex flex-col items-start leading-tight">
-                  <span className="text-[17px] font-black text-[#201515] dark:text-white tracking-tight">FluidHR</span>
+                  <span className="text-[17px] font-black text-[#201515] dark:text-white tracking-tight">Verdant HR</span>
                   <span className="text-[10px] font-bold text-[#939084] dark:text-[#a3b3af] uppercase tracking-wider">Workforce OS</span>
                 </div>
               </div>
@@ -328,7 +405,7 @@ const EmployeeLayout = () => {
             {isPaused && (
               <button
                 onClick={handleResume}
-                className="flex items-center gap-2 px-4 py-1.5 bg-[#ff4f00] text-white rounded-full border-none cursor-pointer hover:bg-[#e64600] transition-all animate-pulse mr-2"
+                className="flex items-center gap-2 px-4 py-1.5 bg-[#00a76b] text-white rounded-full border-none cursor-pointer hover:bg-[#e64600] transition-all animate-pulse mr-2"
               >
                 <Play size={14} fill="currentColor" />
                 <span className="text-[10px] font-black uppercase tracking-widest">Resume Timer</span>
@@ -355,7 +432,7 @@ const EmployeeLayout = () => {
             </button>
 
             <button
-              onClick={() => setDark(d => !d)}
+              onClick={() => setDark(!dark)}
               className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors rounded-full hover:bg-gray-100 border-none bg-transparent cursor-pointer"
             >
               {dark ? <Sun size={18} /> : <Moon size={18} />}
@@ -423,40 +500,101 @@ const EmployeeLayout = () => {
             </div>
 
             {/* User Avatar details */}
-            <div className="relative">
-              <div
-                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                className="hidden sm:flex items-center gap-3 px-3 h-11 hover:bg-gray-100 dark:hover:bg-[#111c18] rounded-full cursor-pointer transition-all select-none"
-              >
-                <Avatar name={displayName} image={profile?.profileImage} size={30} />
-                <div className="hidden lg:block text-left leading-none">
-                  <div className="text-xs font-semibold text-[#201515] dark:text-white truncate max-w-[120px]">{displayName}</div>
-                  <div className="text-[9px] font-medium text-[#00a76b] mt-1">Employee</div>
+            <div className="relative" ref={profileRef}>
+              {isProfileLoading ? (
+                <div
+                  className="hidden sm:flex items-center gap-3 px-3 h-11 rounded-full select-none opacity-60 animate-pulse bg-gray-50 dark:bg-[#111c18]"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-700 shrink-0"></div>
+                  <div className="flex flex-col gap-1 items-start leading-none">
+                    <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-16"></div>
+                    <div className="h-2 bg-gray-200 dark:bg-slate-700 rounded w-10 mt-1"></div>
+                  </div>
+                  <ChevronDown size={14} className="text-gray-400" />
                 </div>
-                <ChevronDown size={14} className="text-gray-500" />
-              </div>
+              ) : (
+                <button
+                  ref={triggerRef}
+                  type="button"
+                  onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setIsProfileDropdownOpen(!isProfileDropdownOpen);
+                    }
+                  }}
+                  className={`hidden sm:flex items-center gap-3 px-3 h-11 rounded-full cursor-pointer transition-all select-none border-none bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-[#00a76b]/50 ${isProfileDropdownOpen ? 'bg-gray-100 dark:bg-[#111c18]' : 'hover:bg-gray-100 dark:hover:bg-[#111c18]'}`}
+                  aria-expanded={isProfileDropdownOpen}
+                  aria-haspopup="true"
+                >
+                  <Avatar name={displayName} image={profile?.profileImage} size={30} />
+                  <div className="hidden lg:block text-left leading-none">
+                    <div className="text-xs font-semibold text-[#201515] dark:text-white truncate max-w-[120px]">{displayName}</div>
+                    <div className="text-[9px] font-medium text-[#00a76b] mt-1">{activeRoleTitle}</div>
+                  </div>
+                  <ChevronDown size={14} className={`text-gray-500 transition-transform duration-200 ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+              )}
 
               {isProfileDropdownOpen && (
-                <div className="absolute top-[48px] right-0 w-48 bg-white dark:bg-[#111c18] border border-[#c5c0b1] dark:border-[#1a2d29] rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] overflow-hidden z-[100] py-1">
-                  <button
-                    onClick={() => { navigate('/employee/profile'); setIsProfileDropdownOpen(false); }}
-                    className="w-full px-4 py-2.5 text-left text-sm font-semibold text-gray-700 dark:text-[#cbd5e1] hover:bg-[#f2fbf6] hover:text-[#00a76b] transition-all border-none bg-transparent cursor-pointer"
-                  >
-                    My Profile
-                  </button>
-                  <button
-                    onClick={() => { navigate('/employee/settings'); setIsProfileDropdownOpen(false); }}
-                    className="w-full px-4 py-2.5 text-left text-sm font-semibold text-gray-700 dark:text-[#cbd5e1] hover:bg-[#f2fbf6] hover:text-[#00a76b] transition-all border-none bg-transparent cursor-pointer"
-                  >
-                    Settings
-                  </button>
-                  <div className="border-t border-[#eceae3] dark:border-[#1a2d29] my-1"></div>
-                  <button
-                    onClick={() => { handleLogout(); setIsProfileDropdownOpen(false); }}
-                    className="w-full px-4 py-2.5 text-left text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all border-none bg-transparent cursor-pointer"
-                  >
-                    Log out
-                  </button>
+                <div
+                  ref={dropdownRef}
+                  onKeyDown={handleDropdownKeyDown}
+                  className="absolute top-[48px] right-0 w-72 bg-white dark:bg-[#111c18] border border-gray-100 dark:border-[#1a2d29] rounded-[20px] shadow-[0_10px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_15px_40px_rgba(0,0,0,0.3)] overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200 origin-top-right focus:outline-none"
+                  role="menu"
+                  aria-orientation="vertical"
+                  aria-labelledby="user-menu-button"
+                  tabIndex="-1"
+                >
+                  {/* User Details Header inside Dropdown */}
+                  {isProfileLoading ? (
+                    <div className="px-6 py-4 flex flex-col gap-1.5 animate-pulse">
+                      <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-24"></div>
+                      <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-32 mt-1"></div>
+                    </div>
+                  ) : profileError || !profile ? (
+                    <div className="px-6 py-4 text-left">
+                      <span className="text-xs font-bold text-red-600 dark:text-red-400">Unable to load profile</span>
+                    </div>
+                  ) : (
+                    <div className="px-6 pt-5 pb-4 flex flex-col">
+                      <span className="text-[17px] font-semibold text-slate-900 dark:text-white leading-tight">{displayName}</span>
+                      <span className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 leading-none">{displayEmail}</span>
+                    </div>
+                  )}
+
+                  <div className="h-px bg-slate-100 dark:bg-slate-800/80 w-full" />
+
+                  {/* Dropdown Options */}
+                  <div className="flex flex-col">
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        setIsProfileDropdownOpen(false);
+                        navigate(`/employee/profile`);
+                      }}
+                      className="w-full px-6 py-3 flex items-center gap-3.5 text-left text-[14px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#162722]/50 hover:text-slate-900 dark:hover:text-white transition-colors duration-150 border-none bg-transparent cursor-pointer select-none outline-none focus-visible:bg-slate-50 dark:focus-visible:bg-[#162722]/50"
+                    >
+                      <User size={18} className="text-slate-400 dark:text-slate-500" />
+                      <span>Employee Information</span>
+                    </button>
+
+                    <div className="h-px bg-slate-100 dark:bg-slate-800/80 w-full" />
+
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        if (window.confirm("Are you sure you want to sign out?")) {
+                          handleLogout();
+                          setIsProfileDropdownOpen(false);
+                        }
+                      }}
+                      className="w-full px-6 py-3.5 flex items-center gap-3.5 text-left text-[14px] font-semibold text-[#EF4444] dark:text-red-400 hover:bg-red-50/50 dark:hover:bg-red-950/20 transition-colors duration-150 border-none bg-transparent cursor-pointer outline-none focus-visible:bg-red-50/50 dark:focus-visible:bg-red-950/20"
+                    >
+                      <LogOut size={18} className="text-[#EF4444] dark:text-red-400" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -469,9 +607,9 @@ const EmployeeLayout = () => {
         <aside
           className="hidden md:flex flex-col border-r flex-shrink-0 transition-all duration-300 ease-in-out relative"
           style={{
-            width: collapsed ? '64px' : '220px',
-            borderColor: dark ? '#1a2d29' : 'var(--border)',
-            backgroundColor: dark ? '#050c0a' : '#f2fbf6',
+            width: collapsed ? '80px' : '280px',
+            borderColor: '#102a26',
+            backgroundColor: '#071A17',
           }}
         >
           <SidebarContent />
@@ -481,8 +619,8 @@ const EmployeeLayout = () => {
         {mobileOpen && (
           <div className="fixed inset-0 z-50 md:hidden">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-            <aside className="absolute left-0 top-0 bottom-0 w-64 border-r animate-slide-in-left"
-              style={{ background: dark ? '#050c0a' : '#f2fbf6', borderColor: dark ? '#1a2d29' : 'var(--border)' }}>
+            <aside className="absolute left-0 top-0 bottom-0 w-[280px] border-r animate-slide-in-left"
+              style={{ background: '#071A17', borderColor: '#102a26' }}>
               <SidebarContent mobile />
             </aside>
           </div>

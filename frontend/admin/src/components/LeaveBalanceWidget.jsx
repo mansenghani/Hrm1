@@ -31,15 +31,15 @@ const LeaveBalanceWidget = () => {
 
     return (
         <div className="bg-[#201515] text-white p-10 rounded-2xl relative overflow-hidden group shadow-2xl">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-[#ff4f00]/5 blur-[100px] -mr-20 -mt-20 group-hover:bg-[#ff4f00]/10 transition-all duration-700"></div>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#00a76b]/5 blur-[100px] -mr-20 -mt-20 group-hover:bg-[#00a76b]/10 transition-all duration-700"></div>
             
             <div className="relative z-10">
                 <div className="flex justify-between items-start mb-10">
                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4f00] mb-3">Leave Carry Forward</p>
-                      <h3 className="text-[32px] font-black italic uppercase leading-none tracking-tighter">Personal <span className="text-[#ff4f00]">Ledger.</span></h3>
+                      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#00a76b] mb-3">Leave Carry Forward</p>
+                      <h3 className="text-[32px] font-black italic uppercase leading-none tracking-tighter">Personal <span className="text-[#00a76b]">Ledger.</span></h3>
                    </div>
-                   <div className="w-12 h-12 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#ff4f00]">
+                   <div className="w-12 h-12 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#00a76b]">
                       <Shield size={24} />
                    </div>
                 </div>
@@ -64,10 +64,10 @@ const LeaveBalanceWidget = () => {
                       <div className="w-[1px] h-8 bg-white/10"></div>
                       <div className="flex flex-col">
                          <span className="text-[10px] font-black text-[#939084] uppercase tracking-widest mb-1">Carried Forward</span>
-                         <span className="text-[13px] font-bold text-[#ff4f00]">{balance?.currentMonth?.carried || 0} Days</span>
+                         <span className="text-[13px] font-bold text-[#00a76b]">{balance?.currentMonth?.carried || 0} Days</span>
                       </div>
                    </div>
-                   <button className="w-10 h-10 rounded-full bg-white/5 hover:bg-[#ff4f00] transition-all flex items-center justify-center border-none cursor-pointer">
+                   <button className="w-10 h-10 rounded-full bg-white/5 hover:bg-[#00a76b] transition-all flex items-center justify-center border-none cursor-pointer">
                       <ArrowUpRight size={18} className="text-white" />
                    </button>
                 </div>

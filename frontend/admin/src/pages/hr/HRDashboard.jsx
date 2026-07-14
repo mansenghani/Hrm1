@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  Users, UserPlus, FileText, CheckCircle, Clock, 
+import {
+  Users, UserPlus, FileText, CheckCircle, Clock,
   Wallet, ChevronRight, CheckSquare, Bell, Calendar,
   TrendingUp, Activity, Play, Briefcase, Plus,
   Check, X, Layers, Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { 
+import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Area, AreaChart
 } from 'recharts';
 
 const HRDashboard = () => {
+  const [userName, setUserName] = useState('Priya');
   const navigate = useNavigate();
   const [stats, setStats] = useState({ employees: 0, pendingLeaves: 0, attendance: '0%', openTasks: 0 });
   const [leaveRequests, setLeaveRequests] = useState([]);
@@ -62,18 +63,18 @@ const HRDashboard = () => {
         // --- ATTENDANCE PROCESSING ---
         const todayStr = new Date().toISOString().split('T')[0];
         let present = 0; let absent = 0; let late = 0; let onLeave = pendingLeaves.length;
-        
+
         const todayRecords = attendance.filter(a => {
-           if (!a.date && !a.createdAt) return false;
-           const d = new Date(a.date || a.createdAt).toISOString().split('T')[0];
-           return d === todayStr;
+          if (!a.date && !a.createdAt) return false;
+          const d = new Date(a.date || a.createdAt).toISOString().split('T')[0];
+          return d === todayStr;
         });
 
         todayRecords.forEach(r => {
-           const s = (r.status || '').toLowerCase();
-           if (s === 'late') late++;
-           else if (s === 'absent') absent++;
-           else present++; 
+          const s = (r.status || '').toLowerCase();
+          if (s === 'late') late++;
+          else if (s === 'absent') absent++;
+          else present++;
         });
 
         // Mock 7-day trend to preserve UI if no data
@@ -89,11 +90,11 @@ const HRDashboard = () => {
         let totalExp = 0;
         let pendingSal = 0;
         payroll.forEach(p => {
-           const amt = p.netSalary || p.amount || 0;
-           totalExp += amt;
-           if ((p.status || '').toLowerCase() === 'pending') pendingSal += amt;
+          const amt = p.netSalary || p.amount || 0;
+          totalExp += amt;
+          if ((p.status || '').toLowerCase() === 'pending') pendingSal += amt;
         });
-        
+
         let nextPayDate = 'N/A';
         const d = new Date();
         nextPayDate = new Date(d.getFullYear(), d.getMonth() + 1, 0).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -101,35 +102,35 @@ const HRDashboard = () => {
         // --- RECENT ACTIVITY ---
         const acts = [];
         leaves.slice(0, 3).forEach(l => {
-           acts.push({
-              id: l._id || Math.random(),
-              icon: FileText,
-              text: `Leave request by ${l.employee?.name || l.employeeId || 'Employee'}`,
-              time: new Date(l.createdAt).toLocaleDateString(),
-              color: 'bg-blue-100 text-blue-600',
-              dateObj: new Date(l.createdAt)
-           });
+          acts.push({
+            id: l._id || Math.random(),
+            icon: FileText,
+            text: `Leave request by ${l.employee?.name || l.employeeId || 'Employee'}`,
+            time: new Date(l.createdAt).toLocaleDateString(),
+            color: 'bg-blue-100 text-blue-600',
+            dateObj: new Date(l.createdAt)
+          });
         });
         tasksList.slice(0, 3).forEach(t => {
-           acts.push({
-              id: t._id || Math.random(),
-              icon: CheckSquare,
-              text: `Task: ${t.title}`,
-              time: new Date(t.createdAt).toLocaleDateString(),
-              color: 'bg-orange-100 text-orange-600',
-              dateObj: new Date(t.createdAt)
-           });
+          acts.push({
+            id: t._id || Math.random(),
+            icon: CheckSquare,
+            text: `Task: ${t.title}`,
+            time: new Date(t.createdAt).toLocaleDateString(),
+            color: 'bg-orange-100 text-orange-600',
+            dateObj: new Date(t.createdAt)
+          });
         });
-        acts.sort((a,b) => b.dateObj - a.dateObj);
+        acts.sort((a, b) => b.dateObj - a.dateObj);
 
         // --- NOTIFICATIONS ---
         const mappedNotifs = notifs.slice(0, 5).map((n, idx) => ({
-           id: n._id || idx,
-           title: n.title || n.type || 'System Alert',
-           desc: n.message || n.description,
-           time: n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Recently',
-           icon: Bell,
-           color: 'text-orange-500 bg-orange-100'
+          id: n._id || idx,
+          title: n.title || n.type || 'System Alert',
+          desc: n.message || n.description,
+          time: n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+          icon: Bell,
+          color: 'text-orange-500 bg-orange-100'
         }));
 
         setStats({
@@ -143,14 +144,14 @@ const HRDashboard = () => {
         setTodayAttendance({ present: present || 112, absent: absent || 5, late: late || 3, onLeave: pendingLeaves.length });
         setAttendanceData(attChart);
         setPayrollStats({ totalExpense: totalExp || 245850, pendingSalary: pendingSal || 45850, nextDate: nextPayDate });
-        
+
         setRecentActivity(acts.length > 0 ? acts : [
-            { id: 1, icon: UserPlus, text: 'Sarah Lee joined Engineering', time: '2 hours ago', color: 'bg-green-100 text-green-600' },
-            { id: 2, icon: CheckCircle, text: 'Approved leave for John Doe', time: '3 hours ago', color: 'bg-blue-100 text-blue-600' },
+          { id: 1, icon: UserPlus, text: 'Sarah Lee joined Engineering', time: '2 hours ago', color: 'bg-green-100 text-green-600' },
+          { id: 2, icon: CheckCircle, text: 'Approved leave for John Doe', time: '3 hours ago', color: 'bg-blue-100 text-blue-600' },
         ]);
         setNotifications(mappedNotifs.length > 0 ? mappedNotifs : [
-            { id: 1, title: 'Leave Alert', desc: '5 employees requested leave.', time: '10 min ago', icon: FileText, color: 'text-orange-500 bg-orange-100' },
-            { id: 2, title: 'Task Reminder', desc: 'Q3 Appraisals due.', time: '3 hrs ago', icon: Bell, color: 'text-blue-500 bg-blue-100' }
+          { id: 1, title: 'Leave Alert', desc: '5 employees requested leave.', time: '10 min ago', icon: FileText, color: 'text-orange-500 bg-orange-100' },
+          { id: 2, title: 'Task Reminder', desc: 'Q3 Appraisals due.', time: '3 hrs ago', icon: Bell, color: 'text-blue-500 bg-blue-100' }
         ]);
 
       } catch (err) {
@@ -168,16 +169,16 @@ const HRDashboard = () => {
       await axios.put(`/api/leaves/hr-approve/${id}`, {}, { headers: { Authorization: `Bearer ${token}` } });
       setLeaveRequests(prev => prev.map(l => l._id === id ? { ...l, status: 'approved' } : l));
       setStats(prev => ({ ...prev, pendingLeaves: Math.max(0, prev.pendingLeaves - 1) }));
-    } catch(err) { console.error(err); }
+    } catch (err) { console.error(err); }
   };
-  
+
   const handleRejectLeave = async (id) => {
     try {
       const token = sessionStorage.getItem('token');
       await axios.put(`/api/leaves/reject/${id}`, {}, { headers: { Authorization: `Bearer ${token}` } });
       setLeaveRequests(prev => prev.map(l => l._id === id ? { ...l, status: 'rejected' } : l));
       setStats(prev => ({ ...prev, pendingLeaves: Math.max(0, prev.pendingLeaves - 1) }));
-    } catch(err) { console.error(err); }
+    } catch (err) { console.error(err); }
   };
 
   const getStatusColor = (status) => {
@@ -213,7 +214,7 @@ const HRDashboard = () => {
 
   return (
     <div className="animate-fade-in pb-20">
-      
+
       {/* HERO SECTION */}
       <div className="mb-12 mt-4 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div className="w-full md:max-w-2xl">
@@ -225,14 +226,14 @@ const HRDashboard = () => {
           </p>
         </div>
         <div className="flex gap-4 shrink-0">
-          <button 
+          <button
             onClick={() => navigate('/hr/create-user')}
             className="flex items-center gap-2 bg-[#ff4f00] hover:bg-[#e64600] text-white px-6 py-3 rounded-[5px] font-bold transition-all shadow-sm"
           >
             <UserPlus size={18} />
             Add Employee
           </button>
-          <button 
+          <button
             onClick={() => navigate('/hr/payroll')}
             className="flex items-center gap-2 bg-white hover:bg-[#eceae3] border border-[#c5c0b1] text-[#201515] px-6 py-3 rounded-[5px] font-bold transition-all shadow-sm"
           >
@@ -279,14 +280,14 @@ const HRDashboard = () => {
             <AreaChart data={attendanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorPresent" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ff4f00" stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor="#ff4f00" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#ff4f00" stopOpacity={0.1} />
+                  <stop offset="95%" stopColor="#ff4f00" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eceae3" />
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#939084', fontWeight: 'bold' }} dy={10} />
               <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#939084', fontWeight: 'bold' }} />
-              <RechartsTooltip 
+              <RechartsTooltip
                 contentStyle={{ borderRadius: '5px', border: '1px solid #eceae3', fontWeight: 'bold', fontSize: '12px' }}
                 cursor={{ stroke: '#eceae3', strokeWidth: 2, strokeDasharray: '3 3' }}
               />
@@ -388,7 +389,7 @@ const HRDashboard = () => {
           </div>
           <div className="space-y-4">
             {tasks.length === 0 ? (
-               <div className="py-8 text-center text-[12px] font-bold text-[#939084]">No tasks assigned.</div>
+              <div className="py-8 text-center text-[12px] font-bold text-[#939084]">No tasks assigned.</div>
             ) : tasks.map((task) => (
               <div key={task._id || task.id} className="p-4 rounded-[5px] border border-[#eceae3] hover:border-[#ff4f00]/30 hover:bg-[#fffdf9] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex-1">
@@ -409,8 +410,8 @@ const HRDashboard = () => {
                     <span>{task.progress || 0}%</span>
                   </div>
                   <div className="h-1.5 w-full bg-[#eceae3] rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-[#ff4f00] rounded-full transition-all duration-500" 
+                    <div
+                      className="h-full bg-[#ff4f00] rounded-full transition-all duration-500"
                       style={{ width: `${task.progress || 0}%` }}
                     ></div>
                   </div>
@@ -459,7 +460,7 @@ const HRDashboard = () => {
           </div>
         </div>
         <div className="flex flex-col gap-3 shrink-0 w-full md:w-auto">
-          <button 
+          <button
             onClick={() => navigate('/hr/payroll')}
             className="bg-[#ff4f00] hover:bg-[#e64600] text-white px-6 py-2.5 rounded-[5px] font-bold transition-all text-[13px] text-center"
           >
@@ -473,7 +474,7 @@ const HRDashboard = () => {
 
       {/* ROW 6 & 7 - QUICK ACTIONS & NOTIFICATIONS */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        
+
         {/* ROW 6 - EMPLOYEE MANAGEMENT QUICK ACTIONS */}
         <div className="xl:col-span-2">
           <h3 className="text-[14px] font-black uppercase tracking-[0.2em] text-[#201515] mb-6">Employee Management Quick Actions</h3>
@@ -486,7 +487,7 @@ const HRDashboard = () => {
               { label: 'Assign Task', icon: Plus, action: () => navigate('/hr/task-management/create') },
               { label: 'Approve Attendance', icon: CheckCircle, action: () => navigate('/hr/attendance') }
             ].map((action, i) => (
-              <button 
+              <button
                 key={i}
                 onClick={action.action}
                 className="bg-white rounded-[5px] border border-[#eceae3] p-6 hover:border-[#ff4f00] hover:shadow-md transition-all group flex flex-col items-center justify-center text-center gap-3 cursor-pointer"
@@ -520,7 +521,7 @@ const HRDashboard = () => {
             </div>
           </div>
         </div>
-        
+
       </div>
 
       {/* ── LEAVE DETAIL MODAL ── */}

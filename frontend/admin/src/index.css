@@ -87,6 +87,11 @@
   box-sizing: border-box !important;
 }
 
+.dark .verdant-card {
+  background: #111c18 !important;
+  border-color: #1a2d29 !important;
+}
+
 /* Primary Action Pill Button (Sage Green) */
 .verdant-btn-primary {
   height: 44px !important;
@@ -137,8 +142,17 @@
   text-decoration: none !important;
 }
 
+.dark .verdant-btn-secondary {
+  background-color: #282520 !important;
+  color: #cbd5e1 !important;
+}
+
 .verdant-btn-secondary:hover {
   background-color: #e3e0d8 !important;
+}
+
+.dark .verdant-btn-secondary:hover {
+  background-color: #38352e !important;
 }
 
 /* Outline Action Pill Button (White w/ border) */
@@ -161,9 +175,20 @@
   text-decoration: none !important;
 }
 
+.dark .verdant-btn-outline {
+  border-color: #1a2d29 !important;
+  background-color: #111c18 !important;
+  color: #cbd5e1 !important;
+}
+
 .verdant-btn-outline:hover {
   border-color: #b8b6ad !important;
   background-color: #f9fdfc !important;
+}
+
+.dark .verdant-btn-outline:hover {
+  border-color: #00a76b !important;
+  background-color: #162722 !important;
 }
 
 /* Icon Action Button (Small Square Box) */
@@ -182,8 +207,20 @@
   outline: none !important;
 }
 
+.dark .verdant-btn-icon {
+  border-color: #1a2d29 !important;
+  background-color: #111c18 !important;
+  color: #cbd5e1 !important;
+}
+
 .verdant-btn-icon:hover {
   background-color: #f2fbf6 !important;
+  border-color: #00a76b !important;
+  color: #00a76b !important;
+}
+
+.dark .verdant-btn-icon:hover {
+  background-color: #162722 !important;
   border-color: #00a76b !important;
   color: #00a76b !important;
 }
@@ -204,6 +241,12 @@
   transition: all 0.2s ease-in-out !important;
 }
 
+.dark .verdant-input {
+  background-color: #111c18 !important;
+  color: #e2e8f0 !important;
+  border-color: #1a2d29 !important;
+}
+
 .verdant-input:focus {
   border-color: #00a76b !important;
   box-shadow: 0 0 0 3px rgba(0, 167, 107, 0.1) !important;
@@ -214,6 +257,10 @@
   cursor: default !important;
 }
 
+.dark .verdant-input[readonly] {
+  background-color: #162722 !important;
+}
+
 /* Inner Session / Highlight boxes */
 .verdant-highlight-box {
   background-color: #f2fbf6 !important;
@@ -222,3 +269,185 @@
   padding: 20px !important;
   box-sizing: border-box !important;
 }
+
+.dark .verdant-highlight-box {
+  background-color: #162722 !important;
+  border-color: #1a2d29 !important;
+}
+
+/* ==========================================
+   GLOBAL DARK MODE OVERRIDES FOR INLINE TAILWIND STYLES
+   ========================================== */
+
+/* 1. Backgrounds Mapping */
+.dark .bg-\[\#fffdf9\], .dark [class*="bg-[#fffdf9]"] {
+  background-color: var(--zap-off-white) !important;
+}
+
+.dark .bg-\[\#fffefb\], .dark [class*="bg-[#fffefb]"] {
+  background-color: var(--zap-cream) !important;
+}
+
+.dark .bg-white {
+  background-color: var(--zap-off-white) !important;
+}
+
+.dark .bg-\[\#eceae3\], .dark [class*="bg-[#eceae3]"] {
+  background-color: var(--zap-light-sand) !important;
+}
+
+.dark .bg-\[\#f8f9fa\], .dark [class*="bg-[#f8f9fa]"] {
+  background-color: var(--zap-cream) !important;
+}
+
+.dark .bg-\[\#F5F5F5\], .dark [class*="bg-[#F5F5F5]"], .dark .bg-\[\#f5f5f5\], .dark [class*="bg-[#f5f5f5]"] {
+  background-color: #111c18 !important;
+}
+
+.dark .bg-\[\#E6E8EA\], .dark [class*="bg-[#E6E8EA]"], .dark .bg-\[\#e6e8ea\], .dark [class*="bg-[#e6e8ea]"] {
+  background-color: #182823 !important;
+}
+
+/* 2. Hover Backgrounds */
+.dark .hover\:bg-\[\#fffdf9\]:hover, .dark [class*="hover:bg-[#fffdf9]"]:hover {
+  background-color: var(--zap-light-sand) !important;
+}
+
+.dark .hover\:bg-white:hover, .dark [class*="hover:bg-white"]:hover {
+  background-color: var(--zap-light-sand) !important;
+}
+
+.dark .hover\:bg-\[\#00a76b\]\/5:hover, .dark [class*="hover:bg-[#00a76b]/5"]:hover {
+  background-color: rgba(0, 167, 107, 0.15) !important;
+}
+
+/* 3. Borders Mapping */
+.dark .border-\[\#c5c0b1\], .dark [class*="border-[#c5c0b1]"] {
+  border-color: var(--zap-sand) !important;
+}
+
+.dark .border-b-\[\#c5c0b1\], .dark [class*="border-b-[#c5c0b1]"] {
+  border-bottom-color: var(--zap-sand) !important;
+}
+
+.dark .border-t-\[\#c5c0b1\], .dark [class*="border-t-[#c5c0b1]"] {
+  border-top-color: var(--zap-sand) !important;
+}
+
+.dark .border-\[\#eceae3\], .dark [class*="border-[#eceae3]"] {
+  border-color: var(--zap-sand) !important;
+}
+
+.dark .border-b-\[\#eceae3\], .dark [class*="border-b-[#eceae3]"] {
+  border-bottom-color: var(--zap-sand) !important;
+}
+
+.dark .border-\[\#E6E8EA\], .dark [class*="border-[#E6E8EA]"], .dark .border-\[\#e6e8ea\], .dark [class*="border-[#e6e8ea]"] {
+  border-color: #1a2d29 !important;
+}
+
+.dark .border-b-\[\#E6E8EA\], .dark [class*="border-b-[#E6E8EA]"], .dark .border-b-\[\#e6e8ea\], .dark [class*="border-b-[#e6e8ea]"] {
+  border-bottom-color: #1a2d29 !important;
+}
+
+.dark .border-t-\[\#E6E8EA\], .dark [class*="border-t-[#E6E8EA]"], .dark .border-t-\[\#e6e8ea\], .dark [class*="border-t-[#e6e8ea]"] {
+  border-top-color: #1a2d29 !important;
+}
+
+/* Divide borders */
+.dark .divide-\[\#eceae3\] > :not([hidden]) ~ :not([hidden]), .dark [class*="divide-[#eceae3]"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--zap-sand) !important;
+}
+
+.dark .divide-\[\#c5c0b1\] > :not([hidden]) ~ :not([hidden]), .dark [class*="divide-[#c5c0b1]"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--zap-sand) !important;
+}
+
+/* 4. Text Colors Mapping */
+.dark .text-\[\#201515\], .dark [class*="text-[#201515]"] {
+  color: var(--zap-black) !important;
+}
+
+.dark .text-\[\#36342e\], .dark [class*="text-[#36342e]"] {
+  color: var(--zap-charcoal) !important;
+}
+
+.dark .text-\[\#939084\], .dark [class*="text-[#939084]"] {
+  color: var(--zap-warm-gray) !important;
+}
+
+.dark .text-\[\#1E2026\], .dark [class*="text-[#1E2026]"], .dark .text-\[\#1e2026\], .dark [class*="text-[#1e2026]"] {
+  color: #ffffff !important;
+}
+
+.dark .text-\[\#848E9C\], .dark [class*="text-[#848E9C]"], .dark .text-\[\#848e9c\], .dark [class*="text-[#848e9c]"] {
+  color: #a3b3af !important;
+}
+
+.dark .text-\[\#F6465D\], .dark [class*="text-[#F6465D]"], .dark .text-\[\#f6465d\], .dark [class*="text-[#f6465d]"] {
+  color: #ff6b6b !important;
+}
+
+.dark .text-\[\#0ECB81\], .dark [class*="text-[#0ECB81]"], .dark .text-\[\#0ecb81\], .dark [class*="text-[#0ecb81]"] {
+  color: #00c285 !important;
+}
+
+.dark .placeholder-\[\#939084\]::placeholder, .dark [class*="placeholder-[#939084]"]::placeholder {
+  color: var(--zap-warm-gray) !important;
+}
+
+.dark .group-hover\:text-\[\#00a76b\]:hover, .dark [class*="group-hover:text-[#00a76b]"]:hover {
+  color: #00b27a !important;
+}
+
+/* 5. Buttons mapping */
+.dark .text-\[\#201515\].bg-white, .dark [class*="text-[#201515]"].bg-white {
+  color: var(--zap-black) !important;
+  background-color: var(--zap-off-white) !important;
+}
+
+.dark .text-\[\#201515\].bg-white:hover {
+  background-color: var(--zap-light-sand) !important;
+}
+
+/* Dropdown specific overrides */
+.dark .bg-white.shadow-xl {
+  background-color: var(--zap-off-white) !important;
+  border: 1px solid var(--zap-sand) !important;
+}
+
+.dark .bg-white.shadow-xl div {
+  color: var(--zap-black) !important;
+  border-bottom-color: var(--zap-sand) !important;
+}
+
+.dark .bg-white.shadow-xl div:hover {
+  background-color: var(--zap-light-sand) !important;
+}
+
+/* 6. Inputs & Forms mapping */
+.dark input.bg-white {
+  background-color: var(--zap-cream) !important;
+  color: var(--zap-black) !important;
+  border-color: var(--zap-sand) !important;
+}
+
+.dark select.bg-white {
+  background-color: var(--zap-cream) !important;
+  color: var(--zap-black) !important;
+  border-color: var(--zap-sand) !important;
+}
+
+/* 7. Modal & Dialogue overrides */
+.dark .bg-\[\#fffefb\], .dark [class*="bg-[#fffefb]"] {
+  background-color: var(--zap-off-white) !important;
+  border-color: var(--zap-sand) !important;
+}
+
+.dark .bg-\#fffdf9, .dark [class*="bg-[#fffdf9]"] {
+  background-color: var(--zap-off-white) !important;
+}
+
+.dark .bg-black\/60, .dark [class*="bg-black/60"] {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+}

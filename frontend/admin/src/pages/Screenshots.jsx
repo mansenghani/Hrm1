@@ -127,7 +127,7 @@ const Screenshots = () => {
 
   const renderBreadcrumbs = () => (
     <div className="flex items-center gap-3 mb-8 text-[11px] font-black uppercase tracking-[0.2em] text-[#939084]">
-       <button onClick={() => setNavigationPath([])} className={`hover:text-[#ff4f00] transition-colors ${navigationPath.length === 0 ? 'text-[#201515]' : ''}`}>
+       <button onClick={() => setNavigationPath([])} className={`hover:text-[#00a76b] transition-colors ${navigationPath.length === 0 ? 'text-[#201515]' : ''}`}>
           Registry Root
        </button>
        {navigationPath.map((path, idx) => (
@@ -135,7 +135,7 @@ const Screenshots = () => {
             <ChevronRight size={14} className="opacity-40" />
             <button 
               onClick={() => setNavigationPath(navigationPath.slice(0, idx + 1))}
-              className={`hover:text-[#ff4f00] transition-colors ${idx === navigationPath.length - 1 ? 'text-[#201515]' : ''}`}
+              className={`hover:text-[#00a76b] transition-colors ${idx === navigationPath.length - 1 ? 'text-[#201515]' : ''}`}
             >
                {path}
             </button>
@@ -149,8 +149,8 @@ const Screenshots = () => {
       {/* HEADER SECTION */}
       <div className="mb-12 border-b border-[#c5c0b1] pb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div>
-          <p className="zap-caption-upper text-[#ff4f00] mb-4">Monitoring Logs</p>
-          <h1 className="zap-display-hero">Screenshot <span className="text-[#ff4f00]">Registry.</span></h1>
+          <p className="zap-caption-upper text-[#00a76b] mb-4">Monitoring Logs</p>
+          <h1 className="zap-display-hero">Screenshot <span className="text-[#00a76b]">Registry.</span></h1>
         </div>
         <div className="flex gap-3">
           {navigationPath.length > 0 && (
@@ -164,13 +164,13 @@ const Screenshots = () => {
           <div className="flex bg-[#eceae3] p-1 rounded-xl">
              <button 
                onClick={() => setViewMode('grid')}
-               className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-[#ff4f00]' : 'text-[#939084] hover:text-[#201515]'}`}
+               className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-[#00a76b]' : 'text-[#939084] hover:text-[#201515]'}`}
              >
                 <LayoutGrid size={20} />
              </button>
              <button 
                onClick={() => setViewMode('list')}
-               className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-[#ff4f00]' : 'text-[#939084] hover:text-[#201515]'}`}
+               className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-[#00a76b]' : 'text-[#939084] hover:text-[#201515]'}`}
              >
                 <ListIcon size={20} />
              </button>
@@ -193,7 +193,7 @@ const Screenshots = () => {
                 placeholder="Filter by Employee Name..." 
                 value={filterUser}
                 onChange={(e) => setFilterUser(e.target.value)}
-                className="w-full h-14 pl-12 pr-4 bg-white border border-[#c5c0b1] rounded-2xl text-[14px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] shadow-sm italic"
+                className="w-full h-14 pl-12 pr-4 bg-white border border-[#c5c0b1] rounded-2xl text-[14px] font-bold text-[#201515] focus:outline-none focus:border-[#00a76b] shadow-sm italic"
               />
            </div>
            <div className="relative">
@@ -203,17 +203,17 @@ const Screenshots = () => {
                 value={filterDate}
                 max={getToday()}
                 onChange={(e) => setFilterDate(e.target.value)}
-                className="w-full h-14 pl-12 pr-4 bg-white border border-[#c5c0b1] rounded-2xl text-[14px] font-bold text-[#201515] focus:outline-none focus:border-[#ff4f00] shadow-sm"
+                className="w-full h-14 pl-12 pr-4 bg-white border border-[#c5c0b1] rounded-2xl text-[14px] font-bold text-[#201515] focus:outline-none focus:border-[#00a76b] shadow-sm"
               />
            </div>
            <div className="flex items-center justify-between gap-4 px-6 h-14 bg-[#fffdf9] border border-[#eceae3] rounded-2xl">
               <div className="flex items-center gap-4">
-                <Filter size={18} className="text-[#ff4f00]" />
+                <Filter size={18} className="text-[#00a76b]" />
                 <span className="text-[11px] font-black uppercase tracking-widest text-[#201515]">Total Results: {filtered.length} Captures</span>
               </div>
               <button 
                 onClick={handleDownloadAll}
-                className="flex items-center gap-2 px-4 py-2 bg-[#ff4f00] text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-[#201515] transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-[#00a76b] text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-[#201515] transition-all"
               >
                 <Download size={14} /> Download All
               </button>
@@ -226,13 +226,13 @@ const Screenshots = () => {
         <div className="flex gap-3 mb-8 animate-fade-in">
            <button 
              onClick={() => setQuickDate('today')}
-             className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterDate === getToday() ? 'bg-[#ff4f00] text-white shadow-lg' : 'bg-[#eceae3] text-[#939084] hover:text-[#201515]'}`}
+             className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterDate === getToday() ? 'bg-[#00a76b] text-white shadow-lg' : 'bg-[#eceae3] text-[#939084] hover:text-[#201515]'}`}
            >
               Today
            </button>
            <button 
              onClick={() => setQuickDate('yesterday')}
-             className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterDate === new Date(Date.now() - 86400000).toISOString().split('T')[0] ? 'bg-[#ff4f00] text-white shadow-lg' : 'bg-[#eceae3] text-[#939084] hover:text-[#201515]'}`}
+             className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterDate === new Date(Date.now() - 86400000).toISOString().split('T')[0] ? 'bg-[#00a76b] text-white shadow-lg' : 'bg-[#eceae3] text-[#939084] hover:text-[#201515]'}`}
            >
               Yesterday
            </button>
@@ -248,7 +248,7 @@ const Screenshots = () => {
       {/* CONTENT ENGINE */}
       {loading ? (
         <div className="py-32 text-center opacity-40">
-           <RefreshCw size={48} className="mx-auto mb-6 animate-spin text-[#ff4f00]" />
+           <RefreshCw size={48} className="mx-auto mb-6 animate-spin text-[#00a76b]" />
            <p className="text-[14px] font-black uppercase tracking-[0.2em]">Loading Registry...</p>
         </div>
       ) : (
@@ -260,9 +260,9 @@ const Screenshots = () => {
                  <div 
                    key={r} 
                    onClick={() => setNavigationPath([r])}
-                   className="zap-card group hover:border-[#ff4f00] transition-all cursor-pointer p-8 flex flex-col items-center text-center shadow-lg"
+                   className="zap-card group hover:border-[#00a76b] transition-all cursor-pointer p-8 flex flex-col items-center text-center shadow-lg"
                  >
-                    <div className="w-20 h-20 rounded-3xl bg-[#eceae3] text-[#201515] group-hover:bg-[#ff4f00] group-hover:text-white flex items-center justify-center transition-all mb-6">
+                    <div className="w-20 h-20 rounded-3xl bg-[#eceae3] text-[#201515] group-hover:bg-[#00a76b] group-hover:text-white flex items-center justify-center transition-all mb-6">
                        <Folder size={40} />
                     </div>
                     <h3 className="text-[16px] font-black uppercase tracking-widest text-[#201515]">{r} Folders</h3>
@@ -282,7 +282,7 @@ const Screenshots = () => {
                     <div 
                       key={name} 
                       onClick={() => setNavigationPath(role === 'manager' ? ['employee', name] : [navigationPath[0], name])}
-                      className="zap-card group hover:border-[#ff4f00] transition-all cursor-pointer p-8 flex items-center gap-6 shadow-lg"
+                      className="zap-card group hover:border-[#00a76b] transition-all cursor-pointer p-8 flex items-center gap-6 shadow-lg"
                     >
                        <div className="w-16 h-16 rounded-2xl bg-[#201515] text-white flex items-center justify-center font-black italic text-xl">
                           {name?.[0]}
@@ -290,7 +290,7 @@ const Screenshots = () => {
                        <div className="flex-1">
                           <h3 className="text-[13px] font-black uppercase tracking-widest text-[#201515] mb-1">{name}</h3>
                           <div className="flex items-center gap-2 text-[9px] font-bold text-[#939084] uppercase tracking-widest italic">
-                             <History size={12} className="text-[#ff4f00]" />
+                             <History size={12} className="text-[#00a76b]" />
                              {countInFolder('name', name) || screenshots.filter(s => s.employeeName === name).length} captures
                           </div>
                        </div>
@@ -325,7 +325,7 @@ const Screenshots = () => {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                            {group.map((s) => (
-                             <div key={s._id} className="zap-card group p-0 overflow-hidden hover:border-[#ff4f00] transition-all cursor-pointer shadow-xl">
+                             <div key={s._id} className="zap-card group p-0 overflow-hidden hover:border-[#00a76b] transition-all cursor-pointer shadow-xl">
                                 <div 
                                   className="relative aspect-video bg-[#201515] overflow-hidden"
                                   onClick={() => setSelectedImage(getImageUrl(s.imageUrl))}
@@ -340,19 +340,19 @@ const Screenshots = () => {
                                    <div className="flex justify-between items-start mb-4">
                                       <div>
                                          <p className="text-[14px] font-black text-[#201515] uppercase italic">{s.employeeName}</p>
-                                         <p className="text-[10px] font-bold text-[#ff4f00] uppercase tracking-widest mt-1">{s.role}</p>
+                                         <p className="text-[10px] font-bold text-[#00a76b] uppercase tracking-widest mt-1">{s.role}</p>
                                       </div>
                                       <div className="flex gap-2">
                                         <button 
                                           onClick={() => setSelectedImage(getImageUrl(s.imageUrl))}
-                                          className="w-8 h-8 rounded-lg bg-[#eceae3] flex items-center justify-center text-[#201515] hover:bg-[#ff4f00] hover:text-white transition-all"
+                                          className="w-8 h-8 rounded-lg bg-[#eceae3] flex items-center justify-center text-[#201515] hover:bg-[#00a76b] hover:text-white transition-all"
                                         >
                                           <Eye size={14} />
                                         </button>
                                         <a 
                                           href={getImageUrl(s.imageUrl)} 
                                           download={`Screenshot-${s.employeeName}-${new Date(s.timestamp).toLocaleDateString()}.png`}
-                                          className="w-8 h-8 rounded-lg bg-[#eceae3] flex items-center justify-center text-[#201515] hover:bg-[#ff4f00] hover:text-white transition-all"
+                                          className="w-8 h-8 rounded-lg bg-[#eceae3] flex items-center justify-center text-[#201515] hover:bg-[#00a76b] hover:text-white transition-all"
                                         >
                                           <Download size={14} />
                                         </a>
@@ -390,7 +390,7 @@ const Screenshots = () => {
                              </div>
                              <div>
                                 <p className="text-[13px] font-black text-[#201515] uppercase italic">{s.employeeName}</p>
-                                <p className="text-[9px] font-bold text-[#ff4f00] uppercase tracking-widest">{s.role}</p>
+                                <p className="text-[9px] font-bold text-[#00a76b] uppercase tracking-widest">{s.role}</p>
                              </div>
                           </div>
                        </td>
@@ -406,14 +406,14 @@ const Screenshots = () => {
                           <div className="flex justify-end gap-2">
                              <button 
                                onClick={() => setSelectedImage(getImageUrl(s.imageUrl))}
-                               className="p-2 text-[#939084] hover:text-[#ff4f00] transition-colors"
+                               className="p-2 text-[#939084] hover:text-[#00a76b] transition-colors"
                              >
                                <Eye size={18} />
                              </button>
                              <a 
                                href={getImageUrl(s.imageUrl)} 
                                download={`Screenshot-${s.employeeName}.png`}
-                               className="p-2 text-[#939084] hover:text-[#ff4f00] transition-colors"
+                               className="p-2 text-[#939084] hover:text-[#00a76b] transition-colors"
                              >
                                <Download size={18} />
                              </a>
@@ -454,7 +454,7 @@ const Screenshots = () => {
                  <a 
                    href={selectedImage} 
                    download="FluidHR-Capture.png"
-                   className="flex items-center gap-3 px-8 py-3 rounded-full bg-white/10 hover:bg-[#ff4f00] text-white transition-all border border-white/20 shadow-2xl group"
+                   className="flex items-center gap-3 px-8 py-3 rounded-full bg-white/10 hover:bg-[#00a76b] text-white transition-all border border-white/20 shadow-2xl group"
                    title="Download High Res"
                  >
                     <Download size={20} className="group-hover:scale-110 transition-transform" />

@@ -1,7 +1,6 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import Landing from '@shared/pages/Landing';
 import Login from '@shared/pages/Login';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import HRDashboard from './pages/hr/HRDashboard';
@@ -11,8 +10,8 @@ import Employees from './pages/admin/Employees';
 import EmployeeForm from './pages/admin/EmployeeForm';
 import EmployeeDetail from './pages/admin/EmployeeDetail';
 import Tasks from './pages/admin/Tasks';
+import Attendance from './pages/Attendance';
 
-import Attendance from './pages/hr/Attendance';
 import HRTasks from './pages/hr/HRTasks';
 import LeaveManagement from './pages/hr/LeaveManagement';
 import TeamManagement from './pages/hr/TeamManagement';
@@ -21,12 +20,18 @@ import EmployeeLeave from './pages/employee/LeaveManagement';
 import EmployeePayslips from './pages/employee/EmployeePayslips';
 import EmployeeDocuments from './pages/employee/EmployeeDocuments';
 import EmployeePerformance from './pages/employee/EmployeePerformance';
-import TimeTrackingDashboard from './pages/TimeTrackingDashboard';
 import Payroll from './pages/Payroll';
 import ManagerTasks from './pages/manager/ManagerTasks';
 import Performance from './pages/Performance';
 import Reports from './pages/Reports';
+import Recruitment from './pages/Recruitment';
+import Training from './pages/Training';
 import Settings from './pages/admin/Settings';
+import Departments from './pages/Departments';
+import Designations from './pages/Designations';
+import RolesPermissions from './pages/admin/RolesPermissions';
+import AuditLogs from './pages/admin/AuditLogs';
+import Integrations from './pages/admin/Integrations';
 import CreateUser from './pages/admin/CreateUser';
 import MainLayout from '@shared/layouts/MainLayout';
 import Profile from '@shared/pages/Profile';
@@ -59,13 +64,31 @@ const ProtectedRoute = ({ children, allowedRole }) => {
   return children;
 };
 
+// ROOT REDIRECT LOGIC: Redirect to appropriate dashboard if logged in, otherwise to login
+const RootRedirect = () => {
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    const token = sessionStorage.getItem('token');
+    const role = sessionStorage.getItem('role');
+
+    if (token && role) {
+      navigate(`/${role}/dashboard`, { replace: true });
+    } else {
+      navigate('/login', { replace: true });
+    }
+  }, [navigate]);
+
+  return null;
+};
+
 const App = () => {
   return (
     <>
       <Toaster position="top-right" reverseOrder={false} />
       <Routes>
         {/* PUBLIC ROUTES */}
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<RootRedirect />} />
         <Route path="/login" element={<Login />} />
 
         {/* REDIRECTS FOR OLD PATHS */}
@@ -91,10 +114,10 @@ const App = () => {
 
           <Route path="leave" element={<LeaveManagement />} />
           <Route path="attendance" element={<Attendance />} />
-          <Route path="time-tracker" element={<TimeTrackingDashboard />} />
           <Route path="payroll" element={<Payroll />} />
           <Route path="performance" element={<Performance />} />
           <Route path="reports" element={<Reports />} />
+          <Route path="recruitment" element={<Recruitment />} />
           <Route path="settings" element={<Settings />} />
           <Route path="create-user" element={<CreateUser />} />
           <Route path="chat" element={<Chat />} />
@@ -102,6 +125,13 @@ const App = () => {
           <Route path="profile" element={<Profile />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="notifications/all" element={<AllNotifications />} />
+          <Route path="documents" element={<EmployeeDocuments />} />
+          <Route path="training" element={<Training />} />
+          <Route path="roles-permissions" element={<RolesPermissions />} />
+          <Route path="audit-logs" element={<AuditLogs />} />
+          <Route path="integrations" element={<Integrations />} />
+          <Route path="departments" element={<Departments />} />
+          <Route path="designations" element={<Designations />} />
         </Route>
 
         {/* HR MODULE */}
@@ -116,25 +146,31 @@ const App = () => {
           <Route path="task-management" element={<TaskManagement />} />
           <Route path="task-management/create" element={<TaskCreate />} />
           <Route path="task-management/update/:id" element={<TaskUpdate />} />
-          <Route path="attendance" element={<Attendance />} />
           <Route path="leave" element={<LeaveManagement />} />
+          <Route path="attendance" element={<Attendance />} />
           <Route path="employees" element={<HREmployees />} />
           <Route path="employees/view/:id" element={<EmployeeDetail />} />
           <Route path="employees/edit/:id" element={<EmployeeForm />} />
           <Route path="create-user" element={<CreateUser />} />
           <Route path="teams" element={<TeamManagement />} />
+          <Route path="recruitment" element={<Recruitment />} />
+          <Route path="performance" element={<Performance />} />
+          <Route path="reports" element={<Reports />} />
           <Route path="projects" element={<ProjectManagement />} />
-          <Route path="time-tracker" element={<TimeTrackingDashboard />} />
           <Route path="chat" element={<Chat />} />
           <Route path="screenshots" element={<Screenshots />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="payroll" element={<Payroll />} />
-          <Route path="performance" element={<Performance />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="departments" element={<Departments />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="notifications/all" element={<AllNotifications />} />
+          <Route path="documents" element={<EmployeeDocuments />} />
+          <Route path="payroll" element={<Payroll />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="training" element={<Training />} />
+          <Route path="roles-permissions" element={<RolesPermissions />} />
+          <Route path="audit-logs" element={<AuditLogs />} />
+          <Route path="integrations" element={<Integrations />} />
+          <Route path="departments" element={<Departments />} />
+          <Route path="designations" element={<Designations />} />
         </Route>
 
         {/* EMPLOYEE MODULE */}
@@ -148,14 +184,22 @@ const App = () => {
           <Route path="task-management/create" element={<TaskCreate />} />
           <Route path="task-management/update/:id" element={<TaskUpdate />} />
           <Route path="projects" element={<EmployeeProjects />} />
-          <Route path="time-tracker" element={<TimeTrackingDashboard />} />
           <Route path="leave" element={<EmployeeLeave />} />
+          <Route path="attendance" element={<Attendance />} />
           <Route path="payslips" element={<EmployeePayslips />} />
           <Route path="documents" element={<EmployeeDocuments />} />
           <Route path="performance" element={<EmployeePerformance />} />
+          <Route path="recruitment" element={<Recruitment />} />
+          <Route path="reports" element={<Reports />} />
           <Route path="chat" element={<Chat />} />
           <Route path="profile" element={<Profile />} />
           <Route path="notifications/all" element={<AllNotifications />} />
+          <Route path="training" element={<Training />} />
+          <Route path="roles-permissions" element={<RolesPermissions />} />
+          <Route path="audit-logs" element={<AuditLogs />} />
+          <Route path="integrations" element={<Integrations />} />
+          <Route path="departments" element={<Departments />} />
+          <Route path="designations" element={<Designations />} />
         </Route>
 
         {/* MANAGER MODULE */}
@@ -171,12 +215,23 @@ const App = () => {
           <Route path="task-management/create" element={<TaskCreate />} />
           <Route path="task-management/update/:id" element={<TaskUpdate />} />
           <Route path="projects" element={<ManagerProjects />} />
-          <Route path="attendance" element={<Attendance />} />
           <Route path="leave" element={<LeaveManagement />} />
+          <Route path="attendance" element={<Attendance />} />
           <Route path="chat" element={<Chat />} />
           <Route path="screenshots" element={<Screenshots />} />
+          <Route path="recruitment" element={<Recruitment />} />
+          <Route path="performance" element={<Performance />} />
+          <Route path="reports" element={<Reports />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="time-tracker" element={<TimeTrackingDashboard />} />
+          <Route path="documents" element={<EmployeeDocuments />} />
+          <Route path="payroll" element={<Payroll />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="training" element={<Training />} />
+          <Route path="roles-permissions" element={<RolesPermissions />} />
+          <Route path="audit-logs" element={<AuditLogs />} />
+          <Route path="integrations" element={<Integrations />} />
+          <Route path="departments" element={<Departments />} />
+          <Route path="designations" element={<Designations />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="notifications/all" element={<AllNotifications />} />
         </Route>

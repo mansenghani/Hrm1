@@ -16,6 +16,9 @@ const managerRoutes = require('./routes/managerRoutes');
 const userRoutes = require('./routes/userRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const screenshotRoutes = require('./routes/screenshotRoutes');
+const jobRoutes = require('./routes/jobRoutes');
+const roleRoutes = require('./routes/roleRoutes');
+const searchRoutes = require('./routes/searchRoutes');
 const path = require('path');
 
 const http = require('http');
@@ -161,6 +164,11 @@ app.use('/api/screenshot', screenshotRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/managers', managerRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/jobs', jobRoutes);
+app.use('/api/roles', roleRoutes);
+app.use('/api/audit-logs', require('./routes/auditLogRoutes'));
+app.use('/api/search', searchRoutes);
+
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'API is running' }));

@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Target, Award, Star, TrendingUp, CheckCircle, Clock, 
   Download, Plus, Search, SlidersHorizontal, X 
 } from 'lucide-react';
 
 const EmployeePerformance = () => {
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
   const [goals, setGoals] = useState([
     { label: 'Ship design system v2', pct: 72, status: 'On track' },
     { label: 'Improve onboarding NPS to 70', pct: 48, status: 'At risk' },
@@ -50,16 +58,16 @@ const EmployeePerformance = () => {
   );
 
   return (
-    <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: '#f9fdfc', minHeight: 'calc(100vh - 56px)', color: '#3b3e3c', width: '100%', boxSizing: 'border-box' }}>
+    <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: isDark ? '#08100e' : '#f9fdfc', minHeight: 'calc(100vh - 56px)', color: isDark ? '#cbd5e1' : '#3b3e3c', width: '100%', boxSizing: 'border-box', transition: 'background-color 0.3s ease, color 0.3s ease' }}>
       <div style={{ width: '100%', maxWidth: '100%', padding: '32px 32px 60px', boxSizing: 'border-box' }}>
         
         {/* HEADER */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
           <div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#2c302e', margin: 0, letterSpacing: '-0.5px' }}>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: isDark ? '#fff' : '#2c302e', margin: 0, letterSpacing: '-0.5px' }}>
               Performance
             </h1>
-            <p style={{ fontSize: 14, color: '#8c918f', margin: '4px 0 0' }}>Goals, KPIs and reviews.</p>
+            <p style={{ fontSize: 14, color: isDark ? '#a3b3af' : '#8c918f', margin: '4px 0 0' }}>Goals, KPIs and reviews.</p>
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
             <button onClick={handleExport} className="verdant-btn-outline" style={{ gap: 8, height: 44 }}>
@@ -74,7 +82,7 @@ const EmployeePerformance = () => {
         {/* SEARCH & FILTER */}
         <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
           <div style={{ position: 'relative', flex: 1 }}>
-            <Search size={18} color="#9ca3af" style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }} />
+            <Search size={18} color={isDark ? '#a3b3af' : '#9ca3af'} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }} />
             <input 
               type="text" 
               placeholder="Search..." 
@@ -94,20 +102,20 @@ const EmployeePerformance = () => {
           {/* Card 1: Active Goals */}
           <div className="verdant-card" style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#e6f7f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(0,167,107,0.08)' : '#e6f7f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Target size={20} color="#00a76b" />
               </div>
             </div>
             <div>
-              <h3 style={{ fontSize: 32, fontWeight: 800, color: '#2c302e', margin: '0 0 4px', lineHeight: 1 }}>{goals.length}</h3>
-              <p style={{ fontSize: 13, color: '#8c918f', margin: 0, fontWeight: 600 }}>Active goals</p>
+              <h3 style={{ fontSize: 32, fontWeight: 800, color: isDark ? '#fff' : '#2c302e', margin: '0 0 4px', lineHeight: 1 }}>{goals.length}</h3>
+              <p style={{ fontSize: 13, color: isDark ? '#a3b3af' : '#8c918f', margin: 0, fontWeight: 600 }}>Active goals</p>
             </div>
           </div>
 
           {/* Card 2: Avg. Rating */}
           <div className="verdant-card" style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#e6f7f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(0,167,107,0.08)' : '#e6f7f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Star size={20} color="#00a76b" />
               </div>
               <span style={{ fontSize: 13, fontWeight: 700, color: '#00a76b', display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -115,45 +123,45 @@ const EmployeePerformance = () => {
               </span>
             </div>
             <div>
-              <h3 style={{ fontSize: 32, fontWeight: 800, color: '#2c302e', margin: '0 0 4px', lineHeight: 1 }}>4.3</h3>
-              <p style={{ fontSize: 13, color: '#8c918f', margin: 0, fontWeight: 600 }}>Avg. rating</p>
+              <h3 style={{ fontSize: 32, fontWeight: 800, color: isDark ? '#fff' : '#2c302e', margin: '0 0 4px', lineHeight: 1 }}>4.3</h3>
+              <p style={{ fontSize: 13, color: isDark ? '#a3b3af' : '#8c918f', margin: 0, fontWeight: 600 }}>Avg. rating</p>
             </div>
           </div>
 
           {/* Card 3: Reviews Due */}
           <div className="verdant-card" style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(249,115,22,0.08)' : '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Award size={20} color="#f97316" />
               </div>
             </div>
             <div>
-              <h3 style={{ fontSize: 32, fontWeight: 800, color: '#2c302e', margin: '0 0 4px', lineHeight: 1 }}>8</h3>
-              <p style={{ fontSize: 13, color: '#8c918f', margin: 0, fontWeight: 600 }}>Reviews due</p>
+              <h3 style={{ fontSize: 32, fontWeight: 800, color: isDark ? '#fff' : '#2c302e', margin: '0 0 4px', lineHeight: 1 }}>8</h3>
+              <p style={{ fontSize: 13, color: isDark ? '#a3b3af' : '#8c918f', margin: 0, fontWeight: 600 }}>Reviews due</p>
             </div>
           </div>
 
           {/* Card 4: Top Performer */}
           <div className="verdant-card" style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(79,70,229,0.08)' : '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <TrendingUp size={20} color="#4f46e5" />
               </div>
             </div>
             <div>
-              <h3 style={{ fontSize: 26, fontWeight: 800, color: '#2c302e', margin: '4px 0 4px', lineHeight: 1 }}>Mei C.</h3>
-              <p style={{ fontSize: 13, color: '#8c918f', margin: 0, fontWeight: 600 }}>Top performer</p>
+              <h3 style={{ fontSize: 26, fontWeight: 800, color: isDark ? '#fff' : '#2c302e', margin: '4px 0 4px', lineHeight: 1 }}>Mei C.</h3>
+              <p style={{ fontSize: 13, color: isDark ? '#a3b3af' : '#8c918f', margin: 0, fontWeight: 600 }}>Top performer</p>
             </div>
           </div>
         </div>
 
         {/* GOALS PROGRESS */}
         <div className="verdant-card" style={{ marginBottom: 28 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 800, color: '#2c302e', marginBottom: 24, marginTop: 0 }}>Goals progress</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 800, color: isDark ? '#fff' : '#2c302e', marginBottom: 24, marginTop: 0 }}>Goals progress</h3>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             {filteredGoals.length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#8c918f', fontSize: 14, padding: '20px 0', margin: 0 }}>
+              <p style={{ textAlign: 'center', color: isDark ? '#a3b3af' : '#8c918f', fontSize: 14, padding: '20px 0', margin: 0 }}>
                 No active goals found.
               </p>
             ) : (
@@ -161,14 +169,14 @@ const EmployeePerformance = () => {
                 <div key={idx}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, alignItems: 'flex-end' }}>
                     <div>
-                      <span style={{ fontSize: 15, color: '#374151', fontWeight: 600, display: 'block' }}>{g.label}</span>
-                      <span style={{ fontSize: 12, color: g.status.toLowerCase() === 'at risk' ? '#dc2626' : '#8c918f', fontWeight: 700 }}>
+                      <span style={{ fontSize: 15, color: isDark ? '#cbd5e1' : '#374151', fontWeight: 600, display: 'block' }}>{g.label}</span>
+                      <span style={{ fontSize: 12, color: g.status.toLowerCase() === 'at risk' ? '#dc2626' : (isDark ? '#a3b3af' : '#8c918f'), fontWeight: 700 }}>
                         {g.status}
                       </span>
                     </div>
                     <span style={{ fontSize: 15, fontWeight: 800, color: '#00a76b' }}>{g.pct}%</span>
                   </div>
-                  <div style={{ height: 8, borderRadius: 99, background: '#e2eae7', overflow: 'hidden' }}>
+                  <div style={{ height: 8, borderRadius: 99, background: isDark ? '#1a2d29' : '#e2eae7', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${g.pct}%`, background: '#00a76b', borderRadius: 99, transition: 'width 0.8s ease' }} />
                   </div>
                 </div>
@@ -183,22 +191,22 @@ const EmployeePerformance = () => {
           {/* AI COMPETENCY PULSE */}
           <div className="verdant-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#3b3e3c', marginBottom: 16, marginTop: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', marginBottom: 16, marginTop: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Award size={18} color="#00a76b" /> AI Competency Pulse
               </h3>
               <div className="verdant-highlight-box" style={{ marginBottom: 16 }}>
                 <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
                   {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="#00a76b" color="#00a76b" />)}
                 </div>
-                <p style={{ fontSize: 13, color: '#3b3e3c', margin: 0, fontStyle: 'italic', lineHeight: 1.5 }}>
+                <p style={{ fontSize: 13, color: isDark ? '#cbd5e1' : '#3b3e3c', margin: 0, fontStyle: 'italic', lineHeight: 1.5 }}>
                   "Bhavik has demonstrated stellar capacity in optimizing system modules and ensuring high uptime during frontend integrations. Great execution cadence."
                 </p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#201515', color: '#fff', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>SC</div>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: isDark ? '#1a2d29' : '#201515', color: isDark ? '#cbd5e1' : '#fff', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>SC</div>
                 <div>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#3b3e3c', margin: 0 }}>Sarah Chen</p>
-                  <p style={{ fontSize: 11, color: '#8c918f', margin: 0 }}>Engineering Director</p>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', margin: 0 }}>Sarah Chen</p>
+                  <p style={{ fontSize: 11, color: isDark ? '#a3b3af' : '#8c918f', margin: 0 }}>Engineering Director</p>
                 </div>
               </div>
             </div>
@@ -206,31 +214,31 @@ const EmployeePerformance = () => {
 
           {/* APPRAISALS TABLE */}
           <div className="verdant-card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ padding: 20, borderBottom: '1px solid #e2eae7' }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2c302e', margin: 0 }}>Cycle Appraisal Registry</h3>
+            <div style={{ padding: 20, borderBottom: isDark ? '1px solid #1a2d29' : '1px solid #e2eae7' }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#fff' : '#2c302e', margin: 0 }}>Cycle Appraisal Registry</h3>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #e2eae7' }}>
-                    <th style={{ padding: '12px 20px', fontSize: 11, fontWeight: 800, color: '#8c918f', textTransform: 'uppercase' }}>Cycle</th>
-                    <th style={{ padding: '12px 20px', fontSize: 11, fontWeight: 800, color: '#8c918f', textTransform: 'uppercase' }}>Score</th>
-                    <th style={{ padding: '12px 20px', fontSize: 11, fontWeight: 800, color: '#8c918f', textTransform: 'uppercase' }}>Status</th>
+                  <tr style={{ borderBottom: isDark ? '1px solid #1a2d29' : '1px solid #e2eae7' }}>
+                    <th style={{ padding: '12px 20px', fontSize: 11, fontWeight: 800, color: isDark ? '#a3b3af' : '#8c918f', textTransform: 'uppercase' }}>Cycle</th>
+                    <th style={{ padding: '12px 20px', fontSize: 11, fontWeight: 800, color: isDark ? '#a3b3af' : '#8c918f', textTransform: 'uppercase' }}>Score</th>
+                    <th style={{ padding: '12px 20px', fontSize: 11, fontWeight: 800, color: isDark ? '#a3b3af' : '#8c918f', textTransform: 'uppercase' }}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {appraisals.map((a, i) => (
-                    <tr key={i} style={{ borderBottom: i < appraisals.length - 1 ? '1px solid #e2eae7' : 'none', fontSize: 13 }} className="hover:bg-[#f9fdfc]">
-                      <td style={{ padding: '14px 20px', fontWeight: 700, color: '#3b3e3c' }}>
+                    <tr key={i} style={{ borderBottom: i < appraisals.length - 1 ? (isDark ? '1px solid #1a2d29' : '1px solid #e2eae7') : 'none', fontSize: 13 }} className={isDark ? "hover:bg-[#162722]" : "hover:bg-[#f9fdfc]"}>
+                      <td style={{ padding: '14px 20px', fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c' }}>
                         <div>{a.period}</div>
-                        <div style={{ fontSize: 11, color: '#8c918f', fontWeight: 500, marginTop: 2 }}>{a.reviewer}</div>
+                        <div style={{ fontSize: 11, color: isDark ? '#a3b3af' : '#8c918f', fontWeight: 500, marginTop: 2 }}>{a.reviewer}</div>
                       </td>
                       <td style={{ padding: '14px 20px', fontWeight: 800, color: '#00a76b', fontFamily: 'monospace' }}>{a.score}</td>
                       <td style={{ padding: '14px 20px' }}>
                         <span style={{
                           fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 99,
-                          background: a.status === 'Completed' ? '#e6f7f0' : '#f3f4f6',
-                          color: a.status === 'Completed' ? '#00a76b' : '#6b7280'
+                          background: a.status === 'Completed' ? (isDark ? 'rgba(0,167,107,0.08)' : '#e6f7f0') : (isDark ? 'rgba(107,114,128,0.08)' : '#f3f4f6'),
+                          color: a.status === 'Completed' ? '#00a76b' : (isDark ? '#cbd5e1' : '#6b7280')
                         }}>
                           {a.status}
                         </span>
@@ -252,11 +260,11 @@ const EmployeePerformance = () => {
             <button onClick={() => setIsSetGoalModalOpen(false)} style={{ position: 'absolute', top: 20, right: 20, border: 'none', background: 'transparent', cursor: 'pointer', color: '#9ca3af' }}>
               <X size={20} />
             </button>
-            <h3 style={{ fontSize: 20, fontWeight: 800, color: '#2c302e', margin: '0 0 24px' }}>Set Goal</h3>
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: isDark ? '#fff' : '#2c302e', margin: '0 0 24px' }}>Set Goal</h3>
             
             <form onSubmit={handleSetGoal} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={{ fontSize: 12, fontWeight: 700, color: '#8c918f' }}>Goal Name</label>
+                <label style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#a3b3af' : '#8c918f' }}>Goal Name</label>
                 <input 
                   type="text" 
                   required
@@ -269,7 +277,7 @@ const EmployeePerformance = () => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: '#8c918f' }}>Target Percentage</label>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#a3b3af' : '#8c918f' }}>Target Percentage</label>
                   <span style={{ fontSize: 13, fontWeight: 800, color: '#00a76b' }}>{formData.pct}%</span>
                 </div>
                 <input 
@@ -283,7 +291,7 @@ const EmployeePerformance = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={{ fontSize: 12, fontWeight: 700, color: '#8c918f' }}>Health Status</label>
+                <label style={{ fontSize: 12, fontWeight: 700, color: isDark ? '#a3b3af' : '#8c918f' }}>Health Status</label>
                 <select 
                   value={formData.status}
                   onChange={e => setFormData({...formData, status: e.target.value})}

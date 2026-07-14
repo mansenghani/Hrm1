@@ -12,10 +12,10 @@ import {
   Calendar as CalendarIcon, Search, ArrowRight, Timer,
   ChevronLeft, ChevronRight, Activity, AlertCircle, Plus, ShieldCheck, Target, Send, X, RefreshCw, MessageSquare, FileText, Download, Calendar, Users, Filter, ChevronDown, UserCheck, ClipboardList, CheckCircle2
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
 import CreateTaskModal from '../components/CreateTaskModal';
 import TaskDetailView from '../components/TaskDetailView';
+import WeeklyAttendanceChart from '@shared/components/WeeklyAttendanceChart';
 
 const API_BASE = '/api/time';
 const POLL_INTERVAL_MS = 1000;
@@ -88,10 +88,37 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
   const registryCalendarRef = useRef(null);
   const viewCalendarRef = useRef(null);
 
+  const [tasks, setTasks] = useState([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
+  const [summary, setSummary] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [myTimeLogs, setMyTimeLogs] = useState([]);
+  const [leaves, setLeaves] = useState([]);
+  const [quickTask, setQuickTask] = useState({ title: '', description: '' });
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [previewGallery, setPreviewGallery] = useState({ items: [], index: 0 });
+
+  const currentPage = 1;
+  const itemsPerPage = 10;
+  const heartbeatRef = useRef(null);
+  const lastActivityRef = useRef(Date.now());
+
+  const getAuth = () => {
+    const token = sessionStorage.getItem('token');
+    return token ? { headers: { Authorization: `Bearer ${token}` } } : null;
+  };
+
   const formatDateDisplay = (dateStr) => {
     if (!dateStr) return '';
-    const [year, month, day] = dateStr.split('-');
-    return `${day}-${month}-${year}`;
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}-${month}-${year}`;
+    } catch (e) { return dateStr; }
   };
 
   const getDaysInMonth = (date) => {
@@ -101,23 +128,22 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
     const numDays = new Date(year, month + 1, 0).getDate();
 
     const days = [];
-    for (let i = 0; i < firstDay; i++) {
-      days.push(null);
-    }
-    for (let d = 1; d <= numDays; d++) {
-      days.push(new Date(year, month, d));
-    }
+    const firstDayIndex = new Date(y, m, 1).getDay();
+    const numDays = new Date(y, m + 1, 0).getDate();
+    for (let i = 0; i < firstDayIndex; i++) days.push(null);
+    for (let i = 1; i <= numDays; i++) days.push(new Date(y, m, i));
     return days;
   };
 
-  useEffect(() => {
-    if (registryDate) {
-      const parsedDate = new Date(registryDate);
-      if (!isNaN(parsedDate.getTime())) {
-        setPersonalCalendarMonth(parsedDate);
-        setRegistryCalendarMonth(parsedDate);
-      }
-    }
+  const fetchRegistryTasks = useCallback(async (date = registryDate) => {
+    const auth = getAuth();
+    if (!auth) return;
+    try {
+      setLoadingTasks(true);
+      const res = await axios.get(`/api/tasks?date=${date}`, auth);
+      if (res.data) setTasks(res.data.data || res.data || []);
+    } catch (err) { console.error('Task registry error'); }
+    finally { setLoadingTasks(false); }
   }, [registryDate]);
 
   useEffect(() => {
@@ -181,14 +207,10 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
   const [previewGallery, setPreviewGallery] = useState({ items: [], index: 0 });
 
   const applyServerState = useCallback((data) => {
-    if (!data?.hasActiveSession) {
-      setStatus(null); setIsRunning(false); setIsIdle(false);
-      setActiveTime(0); setIdleTime(0); setInactivityCount(0);
-      return;
-    }
-    setStatus(data.status);
-    setIsRunning(data.isRunning);
-    setIsIdle(data.status === 'idle');
+    if (!data) return;
+    setStatus(data);
+    setIsRunning(data.isRunning ?? false);
+    setIsIdle(data.isIdle ?? false);
     setActiveTime(data.activeTime ?? 0);
     setIdleTime(data.idleTime ?? 0);
     setInactivityCount(data.inactivityCount ?? 0);
@@ -252,7 +274,7 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
     const auth = getAuth();
     if (!auth) return;
     try {
-      const res = await axios.get('/api/leaves/my', auth);
+      const res = await axios.get('/api/leaves/me', auth);
       if (res.data) setLeaves(res.data);
     } catch (err) {
       console.error('Leaves fetch failed', err.message);
@@ -302,8 +324,8 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
     const auth = getAuth();
     if (!auth) return;
     try {
-      await axios.post(`${API_BASE}/${action}`, {}, auth);
-      await pollStatus();
+      const res = await axios.post(`${API_BASE}/${action}`, {}, auth);
+      applyServerState(res.data);
       await fetchSummary();
       await fetchMyTime();
       toast.success(`Session ${action === 'start' ? 'Initialized' : action.toUpperCase()}`);
@@ -397,47 +419,6 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
     return task.employeeRole?.toLowerCase() === roleFilter.toLowerCase();
   });
 
-  const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
-  const paginatedTasks = filteredTasks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  const roleOptions = [
-    { label: 'All Roles', value: 'All' },
-    ...(userRole === 'admin' ? [
-      { label: 'HR', value: 'HR' },
-      { label: 'Manager', value: 'Manager' }
-    ] : []),
-    ...(userRole === 'hr' ? [
-      { label: 'Manager', value: 'Manager' }
-    ] : []),
-    { label: 'Employee', value: 'Employee' }
-  ];
-
-  // Stacked chart parsing
-  const displayChartData = (summary?.chartData || []).map(item => {
-    const act = Math.round(((item.active || 0) / 3600) * 10) / 10;
-    const idl = Math.round(((item.idle || 0) / 3600) * 10) / 10;
-    const parsedDate = new Date(item.date);
-    const day = isNaN(parsedDate.getTime()) ? (item.date || 'Day') : parsedDate.toLocaleDateString('en-US', { weekday: 'short' });
-    return {
-      day,
-      active: act,
-      idle: idl,
-      overtime: act > 8 ? Math.round((act - 8) * 10) / 10 : 0
-    };
-  });
-
-  const defaultChartData = [
-    { day: 'Mon', active: 7.8, idle: 0.4, overtime: 0.3 },
-    { day: 'Tue', active: 8.0, idle: 0.2, overtime: 0.6 },
-    { day: 'Wed', active: 7.2, idle: 0.8, overtime: 0.0 },
-    { day: 'Thu', active: 8.1, idle: 0.3, overtime: 0.5 },
-    { day: 'Fri', active: 7.9, idle: 0.5, overtime: 0.4 },
-    { day: 'Sat', active: 3.5, idle: 0.1, overtime: 0.0 },
-    { day: 'Sun', active: 0.0, idle: 0.0, overtime: 0.0 }
-  ];
-
-  const chartDataToRender = displayChartData.length > 0 ? displayChartData : defaultChartData;
-
   const startedAtTime = status?.startTime ? new Date(status.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '09:18 AM';
 
   const handleExport = () => {
@@ -469,14 +450,14 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
   const avgWeeklyHours = (parseFloat(totalHoursWorked) / weeksCount).toFixed(1);
 
   return (
-    <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: '#f9fdfc', minHeight: 'calc(100vh - 56px)', color: '#3b3e3c', width: '100%', boxSizing: 'border-box' }}>
+    <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: isDark ? '#08100e' : '#f9fdfc', minHeight: 'calc(100vh - 56px)', color: isDark ? '#cbd5e1' : '#3b3e3c', width: '100%', boxSizing: 'border-box', transition: 'background-color 0.3s ease, color 0.3s ease' }}>
       <div style={{ width: '100%', maxWidth: '100%', padding: '32px 32px 60px', boxSizing: 'border-box' }}>
 
         {/* HEADER SECTION */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, marginBottom: 28 }}>
           <div>
-            <h1 style={{ fontSize: '32px', fontWeight: 800, color: '#2c302e', margin: 0, letterSpacing: '-0.75px' }}>Attendance</h1>
-            <p style={{ fontSize: '15px', color: '#8c918f', margin: '4px 0 0', fontWeight: 500 }}>Track check-ins, hours and shifts.</p>
+            <h1 style={{ fontSize: '32px', fontWeight: 800, color: isDark ? '#fff' : '#2c302e', margin: 0, letterSpacing: '-0.75px' }}>Attendance</h1>
+            <p style={{ fontSize: '15px', color: isDark ? '#a3b3af' : '#8c918f', margin: '4px 0 0', fontWeight: 500 }}>Track check-ins, hours and shifts.</p>
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
             <button onClick={handleExport} className="verdant-btn-outline">
@@ -491,7 +472,7 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
         {/* SEARCH AND FILTERS */}
         <div style={{ display: 'flex', gap: 14, marginBottom: 28, flexWrap: 'wrap' }}>
           <div style={{ position: 'relative', flex: 1, minWidth: 260 }}>
-            <Search size={18} color="#8c918f" style={{ position: 'absolute', left: 18, top: '50%', transform: 'translateY(-50%)' }} />
+            <Search size={18} color={isDark ? '#a3b3af' : '#8c918f'} style={{ position: 'absolute', left: 18, top: '50%', transform: 'translateY(-50%)' }} />
             <input type="text" placeholder="Search..." className="verdant-input" style={{ paddingLeft: 48 }} />
           </div>
           <button className="verdant-btn-outline">
@@ -505,53 +486,53 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
           {/* Card 1: Total Days Worked */}
           <div className="verdant-card" style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#f2fbf6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(0,167,107,0.08)' : '#f2fbf6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <CheckCircle2 size={20} color="#00a76b" />
               </div>
             </div>
-            <p style={{ fontSize: '38px', fontWeight: 800, color: '#3b3e3c', margin: '16px 0 4px', letterSpacing: '-1.5px', lineHeight: 1 }}>
+            <p style={{ fontSize: '38px', fontWeight: 800, color: isDark ? '#fff' : '#3b3e3c', margin: '16px 0 4px', letterSpacing: '-1.5px', lineHeight: 1 }}>
               {totalDaysWorked}
             </p>
-            <p style={{ fontSize: 14, color: '#8c918f', margin: 0, fontWeight: 600 }}>Total days worked</p>
+            <p style={{ fontSize: 14, color: isDark ? '#a3b3af' : '#8c918f', margin: 0, fontWeight: 600 }}>Total days worked</p>
           </div>
 
           {/* Card 2: Leaves Taken */}
           <div className="verdant-card" style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#fbf2f2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(199,101,95,0.08)' : '#fbf2f2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <CalendarIcon size={20} color="#c7655f" />
               </div>
             </div>
-            <p style={{ fontSize: '38px', fontWeight: 800, color: '#3b3e3c', margin: '16px 0 4px', letterSpacing: '-1.5px', lineHeight: 1 }}>
+            <p style={{ fontSize: '38px', fontWeight: 800, color: isDark ? '#fff' : '#3b3e3c', margin: '16px 0 4px', letterSpacing: '-1.5px', lineHeight: 1 }}>
               {totalLeavesTaken}
             </p>
-            <p style={{ fontSize: 14, color: '#8c918f', margin: 0, fontWeight: 600 }}>Leaves taken (days)</p>
+            <p style={{ fontSize: 14, color: isDark ? '#a3b3af' : '#8c918f', margin: 0, fontWeight: 600 }}>Leaves taken (days)</p>
           </div>
 
           {/* Card 3: Total Hours Worked */}
           <div className="verdant-card" style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#f0f5fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(94,139,181,0.08)' : '#f0f5fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Clock size={20} color="#5e8bb5" />
               </div>
             </div>
-            <p style={{ fontSize: '38px', fontWeight: 800, color: '#3b3e3c', margin: '16px 0 4px', letterSpacing: '-1.5px', lineHeight: 1 }}>
+            <p style={{ fontSize: '38px', fontWeight: 800, color: isDark ? '#fff' : '#3b3e3c', margin: '16px 0 4px', letterSpacing: '-1.5px', lineHeight: 1 }}>
               {totalHoursWorked}h
             </p>
-            <p style={{ fontSize: 14, color: '#8c918f', margin: 0, fontWeight: 600 }}>Total active hours</p>
+            <p style={{ fontSize: 14, color: isDark ? '#a3b3af' : '#8c918f', margin: 0, fontWeight: 600 }}>Total active hours</p>
           </div>
 
           {/* Card 4: Average Hours / Week */}
           <div className="verdant-card" style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#f2fbf6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(0,167,107,0.08)' : '#f2fbf6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <TrendingUp size={20} color="#00a76b" />
               </div>
             </div>
-            <p style={{ fontSize: '38px', fontWeight: 800, color: '#3b3e3c', margin: '16px 0 4px', letterSpacing: '-1.5px', lineHeight: 1 }}>
+            <p style={{ fontSize: '38px', fontWeight: 800, color: isDark ? '#fff' : '#3b3e3c', margin: '16px 0 4px', letterSpacing: '-1.5px', lineHeight: 1 }}>
               {avgWeeklyHours}h
             </p>
-            <p style={{ fontSize: 14, color: '#8c918f', margin: 0, fontWeight: 600 }}>Avg. hours / week</p>
+            <p style={{ fontSize: 14, color: isDark ? '#a3b3af' : '#8c918f', margin: 0, fontWeight: 600 }}>Avg. hours / week</p>
           </div>
 
         </div>
@@ -580,7 +561,7 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
           {/* Quick Actions Card */}
           <div className="verdant-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3b3e3c', marginBottom: 20, marginTop: 0 }}>Quick actions</h3>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', marginBottom: 20, marginTop: 0 }}>Quick actions</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <button
                   onClick={() => !isRunning && handleAction('start')}
@@ -593,7 +574,7 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
                   onClick={() => isRunning && handleAction('stop')}
                   disabled={!isRunning}
                   className={!isRunning ? "verdant-btn-secondary text-[#a3a3a3]" : "verdant-btn-primary"}
-                  style={{ width: '100%', backgroundColor: isRunning ? '#3b3e3c' : undefined }}>
+                  style={{ width: '100%', backgroundColor: isRunning ? (isDark ? '#1a2d29' : '#3b3e3c') : undefined }}>
                   <Square size={14} fill="currentColor" /> Check out
                 </button>
                 <button
@@ -606,11 +587,11 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
             </div>
 
             <div className="verdant-highlight-box" style={{ marginTop: 20 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 6px' }}>Current session</p>
-              <h4 style={{ fontSize: '28px', fontWeight: 800, color: '#3b3e3c', margin: '0 0 4px', fontFamily: 'monospace' }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 6px' }}>Current session</p>
+              <h4 style={{ fontSize: '28px', fontWeight: 800, color: isDark ? '#fff' : '#3b3e3c', margin: '0 0 4px', fontFamily: 'monospace' }}>
                 {formatTime(activeTime)}
               </h4>
-              <p style={{ fontSize: 12, color: '#8c918f', margin: 0, fontWeight: 500 }}>
+              <p style={{ fontSize: 12, color: isDark ? '#a3b3af' : '#8c918f', margin: 0, fontWeight: 500 }}>
                 {isRunning ? `Started at ${startedAtTime}` : 'Session inactive'}
               </p>
             </div>
@@ -619,30 +600,30 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
         </div>
 
         {/* SYSTEM REGISTRY TABLE */}
-        <div className="verdant-card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '24px 24px 20px', borderBottom: '1px solid #e2eae7', background: '#f9fdfc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+        <div className="verdant-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 28 }}>
+          <div style={{ padding: '24px 24px 20px', borderBottom: isDark ? '1px solid #1a2d29' : '1px solid #e2eae7', background: isDark ? '#111c18' : '#f9fdfc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3b3e3c', margin: 0 }}>System Registry</h3>
-              <p style={{ fontSize: 13, color: '#8c918f', margin: '4px 0 0', fontWeight: 500 }}>Matrix activity logs and system ticks.</p>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', margin: 0 }}>System Registry</h3>
+              <p style={{ fontSize: 13, color: isDark ? '#a3b3af' : '#8c918f', margin: '4px 0 0', fontWeight: 500 }}>Matrix activity logs and system ticks.</p>
             </div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <span style={{ fontSize: 13, color: '#8c918f', fontWeight: 600 }}>Active Date:</span>
+              <span style={{ fontSize: 13, color: isDark ? '#a3b3af' : '#8c918f', fontWeight: 600 }}>Active Date:</span>
               <div style={{ position: 'relative' }} ref={viewCalendarRef}>
                 <button onClick={() => setShowViewCalendar(!showViewCalendar)} className="verdant-btn-outline" style={{ height: 38, padding: '0 16px' }}>
                   <CalendarIcon size={15} color="#00a76b" /> {formatDateDisplay(viewDate)}
                 </button>
                 {showViewCalendar && (
-                  <div style={{ position: 'absolute', right: 0, bottom: '100%', marginBottom: 8, width: 280, background: '#fff', border: '1px solid #e2eae7', borderRadius: 16, padding: 16, boxShadow: '0 10px 30px rgba(0,0,0,0.06)', zIndex: 100 }}>
+                  <div style={{ position: 'absolute', right: 0, bottom: '100%', marginBottom: 8, width: 280, background: isDark ? '#111c18' : '#fff', border: isDark ? '1px solid #1a2d29' : '1px solid #e2eae7', borderRadius: 16, padding: 16, boxShadow: '0 10px 30px rgba(0,0,0,0.06)', zIndex: 100 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                       <button type="button" onClick={() => setViewCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
-                        style={{ border: 'none', background: '#f3f4f6', cursor: 'pointer', borderRadius: 8, width: 28, height: 28, display: 'flex', alignItems: 'center', justify: 'center' }}>
+                        style={{ border: 'none', background: isDark ? '#162722' : '#f3f4f6', color: isDark ? '#fff' : '#000', cursor: 'pointer', borderRadius: 8, width: 28, height: 28, display: 'flex', alignItems: 'center', justify: 'center', justifyContent: 'center' }}>
                         <ChevronLeft size={14} />
                       </button>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: '#3b3e3c' }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c' }}>
                         {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][viewCalendarMonth.getMonth()]} {viewCalendarMonth.getFullYear()}
                       </span>
                       <button type="button" onClick={() => setViewCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
-                        style={{ border: 'none', background: '#f3f4f6', cursor: 'pointer', borderRadius: 8, width: 28, height: 28, display: 'flex', alignItems: 'center', justify: 'center' }}>
+                        style={{ border: 'none', background: isDark ? '#162722' : '#f3f4f6', color: isDark ? '#fff' : '#000', cursor: 'pointer', borderRadius: 8, width: 28, height: 28, display: 'flex', alignItems: 'center', justify: 'center', justifyContent: 'center' }}>
                         <ChevronRight size={14} />
                       </button>
                     </div>
@@ -652,10 +633,10 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
                         if (!day) return <div key={idx} />;
                         const dStr = getYYYYMMDD(day);
                         const isSel = dStr === viewDate;
-                        const isFut = dStr > today;
+                        const isTdy = dStr === today;
                         return (
-                          <button key={dStr} type="button" disabled={isFut} onClick={() => { setViewDate(dStr); setShowViewCalendar(false); }}
-                            style={{ height: 28, width: 28, border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: isFut ? 'not-allowed' : 'pointer', background: isSel ? '#00a76b' : 'transparent', color: isSel ? '#fff' : isFut ? '#e2eae7' : '#3b3e3c' }}>
+                          <button key={idx} type="button" onClick={() => { setViewDate(dStr); setShowViewCalendar(false); }}
+                            style={{ border: 'none', background: isSel ? '#00a76b' : isTdy ? (isDark ? 'rgba(0,167,107,0.1)' : '#f2fbf6') : 'transparent', color: isSel ? '#fff' : isTdy ? '#00a76b' : (isDark ? '#cbd5e1' : '#3b3e3c'), cursor: 'pointer', borderRadius: 8, height: 28, fontSize: 11, fontWeight: (isSel || isTdy) ? 700 : 500 }}>
                             {day.getDate()}
                           </button>
                         );
@@ -666,39 +647,44 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
               </div>
             </div>
           </div>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+
+          {/* TABLE LOG DISPLAY */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse" style={{ minWidth: 600 }}>
               <thead>
-                <tr style={{ background: '#f9fdfc', borderBottom: '1px solid #e2eae7' }}>
-                  <th style={{ padding: '14px 24px', fontSize: 11, fontWeight: 800, color: '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sequence ID</th>
-                  <th style={{ padding: '14px 24px', fontSize: 11, fontWeight: 800, color: '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Date</th>
-                  <th style={{ padding: '14px 24px', fontSize: 11, fontWeight: 800, color: '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Time</th>
-                  <th style={{ padding: '14px 24px', fontSize: 11, fontWeight: 800, color: '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Idle Duration</th>
-                  <th style={{ padding: '14px 24px', fontSize: 11, fontWeight: 800, color: '#8c918f', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status Code</th>
+                <tr style={{ background: isDark ? '#111c18' : '#f9fdfc', borderBottom: isDark ? '1px solid #1a2d29' : '1px solid #e2eae7' }}>
+                  <th style={{ padding: '16px 24px', fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#8c918f', textTransform: 'uppercase' }}>Sequence ID</th>
+                  <th style={{ padding: '16px 24px', fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#8c918f', textTransform: 'uppercase' }}>Active Date</th>
+                  <th style={{ padding: '16px 24px', fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#8c918f', textTransform: 'uppercase' }}>Active Time</th>
+                  <th style={{ padding: '16px 24px', fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#8c918f', textTransform: 'uppercase' }}>Idle Duration</th>
+                  <th style={{ padding: '16px 24px', fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#8c918f', textTransform: 'uppercase' }}>Status Code</th>
                 </tr>
               </thead>
               <tbody>
-                {summary.logs.length === 0 ? (
+                {myTimeLogs.length === 0 ? (
                   <tr>
-                    <td colSpan="5" style={{ padding: '48px 24px', textAlign: 'center', color: '#8c918f', fontSize: 14, fontWeight: 500 }}>No activity logs recorded for this date range.</td>
+                    <td colSpan={5} style={{ padding: '24px', textAlign: 'center', fontSize: 13, color: isDark ? '#a3b3af' : '#8c918f' }}>
+                      No activity logs recorded.
+                    </td>
                   </tr>
                 ) : (
-                  summary.logs.map((log, i) => (
-                    <tr key={i} style={{ borderBottom: i < summary.logs.length - 1 ? '1px solid #e2eae7' : 'none', fontSize: 13, transition: 'background 0.2s' }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = '#f2fbf6'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                      <td style={{ padding: '16px 24px', fontWeight: 700, color: '#3b3e3c' }}>Pulse-{i + 1}</td>
-                      <td style={{ padding: '16px 24px', color: '#5c5f5d', fontWeight: 500 }}>{formatDateDisplay(log.date)}</td>
-                      <td style={{ padding: '16px 24px', color: '#3b3e3c', fontWeight: 700 }}>{formatTime(log.activeTime)}</td>
-                      <td style={{ padding: '16px 24px', color: '#c7655f', fontWeight: 700 }}>{formatTime(log.idleTime)}</td>
+                  myTimeLogs.map((log, index) => (
+                    <tr key={log._id || index} style={{ borderBottom: isDark ? '1px solid #111c18' : '1px solid #f3f4f6' }}>
+                      <td style={{ padding: '16px 24px', fontSize: 13, fontWeight: 700, color: isDark ? '#fff' : '#2c302e' }}>
+                        Pulse-{myTimeLogs.length - index}
+                      </td>
+                      <td style={{ padding: '16px 24px', fontSize: 13, color: isDark ? '#cbd5e1' : '#3b3e3c' }}>
+                        {formatDateDisplay(log.date)}
+                      </td>
+                      <td style={{ padding: '16px 24px', fontSize: 13, fontFamily: 'monospace', color: isDark ? '#cbd5e1' : '#3b3e3c' }}>
+                        {formatTime(log.activeTime)}
+                      </td>
+                      <td style={{ padding: '16px 24px', fontSize: 13, fontFamily: 'monospace', color: '#d0746e' }}>
+                        {formatTime(log.idleTime)}
+                      </td>
                       <td style={{ padding: '16px 24px' }}>
-                        <span style={{
-                          fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 8,
-                          background: log.status === 'active' ? '#f2fbf6' : '#fbf9f2',
-                          color: log.status === 'active' ? '#00a76b' : '#dfb479',
-                          border: log.status === 'active' ? '1px solid #e2eae7' : '1px solid #f6eedc'
-                        }}>
-                          {log.status === 'active' ? 'ACTIVE' : log.status.toUpperCase()}
+                        <span style={{ display: 'inline-block', padding: '4px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700, background: isDark ? 'rgba(0,167,107,0.08)' : '#f2fbf6', color: '#00a76b' }}>
+                          COMPLETED
                         </span>
                       </td>
                     </tr>
@@ -708,7 +694,12 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
             </table>
           </div>
         </div>
+
       </div>
+
+      {/* MODALS */}
+      <CreateTaskModal isOpen={showCreateTaskModal} onClose={() => setShowCreateTaskModal(false)} onCreated={() => fetchRegistryTasks(registryDate)} employeeId={currentUser?._id} employeeName={currentUser?.fullName} />
+      <TaskDetailView isOpen={!!selectedTask} onClose={() => setSelectedTask(null)} task={selectedTask} onUpdated={() => fetchRegistryTasks(registryDate)} isHigherRole={isHigherRole} />
     </div>
   );
 };

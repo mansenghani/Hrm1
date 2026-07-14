@@ -917,7 +917,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                   placeholder="Search personnel..."
                   value={searchShareQuery}
                   onChange={(e) => setSearchShareQuery(e.target.value)}
-                  className="w-full bg-[#eceae3] border border-[#c5c0b1] rounded-[6px] px-2.5 py-1.5 text-xs text-[#201515] placeholder:text-[#939084] outline-none focus:border-[#ff4f00] mb-3"
+                  className="w-full bg-[#eceae3] border border-[#c5c0b1] rounded-[6px] px-2.5 py-1.5 text-xs text-[#201515] placeholder:text-[#939084] outline-none focus:border-[#00a76b] mb-3"
                 />
                 <div className="max-h-48 overflow-y-auto custom-scrollbar space-y-1">
                   {personnelList
@@ -1037,13 +1037,13 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                     <span className={`w-1.5 h-1.5 rounded-full ${
                       status === 'Completed' ? 'bg-[#24a148]' : 
                       status === 'Ongoing' ? 'bg-blue-500' : 
-                      status === 'Review' ? 'bg-[#ff4f00]' : 
+                      status === 'Review' ? 'bg-[#00a76b]' : 
                       status === 'Need to Improve' ? 'bg-red-500' : 'bg-[#939084]'
                     }`}></span> {status} <ChevronDown size={10}/>
                   </button>
                   <button 
                     onClick={() => updateTaskProperty({ status: status === 'Completed' ? 'Ongoing' : 'Completed' })}
-                    className="p-0.5 bg-[#eceae3] rounded-[3px] text-[#939084] hover:text-[#ff4f00] transition-colors border border-[#c5c0b1]"
+                    className="p-0.5 bg-[#eceae3] rounded-[3px] text-[#939084] hover:text-[#00a76b] transition-colors border border-[#c5c0b1]"
                     title={status === 'Completed' ? "Mark Ongoing" : "Mark Completed"}
                   >
                     <CheckCircle2 size={12}/>
@@ -1063,7 +1063,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                           <span className={`w-1.5 h-1.5 rounded-full ${
                             sOption === 'Completed' ? 'bg-[#24a148]' : 
                             sOption === 'Ongoing' ? 'bg-blue-500' : 
-                            sOption === 'Review' ? 'bg-[#ff4f00]' : 
+                            sOption === 'Review' ? 'bg-[#00a76b]' : 
                             sOption === 'Need to Improve' ? 'bg-red-500' : 'bg-[#939084]'
                           }`}></span>
                           {sOption}
@@ -1080,7 +1080,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                 <div className="flex-1" ref={assigneeDropdownRef}>
                   <button 
                     onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}
-                    className="assignee-trigger-btn text-[13px] text-[#201515] font-bold cursor-pointer hover:text-[#ff4f00] transition-colors flex items-center gap-1.5"
+                    className="assignee-trigger-btn text-[13px] text-[#201515] font-bold cursor-pointer hover:text-[#00a76b] transition-colors flex items-center gap-1.5"
                   >
                     {task?.employeeName || 'Empty'} <ChevronDown size={10} className="text-[#939084]"/>
                   </button>
@@ -1127,13 +1127,13 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                         }
                       }}
                       placeholder="e.g. 4h"
-                      className="bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] px-1.5 py-1 text-[13px] text-[#201515] font-bold outline-none focus:border-[#ff4f00] w-24"
+                      className="bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] px-1.5 py-1 text-[13px] text-[#201515] font-bold outline-none focus:border-[#00a76b] w-24"
                       autoFocus
                     />
                   ) : (
                     <div 
                       onClick={() => setIsEditingEstimate(true)}
-                      className={`text-[13px] font-bold cursor-pointer hover:text-[#ff4f00] transition-colors ${task?.timeEstimate ? 'text-[#201515]' : 'text-[#c5c0b1]'}`}
+                      className={`text-[13px] font-bold cursor-pointer hover:text-[#00a76b] transition-colors ${task?.timeEstimate ? 'text-[#201515]' : 'text-[#c5c0b1]'}`}
                     >
                       {task?.timeEstimate || 'Empty'}
                     </div>
@@ -1222,7 +1222,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                               placeholder="Enter session notes..." 
                               value={notes}
                               onChange={(e) => setNotes(e.target.value)}
-                              className="w-full bg-[#eceae3] border border-[#c5c0b1] rounded-lg p-1.5 text-xs text-[#201515] focus:outline-none focus:border-[#ff4f00] resize-none h-12"
+                              className="w-full bg-[#eceae3] border border-[#c5c0b1] rounded-lg p-1.5 text-xs text-[#201515] focus:outline-none focus:border-[#00a76b] resize-none h-12"
                             />
                           </div>
                         ) : (
@@ -1241,7 +1241,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                               {tagsList.map(tag => (
                                 <span key={tag} className="flex items-center gap-1 bg-[#fffdf9] border border-[#c5c0b1] text-[#201515] text-[10px] px-1.5 py-0.5 rounded">
                                   {tag}
-                                  <X size={9} className="cursor-pointer hover:text-[#ff4f00]" onClick={() => handleRemoveTag(tag)}/>
+                                  <X size={9} className="cursor-pointer hover:text-[#00a76b]" onClick={() => handleRemoveTag(tag)}/>
                                 </span>
                               ))}
                               <input 
@@ -1266,13 +1266,13 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                        <div className="flex items-center gap-2">
                          <button 
                            onClick={() => setIsBillable(!isBillable)}
-                           className={`w-7 h-3.5 rounded-full relative transition-colors cursor-pointer ${isBillable ? 'bg-[#ff4f00]' : 'bg-[#c5c0b1]'}`}
+                           className={`w-7 h-3.5 rounded-full relative transition-colors cursor-pointer ${isBillable ? 'bg-[#00a76b]' : 'bg-[#c5c0b1]'}`}
                          >
                            <div className={`w-2.5 h-2.5 bg-white rounded-full absolute top-0.5 transition-all duration-200 ${isBillable ? 'left-[15px]' : 'left-0.5'}`}></div>
                          </button>
                          <span className="text-[9px] font-black uppercase tracking-wider text-[#939084]">Billable</span>
                        </div>
-                       <button className="px-4 py-1 bg-[#ff4f00] hover:bg-[#201515] text-white text-[10px] font-black uppercase tracking-wider rounded-[3px] transition-colors shadow-sm cursor-pointer" onClick={handleSaveTimeLog}>Save</button>
+                       <button className="px-4 py-1 bg-[#00a76b] hover:bg-[#201515] text-white text-[10px] font-black uppercase tracking-wider rounded-[3px] transition-colors shadow-sm cursor-pointer" onClick={handleSaveTimeLog}>Save</button>
                     </div>
                   </div>
                 )}
@@ -1289,7 +1289,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                       await updateTaskProperty({ date: e.target.value });
                     }}
                     style={{ colorScheme: 'light' }}
-                    className="bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] px-1.5 py-1 text-[13px] text-[#201515] font-black uppercase tracking-wider outline-none focus:border-[#ff4f00] cursor-pointer"
+                    className="bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] px-1.5 py-1 text-[13px] text-[#201515] font-black uppercase tracking-wider outline-none focus:border-[#00a76b] cursor-pointer"
                   />
                 </div>
               </div>
@@ -1313,13 +1313,13 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                           await updateTaskProperty({ sprintPoints: Number(sprintPointsVal) || 0 });
                         }
                       }}
-                      className="bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] px-1.5 py-1 text-[13px] text-[#201515] font-bold outline-none focus:border-[#ff4f00] w-16"
+                      className="bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] px-1.5 py-1 text-[13px] text-[#201515] font-bold outline-none focus:border-[#00a76b] w-16"
                       autoFocus
                     />
                   ) : (
                     <div 
                       onClick={() => setIsEditingSprintPoints(true)}
-                      className={`text-[13px] font-bold cursor-pointer hover:text-[#ff4f00] transition-colors ${task?.sprintPoints ? 'text-[#201515]' : 'text-[#c5c0b1]'}`}
+                      className={`text-[13px] font-bold cursor-pointer hover:text-[#00a76b] transition-colors ${task?.sprintPoints ? 'text-[#201515]' : 'text-[#c5c0b1]'}`}
                     >
                       {task?.sprintPoints || 'Empty'}
                     </div>
@@ -1333,7 +1333,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                 <div className="flex-1" ref={priorityDropdownRef}>
                   <button 
                     onClick={() => setShowPriorityDropdown(!showPriorityDropdown)}
-                    className="priority-trigger-btn text-[13px] font-bold cursor-pointer hover:text-[#ff4f00] transition-colors flex items-center gap-1.5 text-left"
+                    className="priority-trigger-btn text-[13px] font-bold cursor-pointer hover:text-[#00a76b] transition-colors flex items-center gap-1.5 text-left"
                   >
                     {task?.priority || 'Empty'} <ChevronDown size={11} className="text-[#939084]"/>
                   </button>
@@ -1397,13 +1397,13 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                         }
                       }}
                       placeholder="Tag name..."
-                      className="bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] px-1.5 py-1 text-[13px] text-[#201515] font-bold outline-none focus:border-[#ff4f00] w-24"
+                      className="bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] px-1.5 py-1 text-[13px] text-[#201515] font-bold outline-none focus:border-[#00a76b] w-24"
                       autoFocus
                     />
                   ) : (
                     <button 
                       onClick={() => setIsAddingTag(true)}
-                      className="text-[13px] text-[#c5c0b1] hover:text-[#ff4f00] font-bold transition-colors"
+                      className="text-[13px] text-[#c5c0b1] hover:text-[#00a76b] font-bold transition-colors"
                     >
                       + Add Tag
                     </button>
@@ -1468,7 +1468,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading}
-                    className="flex items-center gap-1.5 px-2.5 py-1 bg-[#eceae3] border border-[#c5c0b1] hover:bg-[#ff4f00] hover:text-white rounded-[4px] text-[10px] font-black uppercase tracking-wider text-[#201515] transition-colors cursor-pointer disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-2.5 py-1 bg-[#eceae3] border border-[#c5c0b1] hover:bg-[#00a76b] hover:text-white rounded-[4px] text-[10px] font-black uppercase tracking-wider text-[#201515] transition-colors cursor-pointer disabled:opacity-50"
                   >
                     {isUploading ? 'Uploading...' : 'Upload'}
                   </button>
@@ -1522,10 +1522,10 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
             {showAISidebar ? (
               <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#fffdf9]">
                 {/* AI Copilot Header */}
-                <div className="h-12 flex items-center justify-between px-5 border-b border-[#ff4f00]/20 bg-[#ff4f00]/5 shrink-0">
+                <div className="h-12 flex items-center justify-between px-5 border-b border-[#00a76b]/20 bg-[#00a76b]/5 shrink-0">
                   <div className="flex items-center gap-2">
-                    <Sparkles size={14} className="text-[#ff4f00] animate-pulse" />
-                    <span className="text-[11px] font-black uppercase tracking-wider text-[#ff4f00]">Brain AI Copilot</span>
+                    <Sparkles size={14} className="text-[#00a76b] animate-pulse" />
+                    <span className="text-[11px] font-black uppercase tracking-wider text-[#00a76b]">Brain AI Copilot</span>
                   </div>
                   <button 
                     onClick={() => setShowAISidebar(false)}
@@ -1546,7 +1546,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                       )}
                       <div className={`rounded-[6px] p-3 max-w-[80%] leading-relaxed text-[12px] ${
                         msg.role === 'user' 
-                          ? 'bg-[#ff4f00]/10 text-[#201515] border border-[#ff4f00]/20 font-bold' 
+                          ? 'bg-[#00a76b]/10 text-[#201515] border border-[#00a76b]/20 font-bold' 
                           : 'bg-[#eceae3] text-[#201515] border border-[#c5c0b1]'
                       }`}>
                         {msg.text.split('\n').map((line, lIdx) => (
@@ -1576,19 +1576,19 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                   <div className="flex flex-wrap gap-1.5">
                     <button 
                       onClick={() => handleAskAIQuickAction('description')}
-                      className="px-2.5 py-1 text-[10px] font-black uppercase bg-[#eceae3] hover:bg-[#ff4f00] hover:text-white border border-[#c5c0b1] text-[#939084] rounded-[4px] transition-colors flex items-center gap-1"
+                      className="px-2.5 py-1 text-[10px] font-black uppercase bg-[#eceae3] hover:bg-[#00a76b] hover:text-white border border-[#c5c0b1] text-[#939084] rounded-[4px] transition-colors flex items-center gap-1"
                     >
                       🪄 Write Description
                     </button>
                     <button 
                       onClick={() => handleAskAIQuickAction('subtasks')}
-                      className="px-2.5 py-1 text-[10px] font-black uppercase bg-[#eceae3] hover:bg-[#ff4f00] hover:text-white border border-[#c5c0b1] text-[#939084] rounded-[4px] transition-colors flex items-center gap-1"
+                      className="px-2.5 py-1 text-[10px] font-black uppercase bg-[#eceae3] hover:bg-[#00a76b] hover:text-white border border-[#c5c0b1] text-[#939084] rounded-[4px] transition-colors flex items-center gap-1"
                     >
                       📋 Suggest Subtasks
                     </button>
                     <button 
                       onClick={() => handleAskAIQuickAction('summary')}
-                      className="px-2.5 py-1 text-[10px] font-black uppercase bg-[#eceae3] hover:bg-[#ff4f00] hover:text-white border border-[#c5c0b1] text-[#939084] rounded-[4px] transition-colors flex items-center gap-1"
+                      className="px-2.5 py-1 text-[10px] font-black uppercase bg-[#eceae3] hover:bg-[#00a76b] hover:text-white border border-[#c5c0b1] text-[#939084] rounded-[4px] transition-colors flex items-center gap-1"
                     >
                       ⚡ Status Summary
                     </button>
@@ -1597,7 +1597,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
 
                 {/* AI Chat Input */}
                 <form onSubmit={handleCustomAiQuery} className="p-4 bg-[#fffdf9] border-t border-[#c5c0b1] shrink-0">
-                  <div className="flex items-center gap-2 bg-[#eceae3] border border-[#c5c0b1] focus-within:border-[#ff4f00] rounded-[6px] overflow-hidden px-3 py-2 transition-colors">
+                  <div className="flex items-center gap-2 bg-[#eceae3] border border-[#c5c0b1] focus-within:border-[#00a76b] rounded-[6px] overflow-hidden px-3 py-2 transition-colors">
                     <input
                       type="text"
                       placeholder="Ask anything about this task..."
@@ -1608,7 +1608,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                     <button 
                       type="submit"
                       disabled={!aiQuery.trim() || aiLoading}
-                      className="p-1 text-[#ff4f00] hover:text-[#201515] rounded-[4px] transition-colors disabled:opacity-50"
+                      className="p-1 text-[#00a76b] hover:text-[#201515] rounded-[4px] transition-colors disabled:opacity-50"
                     >
                       <Send size={14} />
                     </button>
@@ -1746,7 +1746,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                           <div className="flex items-center gap-1">
                             <button 
                               onClick={() => toggleReaction(idx, '👍')} 
-                              className={`flex items-center gap-1 p-1.5 rounded-[4px] hover:bg-[#eceae3] transition-colors ${isCommentLikedByMe(c) ? 'text-[#ff4f00]' : 'hover:text-[#201515]'}`}
+                              className={`flex items-center gap-1 p-1.5 rounded-[4px] hover:bg-[#eceae3] transition-colors ${isCommentLikedByMe(c) ? 'text-[#00a76b]' : 'hover:text-[#201515]'}`}
                               title="Like"
                             >
                               <ThumbsUp size={14} className={isCommentLikedByMe(c) ? 'fill-current' : ''} />
@@ -1800,7 +1800,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
 
                 {/* Comment Input */}
                 <div className="p-4 bg-[#fffdf9] border-t border-[#c5c0b1] shrink-0">
-                  <div className="bg-[#eceae3] border border-[#c5c0b1] rounded-[8px] overflow-hidden focus-within:border-[#ff4f00] transition-colors">
+                  <div className="bg-[#eceae3] border border-[#c5c0b1] rounded-[8px] overflow-hidden focus-within:border-[#00a76b] transition-colors">
                     <textarea
                       placeholder="Write a comment..."
                       value={comment}
@@ -1817,7 +1817,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                       <button 
                         onClick={handleCommentSubmit}
                         disabled={!comment.trim() || isSubmitting}
-                        className="p-1.5 bg-[#ff4f00] text-white hover:bg-[#201515] rounded-[4px] transition-colors disabled:opacity-50"
+                        className="p-1.5 bg-[#00a76b] text-white hover:bg-[#201515] rounded-[4px] transition-colors disabled:opacity-50"
                       >
                         <Send size={16} className={isSubmitting ? "animate-pulse" : ""} />
                       </button>

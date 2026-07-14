@@ -22,6 +22,10 @@ exports.applyLeave = async (req, res) => {
       totalDays: totalDays || 1,
       status: 'pending'
     });
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${leave.user.toString()}`).emit('leave_updated', leave);
+    }
     res.status(201).json(leave);
   } catch (error) {
     console.error('Apply Leave Error:', error);
@@ -58,6 +62,10 @@ exports.managerApprove = async (req, res) => {
 
     leave.status = 'approved';
     await leave.save();
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${leave.user.toString()}`).emit('leave_updated', leave);
+    }
     res.json(leave);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -90,6 +98,10 @@ exports.hrApprove = async (req, res) => {
     leave.status = 'approved';
     leave.hrId = req.user.id;
     await leave.save();
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${leave.user.toString()}`).emit('leave_updated', leave);
+    }
     res.json(leave);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -106,6 +118,10 @@ exports.rejectLeave = async (req, res) => {
 
     leave.status = 'rejected';
     await leave.save();
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${leave.user.toString()}`).emit('leave_updated', leave);
+    }
     res.json(leave);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -131,6 +147,10 @@ exports.cancelLeave = async (req, res) => {
 
     leave.status = 'cancelled';
     await leave.save();
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${leave.user.toString()}`).emit('leave_updated', leave);
+    }
     res.json(leave);
   } catch (error) {
     res.status(500).json({ message: error.message });

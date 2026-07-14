@@ -6,13 +6,13 @@ const Landing = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[#fffefb] selection:bg-[#ff4f00] selection:text-white">
+    <div className="min-h-screen bg-[#fffefb] selection:bg-[#00a76b] selection:text-white">
       
       {/* NAVIGATION - Zapier Warm Header */}
       <header className="sticky top-0 w-full z-50 bg-[#fffefb] border-b border-[#c5c0b1]">
         <div className="flex w-full h-[72px] items-center px-8">
           <div className="flex items-center gap-3 mr-12">
-            <div className="w-8 h-8 bg-[#ff4f00] rounded-[4px] flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#00a76b] rounded-[4px] flex items-center justify-center">
               <ShieldCheck size={20} className="text-[#fffefb]" />
             </div>
             <span className="text-[24px] font-bold tracking-tight text-[#201515]">FluidHR</span>
@@ -20,14 +20,14 @@ const Landing = () => {
           
           <nav className="hidden lg:flex gap-10">
             {['Product', 'Solutions', 'Global Sync', 'Security'].map(link => (
-              <a key={link} className="text-[16px] font-medium text-[#201515] no-underline hover:text-[#ff4f00] transition-colors" href="#">{link}</a>
+              <a key={link} className="text-[16px] font-medium text-[#201515] no-underline hover:text-[#00a76b] transition-colors" href="#">{link}</a>
             ))}
           </nav>
           
           <div className="ml-auto flex items-center gap-8">
             <button 
               onClick={() => navigate('/login')} 
-              className="text-[16px] font-medium text-[#201515] bg-transparent border-none cursor-pointer hover:text-[#ff4f00] transition-colors"
+              className="text-[16px] font-medium text-[#201515] bg-transparent border-none cursor-pointer hover:text-[#00a76b] transition-colors"
             >
               Log in
             </button>
@@ -46,9 +46,9 @@ const Landing = () => {
         <section className="px-10 pt-32 pb-48 w-full text-center md:text-left">
           <div className="grid lg:grid-cols-12 gap-16 items-center">
             <div className="lg:col-span-7">
-              <p className="zap-caption-upper mb-8 text-[#ff4f00]">The future of people automation</p>
+              <p className="zap-caption-upper mb-8 text-[#00a76b]">The future of people automation</p>
               <h1 className="zap-display-xl mb-12 text-[#201515]">
-                Automate your <br/>workforce like <span className="text-[#ff4f00]">effortless magic.</span>
+                Automate your <br/>workforce like <span className="text-[#00a76b]">effortless magic.</span>
               </h1>
               <p className="zap-body-large text-[#36342e] max-w-xl mb-16 font-medium">
                 FluidHR is the easiest way to connect your personnel logistics, financial protocols, and institutional security into a single, automated ecosystem.
@@ -73,12 +73,12 @@ const Landing = () => {
                   <div className="bg-[#fffefb] border border-[#c5c0b1] rounded-[8px] p-10 shadow-sm overflow-hidden">
                      <div className="flex justify-between items-center mb-12 border-b border-[#eceae3] pb-6">
                         <div className="flex items-center gap-4">
-                           <div className="w-10 h-10 bg-[#ff4f00] rounded-[4px] flex items-center justify-center">
+                           <div className="w-10 h-10 bg-[#00a76b] rounded-[4px] flex items-center justify-center">
                               <Zap size={20} className="text-[#fffefb]" />
                            </div>
                            <h3 className="text-[18px] font-bold text-[#201515]">Active Automation</h3>
                         </div>
-                        <span className="w-3 h-3 bg-[#ff4f00] rounded-full animate-pulse"></span>
+                        <span className="w-3 h-3 bg-[#00a76b] rounded-full animate-pulse"></span>
                      </div>
                      <div className="space-y-8">
                         {[
@@ -89,7 +89,7 @@ const Landing = () => {
                           <div key={i} className="flex flex-col gap-4">
                              <div className="flex justify-between items-center">
                                 <p className="text-[14px] font-bold text-[#36342e]">{zap.name}</p>
-                                <span className="text-[12px] font-bold text-[#ff4f00]">Active</span>
+                                <span className="text-[12px] font-bold text-[#00a76b]">Active</span>
                              </div>
                              <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-[4px] bg-[#201515] text-[#fffefb] flex items-center justify-center text-[10px] font-bold">{zap.appA}</div>
@@ -120,7 +120,7 @@ const Landing = () => {
         {/* FEATURES - Zapier Editorial Style */}
         <section className="py-32 md:py-48 px-10 w-full">
           <div className="text-center mb-32 w-full">
-             <h2 className="zap-section-heading mb-10">Automation built for <span className="text-[#ff4f00]">human connection.</span></h2>
+             <h2 className="zap-section-heading mb-10">Automation built for <span className="text-[#00a76b]">human connection.</span></h2>
              <p className="zap-body-large text-[#36342e] font-medium leading-relaxed">
                FluidHR rejects the cold technical nature of legacy tools. We've built an infrastructure that feels as warm as a notebook and as powerful as the world's best automation engine.
              </p>
@@ -133,14 +133,14 @@ const Landing = () => {
               { title: 'Synergy Logic', desc: 'Monitor organizational health with approachable metrics that help your team grow together.', icon: BarChart3 }
             ].map((feature, i) => (
               <div key={i} className="group cursor-pointer">
-                 <div className="w-16 h-16 bg-[#eceae3] border border-[#c5c0b1] rounded-[8px] flex items-center justify-center mb-10 text-[#201515] group-hover:bg-[#ff4f00] group-hover:text-[#fffefb] group-hover:border-[#ff4f00] transition-all">
+                 <div className="w-16 h-16 bg-[#eceae3] border border-[#c5c0b1] rounded-[8px] flex items-center justify-center mb-10 text-[#201515] group-hover:bg-[#00a76b] group-hover:text-[#fffefb] group-hover:border-[#00a76b] transition-all">
                     <feature.icon size={28} />
                  </div>
                  <h3 className="text-[24px] font-bold text-[#201515] mb-6">{feature.title}</h3>
                  <p className="text-[16px] text-[#36342e] leading-relaxed mb-10 font-medium">
                    {feature.desc}
                  </p>
-                 <div className="flex items-center text-[#ff4f00] font-bold text-[14px] gap-2">
+                 <div className="flex items-center text-[#00a76b] font-bold text-[14px] gap-2">
                    Learn more <ArrowRight size={18} />
                  </div>
               </div>
@@ -160,7 +160,7 @@ const Landing = () => {
                <input 
                  type="text" 
                  placeholder="Enter your email" 
-                 className="w-full md:w-[420px] h-[64px] px-8 bg-[#fffefb] border-none rounded-[8px] text-[18px] font-medium text-[#201515] focus:outline-none focus:ring-2 focus:ring-[#ff4f00]"
+                 className="w-full md:w-[420px] h-[64px] px-8 bg-[#fffefb] border-none rounded-[8px] text-[18px] font-medium text-[#201515] focus:outline-none focus:ring-2 focus:ring-[#00a76b]"
                />
                <button 
                 onClick={() => navigate('/login')}
@@ -179,7 +179,7 @@ const Landing = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-20 mb-32">
             <div className="col-span-1">
               <div className="flex items-center gap-3 mb-10">
-                <div className="w-8 h-8 bg-[#ff4f00] rounded-[4px] flex items-center justify-center">
+                <div className="w-8 h-8 bg-[#00a76b] rounded-[4px] flex items-center justify-center">
                   <ShieldCheck size={20} className="text-[#fffefb]" />
                 </div>
                 <span className="text-[24px] font-bold text-[#201515]">FluidHR</span>
@@ -198,7 +198,7 @@ const Landing = () => {
                 <h4 className="zap-caption-upper mb-10 text-[#201515]">{col.title}</h4>
                 <ul className="list-none space-y-5">
                   {col.links.map(link => (
-                    <li key={link}><a className="text-[16px] text-[#36342e] hover:text-[#ff4f00] no-underline font-medium transition-colors" href="#">{link}</a></li>
+                    <li key={link}><a className="text-[16px] text-[#36342e] hover:text-[#00a76b] no-underline font-medium transition-colors" href="#">{link}</a></li>
                   ))}
                 </ul>
               </div>
@@ -208,8 +208,8 @@ const Landing = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-12 pt-20 border-t border-[#c5c0b1]">
             <div className="flex items-center gap-12 text-[13px] text-[#939084] font-bold uppercase tracking-widest">
               <p>© 2026 Zapier FluidHR Ecosystem Protocol.</p>
-              <a href="#" className="hover:text-[#ff4f00] no-underline">Privacy</a>
-              <a href="#" className="hover:text-[#ff4f00] no-underline">Terms</a>
+              <a href="#" className="hover:text-[#00a76b] no-underline">Privacy</a>
+              <a href="#" className="hover:text-[#00a76b] no-underline">Terms</a>
             </div>
             <div className="flex items-center gap-4 text-[#939084]">
               <Globe size={18} />

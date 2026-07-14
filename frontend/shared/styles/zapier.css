@@ -8,7 +8,7 @@
   --zap-off-white: #fffdf9;
 
   /* Brand Accent */
-  --zap-orange: #ff4f00;
+  --zap-orange: #00a76b;
 
   /* Neutrals */
   --zap-charcoal: #36342e;
@@ -22,6 +22,23 @@
   --zap-radius-md: 5px;
   --zap-radius-lg: 8px;
   --zap-radius-pill: 20px;
+}
+
+.dark {
+  /* Primary Palette */
+  --zap-black: #ffffff;
+  --zap-cream: #0f0d0a;
+  --zap-off-white: #181612;
+
+  /* Brand Accent */
+  --zap-orange: #00a76b;
+
+  /* Neutrals */
+  --zap-charcoal: #e5e2da;
+  --zap-warm-gray: #a3a094;
+  --zap-sand: #38352e;
+  --zap-light-sand: #282520;
+  --zap-mid-warm: #5c584f;
 }
 
 /* Base Styles */
@@ -106,14 +123,14 @@ body {
   border-radius: var(--zap-radius-lg);
   font-size: 16px;
   font-weight: 700;
-  box-shadow: 0 4px 14px 0 rgba(255, 79, 0, 0.2);
+  box-shadow: 0 4px 14px 0 rgba(0, 167, 107, 0.2);
 }
 
 .zap-btn-orange:hover {
   background-color: var(--zap-orange);
   filter: brightness(1.1);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(255, 79, 0, 0.23);
+  box-shadow: 0 6px 20px rgba(0, 167, 107, 0.23);
 }
 
 .zap-btn-dark {

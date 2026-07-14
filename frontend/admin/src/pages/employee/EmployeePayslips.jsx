@@ -18,6 +18,14 @@ const EmployeePayslips = () => {
   const [loading, setLoading] = useState(true);
   const [selectedSlip, setSelectedSlip] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   const displayName = (() => {
     try {
@@ -123,7 +131,7 @@ const EmployeePayslips = () => {
   );
 
   return (
-    <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: '#f9fdfc', minHeight: 'calc(100vh - 56px)', color: '#3b3e3c', width: '100%', boxSizing: 'border-box' }}>
+    <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: isDark ? '#070B13' : '#f9fdfc', minHeight: 'calc(100vh - 56px)', color: isDark ? '#cbd5e1' : '#3b3e3c', width: '100%', boxSizing: 'border-box' }}>
       <style>{`
         .print-only {
           display: none !important;
@@ -179,10 +187,10 @@ const EmployeePayslips = () => {
         {/* HEADER */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
           <div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#2c302e', margin: 0, letterSpacing: '-0.5px' }}>
-              My payslips
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: isDark ? '#f8fafc' : '#2c302e', margin: 0, letterSpacing: '-0.5px' }}>
+              Payslips
             </h1>
-            <p style={{ fontSize: 14, color: '#8c918f', margin: '4px 0 0' }}>Your monthly compensation history.</p>
+            <p style={{ fontSize: 14, color: isDark ? '#94a3b8' : '#8c918f', margin: '4px 0 0' }}>Your monthly compensation history.</p>
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
             <button onClick={handleExport} className="verdant-btn-outline" style={{ gap: 8, height: 44 }}>
@@ -214,16 +222,16 @@ const EmployeePayslips = () => {
 
         {/* PAYSLIPS CARD */}
         <div className="verdant-card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2eae7' }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: '#2c302e', margin: 0 }}>Payslip history</h3>
+          <div style={{ padding: '20px 24px', borderBottom: isDark ? '1px solid #1a2d29' : '1px solid #e2eae7' }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: isDark ? '#f8fafc' : '#2c302e', margin: 0 }}>Payslip history</h3>
           </div>
           
           {loading ? (
-            <p style={{ padding: '40px 24px', textAlign: 'center', color: '#8c918f', fontSize: 14, margin: 0 }} className="animate-pulse">
+            <p style={{ padding: '40px 24px', textAlign: 'center', color: isDark ? '#94a3b8' : '#8c918f', fontSize: 14, margin: 0 }} className="animate-pulse">
               Synchronizing payslips...
             </p>
           ) : filteredSlips.length === 0 ? (
-            <p style={{ padding: '40px 24px', textAlign: 'center', color: '#8c918f', fontSize: 14, margin: 0 }}>
+            <p style={{ padding: '40px 24px', textAlign: 'center', color: isDark ? '#94a3b8' : '#8c918f', fontSize: 14, margin: 0 }}>
               No payslip records found.
             </p>
           ) : (
@@ -238,19 +246,19 @@ const EmployeePayslips = () => {
                     alignItems: 'center', 
                     justifyContent: 'space-between', 
                     padding: '16px 24px', 
-                    borderBottom: idx === filteredSlips.length - 1 ? 'none' : '1px solid #e2eae7', 
+                    borderBottom: idx === filteredSlips.length - 1 ? 'none' : (isDark ? '1px solid #1a2d29' : '1px solid #e2eae7'), 
                     cursor: 'pointer', 
                     transition: 'background 0.2s' 
                   }} 
-                  className="hover:bg-[#f9fdfc]"
+                  className={isDark ? "hover:bg-[#162722]" : "hover:bg-[#f9fdfc]"}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#e6f7f0', display: 'flex', alignItems: 'center', justifycontent: 'center' }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: isDark ? 'rgba(0, 167, 107, 0.15)' : '#e6f7f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Receipt size={20} color="#00a76b" />
                     </div>
                     <div>
-                      <h4 style={{ fontSize: 15, fontWeight: 700, color: '#3b3e3c', margin: '0 0 4px' }}>{p.month}</h4>
-                      <p style={{ fontSize: 13, color: '#8c918f', margin: 0 }}>
+                      <h4 style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#f8fafc' : '#3b3e3c', margin: '0 0 4px' }}>{p.month}</h4>
+                      <p style={{ fontSize: 13, color: isDark ? '#94a3b8' : '#8c918f', margin: 0 }}>
                         Gross {fmtCurrency(grossVal)} • Net {fmtCurrency(p.netPay)}
                       </p>
                     </div>
@@ -261,8 +269,8 @@ const EmployeePayslips = () => {
                       borderRadius: 99,
                       fontSize: 12,
                       fontWeight: 700,
-                      background: '#e6f7f0',
-                      color: '#00a76b',
+                      background: isDark ? 'rgba(0, 167, 107, 0.15)' : '#e6f7f0',
+                      color: isDark ? '#34d399' : '#00a76b',
                       textTransform: 'capitalize',
                       display: 'inline-block'
                     }}>
@@ -295,41 +303,41 @@ const EmployeePayslips = () => {
                 <X size={20} />
               </button>
 
-              <div style={{ textAlign: 'center', borderBottom: '1px dashed #e2eae7', paddingBottom: 20, marginBottom: 20 }}>
-                <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#e6f7f0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+              <div style={{ textAlign: 'center', borderBottom: isDark ? '1px dashed #1a2d29' : '1px dashed #e2eae7', paddingBottom: 20, marginBottom: 20 }}>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: isDark ? 'rgba(0, 167, 107, 0.15)' : '#e6f7f0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
                   <FileText size={22} color="#00a76b" />
                 </div>
-                <h4 style={{ fontSize: 18, fontWeight: 800, color: '#2c302e', margin: 0 }}>FluidHR Ledger</h4>
-                <p style={{ fontSize: 12, color: '#8c918f', margin: '4px 0 0', textTransform: 'uppercase', letterSpacing: 1 }}>Salary Statement - {selectedSlip.month}</p>
+                <h4 style={{ fontSize: 18, fontWeight: 800, color: isDark ? '#f8fafc' : '#2c302e', margin: 0 }}>FluidHR Ledger</h4>
+                <p style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#8c918f', margin: '4px 0 0', textTransform: 'uppercase', letterSpacing: 1 }}>Salary Statement - {selectedSlip.month}</p>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, borderBottom: '1px solid #e2eae7', paddingBottom: 8 }}>
-                  <span style={{ color: '#8c918f' }}>Basic Salary</span>
-                  <span style={{ fontWeight: 700, color: '#2c302e' }}>{fmtCurrency(selectedSlip.basicSalary)}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, borderBottom: `1px solid ${isDark ? '#1a2d29' : '#e2eae7'}`, paddingBottom: 8 }}>
+                  <span style={{ color: isDark ? '#94a3b8' : '#8c918f' }}>Basic Salary</span>
+                  <span style={{ fontWeight: 700, color: isDark ? '#f8fafc' : '#2c302e' }}>{fmtCurrency(selectedSlip.basicSalary)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, borderBottom: '1px solid #e2eae7', paddingBottom: 8 }}>
-                  <span style={{ color: '#8c918f' }}>House Rent Allowance (HRA)</span>
-                  <span style={{ fontWeight: 700, color: '#2c302e' }}>{fmtCurrency(selectedSlip.allowance)}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, borderBottom: `1px solid ${isDark ? '#1a2d29' : '#e2eae7'}`, paddingBottom: 8 }}>
+                  <span style={{ color: isDark ? '#94a3b8' : '#8c918f' }}>House Rent Allowance (HRA)</span>
+                  <span style={{ fontWeight: 700, color: isDark ? '#f8fafc' : '#2c302e' }}>{fmtCurrency(selectedSlip.allowance)}</span>
                 </div>
                 {selectedSlip.bonus > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, borderBottom: '1px solid #e2eae7', paddingBottom: 8 }}>
-                    <span style={{ color: '#8c918f' }}>Performance Bonus</span>
-                    <span style={{ fontWeight: 700, color: '#2c302e' }}>{fmtCurrency(selectedSlip.bonus)}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, borderBottom: `1px solid ${isDark ? '#1a2d29' : '#e2eae7'}`, paddingBottom: 8 }}>
+                    <span style={{ color: isDark ? '#94a3b8' : '#8c918f' }}>Performance Bonus</span>
+                    <span style={{ fontWeight: 700, color: isDark ? '#f8fafc' : '#2c302e' }}>{fmtCurrency(selectedSlip.bonus)}</span>
                   </div>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, borderBottom: '1px solid #e2eae7', paddingBottom: 8, color: '#dc2626' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, borderBottom: `1px solid ${isDark ? '#1a2d29' : '#e2eae7'}`, paddingBottom: 8, color: isDark ? '#f87171' : '#dc2626' }}>
                   <span>Tax & PF Deductions</span>
                   <span style={{ fontWeight: 700 }}>-{fmtCurrency(selectedSlip.deductions)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, borderTop: '2px solid #2c302e', paddingTop: 12, marginTop: 4 }}>
-                  <span style={{ fontWeight: 800, color: '#2c302e' }}>Net Salary Disbursed</span>
-                  <span style={{ fontWeight: 900, color: '#00a76b' }}>{fmtCurrency(selectedSlip.netPay)}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, borderTop: `2px solid ${isDark ? '#f8fafc' : '#2c302e'}`, paddingTop: 12, marginTop: 4 }}>
+                  <span style={{ fontWeight: 800, color: isDark ? '#f8fafc' : '#2c302e' }}>Net Salary Disbursed</span>
+                  <span style={{ fontWeight: 900, color: isDark ? '#34d399' : '#00a76b' }}>{fmtCurrency(selectedSlip.netPay)}</span>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#8c918f', marginBottom: 24, borderTop: '1px dashed #e2eae7', paddingTop: 16 }}>
-                <span>Payment State: <strong style={{ color: '#00a76b' }}>{selectedSlip.status.toUpperCase()}</strong></span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: isDark ? '#94a3b8' : '#8c918f', marginBottom: 24, borderTop: isDark ? '1px dashed #1a2d29' : '1px dashed #e2eae7', paddingTop: 16 }}>
+                <span>Payment State: <strong style={{ color: isDark ? '#34d399' : '#00a76b' }}>{selectedSlip.status.toUpperCase()}</strong></span>
                 <span>Date: {selectedSlip.date}</span>
               </div>
 
@@ -507,19 +515,19 @@ const EmployeePayslips = () => {
       {/* TAX DOCUMENTS MODAL */}
       {showTaxModal && (
         <div className="no-print" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(15, 23, 42, 0.55)', backdropFilter: 'blur(6px)' }}>
-          <div style={{ width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', background: '#fff', borderRadius: 24, boxShadow: '0 24px 48px rgba(0,0,0,0.18)', position: 'relative', fontFamily: "'Inter', sans-serif" }}>
+          <div style={{ width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', background: isDark ? '#111c18' : '#fff', border: isDark ? '1px solid #1a2d29' : 'none', borderRadius: 24, boxShadow: '0 24px 48px rgba(0,0,0,0.18)', position: 'relative', fontFamily: "'Inter', sans-serif" }}>
             {/* Modal Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 28px', borderBottom: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 28px', borderBottom: isDark ? '1px solid #1a2d29' : '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg, #00b27a, #00915c)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Shield size={22} color="#fff" />
                 </div>
                 <div>
-                  <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', margin: 0 }}>Tax Documents</h2>
-                  <p style={{ fontSize: 12, color: '#64748b', margin: '2px 0 0' }}>Financial Year 2025–2026</p>
+                  <h2 style={{ fontSize: 18, fontWeight: 800, color: isDark ? '#f8fafc' : '#0f172a', margin: 0 }}>Tax Documents</h2>
+                  <p style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', margin: '2px 0 0' }}>Financial Year 2025–2026</p>
                 </div>
               </div>
-              <button onClick={() => setShowTaxModal(false)} style={{ border: 'none', background: '#f1f5f9', borderRadius: '50%', width: 36, height: 36, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+              <button onClick={() => setShowTaxModal(false)} style={{ border: 'none', background: isDark ? '#1a2d29' : '#f1f5f9', borderRadius: '50%', width: 36, height: 36, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isDark ? '#cbd5e1' : '#64748b' }}>
                 <X size={18} />
               </button>
             </div>
@@ -527,23 +535,23 @@ const EmployeePayslips = () => {
             {/* Tax Summary Body */}
             <div style={{ padding: '24px 28px' }}>
               {/* Annual Tax Summary Card */}
-              <div style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '1px solid #86efac', borderRadius: 16, padding: '20px 24px', marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ background: isDark ? 'linear-gradient(135deg, #162722, #111c18)' : 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: isDark ? '1px solid #1a2d29' : '1px solid #86efac', borderRadius: 16, padding: '20px 24px', marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: '#166534', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Annual Earnings</span>
-                  <h3 style={{ fontSize: 26, fontWeight: 900, color: '#14532d', margin: '6px 0 0' }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: isDark ? '#34d399' : '#166534', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Annual Earnings</span>
+                  <h3 style={{ fontSize: 26, fontWeight: 900, color: isDark ? '#10b981' : '#14532d', margin: '6px 0 0' }}>
                     {fmtCurrency(rawSlips.reduce((s, p) => s + p.basicSalary + p.allowance + p.bonus, 0))}
                   </h3>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: '#166534', textTransform: 'uppercase', letterSpacing: '1px' }}>Tax Deducted (TDS)</span>
-                  <h3 style={{ fontSize: 26, fontWeight: 900, color: '#dc2626', margin: '6px 0 0' }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: isDark ? '#f87171' : '#166534', textTransform: 'uppercase', letterSpacing: '1px' }}>Tax Deducted (TDS)</span>
+                  <h3 style={{ fontSize: 26, fontWeight: 900, color: isDark ? '#f87171' : '#dc2626', margin: '6px 0 0' }}>
                     {fmtCurrency(rawSlips.reduce((s, p) => s + p.deductions, 0))}
                   </h3>
                 </div>
               </div>
 
               {/* Employee details */}
-              <div style={{ background: '#f8fafc', borderRadius: 12, padding: '16px 20px', marginBottom: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 24px', fontSize: 13 }}>
+              <div style={{ background: isDark ? '#162722' : '#f8fafc', borderRadius: 12, padding: '16px 20px', marginBottom: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 24px', fontSize: 13 }}>
                 {[
                   { label: 'Employee Name', value: displayName },
                   { label: 'PAN Number', value: 'ABCDE1234F' },
@@ -553,32 +561,32 @@ const EmployeePayslips = () => {
                   { label: 'TAN Number', value: 'MUMA12345G' },
                 ].map(({ label, value }) => (
                   <div key={label}>
-                    <span style={{ color: '#64748b', fontWeight: 600 }}>{label}: </span>
-                    <span style={{ color: '#0f172a', fontWeight: 700 }}>{value}</span>
+                    <span style={{ color: isDark ? '#94a3b8' : '#64748b', fontWeight: 600 }}>{label}: </span>
+                    <span style={{ color: isDark ? '#f8fafc' : '#0f172a', fontWeight: 700 }}>{value}</span>
                   </div>
                 ))}
               </div>
 
               {/* Month-wise table */}
-              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px' }}>Monthly Breakdown</h3>
+              <h3 style={{ fontSize: 13, fontWeight: 800, color: isDark ? '#cbd5e1' : '#475569', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px' }}>Monthly Breakdown</h3>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 20 }}>
                 <thead>
-                  <tr style={{ background: '#f1f5f9' }}>
+                  <tr style={{ background: isDark ? '#162722' : '#f1f5f9' }}>
                     {['Month', 'Gross Pay', 'Deductions (TDS)', 'Net Pay'].map(h => (
-                      <th key={h} style={{ textAlign: h === 'Month' ? 'left' : 'right', padding: '10px 14px', fontWeight: 800, color: '#334155', borderBottom: '2px solid #e2e8f0' }}>{h}</th>
+                      <th key={h} style={{ textAlign: h === 'Month' ? 'left' : 'right', padding: '10px 14px', fontWeight: 800, color: isDark ? '#cbd5e1' : '#334155', borderBottom: isDark ? '2px solid #1a2d29' : '2px solid #e2e8f0' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {rawSlips.map((p, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? '#fff' : '#f8fafc' }}>
-                      <td style={{ padding: '10px 14px', color: '#0f172a', fontWeight: 600 }}>{p.month}</td>
-                      <td style={{ padding: '10px 14px', textAlign: 'right', color: '#0f172a', fontWeight: 700 }}>{fmtCurrency(p.basicSalary + p.allowance + p.bonus)}</td>
-                      <td style={{ padding: '10px 14px', textAlign: 'right', color: '#dc2626', fontWeight: 700 }}>{fmtCurrency(p.deductions)}</td>
-                      <td style={{ padding: '10px 14px', textAlign: 'right', color: '#00a76b', fontWeight: 800 }}>{fmtCurrency(p.netPay)}</td>
+                    <tr key={i} style={{ borderBottom: `1px solid ${isDark ? '#1a2d29' : '#f1f5f9'}`, background: i % 2 === 0 ? (isDark ? '#111c18' : '#fff') : (isDark ? '#162722' : '#f8fafc') }}>
+                      <td style={{ padding: '10px 14px', color: isDark ? '#f8fafc' : '#0f172a', fontWeight: 600 }}>{p.month}</td>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', color: isDark ? '#f8fafc' : '#0f172a', fontWeight: 700 }}>{fmtCurrency(p.basicSalary + p.allowance + p.bonus)}</td>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', color: isDark ? '#f87171' : '#dc2626', fontWeight: 700 }}>{fmtCurrency(p.deductions)}</td>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', color: isDark ? '#34d399' : '#00a76b', fontWeight: 800 }}>{fmtCurrency(p.netPay)}</td>
                     </tr>
                   ))}
-                  <tr style={{ background: '#0f172a' }}>
+                  <tr style={{ background: isDark ? '#1a2d29' : '#0f172a' }}>
                     <td style={{ padding: '12px 14px', color: '#fff', fontWeight: 800 }}>Total</td>
                     <td style={{ padding: '12px 14px', textAlign: 'right', color: '#fff', fontWeight: 800 }}>{fmtCurrency(rawSlips.reduce((s, p) => s + p.basicSalary + p.allowance + p.bonus, 0))}</td>
                     <td style={{ padding: '12px 14px', textAlign: 'right', color: '#fca5a5', fontWeight: 800 }}>{fmtCurrency(rawSlips.reduce((s, p) => s + p.deductions, 0))}</td>
@@ -588,9 +596,9 @@ const EmployeePayslips = () => {
               </table>
 
               {/* Form 16 badge */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: '12px 16px', marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: isDark ? '#162722' : '#f0fdf4', border: isDark ? '1px solid #1a2d29' : '1px solid #86efac', borderRadius: 10, padding: '12px 16px', marginBottom: 20 }}>
                 <CheckCircle size={18} color="#00a76b" />
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#166534' }}>Form 16 (Part A & B) is auto-generated for FY 2025–26. Download available below.</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: isDark ? '#34d399' : '#166534' }}>Form 16 (Part A & B) is auto-generated for FY 2025–26. Download available below.</span>
               </div>
 
               {/* Action buttons */}
