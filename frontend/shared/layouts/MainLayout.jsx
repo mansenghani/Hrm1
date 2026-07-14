@@ -68,13 +68,9 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   const profileRef = React.useRef(null);
   const triggerRef = React.useRef(null);
   const dropdownRef = React.useRef(null);
-  const searchRef = React.useRef(null);
   const quickActionRef = React.useRef(null);
   const languageRef = React.useRef(null);
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState(null);
-  const [isSearching, setIsSearching] = useState(false);
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState('English');

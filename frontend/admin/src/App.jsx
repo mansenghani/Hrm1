@@ -45,7 +45,6 @@ import TaskCreate from './pages/TaskCreate';
 import TaskUpdate from './pages/TaskUpdate';
 import Notifications from './pages/Notifications';
 import AllNotifications from './pages/AllNotifications';
-import Departments from './pages/Departments';
 
 // ROUTE PROTECTION LOGIC
 const ProtectedRoute = ({ children, allowedRole }) => {

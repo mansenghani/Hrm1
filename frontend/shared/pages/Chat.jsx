@@ -1717,10 +1717,7 @@ const Chat = () => {
                     </button>
                   </div>
                 </div>
-              </>
-                )}
-            </div>
-        </div>
+              </div>
 
         {/* MESSAGE INFO SIDEBAR */}
         {messageInfoMsg && (
