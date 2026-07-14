@@ -37,7 +37,8 @@ exports.createUser = async (req, res) => {
 
   } catch (error) {
     console.error('🔥 Personnel Genesis Failure:', error.message);
-    res.status(500).json({ 
+    const isDuplicate = error.message.includes('Duplicate email');
+    res.status(isDuplicate ? 400 : 500).json({ 
       success: false, 
       message: error.message || 'Critical system failure during identity synchronization'
     });

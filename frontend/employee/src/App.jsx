@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import EmployeeLayout from './layouts/EmployeeLayout';
 import Dashboard from './pages/Dashboard';
 import useAuthStore from '@shared/store/authStore';
+import EmployeeDocuments from './pages/EmployeeDocuments';
 
 // Shared pages that already exist for employee role
 import Chat from '@shared/pages/Chat';
@@ -58,7 +59,7 @@ function App() {
           <Route path="attendance" element={<AttendanceDashboard userRole="employee" />} />
           <Route path="leave" element={<PlaceholderPage title="My Leaves" />} />
           <Route path="payslips" element={<PlaceholderPage title="My Payslips" />} />
-          <Route path="documents" element={<PlaceholderPage title="My Documents" />} />
+          <Route path="documents" element={<EmployeeDocuments />} />
           <Route path="performance" element={<PlaceholderPage title="My Performance" />} />
         </Route>
 

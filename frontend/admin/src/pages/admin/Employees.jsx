@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Search, UserPlus, Trash2, Edit3, User, Eye, CheckCircle, XCircle, MoreVertical, RefreshCw, ChevronDown } from 'lucide-react';
+import { Search, UserPlus, Trash2, Edit3, User, Eye, CheckCircle, XCircle, MoreVertical, RefreshCw, ChevronDown, Power } from 'lucide-react';
 import { API_BASE_URL, getImageUrl } from '@shared/services/api';
 
 const Employees = () => {
@@ -9,7 +9,9 @@ const Employees = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('');
+  const [filterStatus, setFilterStatus] = useState('active');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
@@ -35,7 +37,7 @@ const Employees = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterRole]);
+  }, [searchTerm, filterRole, filterStatus]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -57,8 +59,11 @@ const Employees = () => {
       empId.includes(searchTerm.toLowerCase());
 
     const matchesRole = filterRole ? (emp.role === filterRole || emp.userId?.role === filterRole) : true;
+    
+    const empStatus = emp.status?.toLowerCase() || emp.userId?.status?.toLowerCase() || 'active';
+    const matchesStatus = filterStatus ? empStatus === filterStatus : true;
 
-    return matchesSearch && matchesRole;
+    return matchesSearch && matchesRole && matchesStatus;
   });
 
   const itemsPerPage = 10;
@@ -68,16 +73,21 @@ const Employees = () => {
     currentPage * itemsPerPage
   );
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Eject this node from the matrix (Deactivate)?')) {
+  const handleToggleStatus = async (emp) => {
+    const currentStatus = emp.status?.toLowerCase() || emp.userId?.status?.toLowerCase() || 'active';
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    const actionText = newStatus === 'inactive' ? 'Deactivate' : 'Reactivate';
+    
+    if (window.confirm(`Are you sure you want to ${actionText} this employee? Their status will be updated to ${newStatus.toUpperCase()}.`)) {
       try {
         const token = sessionStorage.getItem('token');
-        await axios.delete(`/api/employees/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await axios.patch(`/api/employees/${emp._id}/status`, 
+          { status: newStatus },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         fetchEmployees();
       } catch (err) {
-        console.error('Deactivation failed:', err);
+        console.error('Status update failed:', err);
       }
     }
   };
@@ -163,6 +173,30 @@ const Employees = () => {
               </div>
             )}
           </div>
+
+          <div className="relative min-w-[150px]">
+            <button 
+              onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+              className="w-full h-12 px-6 bg-white border border-[#ff4f00] rounded-xl text-[12px] font-black uppercase tracking-widest text-[#ff4f00] outline-none flex items-center justify-between gap-4 cursor-pointer transition-all hover:bg-[#ff4f00]/5 shadow-sm"
+            >
+              {filterStatus === '' ? 'All Statuses' : filterStatus.toUpperCase()}
+              <ChevronDown size={16} className={`transition-transform ${isStatusDropdownOpen ? 'rotate-180' : 'rotate-0'}`} />
+            </button>
+            {isStatusDropdownOpen && (
+              <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-[#eceae3] rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                {[
+                  { id: '', label: 'All Statuses' },
+                  { id: 'active', label: 'Active' },
+                  { id: 'inactive', label: 'Inactive' }
+                ].map((statusOpt) => (
+                  <div key={statusOpt.id} onClick={() => { setFilterStatus(statusOpt.id); setIsStatusDropdownOpen(false); }} className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-[#201515] hover:bg-[#ff4f00]/5 hover:text-[#ff4f00] cursor-pointer transition-colors border-b border-[#f8f8f8] last:border-none">
+                    {statusOpt.label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="px-8 border-l border-[#c5c0b1] h-12 flex items-center">
             <span className="text-[13px] font-bold text-[#939084] uppercase tracking-wider">Nodes: <span className="text-[#201515] font-black ml-2">{filteredEmployees.length}</span></span>
           </div>
@@ -199,7 +233,8 @@ const Employees = () => {
                       </div>
                       <div>
                         <p className="text-[16px] font-black text-[#201515] leading-none mb-1 group-hover:text-[#ff4f00] transition-colors">{emp.fullName || emp.userId?.name || 'Anonymous Node'}</p>
-                        <p className="text-[12px] font-bold text-[#939084] uppercase tracking-widest">{emp.email || emp.userId?.email}</p>
+                        <p className="text-[12px] font-bold text-[#939084] uppercase tracking-widest mb-1">{emp.email || emp.userId?.email}</p>
+                        <p className="text-[12px] font-bold text-[#ff4f00] leading-none">{emp.designation || emp.position || 'Employee'}</p>
                       </div>
                     </div>
                   </td>
@@ -218,7 +253,13 @@ const Employees = () => {
                     <div className="flex items-center justify-end gap-3 opacity-60 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => navigate(`/admin/employees/view/${emp._id}`)} className="w-10 h-10 flex items-center justify-center text-[#201515] bg-white border border-[#eceae3] rounded-xl hover:border-[#ff4f00] hover:text-[#ff4f00] transition-all shadow-sm"><Eye size={18} /></button>
                       <button onClick={() => navigate(`/admin/employees/edit/${emp._id}`)} className="w-10 h-10 flex items-center justify-center text-[#201515] bg-white border border-[#eceae3] rounded-xl hover:border-[#ff4f00] hover:text-[#ff4f00] transition-all shadow-sm"><Edit3 size={18} /></button>
-                      <button onClick={() => handleDelete(emp._id)} className="w-10 h-10 flex items-center justify-center text-[#ff4f00] bg-white border border-[#eceae3] rounded-xl hover:bg-[#ff4f00] hover:text-white transition-all shadow-sm"><Trash2 size={18} /></button>
+                      <button 
+                        onClick={() => handleToggleStatus(emp)} 
+                        className={`w-10 h-10 flex items-center justify-center bg-white border border-[#eceae3] rounded-xl transition-all shadow-sm ${(emp.status === 'active' || emp.userId?.status === 'active') ? 'text-[#ff4f00] hover:bg-[#ff4f00] hover:text-white' : 'text-[#24a148] hover:bg-[#24a148] hover:text-white'}`}
+                        title={(emp.status === 'active' || emp.userId?.status === 'active') ? 'Change to Inactive' : 'Change to Active'}
+                      >
+                        <Power size={18} />
+                      </button>
                     </div>
                   </td>
                 </tr>

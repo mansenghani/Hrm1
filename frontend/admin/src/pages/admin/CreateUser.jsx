@@ -26,13 +26,18 @@ import { toast } from 'react-hot-toast';
 import CustomDatePicker from '../../components/CustomDatePicker';
 
 const CreateUser = () => {
+  const today = new Date();
+  const maxDobDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate()).toISOString().split('T')[0];
+
   const [formData, setFormData] = useState({
     firstName: '',
+    middleName: '',
     lastName: '',
     email: '',
     phone: '',
     password: '',
     role: 'employee',
+    designation: '',
     gender: 'Male',
     address: '',
     dob: '',
@@ -57,16 +62,6 @@ const CreateUser = () => {
 
   const token = sessionStorage.getItem('token');
 
-  // Auto-generate email based on name
-  useEffect(() => {
-    if (formData.firstName || formData.lastName) {
-      const fName = formData.firstName.toLowerCase() || 'user';
-      const lName = formData.lastName.toLowerCase() || '';
-      const emailPulse = lName ? `${fName}.${lName}@fluidhr.com` : `${fName}@fluidhr.com`;
-      setFormData(prev => ({ ...prev, email: emailPulse }));
-    }
-  }, [formData.firstName, formData.lastName]);
-
   useEffect(() => {
     const fetchNextId = async () => {
       try {
@@ -74,9 +69,6 @@ const CreateUser = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         setNextId(res.data.nextId);
-        if (!formData.firstName && !formData.lastName) {
-          setFormData(prev => ({ ...prev, email: `${res.data.nextId}@fluidhr.com` }));
-        }
       } catch (err) { console.warn('ID Sync Delayed'); }
     };
 
@@ -99,10 +91,10 @@ const CreateUser = () => {
     let { name, value } = e.target;
     let newErrors = { ...errors, [name]: '' };
 
-    if (name === 'firstName' || name === 'lastName') {
+    if (name === 'firstName' || name === 'lastName' || name === 'middleName') {
       // Remove spaces and non-alphabetic characters
       if (value && !/^[A-Za-z]*$/.test(value)) {
-        const fieldDisplayName = name === 'firstName' ? 'First Name' : 'Last Name';
+        const fieldDisplayName = name === 'firstName' ? 'First Name' : name === 'lastName' ? 'Last Name' : 'Middle Name';
         newErrors[name] = `${fieldDisplayName} allows only alphabetic characters (no spaces).`;
         value = value.replace(/[^A-Za-z]/g, '');
       }
@@ -113,19 +105,24 @@ const CreateUser = () => {
         newErrors.phone = 'Only numbers (0-9) are allowed.';
         value = value.replace(/[^0-9]/g, '');
       }
+      if (value.length > 10) {
+        value = value.slice(0, 10);
+      }
     }
 
     if (name === 'email') {
       if (/\s/.test(value)) {
         newErrors.email = 'Spaces are not allowed in email address.';
         value = value.replace(/\s/g, '');
+      } else if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        newErrors.email = 'Please enter a valid email format (e.g., user@example.com).';
       }
     }
 
     if (name === 'password' && value) {
-      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,20}$/;
+      const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/;
       if (!passwordRegex.test(value)) {
-        newErrors.password = 'Password must be 8-20 chars with 1 uppercase, 1 lowercase, 1 number, and 1 special char.';
+        newErrors.password = 'Password must be minimum 8 characters, 1 special symbol, minimum 1 capital letter, and minimum 1 number.';
       }
     }
     
@@ -171,20 +168,43 @@ const CreateUser = () => {
     const newErrors = {};
     if (!formData.firstName) newErrors.firstName = 'First Name is required.';
     if (!formData.lastName) newErrors.lastName = 'Last Name is required.';
-    if (!formData.email) newErrors.email = 'Email Address is required.';
-    if (!formData.phone) newErrors.phone = 'Phone Number is required.';
+    if (!formData.email) {
+      newErrors.email = 'Email Address is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email format.';
+    }
+    if (!formData.phone) {
+      newErrors.phone = 'Phone Number is required.';
+    } else if (formData.phone.length !== 10) {
+      newErrors.phone = 'Phone Number must be exactly 10 digits.';
+    }
     if (!formData.password) {
       newErrors.password = 'Password is required.';
     } else {
-      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,20}$/;
+      const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/;
       if (!passwordRegex.test(formData.password)) {
-        newErrors.password = 'Password must be 8-20 chars with 1 uppercase, 1 lowercase, 1 number, and 1 special char.';
+        newErrors.password = 'Password must be minimum 8 characters, 1 special symbol, minimum 1 capital letter, and minimum 1 number.';
       }
     }
     if (!formData.role) newErrors.role = 'System Role is required.';
     if (!formData.gender) newErrors.gender = 'Gender is required.';
     if (!formData.joinDate) newErrors.joinDate = 'Join Date is required.';
-    if (!formData.dob) newErrors.dob = 'Date of Birth is required.';
+    
+    if (!formData.dob) {
+      newErrors.dob = 'Date of Birth is required.';
+    } else {
+      const dobDate = new Date(formData.dob);
+      const today = new Date();
+      let age = today.getFullYear() - dobDate.getFullYear();
+      const m = today.getMonth() - dobDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) {
+        age--;
+      }
+      if (age < 18) {
+        newErrors.dob = 'Employee must be at least 18 years old.';
+      }
+    }
+
     if (!['hr', 'manager', 'admin'].includes(formData.role) && !formData.reportingManager) {
       newErrors.reportingManager = 'Reporting Manager is required.';
     }
@@ -200,10 +220,12 @@ const CreateUser = () => {
 
     try {
       const payload = {
-        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        name: `${formData.firstName} ${formData.middleName ? formData.middleName + ' ' : ''}${formData.lastName}`.trim(),
         email: formData.email,
         password: formData.password,
         role: formData.role,
+        designation: formData.designation,
+        phone: formData.phone,
         gender: formData.gender,
         address: formData.address,
         dob: formData.dob,
@@ -289,11 +311,14 @@ const CreateUser = () => {
       // Cleanup
       setFormData({
         firstName: '',
+        middleName: '',
         lastName: '',
         email: '',
         password: '',
         role: formData.role,
+        designation: '',
         gender: 'Male',
+        phone: '',
         address: '',
         dob: '',
         joinDate: new Date().toISOString().split('T')[0],
@@ -394,6 +419,21 @@ const CreateUser = () => {
                 {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
               </div>
 
+              {/* Middle Name */}
+              <div className="space-y-4">
+                <label className="zap-caption-upper text-[#201515]">Middle Name</label>
+                <div className="relative">
+                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
+                  <input
+                    name="middleName" value={formData.middleName} onChange={handleChange}
+                    className={`w-full h-14 pl-12 pr-4 bg-white border ${errors.middleName ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all`}
+                    placeholder="Enter middle name (optional)..."
+                    maxLength="20"
+                  />
+                </div>
+                {errors.middleName && <p className="text-red-500 text-sm mt-1">{errors.middleName}</p>}
+              </div>
+
               {/* Last Name */}
               <div className="space-y-4">
                 <label className="zap-caption-upper text-[#201515]">Last Name <span className="text-[#ff4f00] ml-1">*</span></label>
@@ -415,7 +455,7 @@ const CreateUser = () => {
                 <div className="relative">
                   <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
                   <input
-                    required name="email" value={formData.email} onChange={handleChange}
+                    type="email" required name="email" value={formData.email} onChange={handleChange}
                     className={`w-full h-14 pl-12 pr-4 bg-white border ${errors.email ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all`}
                     placeholder="email@example.com"
                   />
@@ -431,8 +471,8 @@ const CreateUser = () => {
                   <input
                     required name="phone" value={formData.phone} onChange={handleChange}
                     className={`w-full h-14 pl-12 pr-4 bg-white border ${errors.phone ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all`}
-                    placeholder="Enter phone number..."
-                    maxLength="15"
+                    placeholder="Enter 10-digit phone number..."
+                    maxLength="10"
                   />
                 </div>
                 {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
@@ -480,6 +520,20 @@ const CreateUser = () => {
                 {errors.role && <p className="text-red-500 text-sm mt-1">{errors.role}</p>}
               </div>
 
+              {/* Designation */}
+              <div className="space-y-4">
+                <label className="zap-caption-upper text-[#201515]">Designation</label>
+                <div className="relative">
+                  <Shield size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
+                  <input
+                    name="designation" value={formData.designation} onChange={handleChange}
+                    className={`w-full h-14 pl-12 pr-4 bg-white border border-[#c5c0b1] rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all`}
+                    placeholder="Enter designation (e.g. Software Engineer)..."
+                    maxLength="50"
+                  />
+                </div>
+              </div>
+
               {/* Gender */}
               <div className="space-y-4">
                 <label className="zap-caption-upper text-[#201515]">Gender <span className="text-[#ff4f00] ml-1">*</span></label>
@@ -522,7 +576,7 @@ const CreateUser = () => {
                     value={formData.dob}
                     onChange={handleChange}
                     placeholder="Select Date"
-                    maxDate={new Date().toISOString().split('T')[0]}
+                    maxDate={maxDobDate}
                     className={`w-full h-14 bg-white border ${errors.dob ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-bold text-[#201515] transition-all hover:border-[#ff4f00]`}
                   />
                 </div>

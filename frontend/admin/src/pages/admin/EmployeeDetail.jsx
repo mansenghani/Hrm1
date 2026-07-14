@@ -148,6 +148,10 @@ const EmployeeDetail = () => {
                    <p className="text-[14px] font-black text-[#1E2026] uppercase">{employee.role}</p>
                 </div>
                 <div>
+                   <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest mb-1">Designation</p>
+                   <p className="text-[14px] font-black text-[#1E2026]">{employee.designation || employee.position || 'N/A'}</p>
+                </div>
+                <div>
                    <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest mb-1">Hierarchy Manager</p>
                    <p className="text-[14px] font-black text-[#1E2026]">{employee.managerId?.name || 'Core Root'}</p>
                 </div>
@@ -158,6 +162,14 @@ const EmployeeDetail = () => {
                 <div>
                    <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest mb-1">Induction Date</p>
                    <p className="text-[14px] font-black text-[#1E2026]">{employee.joinDate ? new Date(employee.joinDate).toLocaleDateString() : 'N/A'}</p>
+                </div>
+                <div>
+                   <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest mb-1">Gender Identity</p>
+                   <p className="text-[14px] font-black text-[#1E2026] uppercase">{employee.gender || 'Unknown'}</p>
+                </div>
+                <div>
+                   <p className="text-[10px] font-bold text-[#848E9C] uppercase tracking-widest mb-1">Birthdate</p>
+                   <p className="text-[14px] font-black text-[#1E2026]">{employee.dob ? new Date(employee.dob).toLocaleDateString() : 'Unknown'}</p>
                 </div>
               </div>
             </div>

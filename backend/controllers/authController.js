@@ -131,6 +131,7 @@ exports.getMe = async (req, res) => {
       ...roleMetadata,
       role: user.role,
       employeeId: employeeData?.employeeId || user.employeeId || 'PENDING-SYNC',
+      employeeRecordId: employeeData?._id,
       _id: user._id
     };
 
@@ -197,5 +198,52 @@ exports.uploadProfileImage = async (req, res) => {
   } catch (error) {
     console.error('🔥 Upload Error:', error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+// 🔄 RECOVERY: Forgot Password Validation
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email address is required' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'Email not registered' });
+    }
+
+    // In a real application, you would generate a reset token and send an email here.
+    // For now, we simulate a successful validation.
+    res.json({ message: 'If this email exists in our system, a password reset link has been sent.' });
+
+  } catch (error) {
+    console.error('🔥 Forgot Password Error:', error);
+    res.status(500).json({ message: 'Server error during password recovery validation' });
+  }
+};
+
+// 🔄 RECOVERY: Reset Password
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and new password are required' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.password = password;
+    await user.save();
+
+    res.json({ message: 'Password has been successfully reset.' });
+
+  } catch (error) {
+    console.error('🔥 Reset Password Error:', error);
+    res.status(500).json({ message: 'Server error during password reset' });
   }
 };

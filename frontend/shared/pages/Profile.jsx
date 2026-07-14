@@ -53,7 +53,8 @@ const Profile = () => {
   
   const empId = safeUserData.employeeId || 'PENDING-SYNC';
   const personalEmail = safeUserData.personalEmail || 'Not Configured';
-  const joinDate = safeUserData.joinDate ? new Date(safeUserData.joinDate).toLocaleDateString() : 'Not Set';
+  const joinDateRaw = safeUserData.joinDate || safeUserData.createdAt;
+  const joinDate = joinDateRaw ? new Date(joinDateRaw).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not Set';
   const phone = safeUserData.phone || 'Data Missing';
   const empType = safeUserData.employmentType || 'Standard';
   const gender = safeUserData.gender || 'Not Specified';
@@ -144,6 +145,7 @@ const Profile = () => {
 
             <h3 style={{ fontSize: 18, fontWeight: 800, color: '#3b3e3c', margin: '0 0 4px' }}>{fullName}</h3>
             <p style={{ fontSize: 13, color: '#8c918f', margin: '0 0 2px', fontWeight: 600 }}>{userRole.toUpperCase()}</p>
+            <p style={{ fontSize: 13, color: '#00a76b', margin: '0 0 2px', fontWeight: 700 }}>ID: {empId}</p>
             <p style={{ fontSize: 12, color: '#9ca3af', margin: 0, fontWeight: 600 }}>{userDept}</p>
           </div>
 
@@ -152,6 +154,11 @@ const Profile = () => {
             <h3 style={{ fontSize: 15, fontWeight: 700, color: '#3b3e3c', marginBottom: 24, marginTop: 0 }}>Personal details</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px 24px' }}>
               
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Employee ID</label>
+                <input type="text" readOnly defaultValue={empId} className="verdant-input" />
+              </div>
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full name</label>
                 <input type="text" readOnly defaultValue={fullName} className="verdant-input" />
@@ -169,7 +176,7 @@ const Profile = () => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Designation</label>
-                <input type="text" readOnly defaultValue={userRole} className="verdant-input" />
+                <input type="text" readOnly defaultValue={userData?.designation || userData?.position || userRole} className="verdant-input" />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -180,6 +187,11 @@ const Profile = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Location</label>
                 <input type="text" readOnly defaultValue={address} className="verdant-input" />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Joining Date</label>
+                <input type="text" readOnly defaultValue={joinDate} className="verdant-input" />
               </div>
 
             </div>

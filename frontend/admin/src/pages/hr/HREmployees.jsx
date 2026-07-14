@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Search, UserPlus, Trash2, Edit3, User, Eye, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Search, UserPlus, Trash2, Edit3, User, Eye, CheckCircle, XCircle, RefreshCw, Power } from 'lucide-react';
 import { API_BASE_URL, getImageUrl } from '@shared/services/api';
 
 const HREmployees = () => {
@@ -9,6 +9,7 @@ const HREmployees = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('');
+  const [filterStatus, setFilterStatus] = useState('active');
   const navigate = useNavigate();
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -34,9 +35,12 @@ const HREmployees = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterRole]);
+  }, [searchTerm, filterRole, filterStatus]);
 
   const filteredEmployees = employees.filter(emp => {
+    const role = (emp.role || emp.userId?.role || '').toLowerCase();
+    if (role === 'admin') return false;
+
     const fullName = emp.fullName?.toLowerCase() || emp.userId?.name?.toLowerCase() || '';
     const email = emp.email?.toLowerCase() || emp.userId?.email?.toLowerCase() || '';
     const empId = emp.employeeId?.toLowerCase() || '';
@@ -46,8 +50,11 @@ const HREmployees = () => {
       empId.includes(searchTerm.toLowerCase());
 
     const matchesRole = filterRole ? (emp.role === filterRole || emp.userId?.role === filterRole) : true;
+    
+    const empStatus = emp.status?.toLowerCase() || emp.userId?.status?.toLowerCase() || 'active';
+    const matchesStatus = filterStatus ? empStatus === filterStatus : true;
 
-    return matchesSearch && matchesRole;
+    return matchesSearch && matchesRole && matchesStatus;
   });
 
   const itemsPerPage = 10;
@@ -57,16 +64,21 @@ const HREmployees = () => {
     currentPage * itemsPerPage
   );
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Eject this node from the matrix (Deactivate)?')) {
+  const handleToggleStatus = async (emp) => {
+    const currentStatus = emp.status?.toLowerCase() || emp.userId?.status?.toLowerCase() || 'active';
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    const actionText = newStatus === 'inactive' ? 'Deactivate' : 'Reactivate';
+    
+    if (window.confirm(`Are you sure you want to ${actionText} this employee? Their status will be updated to ${newStatus.toUpperCase()}.`)) {
       try {
         const token = sessionStorage.getItem('token');
-        await axios.delete(`/api/employees/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await axios.patch(`/api/employees/${emp._id}/status`, 
+          { status: newStatus },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         fetchEmployees();
       } catch (err) {
-        console.error('Deactivation failed:', err);
+        console.error('Status update failed:', err);
       }
     }
   };
@@ -112,7 +124,10 @@ const HREmployees = () => {
             Reject All Pending
           </button>
           <button
-            onClick={() => navigate('/hr/employees/create')}
+            onClick={() => {
+              const pathRole = window.location.pathname.split('/')[1] || 'hr';
+              navigate(`/${pathRole}/employees/create`);
+            }}
             className="zap-btn zap-btn-dark h-14 px-8 flex items-center gap-2"
           >
             <UserPlus size={18} />
@@ -140,10 +155,18 @@ const HREmployees = () => {
             className="zap-input h-12 uppercase font-black"
           >
             <option value="">ALL ROLES</option>
-            <option value="admin">ADMINS</option>
             <option value="hr">HR OFFICERS</option>
             <option value="manager">MANAGERS</option>
             <option value="employee">EMPLOYEES</option>
+          </select>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="zap-input h-12 uppercase font-black ml-4"
+          >
+            <option value="">ALL STATUSES</option>
+            <option value="active">ACTIVE</option>
+            <option value="inactive">INACTIVE</option>
           </select>
         </div>
       </div>
@@ -187,7 +210,8 @@ const HREmployees = () => {
                         </div>
                         <div>
                           <p className="text-[15px] font-bold text-[#201515] leading-none mb-2">{emp.fullName || emp.userId?.name || 'Anonymous Node'}</p>
-                          <p className="text-[13px] font-medium text-[#939084] leading-none">{emp.email || emp.userId?.email}</p>
+                          <p className="text-[13px] font-medium text-[#939084] leading-none mb-1">{emp.email || emp.userId?.email}</p>
+                          <p className="text-[12px] font-bold text-[#ff4f00] leading-none">{emp.designation || emp.position || 'Employee'}</p>
                         </div>
                       </div>
                     </td>
@@ -207,22 +231,29 @@ const HREmployees = () => {
                     <td className="py-6 px-4 text-right">
                       <div className="flex items-center justify-end gap-3">
                         <button
-                          onClick={() => navigate(`/hr/employees/view/${emp._id}`)}
+                          onClick={() => {
+                            const pathRole = window.location.pathname.split('/')[1] || 'hr';
+                            navigate(`/${pathRole}/employees/view/${emp._id}`);
+                          }}
                           className="zap-btn zap-btn-outline w-10 h-10 flex items-center justify-center p-0"
                         >
                           <Eye size={18} />
                         </button>
                         <button
-                          onClick={() => navigate(`/hr/employees/edit/${emp._id}`)}
+                          onClick={() => {
+                            const pathRole = window.location.pathname.split('/')[1] || 'hr';
+                            navigate(`/${pathRole}/employees/edit/${emp._id}`);
+                          }}
                           className="zap-btn zap-btn-outline w-10 h-10 flex items-center justify-center p-0"
                         >
                           <Edit3 size={18} />
                         </button>
                         <button
-                          onClick={() => handleDelete(emp._id)}
-                          className="zap-btn zap-btn-outline w-10 h-10 flex items-center justify-center p-0 text-[#ff4f00]"
+                          onClick={() => handleToggleStatus(emp)}
+                          className={`zap-btn zap-btn-outline w-10 h-10 flex items-center justify-center p-0 ${(emp.status === 'active' || emp.userId?.status === 'active') ? 'text-[#ff4f00]' : 'text-[#24a148]'}`}
+                          title={(emp.status === 'active' || emp.userId?.status === 'active') ? 'Change to Inactive' : 'Change to Active'}
                         >
-                          <Trash2 size={18} />
+                          <Power size={18} />
                         </button>
                       </div>
                     </td>

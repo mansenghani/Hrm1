@@ -11,7 +11,9 @@ const EmployeeForm = () => {
 
   const [formData, setFormData] = useState({
     employeeId: '',
-    fullName: '',
+    firstName: '',
+    middleName: '',
+    lastName: '',
     email: '',
     personalEmail: '',
     password: '',
@@ -20,6 +22,7 @@ const EmployeeForm = () => {
     dob: '',
     address: '',
     role: 'employee',
+    designation: '',
     managerId: '',
     joinDate: '',
     employmentType: 'Full-time'
@@ -44,9 +47,16 @@ const EmployeeForm = () => {
              headers: { Authorization: `Bearer ${token}` }
           });
           const emp = empRes.data;
+          const nameParts = (emp.fullName || emp.name || '').split(' ');
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+          const middleName = nameParts.length > 2 ? nameParts.slice(1, -1).join(' ') : '';
+
           setFormData({
             employeeId: emp.employeeId || '',
-            fullName: emp.fullName || '',
+            firstName,
+            middleName,
+            lastName,
             email: emp.email || '',
             personalEmail: emp.personalEmail || '',
             phone: emp.phone || '',
@@ -54,6 +64,7 @@ const EmployeeForm = () => {
             dob: emp.dob ? emp.dob.split('T')[0] : '',
             address: emp.address || '',
             role: emp.userId?.role || emp.role || 'employee',
+            designation: emp.designation || emp.position || '',
             managerId: emp.managerId?._id || '',
             joinDate: emp.joinDate ? emp.joinDate.split('T')[0] : '',
             employmentType: emp.employmentType || 'Full-time',
@@ -75,9 +86,10 @@ const EmployeeForm = () => {
     let { name, value } = e.target;
     let newErrors = { ...errors, [name]: '' };
 
-    if (name === 'fullName') {
+    if (name === 'firstName' || name === 'lastName' || name === 'middleName') {
       if (value && !/^[A-Za-z\s]*$/.test(value)) {
-        newErrors[name] = 'Full Name allows only alphabetic characters.';
+        const fieldDisplayName = name === 'firstName' ? 'First Name' : name === 'lastName' ? 'Last Name' : 'Middle Name';
+        newErrors[name] = `${fieldDisplayName} allows only alphabetic characters.`;
         value = value.replace(/[^A-Za-z\s]/g, '');
       }
     }
@@ -86,6 +98,9 @@ const EmployeeForm = () => {
       if (value && !/^[0-9]*$/.test(value)) {
         newErrors.phone = 'Only numbers (0-9) are allowed.';
         value = value.replace(/[^0-9]/g, '');
+      }
+      if (value.length > 10) {
+        value = value.slice(0, 10);
       }
     }
 
@@ -114,9 +129,14 @@ const EmployeeForm = () => {
 
     // Custom Validation
     const newErrors = {};
-    if (!formData.fullName) newErrors.fullName = 'Full Name is required.';
+    if (!formData.firstName) newErrors.firstName = 'First Name is required.';
+    if (!formData.lastName) newErrors.lastName = 'Last Name is required.';
     if (!formData.email) newErrors.email = 'Email Address is required.';
-    if (!formData.phone) newErrors.phone = 'Phone Number is required.';
+    if (!formData.phone) {
+      newErrors.phone = 'Phone Number is required.';
+    } else if (formData.phone.length !== 10) {
+      newErrors.phone = 'Phone Number must be exactly 10 digits.';
+    }
     if (!isEdit && !formData.password) {
       newErrors.password = 'Password is required.';
     } else if (formData.password) {
@@ -143,6 +163,10 @@ const EmployeeForm = () => {
     try {
       const token = sessionStorage.getItem('token');
       const submitData = { ...formData };
+      submitData.fullName = `${formData.firstName} ${formData.middleName ? formData.middleName + ' ' : ''}${formData.lastName}`.trim();
+      delete submitData.firstName;
+      delete submitData.middleName;
+      delete submitData.lastName;
       
       // Data cleanup
       if (!submitData.managerId) delete submitData.managerId;
@@ -225,7 +249,7 @@ const EmployeeForm = () => {
                   <img src={formData.profileImage} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-4xl font-black text-[#1E2026] opacity-10 uppercase">
-                    {formData.fullName?.substring(0, 2) || 'SA'}
+                    {formData.firstName?.substring(0, 1) || 'S'}{formData.lastName?.substring(0, 1) || 'A'}
                   </span>
                 )}
               </div>
@@ -427,9 +451,19 @@ const EmployeeForm = () => {
                </div>
              )}
              <div className="space-y-2">
-               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Full Name *</label>
-               <input required name="fullName" value={formData.fullName} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.fullName ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} placeholder="John Doe" />
-               {errors.fullName && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.fullName}</p>}
+               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">First Name *</label>
+               <input required name="firstName" value={formData.firstName} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.firstName ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} placeholder="John" />
+               {errors.firstName && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.firstName}</p>}
+             </div>
+             <div className="space-y-2">
+               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Middle Name</label>
+               <input name="middleName" value={formData.middleName} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.middleName ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} placeholder="Middle" />
+               {errors.middleName && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.middleName}</p>}
+             </div>
+             <div className="space-y-2">
+               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Last Name *</label>
+               <input required name="lastName" value={formData.lastName} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.lastName ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} placeholder="Doe" />
+               {errors.lastName && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.lastName}</p>}
              </div>
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Office Email Address *</label>
@@ -462,7 +496,7 @@ const EmployeeForm = () => {
 
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Phone Number *</label>
-               <input name="phone" maxLength={15} value={formData.phone} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.phone ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} placeholder="+1 234 567 8900" />
+               <input name="phone" maxLength={10} value={formData.phone} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.phone ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} placeholder="1234567890" />
                {errors.phone && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.phone}</p>}
              </div>
 
@@ -480,7 +514,10 @@ const EmployeeForm = () => {
                {errors.role && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.role}</p>}
              </div>
 
-
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Designation</label>
+                <input name="designation" value={formData.designation} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm`} placeholder="Software Engineer" />
+              </div>
 
              {/* Direct Manager Selection - Hidden for Leadership Nodes */}
              {!['hr', 'manager', 'admin'].includes(formData.role?.toLowerCase()) && (

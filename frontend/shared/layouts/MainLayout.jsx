@@ -380,6 +380,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
       case 'manager':
         return [
           { name: 'Dashboard', path: '/manager/dashboard', icon: LayoutDashboard },
+          { name: 'Team / Employees', path: '/manager/employees', icon: Users },
           { name: 'Daily Tasks Board', path: '/manager/tasks', icon: CheckSquare },
           // { name: 'Task Management', path: '/manager/task-management', icon: ClipboardList },
           // { name: 'Project Hub', path: '/manager/projects', icon: Briefcase },
