@@ -247,7 +247,7 @@ exports.forgotPassword = async (req, res) => {
       user.resetPasswordExpire = undefined;
       await user.save({ validateBeforeSave: false });
 
-      return res.status(500).json({ message: 'Email could not be sent' });
+      return res.status(500).json({ message: `Email could not be sent: ${err.message}` });
     }
 
   } catch (error) {
