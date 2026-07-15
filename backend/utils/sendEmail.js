@@ -1,6 +1,29 @@
 const nodemailer = require('nodemailer');
 
 const sendEmail = async (options) => {
+  // If Resend API Key is provided, use HTTPS API (never blocked by Render)
+  if (process.env.RESEND_API_KEY) {
+    const axios = require('axios');
+    try {
+      await axios.post('https://api.resend.com/emails', {
+        from: `${process.env.FROM_NAME || 'FluidHR'} <${process.env.FROM_EMAIL || 'onboarding@resend.dev'}>`,
+        to: [options.email],
+        subject: options.subject,
+        text: options.message,
+        html: options.html
+      }, {
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      return;
+    } catch (err) {
+      console.error("🔥 Resend API Error:", err.response?.data || err.message);
+      throw new Error(err.response?.data?.message || err.message);
+    }
+  }
+
   // Use Ethereal for testing if no actual SMTP is provided
   let transporter;
   if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
