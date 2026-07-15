@@ -272,7 +272,24 @@ exports.forgotPassword = async (req, res) => {
 
       res.status(200).json({ message: 'A password reset link has been sent.' });
     } catch (err) {
-      console.error(err);
+      console.error("🔥 Error sending email:", err);
+      
+      // Local fallback for developers to test reset link
+      if (process.env.NODE_ENV === 'development') {
+        try {
+          const fs = require('fs');
+          const path = require('path');
+          const filePath = path.resolve(__dirname, '../reset-link.txt');
+          fs.writeFileSync(filePath, `RESET PASSWORD URL:\n${resetUrl}\n`);
+          console.log(`\n==================================================\n⚠️ EMAIL SEND FAILED, BUT RESET LINK WRITTEN TO:\n👉 ${filePath}\n==================================================\n`);
+          return res.status(200).json({ 
+            message: 'Local development notice: Email delivery failed, but we generated a reset link in backend/reset-link.txt!' 
+          });
+        } catch (fileErr) {
+          console.error("Failed to write fallback reset-link.txt:", fileErr);
+        }
+      }
+
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;
       await user.save({ validateBeforeSave: false });
