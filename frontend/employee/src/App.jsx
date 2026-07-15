@@ -4,6 +4,7 @@ import EmployeeLayout from './layouts/EmployeeLayout';
 import Dashboard from './pages/Dashboard';
 import Attendance from './pages/Attendance';
 import useAuthStore from '@shared/store/authStore';
+import EmployeeDocuments from './pages/EmployeeDocuments';
 
 // Shared pages that already exist for employee role
 import Chat from '@shared/pages/Chat';
@@ -59,7 +60,7 @@ function App() {
           <Route path="attendance" element={<Attendance />} />
           <Route path="leave" element={<PlaceholderPage title="My Leaves" />} />
           <Route path="payslips" element={<PlaceholderPage title="Payslips" />} />
-          <Route path="documents" element={<PlaceholderPage title="My Documents" />} />
+          <Route path="documents" element={<EmployeeDocuments />} />
           <Route path="performance" element={<PlaceholderPage title="My Performance" />} />
           <Route path="recruitment" element={<PlaceholderPage title="Recruitment" />} />
           <Route path="reports" element={<PlaceholderPage title="Reports" />} />

@@ -59,10 +59,11 @@ const Profile = () => {
   const userEmail = safeUserData.email || 'admin@fluidhr.com';
   const userRole = safeUserData.role || 'Personnel';
   const userDept = (safeUserData.department && typeof safeUserData.department === 'object') ? safeUserData.department.name : (safeUserData.department || 'General Operations');
-  
+
   const empId = safeUserData.employeeId || 'PENDING-SYNC';
   const personalEmail = safeUserData.personalEmail || 'Not Configured';
-  const joinDate = safeUserData.joinDate ? new Date(safeUserData.joinDate).toLocaleDateString() : 'Not Set';
+  const joinDateRaw = safeUserData.joinDate || safeUserData.createdAt;
+  const joinDate = joinDateRaw ? new Date(joinDateRaw).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not Set';
   const phone = safeUserData.phone || 'Data Missing';
   const empType = safeUserData.employmentType || 'Standard';
   const gender = safeUserData.gender || 'Not Specified';
@@ -76,8 +77,8 @@ const Profile = () => {
 
   const reportingManagerName = safeUserData.reportingManager
     ? (typeof safeUserData.reportingManager === 'object'
-        ? (safeUserData.reportingManager.name || safeUserData.reportingManager.fullName)
-        : safeUserData.reportingManager)
+      ? (safeUserData.reportingManager.name || safeUserData.reportingManager.fullName)
+      : safeUserData.reportingManager)
     : 'Not Assigned';
 
   const resetForm = () => {
@@ -121,7 +122,7 @@ const Profile = () => {
   return (
     <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: isDark ? '#08100e' : '#f9fdfc', minHeight: 'calc(100vh - 56px)', color: isDark ? '#cbd5e1' : '#3b3e3c', width: '100%', boxSizing: 'border-box', transition: 'background-color 0.3s ease, color 0.3s ease' }}>
       <div style={{ width: '100%', maxWidth: '100%', padding: '32px 32px 60px', boxSizing: 'border-box' }}>
-        
+
         {/* ALERTS */}
         {status.message && (
           <div style={{ marginBottom: 20, padding: 16, borderRadius: 12, border: status.type === 'success' ? (isDark ? '1px solid #047857' : '1px solid #10b981') : (isDark ? '1px solid #b91c1c' : '1px solid #f87171'), background: status.type === 'success' ? (isDark ? '#062f22' : '#f0fdf4') : (isDark ? '#4c1d1d' : '#fef2f2'), display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -141,12 +142,12 @@ const Profile = () => {
         </div>
 
         {/* PROFILE METADATA GRID */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, alignItems: 'start', marginBottom: 24 }}>
-          
-          {/* IDENTITY CARD */}
-          <div className="verdant-card" style={{ textAlign: 'center', position: 'relative' }}>
+        <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: 24 }}>
+
+          {/* LEFT: IDENTITY CARD */}
+          <div className="verdant-card" style={{ flex: '0 0 320px', width: '100%', textAlign: 'center', position: 'relative' }}>
             <p style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', margin: '0 0 24px', textAlign: 'left' }}>Identity</p>
-            
+
             <div style={{ display: 'inline-flex', position: 'relative', margin: '0 auto 16px' }}>
               <div style={{ width: 100, height: 100, borderRadius: '50%', background: '#00a76b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 800, overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,167,107,0.1)' }}>
                 {userData?.profileImage ? (
@@ -157,16 +158,19 @@ const Profile = () => {
               </div>
             </div>
 
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: isDark ? '#fff' : '#3b3e3c', margin: '0 0 4px' }}>{fullName}</h3>
-            <p style={{ fontSize: 13, color: isDark ? '#a3b3af' : '#8c918f', margin: '0 0 2px', fontWeight: 600 }}>{userRole.toUpperCase()}</p>
-            <p style={{ fontSize: 12, color: isDark ? '#a3b3af' : '#9ca3af', margin: 0, fontWeight: 600 }}>{userDept}</p>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#3b3e3c', margin: '0 0 4px' }}>{fullName}</h3>
+            <p style={{ fontSize: 13, color: '#8c918f', margin: '0 0 2px', fontWeight: 600 }}>{userRole.toUpperCase()}</p>
+            <p style={{ fontSize: 13, color: '#00a76b', margin: '0 0 2px', fontWeight: 700 }}>ID: {empId}</p>
+            <p style={{ fontSize: 12, color: '#9ca3af', margin: 0, fontWeight: 600 }}>{userDept}</p>
           </div>
 
-          {/* PERSONAL DETAILS CARD */}
-          <div className="verdant-card">
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', marginBottom: 24, marginTop: 0 }}>Personal details</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px 24px' }}>
-              
+          {/* RIGHT: DETAILS FORMS */}
+          <div style={{ flex: '1 1 500px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
+            {/* PERSONAL DETAILS CARD */}
+            <div className="verdant-card" style={{ height: '100%' }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', marginBottom: 24, marginTop: 0 }}>Personal details</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px 24px' }}>
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full name</label>
                 <input type="text" readOnly value={fullName} className="verdant-input" />
@@ -209,7 +213,7 @@ const Profile = () => {
           <div className="verdant-card">
             <h3 style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', marginBottom: 24, marginTop: 0 }}>Employment details</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px 24px' }}>
-              
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Employee ID</label>
                 <input type="text" readOnly value={empId} className="verdant-input" />
@@ -217,7 +221,7 @@ const Profile = () => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Designation</label>
-                <input type="text" readOnly value={userRole.toUpperCase()} className="verdant-input" />
+                <input type="text" readOnly value={userData?.designation || userData?.position || userRole} className="verdant-input" />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -226,8 +230,8 @@ const Profile = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Employment Type</label>
-                <input type="text" readOnly value={empType} className="verdant-input" />
+                <label style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Reporting Manager</label>
+                <input type="text" readOnly value={reportingManagerName} className="verdant-input" />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -235,21 +239,17 @@ const Profile = () => {
                 <input type="text" readOnly value={joinDate} className="verdant-input" />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Reporting Manager</label>
-                <input type="text" readOnly value={reportingManagerName} className="verdant-input" />
-              </div>
-
             </div>
           </div>
 
+          </div>
         </div>
 
         {/* VERIFIED DOCUMENTS VAULT */}
         <div className="verdant-card" style={{ marginBottom: 24 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', marginBottom: 24, marginTop: 0 }}>Verified Documents Vault</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-            
+
             {/* Adharcard Display */}
             <div className="verdant-highlight-box" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: 20 }}>
               <div style={{ textAlign: 'center' }}>
@@ -304,10 +304,10 @@ const Profile = () => {
         {/* SECURITY CHANGE PASSWORD */}
         <div className="verdant-card">
           <h3 style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', marginBottom: 24, marginTop: 0 }}>Change Password</h3>
-          
+
           <form onSubmit={handleUpdatePassword} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
-              
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Old Password</label>
                 <input type="password" required value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} className="verdant-input" />

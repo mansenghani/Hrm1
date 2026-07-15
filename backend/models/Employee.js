@@ -1,17 +1,17 @@
 const mongoose = require('mongoose');
 
 const employeeSchema = new mongoose.Schema({
-  userId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User', 
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
     required: true,
-    unique: true 
+    unique: true
   },
   employeeId: { type: String, unique: true },
   fullName: String,
-  email: { type: String, lowercase: true, trim: true },
+  email: { type: String, trim: true, lowercase: true },
   role: String,
-  personalEmail: { type: String, lowercase: true, trim: true },
+  personalEmail: { type: String, trim: true, lowercase: true },
   phone: String,
   gender: { type: String, default: 'Male' },
   dob: Date,
@@ -24,6 +24,7 @@ const employeeSchema = new mongoose.Schema({
   panCard: { type: String, default: null },
   status: { type: String, default: 'active' },
   position: { type: String, default: 'Associate' },
+  designation: { type: String, default: 'Employee' },
   managerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   reportingManager: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });

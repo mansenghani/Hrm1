@@ -473,7 +473,7 @@ const TimeTrackingDashboard = ({ user: propUser, socket }) => {
         <div style={{ display: 'flex', gap: 14, marginBottom: 28, flexWrap: 'wrap' }}>
           <div style={{ position: 'relative', flex: 1, minWidth: 260 }}>
             <Search size={18} color={isDark ? '#a3b3af' : '#8c918f'} style={{ position: 'absolute', left: 18, top: '50%', transform: 'translateY(-50%)' }} />
-            <input type="text" placeholder="Search..." className="verdant-input" style={{ paddingLeft: 48 }} />
+            <input type="text" placeholder="Search..." className="verdant-input with-search-icon" />
           </div>
           <button className="verdant-btn-outline">
             <Filter size={15} /> Filters

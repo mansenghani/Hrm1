@@ -15,6 +15,9 @@ exports.getEmployees = async (req, res) => {
     } else if (role === 'employee') {
       // Employees should only see themselves, or maybe they just use /me endpoint. If they hit this, return just their profile.
       query.userId = req.user.id;
+    } else if (role === 'hr') {
+      // HR should not see Admin profiles since they cannot view/edit/delete them
+      query.role = { $ne: 'admin' };
     }
 
     const employees = await Employee.find(query)
@@ -43,7 +46,11 @@ exports.getEmployeeById = async (req, res) => {
     }
     
     // Role-based access logic
-    if (req.user.role === 'manager' && employee.managerId?.toString() !== req.user.id) {
+    if (req.user.role === 'hr' && (employee.role === 'admin' || employee.userId?.role === 'admin')) {
+       return res.status(403).json({ message: 'Not authorized to view Admin profiles' });
+    }
+    const managerIdStr = employee.managerId?._id ? employee.managerId._id.toString() : employee.managerId?.toString();
+    if (req.user.role === 'manager' && managerIdStr !== req.user.id) {
        return res.status(403).json({ message: 'Not authorized to view this employee' });
     }
     if (req.user.role === 'employee' && employee.userId._id.toString() !== req.user.id) {
@@ -105,13 +112,24 @@ exports.updateEmployee = async (req, res) => {
   try {
     const { password, ...updateData } = req.body;
     
-    // Ensure office email cannot be modified after creation
+    // Ensure office email and DOB cannot be modified after creation
     if (updateData.email) {
       delete updateData.email;
+    }
+    if (updateData.dob) {
+      delete updateData.dob;
     }
 
     const employee = await Employee.findById(req.params.id);
     if (!employee) return res.status(404).json({ message: 'Employee not found' });
+    
+    if (req.user.role === 'hr' && (employee.role === 'admin' || employee.userId?.role === 'admin')) {
+       return res.status(403).json({ message: 'Not authorized to modify Admin profiles' });
+    }
+    const managerIdStr = employee.managerId?._id ? employee.managerId._id.toString() : employee.managerId?.toString();
+    if (req.user.role === 'manager' && managerIdStr !== req.user.id) {
+       return res.status(403).json({ message: 'Not authorized to modify this employee' });
+    }
     
     const updatedEmployee = await Employee.findByIdAndUpdate(req.params.id, updateData, { new: true });
     
@@ -146,6 +164,10 @@ exports.deleteEmployee = async (req, res) => {
     const employee = await Employee.findById(req.params.id);
     if (!employee) return res.status(404).json({ message: 'Employee not found' });
     
+    if (req.user.role === 'hr' && (employee.role === 'admin' || employee.userId?.role === 'admin')) {
+       return res.status(403).json({ message: 'Not authorized to delete Admin profiles' });
+    }
+    
     employee.status = 'inactive';
     await employee.save();
     
@@ -166,6 +188,10 @@ exports.updateEmployeeStatus = async (req, res) => {
     
     const employee = await Employee.findById(req.params.id);
     if (!employee) return res.status(404).json({ message: 'Employee not found' });
+    
+    if (req.user.role === 'hr' && (employee.role === 'admin' || employee.userId?.role === 'admin')) {
+       return res.status(403).json({ message: 'Not authorized to modify Admin status' });
+    }
     
     employee.status = status;
     await employee.save();
@@ -220,6 +246,11 @@ exports.updateEmployeeDocument = async (req, res, field) => {
     
     const employee = await Employee.findById(req.params.id);
     if (!employee) return res.status(404).json({ message: 'Employee not found' });
+    
+    // Ensure an employee can only upload their own document
+    if (req.user.role === 'employee' && employee.userId.toString() !== req.user.id) {
+       return res.status(403).json({ message: 'Not authorized to modify this document' });
+    }
     
     const { saveBase64Image } = require('../utils/fileUpload');
     const docPath = saveBase64Image(document, 'documents', `${field}-${employee._id}`);

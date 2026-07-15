@@ -133,6 +133,7 @@ exports.getMe = async (req, res) => {
       ...roleMetadata,
       role: user.role,
       employeeId: employeeData?.employeeId || user.employeeId || 'PENDING-SYNC',
+      employeeRecordId: employeeData?._id,
       _id: user._id
     };
 
@@ -203,5 +204,97 @@ exports.uploadProfileImage = async (req, res) => {
   } catch (error) {
     console.error('🔥 Upload Error:', error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+const crypto = require('crypto');
+const sendEmail = require('../utils/sendEmail');
+
+// 🔄 RECOVERY: Forgot Password Validation
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email address is required' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'Email not registered' });
+    }
+
+    // Generate token
+    const resetToken = user.createPasswordResetToken();
+    await user.save({ validateBeforeSave: false });
+
+    // Create reset URL
+    // Pointing to frontend which runs on port 4000/5000/etc based on the request origin, or a standard host
+    const resetUrl = `${req.protocol}://${req.get('host').replace(/:\d+/, ':4000')}/reset-password/${resetToken}`;
+
+    const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please click on the link below to reset your password:\n\n${resetUrl}\n\nIf you did not request a password reset, please ignore this email.\nThis link will expire in 30 minutes.`;
+
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: 'FluidHR - Password Reset Token',
+        message
+      });
+
+      res.status(200).json({ message: 'A password reset link has been sent.' });
+    } catch (err) {
+      console.error(err);
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      return res.status(500).json({ message: 'Email could not be sent' });
+    }
+
+  } catch (error) {
+    console.error('🔥 Forgot Password Error:', error);
+    res.status(500).json({ message: 'Server error during password recovery validation' });
+  }
+};
+
+// 🔄 RECOVERY: Reset Password
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ message: 'New password is required' });
+    }
+
+    // Check strength
+    const strongRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.{8,})");
+    if (!strongRegex.test(password)) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters long, contain 1 uppercase letter and 1 number.' });
+    }
+
+    // Hash token to compare with DB
+    const resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired password reset token' });
+    }
+
+    // Set new password (the pre-save hook will hash it)
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    
+    await user.save();
+
+    res.json({ message: 'Password has been successfully reset. You can now login.' });
+
+  } catch (error) {
+    console.error('🔥 Reset Password Error:', error);
+    res.status(500).json({ message: 'Server error during password reset' });
   }
 };

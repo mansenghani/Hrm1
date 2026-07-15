@@ -2,6 +2,9 @@ import React from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Login from '@shared/pages/Login';
+import ForgotPassword from '@shared/pages/ForgotPassword';
+import ResetPassword from '@shared/pages/ResetPassword';
+
 import AdminDashboard from './pages/admin/AdminDashboard';
 import HRDashboard from './pages/hr/HRDashboard';
 import ManagerDashboard from './pages/manager/ManagerDashboard';
@@ -89,6 +92,8 @@ const App = () => {
         {/* PUBLIC ROUTES */}
         <Route path="/" element={<RootRedirect />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         {/* REDIRECTS FOR OLD PATHS */}
         <Route path="/select-role" element={<Navigate to="/login" replace />} />
@@ -210,6 +215,9 @@ const App = () => {
           <Route index element={<ManagerDashboard />} />
           <Route path="dashboard" element={<ManagerDashboard />} />
           <Route path="tasks" element={<ManagerTasks />} />
+          <Route path="employees" element={<HREmployees />} />
+          <Route path="employees/edit/:id" element={<EmployeeForm />} />
+          <Route path="employees/view/:id" element={<EmployeeDetail />} />
           <Route path="task-management" element={<TaskManagement />} />
           <Route path="task-management/create" element={<TaskCreate />} />
           <Route path="task-management/update/:id" element={<TaskUpdate />} />

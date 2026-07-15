@@ -1,50 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { ShieldCheck, ArrowRight, Lock, Mail, AlertCircle, Zap } from 'lucide-react';
-import { EntryButton, EntryInput, EntrySelect } from '../components/EntryPrimitives';
+import { ShieldCheck, ArrowRight, ArrowLeft, Mail, Zap, AlertCircle, CheckCircle } from 'lucide-react';
+import { EntryButton, EntryInput } from '../components/EntryPrimitives';
 
-const Login = () => {
+const ForgotPassword = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-
-  // REDIRECT IF ALREADY LOGGED IN
-  useEffect(() => {
-    const token = sessionStorage.getItem('token');
-    const role = sessionStorage.getItem('role');
-    if (token && role) {
-      navigate(`/${role}/dashboard`);
-    }
-  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess('');
+
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid corporate email address.');
+      setLoading(false);
+      return;
+    }
 
     try {
-      const response = await axios.post('/api/auth/login', {
-        email: email.trim(),
-        password
-      });
-
-      const { token, role, _id, email: userEmail } = response.data;
-      const user = { _id, role, email: userEmail };
-
-      if (!role) {
-        throw new Error('Identity verification failed: No role assigned');
-      }
-
-      sessionStorage.setItem('token', token);
-      sessionStorage.setItem('user', JSON.stringify(user));
-      sessionStorage.setItem('role', role);
-
-      navigate(`/${role}/dashboard`);
+      const response = await axios.post('/api/auth/forgot-password', { email });
+      setSuccess(response.data.message || 'A password reset link has been sent.');
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid email or password');
+      if (err.response && err.response.status === 404) {
+        setError('Email not registered.');
+      } else {
+        setError(err.response?.data?.message || 'An error occurred while validating the email.');
+      }
     } finally {
       setLoading(false);
     }
@@ -53,12 +43,12 @@ const Login = () => {
   return (
     <div className="h-screen overflow-hidden bg-[#eceae3] flex items-center justify-center p-4 selection:bg-[#00a76b] selection:text-white font-sans">
       <div className="w-full max-w-[760px] h-full max-h-[calc(100vh-2rem)] grid grid-cols-1 lg:grid-cols-12 bg-[#fffefb] rounded-[8px] border border-[#c5c0b1] shadow-sm overflow-hidden">
-        {/* BRAND SIDEBAR - Zapier Dark Warm Style */}
+        {/* BRAND SIDEBAR */}
         <div className="hidden lg:flex lg:col-span-5 bg-[#201515] p-6 flex-col justify-between relative overflow-hidden">
            <div className="absolute -top-24 -left-24 w-80 h-80 bg-[#00a76b] opacity-10 blur-[100px] rounded-full"></div>
            
            <div className="relative z-10 flex items-center gap-3">
-              <div className="w-9 h-9 bg-[#00a76b] rounded-[4px] flex items-center justify-center">
+              <div className="w-9 h-9 bg-[#00a76b] rounded-[4px] flex items-center justify-center cursor-pointer" onClick={() => navigate('/login')}>
                 <ShieldCheck size={20} className="text-[#fffefb]" />
               </div>
               <span className="text-[22px] font-bold text-[#fffefb] tracking-tight">FluidHR</span>
@@ -66,10 +56,10 @@ const Login = () => {
 
            <div className="relative z-10">
               <h2 className="text-[30px] font-medium text-[#fffefb] mb-5 leading-[1.1] tracking-tight">
-                 Single <br/><span className="text-[#00a76b]">Identity</span> <br/>Protocol.
+                 Access <br/><span className="text-[#00a76b]">Recovery</span> <br/>Protocol.
               </h2>
               <p className="text-[15px] text-[#c5c0b1] max-w-[260px] leading-relaxed font-medium">
-                 One unified portal to manage your entire organizational lifecycle with military-grade precision.
+                 Regain entry to your organizational lifecycle portal securely.
               </p>
            </div>
 
@@ -81,16 +71,19 @@ const Login = () => {
            </div>
         </div>
 
-        {/* AUTH FORM - Unified Login */}
-        <div className="lg:col-span-7 p-6 md:p-10 flex flex-col justify-center bg-[#fffefb]">
-           <div className="max-w-[400px] w-full mx-auto">
+        {/* RECOVERY FORM */}
+        <div className="lg:col-span-7 p-6 md:p-10 flex flex-col bg-[#fffefb] relative overflow-y-auto">
+           <Link to="/login" className="absolute top-8 left-8 text-[#939084] hover:text-[#201515] transition-colors flex items-center gap-2 text-sm font-bold">
+             <ArrowLeft size={16} /> Back to Login
+           </Link>
+           <div className="max-w-[400px] w-full mx-auto mt-20">
               <div className="mb-6">
-                 <p className="zap-caption-upper mb-3 text-[#00a76b]">Enterprise Access</p>
+                 <p className="zap-caption-upper mb-3 text-[#00a76b]">Account Recovery</p>
                  <h1 className="text-[34px] font-medium text-[#201515] tracking-tight mb-3 leading-[1.0]">
-                    HRMS Login
+                    Forgot Password
                  </h1>
                  <p className="text-[13px] text-[#36342e] font-medium leading-relaxed">
-                    Enter your corporate credentials to continue to your workspace.
+                    Enter your registered corporate email to receive a password reset link.
                  </p>
               </div>
 
@@ -105,31 +98,18 @@ const Login = () => {
                     icon={<Mail size={20} />}
                   />
 
-                 <div>
-                   <EntryInput 
-                      label="Secret Key"
-                      type="password" 
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter password"
-                      icon={<Lock size={20} />}
-                    />
-                   <div className="flex justify-end mt-2">
-                     <button type="button" onClick={() => navigate('/forgot-password')} className="text-[13px] font-bold text-[#00a76b] hover:text-[#201515] transition-colors">
-                       Forgot Password?
-                     </button>
-                   </div>
-                 </div>
-
                  <div className="min-h-[60px] mb-3 flex items-center">
-                   {error ? (
+                   {error && (
                      <div className="w-full bg-[#fff8f6] border border-[#00a76b] p-3 rounded-[4px] flex items-start gap-3 animate-fade-in">
                        <AlertCircle size={20} className="text-[#00a76b] shrink-0" />
                        <span className="text-[14px] text-[#00a76b] font-bold">{error}</span>
                      </div>
-                   ) : (
-                     <div className="w-full h-full"></div>
+                   )}
+                   {success && (
+                     <div className="w-full bg-[#f6fff8] border border-[#24a148] p-3 rounded-[4px] flex items-start gap-3 animate-fade-in">
+                       <CheckCircle size={20} className="text-[#24a148] shrink-0" />
+                       <span className="text-[14px] text-[#24a148] font-bold">{success}</span>
+                     </div>
                    )}
                  </div>
 
@@ -138,18 +118,12 @@ const Login = () => {
                       type="submit" 
                       disabled={loading}
                       variant="primary"
-                      className="h-[48px] text-[15px] font-bold bg-[#00a76b] text-[#fffefb] hover:bg-[#201515]"
+                      className="h-[48px] text-[15px] font-bold bg-[#00a76b] text-[#fffefb] hover:bg-[#201515] w-full"
                     >
-                       {loading ? 'Validating credentials...' : 'Login'}
+                       {loading ? 'Processing...' : 'Send Reset Link'}
                        {!loading && <ArrowRight size={20} className="ml-4" />}
                     </EntryButton>
                  </div>
-
-                 <div className="mt-8 pt-8 border-t border-[#eceae3] text-center">
-                    <p className="text-[14px] text-[#939084] font-medium">
-                       Authorized personnel only. All access is logged.
-                    </p>
-                  </div>
               </form>
            </div>
         </div>
@@ -158,4 +132,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default ForgotPassword;

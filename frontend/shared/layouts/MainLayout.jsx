@@ -64,7 +64,6 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   });
   const [liveNotifications, setLiveNotifications] = useState([]);
   const notificationRef = React.useRef(null);
-  const searchRef = React.useRef(null);
   const profileRef = React.useRef(null);
   const triggerRef = React.useRef(null);
   const dropdownRef = React.useRef(null);
@@ -465,66 +464,97 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     document.title = `${baseTitle} | ${roleName}`;
   }, [role, location.pathname]);
 
-  const getCategorizedMenuItems = (currentRole) => {
-    const roleKey = currentRole || 'admin';
-    const overview = [
-      { name: 'Dashboard', path: `/${roleKey}/dashboard`, icon: LayoutDashboard }
-    ];
-
-    const people = [];
-    if (roleKey === 'admin' || roleKey === 'hr') {
-      people.push({ name: 'Employees', path: `/${roleKey}/employees`, icon: Users });
-    } else {
-      people.push({ name: 'Employees', path: `/${roleKey}/profile`, icon: Users });
+  const getMenuItemsByRole = (currentRole) => {
+    switch (currentRole) {
+      case 'hr':
+        return [
+          { name: 'Dashboard', path: '/hr/dashboard', icon: LayoutDashboard },
+          { name: 'Employees', path: '/hr/employees', icon: Users },
+          { name: 'Daily Tasks Board', path: '/hr/tasks', icon: CheckSquare },
+          // { name: 'Task Management', path: '/hr/task-management', icon: ClipboardList },
+          { name: 'Attendance', path: '/hr/attendance', icon: Calendar },
+          { name: 'Time Tracker', path: '/hr/time-tracker', icon: Clock },
+          { name: 'Team Chat', path: '/hr/chat', icon: MessageSquare },
+          { name: 'Payroll', path: '/hr/payroll', icon: Wallet },
+          { name: 'Performance', path: '/hr/performance', icon: TrendingUp },
+          { name: 'Tasks', path: '/hr/tasks', icon: CheckSquare },
+          { name: 'Reports', path: '/hr/reports', icon: BarChart3 },
+          { name: 'Monitoring Logs', path: '/hr/screenshots', icon: Camera },
+          { name: 'Notifications', path: '/hr/notifications', icon: Bell },
+          { name: 'Settings', path: '/hr/settings', icon: Settings },
+        ];
+      case 'employee':
+        return [
+          { name: 'Dashboard', path: '/employee/dashboard', icon: LayoutDashboard },
+          { name: 'Time Tracker', path: '/employee/time-tracker', icon: Clock },
+          { name: 'Team Chat', path: '/employee/chat', icon: MessageSquare },
+          { name: 'Create Task', path: '/employee/task-management/create', icon: PlusCircle },
+          { name: 'My Documents', path: '/employee/documents', icon: FileText },
+        ];
+      case 'manager':
+        return [
+          { name: 'Dashboard', path: '/manager/dashboard', icon: LayoutDashboard },
+          { name: 'Team / Employees', path: '/manager/employees', icon: Users },
+          { name: 'Daily Tasks Board', path: '/manager/tasks', icon: CheckSquare },
+          // { name: 'Task Management', path: '/manager/task-management', icon: ClipboardList },
+          // { name: 'Project Hub', path: '/manager/projects', icon: Briefcase },
+          { name: 'Time Tracker', path: '/manager/time-tracker', icon: Clock },
+          { name: 'Team Chat', path: '/manager/chat', icon: MessageSquare },
+          { name: 'Team Attendance', path: '/manager/attendance', icon: Calendar },
+          { name: 'Monitoring Logs', path: '/manager/screenshots', icon: Camera },
+          { name: 'Notifications', path: '/manager/notifications', icon: Bell },
+          // { name: 'Review Leaves', path: '/manager/leave', icon: FileText },
+        ];
+      case 'admin':
+      default:
+        return [
+          { name: 'Dashboard', path: `/${currentRole}/dashboard`, icon: LayoutDashboard },
+          { name: 'Employees', path: `/${currentRole}/employees`, icon: Users },
+          { name: 'Daily Tasks Board', path: `/${currentRole}/tasks`, icon: CheckSquare },
+          // { name: 'Task Management', path: `/${currentRole}/task-management`, icon: ClipboardList },
+          // { name: 'Request For Leave', path: `/${currentRole}/leave`, icon: FileText },
+          { name: 'Attendance', path: `/${currentRole}/attendance`, icon: Calendar },
+          { name: 'Time Tracker', path: `/${currentRole}/time-tracker`, icon: Clock },
+          { name: 'Global Chat', path: `/${currentRole}/chat`, icon: MessageSquare },
+          { name: 'Payroll', path: `/${currentRole}/payroll`, icon: Wallet },
+          { name: 'Performance', path: `/${currentRole}/performance`, icon: TrendingUp },
+          { name: 'Reports', path: `/${currentRole}/reports`, icon: BarChart3 },
+          { name: 'Monitoring Logs', path: `/${currentRole}/screenshots`, icon: Camera },
+          { name: 'Notifications', path: `/${currentRole}/notifications`, icon: Bell },
+          { name: 'Settings', path: `/${currentRole}/settings`, icon: Settings },
+        ];
     }
-    people.push({ name: 'Attendance', path: `/${roleKey}/attendance`, icon: Clock });
-    people.push({ name: 'Leave', path: `/${roleKey}/leave`, icon: Calendar });
-    const menuItems = {
-      OVERVIEW: overview,
-      PEOPLE: people
+  };
+
+  const menuItems = navItems ? navItems.map(item => ({
+    name: item.label || item.name,
+    path: item.path,
+    icon: item.icon || LayoutDashboard
+  })) : getMenuItemsByRole(activeRole);
+
+  const getCategorizedMenuItems = (role) => {
+    const categorized = {
+      'Overview': [],
+      'Workspace': [],
+      'Administration': []
     };
 
-    // TALENT Section
-    const talent = [];
-    talent.push({ name: 'Recruitment', path: `/${roleKey}/recruitment`, icon: Briefcase });
-    talent.push({ name: 'Performance', path: `/${roleKey}/performance`, icon: Target });
-    talent.push({ name: 'Training', path: `/${roleKey}/training`, icon: GraduationCap });
-    menuItems.TALENT = talent;
+    menuItems.forEach(item => {
+      const n = item.name.toLowerCase();
+      if (n.includes('dashboard') || n.includes('chat') || n.includes('notifications')) {
+        categorized['Overview'].push(item);
+      } else if (n.includes('settings') || n.includes('log') || n.includes('create user')) {
+        categorized['Administration'].push(item);
+      } else {
+        categorized['Workspace'].push(item);
+      }
+    });
 
-    // FINANCE Section
-    menuItems.FINANCE = [
-      { name: 'Payroll', path: roleKey === 'employee' ? `/employee/payslips` : `/${roleKey}/payroll`, icon: Wallet }
-    ];
-
-    // INSIGHTS Section
-    menuItems.INSIGHTS = [
-      { name: 'Reports', path: `/${roleKey}/reports`, icon: BarChart3 },
-      { name: 'Documents', path: `/${roleKey}/documents`, icon: FileText }
-    ];
-
-    if (roleKey === 'admin' || roleKey === 'hr') {
-      menuItems.INSIGHTS.push({ name: 'Monitoring Logs', path: `/${roleKey}/screenshots`, icon: Camera });
+    const result = {};
+    for (const [key, items] of Object.entries(categorized)) {
+      if (items.length > 0) result[key] = items;
     }
-
-    // ORGANIZATION Section
-    const organization = [];
-    organization.push({ name: 'Departments', path: `/${roleKey}/departments`, icon: Building2 });
-    organization.push({ name: 'Designations', path: `/${roleKey}/designations`, icon: Award });
-    menuItems.ORGANIZATION = organization;
-
-    // SYSTEM Section
-    const system = [];
-    system.push({ name: 'Roles & Permissions', path: `/${roleKey}/roles-permissions`, icon: ShieldCheck });
-    system.push({ name: 'Audit Logs', path: `/${roleKey}/audit-logs`, icon: FileText });
-    system.push({ name: 'Integrations', path: `/${roleKey}/integrations`, icon: Plug });
-    menuItems.SYSTEM = system;
-
-    menuItems.ACCOUNT = [
-      { name: 'Settings', path: roleKey === 'admin' || roleKey === 'hr' ? `/${roleKey}/settings` : `/${roleKey}/profile`, icon: Settings },
-      { name: 'Profile', path: `/${roleKey}/profile`, icon: User }
-    ];
-
-    return menuItems;
+    return result;
   };
 
   const handleLogout = () => {
@@ -750,8 +780,8 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
       {/* 1. LEFT SIDEBAR (Full height sticky sidebar / slide-out drawer on mobile) */}
       <aside
         className={`flex flex-col shrink-0 border-r transition-all duration-300 ease-in-out h-screen overflow-hidden z-40 fixed md:sticky top-0 ${isSidebarOpen
-            ? 'left-0 w-[250px] translate-x-0'
-            : '-left-[250px] md:left-0 md:translate-x-0 md:w-[72px]'
+          ? 'left-0 w-[250px] translate-x-0'
+          : '-left-[250px] md:left-0 md:translate-x-0 md:w-[72px]'
           }`}
         style={{
           backgroundColor: isDarkMode ? '#050c0a' : '#f4f9f6',
@@ -840,7 +870,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
 
       {/* 2. RIGHT CONTENT AREA (Header + main page content) */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 w-full z-35 border-b bg-white/80 dark:bg-[#08100e]/80 backdrop-blur-md transition-colors duration-300 ease-in-out" style={{ height: '70px', borderColor: isDarkMode ? '#1a2d29' : '#e2eae7' }}>
+        <header className="sticky top-0 w-full z-[150] border-b bg-white dark:bg-[#08100e] transition-colors duration-300 ease-in-out" style={{ height: '70px', borderColor: isDarkMode ? '#1a2d29' : '#e2eae7' }}>
           <div className="flex items-center h-full w-full px-6">
             <button
               onClick={toggleSidebar}
@@ -1158,11 +1188,15 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                   <button
                     ref={triggerRef}
                     type="button"
-                    onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsProfileDropdownOpen(prev => !prev);
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        setIsProfileDropdownOpen(!isProfileDropdownOpen);
+                        setIsProfileDropdownOpen(prev => !prev);
                       }
                     }}
                     className={`flex items-center gap-3 px-1 md:px-3 h-11 rounded-full cursor-pointer transition-all select-none border-none bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-[#00a76b]/50 ${isProfileDropdownOpen ? 'bg-gray-100 dark:bg-[#111c18]' : 'hover:bg-gray-100 dark:hover:bg-[#111c18]'}`}
@@ -1188,7 +1222,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                   <div
                     ref={dropdownRef}
                     onKeyDown={handleDropdownKeyDown}
-                    className="absolute top-[48px] right-0 w-72 bg-white dark:bg-[#111c18] border border-gray-100 dark:border-[#1a2d29] rounded-[20px] shadow-[0_10px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_15px_40px_rgba(0,0,0,0.3)] overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200 origin-top-right focus:outline-none"
+                    className="absolute top-[48px] right-0 w-72 bg-white dark:bg-[#111c18] border border-gray-100 dark:border-[#1a2d29] rounded-[20px] shadow-[0_10px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_15px_40px_rgba(0,0,0,0.3)] overflow-hidden z-[100] focus:outline-none"
                     role="menu"
                     aria-orientation="vertical"
                     aria-labelledby="user-menu-button"

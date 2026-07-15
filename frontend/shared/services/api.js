@@ -51,7 +51,7 @@ export const getImageUrl = (path) => {
                         window.location.hostname.startsWith('10.') ||
                         window.location.hostname.startsWith('172.');
   
-  const base = isLocalHost ? 'https://hrm1.onrender.com' : '';
+  const base = isLocalHost ? window.location.origin : 'https://hrm1.onrender.com';
   return `${base}${cleanPath}`;
 };
 

@@ -88,8 +88,7 @@ const EmployeePerformance = () => {
               placeholder="Search..." 
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="verdant-input"
-              style={{ paddingLeft: 46 }}
+              className="verdant-input with-search-icon"
             />
           </div>
           <button className="verdant-btn-outline" style={{ gap: 8, height: 44 }}>

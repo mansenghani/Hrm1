@@ -1,111 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import {
-  Search,
-  Trash2,
-  Edit3,
-  User,
-  Eye,
-  RefreshCw,
-  Download,
-  Plus,
-  SlidersHorizontal,
-  MoreHorizontal
-} from 'lucide-react';
-
-const SAMPLE_EMPLOYEES = [
-  {
-    _id: 'sample-1',
-    fullName: 'Sara Lopez',
-    email: 'sara@acme.co',
-    department: 'Design',
-    designation: 'Product Designer',
-    joinDate: '2022-03-14',
-    status: 'Active',
-    employeeId: 'EMP-001'
-  },
-  {
-    _id: 'sample-2',
-    fullName: 'Daniel Kim',
-    email: 'daniel@acme.co',
-    department: 'Engineering',
-    designation: 'Engineering Lead',
-    joinDate: '2020-08-01',
-    status: 'Active',
-    employeeId: 'EMP-002'
-  },
-  {
-    _id: 'sample-3',
-    fullName: 'Priya Shah',
-    email: 'priya@acme.co',
-    department: 'HR',
-    designation: 'HR Manager',
-    joinDate: '2019-11-22',
-    status: 'Active',
-    employeeId: 'EMP-003'
-  },
-  {
-    _id: 'sample-4',
-    fullName: 'Marcus Lee',
-    email: 'marcus@acme.co',
-    department: 'Engineering',
-    designation: 'Senior Engineer',
-    joinDate: '2021-06-10',
-    status: 'Active',
-    employeeId: 'EMP-004'
-  },
-  {
-    _id: 'sample-5',
-    fullName: 'Aisha Khan',
-    email: 'aisha@acme.co',
-    department: 'Marketing',
-    designation: 'Marketing Lead',
-    joinDate: '2022-01-05',
-    status: 'On Leave',
-    employeeId: 'EMP-005'
-  },
-  {
-    _id: 'sample-6',
-    fullName: 'Jonas Becker',
-    email: 'jonas@acme.co',
-    department: 'Sales',
-    designation: 'Account Executive',
-    joinDate: '2023-02-19',
-    status: 'Active',
-    employeeId: 'EMP-006'
-  },
-  {
-    _id: 'sample-7',
-    fullName: 'Mei Chen',
-    email: 'mei@acme.co',
-    department: 'Engineering',
-    designation: 'Frontend Engineer',
-    joinDate: '2023-09-04',
-    status: 'Active',
-    employeeId: 'EMP-007'
-  },
-  {
-    _id: 'sample-8',
-    fullName: 'Olivia Brown',
-    email: 'olivia@acme.co',
-    department: 'Finance',
-    designation: 'Accountant',
-    joinDate: '2021-04-12',
-    status: 'Active',
-    employeeId: 'EMP-008'
-  }
-];
+import { Search, UserPlus, Trash2, Edit3, User, Eye, CheckCircle, XCircle, RefreshCw, Download, SlidersHorizontal, MoreHorizontal, Plus } from 'lucide-react';
+import { API_BASE_URL, getImageUrl } from '@shared/services/api';
 
 const HREmployees = () => {
   const [dbEmployees, setDbEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(() => sessionStorage.getItem('hr_searchTerm') || '');
+  const [filterRole, setFilterRole] = useState(() => sessionStorage.getItem('hr_filterRole') || '');
+  const [filterStatus, setFilterStatus] = useState(() => sessionStorage.getItem('hr_filterStatus') || 'active');
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
-  const [filterDept, setFilterDept] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
-  const [activeActionId, setActiveActionId] = useState(null);
   const navigate = useNavigate();
+  const pathRole = window.location.pathname.split('/')[1] || 'hr';
 
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -130,35 +37,17 @@ const HREmployees = () => {
 
   // Global click listener to close actions dropdown on clicking outside
   useEffect(() => {
-    const handleOutsideClick = () => {
-      setActiveActionId(null);
-    };
-    document.addEventListener('click', handleOutsideClick);
-    return () => document.removeEventListener('click', handleOutsideClick);
-  }, []);
+    setCurrentPage(1);
+    sessionStorage.setItem('hr_searchTerm', searchTerm);
+    sessionStorage.setItem('hr_filterRole', filterRole);
+    sessionStorage.setItem('hr_filterStatus', filterStatus);
+  }, [searchTerm, filterRole, filterStatus]);
 
-  // Merge database employees with our premium pre-populated sample employees to avoid duplication
-  const mergedEmployees = [
-    ...SAMPLE_EMPLOYEES,
-    ...dbEmployees.filter(dbEmp => {
-      const dbEmail = (dbEmp.email || dbEmp.userId?.email || '').toLowerCase();
-      return dbEmail && !SAMPLE_EMPLOYEES.some(s => s.email.toLowerCase() === dbEmail);
-    }).map(dbEmp => ({
-      _id: dbEmp._id,
-      fullName: dbEmp.fullName || dbEmp.userId?.name || 'Anonymous Node',
-      email: dbEmp.email || dbEmp.userId?.email || '',
-      department: dbEmp.department || 'Staff',
-      designation: dbEmp.designation || 'Staff Member',
-      joinDate: dbEmp.joinDate || dbEmp.createdAt || new Date(),
-      status: dbEmp.status || (dbEmp.userId?.status === 'active' ? 'Active' : 'On Leave'),
-      employeeId: dbEmp.employeeId || 'EMP-DB'
-    }))
-  ];
-
-  // Perform search and filter calculations
-  const filteredEmployees = mergedEmployees.filter(emp => {
-    const fullName = emp.fullName?.toLowerCase() || '';
-    const email = emp.email?.toLowerCase() || '';
+  const uniqueEmployees = Array.from(new Map(dbEmployees.map(emp => [emp._id, emp])).values());
+  const filteredEmployees = uniqueEmployees.filter(emp => {
+    const fullName = emp.fullName?.toLowerCase() || emp.userId?.name?.toLowerCase() || '';
+    const email = emp.email?.toLowerCase() || emp.userId?.email?.toLowerCase() || '';
+    const empId = emp.employeeId?.toLowerCase() || '';
     const dept = emp.department?.toLowerCase() || '';
     const desig = emp.designation?.toLowerCase() || '';
     const search = searchTerm.toLowerCase();
@@ -168,26 +57,28 @@ const HREmployees = () => {
       dept.includes(search) ||
       desig.includes(search);
 
-    const matchesDept = filterDept ? emp.department.toLowerCase() === filterDept.toLowerCase() : true;
-    const matchesStatus = filterStatus ? emp.status.toLowerCase() === filterStatus.toLowerCase() : true;
+    const matchesRole = filterRole ? (emp.role === filterRole || emp.userId?.role === filterRole) : true;
+    const empStatus = emp.status?.toLowerCase() || emp.userId?.status?.toLowerCase() || 'active';
+    const matchesStatus = filterStatus ? empStatus === filterStatus : true;
 
-    return matchesSearch && matchesDept && matchesStatus;
+    return matchesSearch && matchesRole && matchesStatus;
   });
 
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
+  const paginatedEmployees = filteredEmployees.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const handleDelete = async (id) => {
-    if (id.startsWith('sample-')) {
-      alert('Demo personnel records cannot be deactivated.');
-      return;
-    }
-    if (window.confirm('Are you sure you want to deactivate this employee?')) {
+    if (window.confirm('Are you sure you want to remove this employee? This will change their status to INACTIVE instead of permanently deleting the record.')) {
       try {
         const token = sessionStorage.getItem('token');
-        await axios.delete(`/api/employees/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await axios.delete(`/api/employees/${id}`, { headers: { Authorization: `Bearer ${token}` } });
         fetchEmployees();
       } catch (err) {
-        console.error('Deactivation failed:', err);
+        console.error('Delete failed:', err);
       }
     }
   };
@@ -197,15 +88,15 @@ const HREmployees = () => {
       alert('Demo personnel records cannot be modified.');
       return;
     }
-    navigate(`/hr/employees/edit/${id}`);
+    navigate(`/${pathRole}/employees/edit/${id}`);
   };
 
   const handleView = (id) => {
     if (id.startsWith('sample-')) {
-      alert(`Viewing demo profile for ${SAMPLE_EMPLOYEES.find(e => e._id === id)?.fullName}`);
+      alert(`Viewing demo profile for ${id}`);
       return;
     }
-    navigate(`/hr/employees/view/${id}`);
+    navigate(`/${pathRole}/employees/view/${id}`);
   };
 
   const handleExportCSV = () => {
@@ -255,8 +146,8 @@ const HREmployees = () => {
     const isActive = status.toLowerCase() === 'active';
     return (
       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${isActive
-          ? 'bg-[#e2f7ed] text-[#00875a] dark:bg-[#112a20] dark:text-[#3cd070]'
-          : 'bg-[#f4f5f7] text-[#5e6c84] dark:bg-[#202528] dark:text-[#a0a5aa]'
+        ? 'bg-[#e2f7ed] text-[#00875a] dark:bg-[#112a20] dark:text-[#3cd070]'
+        : 'bg-[#f4f5f7] text-[#5e6c84] dark:bg-[#202528] dark:text-[#a0a5aa]'
         }`}>
         {isActive ? 'Active' : 'On Leave'}
       </span>
@@ -280,8 +171,8 @@ const HREmployees = () => {
             <span>Export</span>
           </button>
           <button
-            onClick={() => navigate('/hr/create-user')}
-            className="verdant-btn-primary h-10 px-5 flex items-center gap-2 text-sm font-semibold rounded-full text-white bg-[#00a76b] hover:bg-[#00915c] transition-all shadow-sm cursor-pointer border-none"
+            onClick={() => navigate(`/${pathRole}/employees/create`)}
+            className="zap-btn zap-btn-dark h-14 px-8 flex items-center gap-2"
           >
             <Plus size={16} />
             <span>Add employee</span>
@@ -308,52 +199,37 @@ const HREmployees = () => {
               setShowFiltersPanel(!showFiltersPanel);
             }}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-full border text-sm font-semibold transition-all shadow-sm cursor-pointer whitespace-nowrap ${showFiltersPanel
-                ? 'bg-[#e2f7ed] border-[#00a76b] text-[#00a76b] dark:bg-[#162722] dark:border-[#00a76b]'
-                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-[#111c18] dark:border-[#1a2d29] dark:text-[#cbd5e1] dark:hover:bg-[#162722]'
+              ? 'bg-[#e2f7ed] border-[#00a76b] text-[#00a76b] dark:bg-[#162722] dark:border-[#00a76b]'
+              : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-[#111c18] dark:border-[#1a2d29] dark:text-[#cbd5e1] dark:hover:bg-[#162722]'
               }`}
           >
             <SlidersHorizontal size={15} />
             <span>Filters</span>
           </button>
         </div>
-
-        {/* Filter Dropdown Panel */}
-        {showFiltersPanel && (
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3 p-4 bg-white dark:bg-[#111c18] border border-gray-200 dark:border-[#1a2d29] rounded-2xl shadow-sm animate-fade-in"
+        <div>
+          <select
+            value={filterRole}
+            onChange={(e) => setFilterRole(e.target.value)}
+            className="zap-input h-12 uppercase font-black"
           >
-            <div>
-              <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Department</label>
-              <select
-                value={filterDept}
-                onChange={(e) => setFilterDept(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-50 dark:bg-[#162722] border border-gray-200 dark:border-[#1a2d29] rounded-lg text-sm font-semibold text-gray-700 dark:text-[#cbd5e1] focus:outline-none focus:border-[#00a76b]"
-              >
-                <option value="">All Departments</option>
-                <option value="Design">Design</option>
-                <option value="Engineering">Engineering</option>
-                <option value="HR">HR</option>
-                <option value="Marketing">Marketing</option>
-                <option value="Sales">Sales</option>
-                <option value="Finance">Finance</option>
-                <option value="Operations">Operations</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Status</label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-50 dark:bg-[#162722] border border-gray-200 dark:border-[#1a2d29] rounded-lg text-sm font-semibold text-gray-700 dark:text-[#cbd5e1] focus:outline-none focus:border-[#00a76b]"
-              >
-                <option value="">All Statuses</option>
-                <option value="Active">Active</option>
-                <option value="On Leave">On Leave</option>
-              </select>
-            </div>
-          </div>
-        )}
+            <option value="">ALL ROLES</option>
+            <option value="admin">ADMINS</option>
+            <option value="hr">HR OFFICERS</option>
+            <option value="manager">MANAGERS</option>
+            <option value="employee">EMPLOYEES</option>
+          </select>
+          
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="zap-input h-12 uppercase font-black ml-3"
+          >
+            <option value="">ALL STATUSES</option>
+            <option value="active">ACTIVE</option>
+            <option value="inactive">INACTIVE</option>
+          </select>
+        </div>
       </div>
 
       {/* 3. Table Card Container */}
@@ -376,95 +252,116 @@ const HREmployees = () => {
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="border-b border-[#e2eae7] dark:border-[#1a2d29] bg-[#f9fafb]/50 dark:bg-[#162722]/30">
+                  <th className="py-4 px-6 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">EMPLOYEE ID</th>
                   <th className="py-4 px-6 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">EMPLOYEE</th>
-                  <th className="py-4 px-6 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">DEPARTMENT</th>
                   <th className="py-4 px-6 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">DESIGNATION</th>
                   <th className="py-4 px-6 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">JOIN DATE</th>
                   <th className="py-4 px-6 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">STATUS</th>
                   <th className="py-4 px-6 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#e2eae7] dark:divide-[#1a2d29]">
-                {filteredEmployees.map((emp) => {
-                  const initials = getInitials(emp.fullName);
-                  return (
-                    <tr key={emp._id} className="hover:bg-[#f2fbf6]/50 dark:hover:bg-[#162722]/30 transition-colors group">
-                      {/* Initials Avatar + Info block */}
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-[13px] bg-[#e2f7ed] text-[#00875a] dark:bg-[#112a20] dark:text-[#3cd070] select-none shrink-0">
-                            {initials}
-                          </div>
-                          <div>
-                            <div className="font-semibold text-gray-900 dark:text-white text-[15px]">{emp.fullName}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 font-normal">{emp.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      {/* Department */}
-                      <td className="py-4 px-6 text-sm text-gray-900 dark:text-gray-300">
-                        {emp.department}
-                      </td>
-                      {/* Designation */}
-                      <td className="py-4 px-6 text-sm text-gray-900 dark:text-gray-400">
-                        {emp.designation}
-                      </td>
-                      {/* Join Date */}
-                      <td className="py-4 px-6 text-sm text-gray-600 dark:text-gray-400 font-normal">
-                        {formatDate(emp.joinDate)}
-                      </td>
-                      {/* Status badge */}
-                      <td className="py-4 px-6">
-                        {renderStatusBadge(emp.status)}
-                      </td>
-                      {/* Row-level dropdown options */}
-                      <td className="py-4 px-6 text-right relative">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveActionId(activeActionId === emp._id ? null : emp._id);
-                          }}
-                          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-[#162722] text-gray-400 hover:text-gray-700 dark:hover:text-white transition-all cursor-pointer border-none bg-transparent"
-                          title="Options"
-                        >
-                          <MoreHorizontal size={18} />
-                        </button>
-                        {activeActionId === emp._id && (
-                          <div className="absolute right-6 top-10 w-44 bg-white dark:bg-[#111c18] border border-[#e2eae7] dark:border-[#1a2d29] rounded-xl shadow-lg z-50 py-1 text-left animate-fade-in">
-                            <button
-                              onClick={() => handleView(emp._id)}
-                              className="w-full px-4 py-2.5 text-xs font-semibold text-gray-700 dark:text-[#cbd5e1] hover:bg-gray-50 dark:hover:bg-[#162722] transition-all border-none bg-transparent cursor-pointer flex items-center gap-2"
-                            >
-                              <Eye size={13} />
-                              <span>View profile</span>
-                            </button>
-                            <button
-                              onClick={() => handleEdit(emp._id)}
-                              className="w-full px-4 py-2.5 text-xs font-semibold text-gray-700 dark:text-[#cbd5e1] hover:bg-gray-50 dark:hover:bg-[#162722] transition-all border-none bg-transparent cursor-pointer flex items-center gap-2"
-                            >
-                              <Edit3 size={13} />
-                              <span>Edit details</span>
-                            </button>
-                            <div className="border-t border-[#eceae3] dark:border-[#1a2d29] my-1"></div>
-                            <button
-                              onClick={() => handleDelete(emp._id)}
-                              className="w-full px-4 py-2.5 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all border-none bg-transparent cursor-pointer flex items-center gap-2"
-                            >
-                              <Trash2 size={13} />
-                              <span>Deactivate</span>
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+              <tbody>
+                {paginatedEmployees.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="text-center py-24 border border-[#c5c0b1] bg-[#fffdf9] rounded-[8px]">
+                    <p className="text-[16px] font-medium text-[#939084]">No active personnel nodes matching filter.</p>
+                  </td>
+                </tr>
+                ) : (
+                paginatedEmployees.map((emp) => (
+                <tr key={emp._id} className="border-b border-[#c5c0b1] hover:bg-[#fffdf9] transition-colors group">
+                  <td className="py-6 px-4">
+                    <span className="font-bold text-[#201515]">{emp.employeeId || 'NODE-UNDEF'}</span>
+                  </td>
+                  <td className="py-6 px-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-[#eceae3] border border-[#c5c0b1] rounded-[4px] flex items-center justify-center overflow-hidden">
+                        {emp.profileImage ? <img src={getImageUrl(emp.profileImage)} alt="User" className="w-full h-full object-cover" /> : <User size={18} className="text-[#939084]" />}
+                      </div>
+                      <div>
+                        <p className="text-[15px] font-bold text-[#201515] leading-none mb-2">{emp.fullName || emp.userId?.name || 'Anonymous Node'}</p>
+                        <p className="text-[13px] font-medium text-[#939084] leading-none">{emp.email || emp.userId?.email}</p>
+                      </div>
+                    </div>
+                  </td>
+                  {/* Designation */}
+                  <td className="py-4 px-6 text-sm text-gray-900 dark:text-gray-400">
+                    {emp.designation}
+                  </td>
+                  {/* Join Date */}
+                  <td className="py-4 px-6 text-sm text-gray-600 dark:text-gray-400 font-normal">
+                    {formatDate(emp.joinDate)}
+                  </td>
+                  {/* Status badge */}
+                  <td className="py-4 px-6">
+                    {renderStatusBadge(emp.status)}
+                  </td>
+                  {/* Row-level dropdown options */}
+                  <td className="py-4 px-6 text-right relative">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                      onClick={() => handleView(emp._id)}
+                      className="zap-btn zap-btn-outline w-10 h-10 flex items-center justify-center p-0"
+                    >
+                      <MoreHorizontal size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleEdit(emp._id)}
+                      className="zap-btn zap-btn-outline w-10 h-10 flex items-center justify-center p-0"
+                    >
+                      <Edit3 size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(emp._id)}
+                      className="zap-btn zap-btn-outline w-10 h-10 flex items-center justify-center p-0 text-[#ff4f00]"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              ))
+              )}
+            </tbody>
+          </table>
+        </div>
         )}
-      </div>
+
+      {/* PAGINATION CONTROLS */}
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center px-8 py-5 bg-gray-50 border-t border-[#eceae3]">
+          <span className="text-[11px] font-black uppercase tracking-widest text-[#939084]">
+            Page {currentPage} of {totalPages} ({filteredEmployees.length} total nodes)
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-[#eceae3] ${currentPage === 1 ? 'opacity-40 cursor-not-allowed bg-gray-100 text-gray-400' : 'bg-white text-[#201515] hover:border-[#ff4f00] hover:text-[#ff4f00] cursor-pointer'}`}
+            >
+              Prev
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNo) => (
+              <button
+                key={pageNo}
+                onClick={() => setCurrentPage(pageNo)}
+                className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all border ${currentPage === pageNo ? 'bg-[#ff4f00] text-white border-[#ff4f00]' : 'bg-white text-[#201515] border-[#eceae3] hover:border-[#ff4f00] hover:text-[#ff4f00] cursor-pointer'}`}
+              >
+                {pageNo}
+              </button>
+            ))}
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-[#eceae3] ${currentPage === totalPages ? 'opacity-40 cursor-not-allowed bg-gray-100 text-gray-400' : 'bg-white text-[#201515] hover:border-[#ff4f00] hover:text-[#ff4f00] cursor-pointer'}`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
+    </div >
   );
 };
 

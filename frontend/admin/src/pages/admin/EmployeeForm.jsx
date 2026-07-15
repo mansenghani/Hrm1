@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Save, ArrowLeft, Loader2, ChevronDown, FileText, UploadCloud, CheckCircle } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, ChevronDown, FileText, UploadCloud, CheckCircle, Download } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const EmployeeForm = () => {
@@ -11,7 +11,9 @@ const EmployeeForm = () => {
 
   const [formData, setFormData] = useState({
     employeeId: '',
-    fullName: '',
+    firstName: '',
+    middleName: '',
+    lastName: '',
     email: '',
     personalEmail: '',
     password: '',
@@ -20,6 +22,7 @@ const EmployeeForm = () => {
     dob: '',
     address: '',
     role: 'employee',
+    designation: '',
     managerId: '',
     joinDate: '',
     employmentType: 'Full-time'
@@ -44,9 +47,16 @@ const EmployeeForm = () => {
              headers: { Authorization: `Bearer ${token}` }
           });
           const emp = empRes.data;
+          const nameParts = (emp.fullName || emp.name || '').split(' ');
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+          const middleName = nameParts.length > 2 ? nameParts.slice(1, -1).join(' ') : '';
+
           setFormData({
             employeeId: emp.employeeId || '',
-            fullName: emp.fullName || '',
+            firstName,
+            middleName,
+            lastName,
             email: emp.email || '',
             personalEmail: emp.personalEmail || '',
             phone: emp.phone || '',
@@ -54,6 +64,7 @@ const EmployeeForm = () => {
             dob: emp.dob ? emp.dob.split('T')[0] : '',
             address: emp.address || '',
             role: emp.userId?.role || emp.role || 'employee',
+            designation: emp.designation || emp.position || '',
             managerId: emp.managerId?._id || '',
             joinDate: emp.joinDate ? emp.joinDate.split('T')[0] : '',
             employmentType: emp.employmentType || 'Full-time',
@@ -75,9 +86,10 @@ const EmployeeForm = () => {
     let { name, value } = e.target;
     let newErrors = { ...errors, [name]: '' };
 
-    if (name === 'fullName') {
+    if (name === 'firstName' || name === 'lastName' || name === 'middleName') {
       if (value && !/^[A-Za-z\s]*$/.test(value)) {
-        newErrors[name] = 'Full Name allows only alphabetic characters.';
+        const fieldDisplayName = name === 'firstName' ? 'First Name' : name === 'lastName' ? 'Last Name' : 'Middle Name';
+        newErrors[name] = `${fieldDisplayName} allows only alphabetic characters.`;
         value = value.replace(/[^A-Za-z\s]/g, '');
       }
     }
@@ -86,6 +98,9 @@ const EmployeeForm = () => {
       if (value && !/^[0-9]*$/.test(value)) {
         newErrors.phone = 'Only numbers (0-9) are allowed.';
         value = value.replace(/[^0-9]/g, '');
+      }
+      if (value.length > 10) {
+        value = value.slice(0, 10);
       }
     }
 
@@ -114,9 +129,14 @@ const EmployeeForm = () => {
 
     // Custom Validation
     const newErrors = {};
-    if (!formData.fullName) newErrors.fullName = 'Full Name is required.';
+    if (!formData.firstName) newErrors.firstName = 'First Name is required.';
+    if (!formData.lastName) newErrors.lastName = 'Last Name is required.';
     if (!formData.email) newErrors.email = 'Email Address is required.';
-    if (!formData.phone) newErrors.phone = 'Phone Number is required.';
+    if (!formData.phone) {
+      newErrors.phone = 'Phone Number is required.';
+    } else if (formData.phone.length !== 10) {
+      newErrors.phone = 'Phone Number must be exactly 10 digits.';
+    }
     if (!isEdit && !formData.password) {
       newErrors.password = 'Password is required.';
     } else if (formData.password) {
@@ -143,6 +163,10 @@ const EmployeeForm = () => {
     try {
       const token = sessionStorage.getItem('token');
       const submitData = { ...formData };
+      submitData.fullName = `${formData.firstName} ${formData.middleName ? formData.middleName + ' ' : ''}${formData.lastName}`.trim();
+      delete submitData.firstName;
+      delete submitData.middleName;
+      delete submitData.lastName;
       
       // Data cleanup
       if (!submitData.managerId) delete submitData.managerId;
@@ -225,7 +249,7 @@ const EmployeeForm = () => {
                   <img src={formData.profileImage} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-4xl font-black text-[#1E2026] opacity-10 uppercase">
-                    {formData.fullName?.substring(0, 2) || 'SA'}
+                    {formData.firstName?.substring(0, 1) || 'S'}{formData.lastName?.substring(0, 1) || 'A'}
                   </span>
                 )}
               </div>
@@ -239,6 +263,13 @@ const EmployeeForm = () => {
                   onChange={async (e) => {
                     const file = e.target.files[0];
                     if (!file) return;
+                    
+                    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                    if (!validImageTypes.includes(file.type)) {
+                      toast.error('Unsupported file format. Only images are allowed.');
+                      return;
+                    }
+
                     const reader = new FileReader();
                     reader.onloadend = async () => {
                       const token = sessionStorage.getItem('token');
@@ -275,7 +306,14 @@ const EmployeeForm = () => {
                   onClick={() => formData.adharCard && window.open(formData.adharCard, '_blank')}
                 >
                   {formData.adharCard ? (
-                    <img src={formData.adharCard} alt="" className="w-full h-full object-cover" />
+                    (formData.adharCard.toLowerCase().endsWith('.pdf') || formData.adharCard.startsWith('data:application/pdf')) ? (
+                      <div className="flex flex-col items-center gap-2 text-center p-4">
+                        <FileText size={48} className="text-[#F0B90B]" />
+                        <span className="text-[10px] font-bold text-[#1E2026]">View PDF</span>
+                      </div>
+                    ) : (
+                      <img src={formData.adharCard} alt="" className="w-full h-full object-cover" />
+                    )
                   ) : (
                     <div className="flex flex-col items-center gap-2">
                        <FileText size={32} className="opacity-20" />
@@ -284,34 +322,61 @@ const EmployeeForm = () => {
                   )}
                 </div>
                 
-                <label className="w-full cursor-pointer bg-[#1E2026] text-white py-3 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95">
-                  <UploadCloud size={14} />
-                  Upload
-                  <input 
-                    type="file" className="hidden" 
-                    onChange={async (e) => {
-                      const file = e.target.files[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onloadend = async () => {
-                        const token = sessionStorage.getItem('token');
-                        try {
-                          setLoading(true);
-                          const res = await axios.post(`/api/employees/${id}/adhar-card`, { document: reader.result }, {
-                            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
-                          });
-                          setFormData({ ...formData, adharCard: res.data.adharCard });
-                          toast.success('Adharcard Protocol Verified');
-                        } catch (err) {
-                          toast.error('Identity Verification Failed');
-                        } finally {
-                          setLoading(false);
+                <div className="flex w-full gap-2">
+                  <label className="flex-1 cursor-pointer bg-[#1E2026] text-white py-3 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-1 shadow-lg active:scale-95">
+                    <UploadCloud size={14} />
+                    Upload
+                    <input 
+                      type="file" className="hidden" 
+                      accept="image/*,.pdf"
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+
+                        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+                        if (!validTypes.includes(file.type)) {
+                          toast.error('Unsupported file format. Only images and PDFs are allowed.');
+                          return;
                         }
-                      };
-                      reader.readAsDataURL(file);
-                    }}
-                  />
-                </label>
+
+                        const reader = new FileReader();
+                        reader.onloadend = async () => {
+                          const token = sessionStorage.getItem('token');
+                          try {
+                            setLoading(true);
+                            const res = await axios.post(`/api/employees/${id}/adhar-card`, { document: reader.result }, {
+                              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+                            });
+                            setFormData({ ...formData, adharCard: res.data.adharCard });
+                            toast.success('Adharcard Protocol Verified');
+                          } catch (err) {
+                            toast.error('Identity Verification Failed');
+                          } finally {
+                            setLoading(false);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+                  {formData.adharCard && (
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = formData.adharCard;
+                        link.download = `AdharCard_${formData.employeeId || 'doc'}`;
+                        link.target = "_blank";
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      className="flex-1 cursor-pointer bg-white text-[#1E2026] border border-[#E6E8EA] py-3 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center justify-center gap-1 shadow-sm active:scale-95"
+                    >
+                      <Download size={14} /> Download
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -324,7 +389,14 @@ const EmployeeForm = () => {
                   onClick={() => formData.bankDetails && window.open(formData.bankDetails, '_blank')}
                 >
                   {formData.bankDetails ? (
-                    <img src={formData.bankDetails} alt="" className="w-full h-full object-cover" />
+                    (formData.bankDetails.toLowerCase().endsWith('.pdf') || formData.bankDetails.startsWith('data:application/pdf')) ? (
+                      <div className="flex flex-col items-center gap-2 text-center p-4">
+                        <FileText size={48} className="text-[#F0B90B]" />
+                        <span className="text-[10px] font-bold text-[#1E2026]">View PDF</span>
+                      </div>
+                    ) : (
+                      <img src={formData.bankDetails} alt="" className="w-full h-full object-cover" />
+                    )
                   ) : (
                     <div className="flex flex-col items-center gap-2">
                        <span className="material-symbols-outlined text-3xl opacity-20">credit_card</span>
@@ -333,34 +405,61 @@ const EmployeeForm = () => {
                   )}
                 </div>
 
-                <label className="w-full cursor-pointer bg-[#1E2026] text-white py-3 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95">
-                  <UploadCloud size={14} />
-                  Upload
-                  <input 
-                    type="file" className="hidden" 
-                    onChange={async (e) => {
-                      const file = e.target.files[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onloadend = async () => {
-                        const token = sessionStorage.getItem('token');
-                        try {
-                          setLoading(true);
-                          const res = await axios.post(`/api/employees/${id}/bank-details`, { document: reader.result }, {
-                            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
-                          });
-                          setFormData({ ...formData, bankDetails: res.data.bankDetails });
-                          toast.success('Financial Asset Synchronized');
-                        } catch (err) {
-                          toast.error('Banking Verification Failed');
-                        } finally {
-                          setLoading(false);
+                <div className="flex w-full gap-2">
+                  <label className="flex-1 cursor-pointer bg-[#1E2026] text-white py-3 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-1 shadow-lg active:scale-95">
+                    <UploadCloud size={14} />
+                    Upload
+                    <input 
+                      type="file" className="hidden" 
+                      accept="image/*,.pdf"
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+
+                        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+                        if (!validTypes.includes(file.type)) {
+                          toast.error('Unsupported file format. Only images and PDFs are allowed.');
+                          return;
                         }
-                      };
-                      reader.readAsDataURL(file);
-                    }}
-                  />
-                </label>
+
+                        const reader = new FileReader();
+                        reader.onloadend = async () => {
+                          const token = sessionStorage.getItem('token');
+                          try {
+                            setLoading(true);
+                            const res = await axios.post(`/api/employees/${id}/bank-details`, { document: reader.result }, {
+                              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+                            });
+                            setFormData({ ...formData, bankDetails: res.data.bankDetails });
+                            toast.success('Financial Asset Synchronized');
+                          } catch (err) {
+                            toast.error('Banking Verification Failed');
+                          } finally {
+                            setLoading(false);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+                  {formData.bankDetails && (
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = formData.bankDetails;
+                        link.download = `BankDetails_${formData.employeeId || 'doc'}`;
+                        link.target = "_blank";
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      className="flex-1 cursor-pointer bg-white text-[#1E2026] border border-[#E6E8EA] py-3 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center justify-center gap-1 shadow-sm active:scale-95"
+                    >
+                      <Download size={14} /> Download
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -373,7 +472,14 @@ const EmployeeForm = () => {
                   onClick={() => formData.panCard && window.open(formData.panCard, '_blank')}
                 >
                   {formData.panCard ? (
-                    <img src={formData.panCard} alt="" className="w-full h-full object-cover" />
+                    (formData.panCard.toLowerCase().endsWith('.pdf') || formData.panCard.startsWith('data:application/pdf')) ? (
+                      <div className="flex flex-col items-center gap-2 text-center p-4">
+                        <FileText size={48} className="text-[#F0B90B]" />
+                        <span className="text-[10px] font-bold text-[#1E2026]">View PDF</span>
+                      </div>
+                    ) : (
+                      <img src={formData.panCard} alt="" className="w-full h-full object-cover" />
+                    )
                   ) : (
                     <div className="flex flex-col items-center gap-2">
                        <span className="material-symbols-outlined text-3xl opacity-20">badge</span>
@@ -382,34 +488,61 @@ const EmployeeForm = () => {
                   )}
                 </div>
 
-                <label className="w-full cursor-pointer bg-[#1E2026] text-white py-3 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95">
-                  <UploadCloud size={14} />
-                  Upload
-                  <input 
-                    type="file" className="hidden" 
-                    onChange={async (e) => {
-                      const file = e.target.files[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onloadend = async () => {
-                        const token = sessionStorage.getItem('token');
-                        try {
-                          setLoading(true);
-                          const res = await axios.post(`/api/employees/${id}/pan-card`, { document: reader.result }, {
-                            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
-                          });
-                          setFormData({ ...formData, panCard: res.data.panCard });
-                          toast.success('PAN Card Protocol Synchronized');
-                        } catch (err) {
-                          toast.error('PAN Verification Failed');
-                        } finally {
-                          setLoading(false);
+                <div className="flex w-full gap-2">
+                  <label className="flex-1 cursor-pointer bg-[#1E2026] text-white py-3 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-1 shadow-lg active:scale-95">
+                    <UploadCloud size={14} />
+                    Upload
+                    <input 
+                      type="file" className="hidden" 
+                      accept="image/*,.pdf"
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+
+                        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+                        if (!validTypes.includes(file.type)) {
+                          toast.error('Unsupported file format. Only images and PDFs are allowed.');
+                          return;
                         }
-                      };
-                      reader.readAsDataURL(file);
-                    }}
-                  />
-                </label>
+
+                        const reader = new FileReader();
+                        reader.onloadend = async () => {
+                          const token = sessionStorage.getItem('token');
+                          try {
+                            setLoading(true);
+                            const res = await axios.post(`/api/employees/${id}/pan-card`, { document: reader.result }, {
+                              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+                            });
+                            setFormData({ ...formData, panCard: res.data.panCard });
+                            toast.success('PAN Card Protocol Synchronized');
+                          } catch (err) {
+                            toast.error('PAN Verification Failed');
+                          } finally {
+                            setLoading(false);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+                  {formData.panCard && (
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = formData.panCard;
+                        link.download = `PAN_${formData.employeeId || 'doc'}`;
+                        link.target = "_blank";
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      className="flex-1 cursor-pointer bg-white text-[#1E2026] border border-[#E6E8EA] py-3 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center justify-center gap-1 shadow-sm active:scale-95"
+                    >
+                      <Download size={14} /> Download
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -427,9 +560,19 @@ const EmployeeForm = () => {
                </div>
              )}
              <div className="space-y-2">
-               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Full Name *</label>
-               <input required name="fullName" value={formData.fullName} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.fullName ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} placeholder="John Doe" />
-               {errors.fullName && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.fullName}</p>}
+               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">First Name *</label>
+               <input required name="firstName" value={formData.firstName} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.firstName ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} placeholder="John" />
+               {errors.firstName && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.firstName}</p>}
+             </div>
+             <div className="space-y-2">
+               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Middle Name</label>
+               <input name="middleName" value={formData.middleName} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.middleName ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} placeholder="Middle" />
+               {errors.middleName && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.middleName}</p>}
+             </div>
+             <div className="space-y-2">
+               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Last Name *</label>
+               <input required name="lastName" value={formData.lastName} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.lastName ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} placeholder="Doe" />
+               {errors.lastName && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.lastName}</p>}
              </div>
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Office Email Address *</label>
@@ -462,7 +605,7 @@ const EmployeeForm = () => {
 
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Phone Number *</label>
-               <input name="phone" maxLength={15} value={formData.phone} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.phone ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} placeholder="+1 234 567 8900" />
+               <input name="phone" maxLength={10} value={formData.phone} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.phone ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} placeholder="1234567890" />
                {errors.phone && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.phone}</p>}
              </div>
 
@@ -480,7 +623,10 @@ const EmployeeForm = () => {
                {errors.role && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.role}</p>}
              </div>
 
-
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Designation</label>
+                <input name="designation" value={formData.designation} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 border-transparent focus:border-[#F0B90B] rounded-xl font-bold text-sm`} placeholder="Software Engineer" />
+              </div>
 
              {/* Direct Manager Selection - Hidden for Leadership Nodes */}
              {!['hr', 'manager', 'admin'].includes(formData.role?.toLowerCase()) && (
@@ -510,7 +656,7 @@ const EmployeeForm = () => {
 
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Birthdate *</label>
-               <input type="date" required name="dob" value={formData.dob} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.dob ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} />
+                <input type="date" required name="dob" disabled={isEdit} value={formData.dob} onChange={handleChange} className={`w-full px-4 py-3 bg-[#F5F5F5] border-2 rounded-xl font-bold text-sm ${isEdit ? 'opacity-60 cursor-not-allowed border-transparent' : (errors.dob ? 'border-[#F6465D] bg-white' : 'border-transparent focus:border-[#F0B90B] focus:bg-white')}`} />
                {errors.dob && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.dob}</p>}
              </div>
 
@@ -530,13 +676,13 @@ const EmployeeForm = () => {
              <div className="space-y-2">
                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Gender Identity *</label>
                <div className="relative">
-                 <select required name="gender" value={formData.gender} onChange={handleChange} className={`w-full px-4 pr-10 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.gender ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm appearance-none cursor-pointer transition-all`}>
-                   <option value="Male">Male</option>
-                   <option value="Female">Female</option>
-                   <option value="Other">Other</option>
-                 </select>
-                 <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#848E9C] pointer-events-none" />
-               </div>
+                  <select required name="gender" disabled={isEdit} value={formData.gender} onChange={handleChange} className={`w-full px-4 pr-10 py-3 bg-[#F5F5F5] border-2 rounded-xl font-bold text-sm appearance-none transition-all ${isEdit ? 'opacity-60 cursor-not-allowed border-transparent' : (errors.gender ? 'border-[#F6465D] bg-white' : 'border-transparent focus:border-[#F0B90B] focus:bg-white cursor-pointer')}`}>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  <ChevronDown size={16} className={`absolute right-4 top-1/2 -translate-y-1/2 text-[#848E9C] pointer-events-none ${isEdit ? 'opacity-50' : ''}`} />
+                </div>
                {errors.gender && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.gender}</p>}
              </div>
 

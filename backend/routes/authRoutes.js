@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { login, getMe, createUser, updatePassword, uploadProfileImage } = require('../controllers/authController');
+const { login, getMe, createUser, updatePassword, uploadProfileImage, forgotPassword, resetPassword } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/upload');
 
 router.post('/login', login);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password/:token', resetPassword);
 router.post('/create-user', protect, createUser);
 router.get('/me', protect, getMe);
 router.put('/update-password', protect, updatePassword);
