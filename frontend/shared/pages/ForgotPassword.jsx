@@ -25,10 +25,10 @@ const ForgotPassword = () => {
 
     try {
       const response = await axios.post('/api/auth/forgot-password', { email });
-      setSuccess(response.data.message || 'Validation successful. Redirecting...');
+      setSuccess(response.data.message || 'A password reset link has been sent.');
       setTimeout(() => {
-        navigate('/reset-password', { state: { email } });
-      }, 1000);
+        navigate('/login');
+      }, 3000);
     } catch (err) {
       if (err.response && err.response.status === 404) {
         setError('Email not registered.');

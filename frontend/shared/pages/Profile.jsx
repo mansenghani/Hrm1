@@ -142,10 +142,10 @@ const Profile = () => {
         </div>
 
         {/* PROFILE METADATA GRID */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, alignItems: 'start', marginBottom: 24 }}>
+        <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: 24 }}>
 
-          {/* IDENTITY CARD */}
-          <div className="verdant-card" style={{ textAlign: 'center', position: 'relative' }}>
+          {/* LEFT: IDENTITY CARD */}
+          <div className="verdant-card" style={{ flex: '0 0 320px', width: '100%', textAlign: 'center', position: 'relative' }}>
             <p style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', margin: '0 0 24px', textAlign: 'left' }}>Identity</p>
 
             <div style={{ display: 'inline-flex', position: 'relative', margin: '0 auto 16px' }}>
@@ -164,10 +164,12 @@ const Profile = () => {
             <p style={{ fontSize: 12, color: '#9ca3af', margin: 0, fontWeight: 600 }}>{userDept}</p>
           </div>
 
-          {/* PERSONAL DETAILS CARD */}
-          <div className="verdant-card">
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', marginBottom: 24, marginTop: 0 }}>Personal details</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px 24px' }}>
+          {/* RIGHT: DETAILS FORMS */}
+          <div style={{ flex: '1 1 500px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
+            {/* PERSONAL DETAILS CARD */}
+            <div className="verdant-card" style={{ height: '100%' }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', marginBottom: 24, marginTop: 0 }}>Personal details</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px 24px' }}>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full name</label>
@@ -213,23 +215,13 @@ const Profile = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px 24px' }}>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Employee ID</label>
-                <input type="text" readOnly defaultValue={empId} className="verdant-input" />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Employee ID</label>
-                <input type="text" readOnly defaultValue={empId} className="verdant-input" />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Employee ID</label>
                 <input type="text" readOnly value={empId} className="verdant-input" />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Designation</label>
-                <input type="text" readOnly value={userRole.toUpperCase()} className="verdant-input" />
+                <input type="text" readOnly value={userData?.designation || userData?.position || userRole} className="verdant-input" />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -238,8 +230,8 @@ const Profile = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Designation</label>
-                <input type="text" readOnly defaultValue={userData?.designation || userData?.position || userRole} className="verdant-input" />
+                <label style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Reporting Manager</label>
+                <input type="text" readOnly value={reportingManagerName} className="verdant-input" />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -247,24 +239,10 @@ const Profile = () => {
                 <input type="text" readOnly value={joinDate} className="verdant-input" />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#a3b3af' : '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Reporting Manager</label>
-                <input type="text" readOnly value={reportingManagerName} className="verdant-input" />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Joining Date</label>
-                <input type="text" readOnly defaultValue={joinDate} className="verdant-input" />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: '#939084', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Joining Date</label>
-                <input type="text" readOnly defaultValue={joinDate} className="verdant-input" />
-              </div>
-
             </div>
           </div>
 
+          </div>
         </div>
 
         {/* VERIFIED DOCUMENTS VAULT */}

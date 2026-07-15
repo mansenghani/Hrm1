@@ -207,6 +207,9 @@ exports.uploadProfileImage = async (req, res) => {
   }
 };
 
+const crypto = require('crypto');
+const sendEmail = require('../utils/sendEmail');
+
 // 🔄 RECOVERY: Forgot Password Validation
 exports.forgotPassword = async (req, res) => {
   try {
@@ -220,9 +223,32 @@ exports.forgotPassword = async (req, res) => {
       return res.status(404).json({ message: 'Email not registered' });
     }
 
-    // In a real application, you would generate a reset token and send an email here.
-    // For now, we simulate a successful validation.
-    res.json({ message: 'If this email exists in our system, a password reset link has been sent.' });
+    // Generate token
+    const resetToken = user.createPasswordResetToken();
+    await user.save({ validateBeforeSave: false });
+
+    // Create reset URL
+    // Pointing to frontend which runs on port 4000/5000/etc based on the request origin, or a standard host
+    const resetUrl = `${req.protocol}://${req.get('host').replace(/:\d+/, ':4000')}/reset-password/${resetToken}`;
+
+    const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please click on the link below to reset your password:\n\n${resetUrl}\n\nIf you did not request a password reset, please ignore this email.\nThis link will expire in 30 minutes.`;
+
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: 'FluidHR - Password Reset Token',
+        message
+      });
+
+      res.status(200).json({ message: 'A password reset link has been sent.' });
+    } catch (err) {
+      console.error(err);
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      return res.status(500).json({ message: 'Email could not be sent' });
+    }
 
   } catch (error) {
     console.error('🔥 Forgot Password Error:', error);
@@ -233,20 +259,39 @@ exports.forgotPassword = async (req, res) => {
 // 🔄 RECOVERY: Reset Password
 exports.resetPassword = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and new password are required' });
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ message: 'New password is required' });
     }
 
-    const user = await User.findOne({ email });
+    // Check strength
+    const strongRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.{8,})");
+    if (!strongRegex.test(password)) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters long, contain 1 uppercase letter and 1 number.' });
+    }
+
+    // Hash token to compare with DB
+    const resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(400).json({ message: 'Invalid or expired password reset token' });
     }
 
+    // Set new password (the pre-save hook will hash it)
     user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    
     await user.save();
 
-    res.json({ message: 'Password has been successfully reset.' });
+    res.json({ message: 'Password has been successfully reset. You can now login.' });
 
   } catch (error) {
     console.error('🔥 Reset Password Error:', error);

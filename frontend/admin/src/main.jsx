@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import axios from 'axios';
 import App from './App';
+import ErrorBoundary from '@shared/components/ErrorBoundary';
 import './index.css';
 
 // 🛰️ DYNAMIC AXIOS BASE URL CONFIGURATION

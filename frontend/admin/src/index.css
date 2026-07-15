@@ -241,6 +241,10 @@
   transition: all 0.2s ease-in-out !important;
 }
 
+.verdant-input.with-search-icon {
+  padding-left: 46px !important;
+}
+
 .dark .verdant-input {
   background-color: #111c18 !important;
   color: #e2e8f0 !important;

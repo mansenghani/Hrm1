@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { ShieldCheck, ArrowRight, ArrowLeft, Lock, Zap, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { EntryButton, EntryInput } from '../components/EntryPrimitives';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const email = location.state?.email;
+  const { token } = useParams();
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -16,8 +15,8 @@ const ResetPassword = () => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // If no email is provided via state, redirect to forgot password
-  if (!email) {
+  // If no token is provided, redirect to forgot password
+  if (!token) {
     navigate('/forgot-password', { replace: true });
     return null;
   }
@@ -42,7 +41,7 @@ const ResetPassword = () => {
     }
 
     try {
-      const response = await axios.post('/api/auth/reset-password', { email, password });
+      const response = await axios.post(`/api/auth/reset-password/${token}`, { password });
       setSuccess(response.data.message || 'Password reset successfully.');
       setTimeout(() => {
         navigate('/login', { replace: true });
@@ -97,7 +96,7 @@ const ResetPassword = () => {
                     Reset Password
                  </h1>
                  <p className="text-[13px] text-[#36342e] font-medium leading-relaxed">
-                    Setting new credentials for <span className="font-bold">{email}</span>
+                    Setting new credentials for your account.
                  </p>
               </div>
 

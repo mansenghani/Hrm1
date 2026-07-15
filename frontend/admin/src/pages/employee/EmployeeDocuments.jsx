@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Download, Upload, Trash2, Check, RefreshCw, Search, X, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import axios from 'axios';
+import { getImageUrl } from '@shared/services/api';
 
 const EmployeeDocuments = () => {
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
@@ -11,12 +13,7 @@ const EmployeeDocuments = () => {
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     return () => observer.disconnect();
   }, []);
-  const [dossierFiles, setDossierFiles] = useState([
-    { id: 1, name: 'Offer letter.pdf', size: '182 KB', date: 'Mar 14, 2022', type: 'offer_letter', dummy: true },
-    { id: 2, name: 'Employment contract.pdf', size: '254 KB', date: 'Mar 14, 2022', type: 'contract', dummy: true },
-    { id: 3, name: 'ID Verification.pdf', size: '98 KB', date: 'Mar 16, 2022', type: 'id_proof', dummy: true },
-    { id: 4, name: 'Tax form W-4.pdf', size: '64 KB', date: 'Jan 5, 2026', type: 'tax_form', dummy: true }
-  ]);
+  const [dossierFiles, setDossierFiles] = useState([]);
   const [userData, setUserData] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -202,9 +199,6 @@ const EmployeeDocuments = () => {
             <button onClick={handleExport} className="verdant-btn-outline" style={{ gap: 8, height: 44 }}>
               <Download size={16} /> Export
             </button>
-            <button onClick={() => setIsUploadModalOpen(true)} className="verdant-btn-primary" style={{ gap: 8, height: 44 }}>
-              <Plus size={16} /> Upload Generic
-            </button>
           </div>
         </div>
 
@@ -217,8 +211,7 @@ const EmployeeDocuments = () => {
               placeholder="Search..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="verdant-input"
-              style={{ paddingLeft: 46 }}
+              className="verdant-input with-search-icon"
             />
           </div>
         </div>

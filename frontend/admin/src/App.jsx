@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import Login from '@shared/pages/Login';
 import ForgotPassword from '@shared/pages/ForgotPassword';
 import ResetPassword from '@shared/pages/ResetPassword';
+
 import AdminDashboard from './pages/admin/AdminDashboard';
 import HRDashboard from './pages/hr/HRDashboard';
 import ManagerDashboard from './pages/manager/ManagerDashboard';
@@ -47,7 +48,6 @@ import TaskCreate from './pages/TaskCreate';
 import TaskUpdate from './pages/TaskUpdate';
 import Notifications from './pages/Notifications';
 import AllNotifications from './pages/AllNotifications';
-import Departments from './pages/Departments';
 
 // ROUTE PROTECTION LOGIC
 const ProtectedRoute = ({ children, allowedRole }) => {
@@ -93,7 +93,7 @@ const App = () => {
         <Route path="/" element={<RootRedirect />} />
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         {/* REDIRECTS FOR OLD PATHS */}
         <Route path="/select-role" element={<Navigate to="/login" replace />} />

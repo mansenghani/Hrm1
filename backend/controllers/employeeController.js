@@ -15,6 +15,9 @@ exports.getEmployees = async (req, res) => {
     } else if (role === 'employee') {
       // Employees should only see themselves, or maybe they just use /me endpoint. If they hit this, return just their profile.
       query.userId = req.user.id;
+    } else if (role === 'hr') {
+      // HR should not see Admin profiles since they cannot view/edit/delete them
+      query.role = { $ne: 'admin' };
     }
 
     const employees = await Employee.find(query)
@@ -109,9 +112,12 @@ exports.updateEmployee = async (req, res) => {
   try {
     const { password, ...updateData } = req.body;
     
-    // Ensure office email cannot be modified after creation
+    // Ensure office email and DOB cannot be modified after creation
     if (updateData.email) {
       delete updateData.email;
+    }
+    if (updateData.dob) {
+      delete updateData.dob;
     }
 
     const employee = await Employee.findById(req.params.id);

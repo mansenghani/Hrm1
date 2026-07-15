@@ -35,9 +35,9 @@ const EmployeeDocuments = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
     if (!validTypes.includes(file.type)) {
-      toast.error('Invalid format. Please upload a JPG or PNG image.', {
+      toast.error('Invalid format. Please upload JPG, PNG, or PDF.', {
         style: { background: '#ff4f00', color: '#fff', fontWeight: 'bold' }
       });
       e.target.value = '';
@@ -50,9 +50,9 @@ const EmployeeDocuments = () => {
         setUploadingField(fieldName);
         
         let endpoint = '';
-        if (fieldName === 'adharCard') endpoint = `/api/employees/${userData._id}/adhar-card`;
-        if (fieldName === 'bankDetails') endpoint = `/api/employees/${userData._id}/bank-details`;
-        if (fieldName === 'panCard') endpoint = `/api/employees/${userData._id}/pan-card`;
+        if (fieldName === 'adharCard') endpoint = `/api/employees/${userData.employeeRecordId}/adhar-card`;
+        if (fieldName === 'bankDetails') endpoint = `/api/employees/${userData.employeeRecordId}/bank-details`;
+        if (fieldName === 'panCard') endpoint = `/api/employees/${userData.employeeRecordId}/pan-card`;
 
         await axios.post(endpoint, { document: reader.result }, {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
@@ -97,6 +97,8 @@ const EmployeeDocuments = () => {
   const { adharCard, bankDetails, panCard } = userData;
 
   const renderDocumentBox = (title, field, currentValue, icon) => {
+    const isPdf = currentValue && (currentValue.toLowerCase().endsWith('.pdf') || currentValue.startsWith('data:application/pdf'));
+
     return (
       <div className="bg-white rounded-xl border border-[#eceae3] p-6 shadow-sm flex flex-col justify-between h-full hover:border-[#00a76b] transition-all">
         <div className="flex items-start justify-between mb-6">
@@ -106,7 +108,13 @@ const EmployeeDocuments = () => {
               onClick={() => currentValue && window.open(getImageUrl(currentValue), '_blank')}
             >
               {currentValue ? (
-                <img src={getImageUrl(currentValue)} alt={title} className="w-full h-full object-cover" />
+                isPdf ? (
+                  <div className="flex flex-col items-center justify-center text-red-500">
+                    <span className="font-black text-[10px] uppercase">PDF</span>
+                  </div>
+                ) : (
+                  <img src={getImageUrl(currentValue)} alt={title} className="w-full h-full object-cover" />
+                )
               ) : (
                 icon
               )}
@@ -129,7 +137,7 @@ const EmployeeDocuments = () => {
           <input 
             type="file" 
             className="hidden" 
-            accept=".jpg,.jpeg,.png,image/jpeg,image/png" 
+            accept=".jpg,.jpeg,.png,image/jpeg,image/png,application/pdf" 
             onChange={(e) => handleDocumentChange(e, field)}
             disabled={uploadingField === field}
           />

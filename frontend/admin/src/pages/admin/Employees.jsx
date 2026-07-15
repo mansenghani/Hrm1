@@ -7,9 +7,9 @@ import { API_BASE_URL, getImageUrl } from '@shared/services/api';
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterRole, setFilterRole] = useState('');
-  const [filterStatus, setFilterStatus] = useState('active');
+  const [searchTerm, setSearchTerm] = useState(() => sessionStorage.getItem('admin_searchTerm') || '');
+  const [filterRole, setFilterRole] = useState(() => sessionStorage.getItem('admin_filterRole') || '');
+  const [filterStatus, setFilterStatus] = useState(() => sessionStorage.getItem('admin_filterStatus') || 'active');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -37,6 +37,9 @@ const Employees = () => {
 
   useEffect(() => {
     setCurrentPage(1);
+    sessionStorage.setItem('admin_searchTerm', searchTerm);
+    sessionStorage.setItem('admin_filterRole', filterRole);
+    sessionStorage.setItem('admin_filterStatus', filterStatus);
   }, [searchTerm, filterRole, filterStatus]);
 
   useEffect(() => {
@@ -49,7 +52,8 @@ const Employees = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredEmployees = employees.filter(emp => {
+  const uniqueEmployees = Array.from(new Map(employees.map(emp => [emp._id, emp])).values());
+  const filteredEmployees = uniqueEmployees.filter(emp => {
     const fullName = emp.fullName?.toLowerCase() || emp.userId?.name?.toLowerCase() || '';
     const email = emp.email?.toLowerCase() || emp.userId?.email?.toLowerCase() || '';
     const empId = emp.employeeId?.toLowerCase() || '';
@@ -88,6 +92,18 @@ const Employees = () => {
         fetchEmployees();
       } catch (err) {
         console.error('Status update failed:', err);
+      }
+    }
+  };
+
+  const handleDelete = async (empId) => {
+    if (window.confirm('Are you sure you want to remove this employee? This will change their status to INACTIVE instead of permanently deleting the record.')) {
+      try {
+        const token = sessionStorage.getItem('token');
+        await axios.delete(`/api/employees/${empId}`, { headers: { Authorization: `Bearer ${token}` } });
+        fetchEmployees();
+      } catch (err) {
+        console.error('Delete failed:', err);
       }
     }
   };
@@ -222,6 +238,16 @@ const Employees = () => {
                   <p className="zap-caption-upper text-[#939084] dark:text-[#a3a094]">Syncing Matrix...</p>
                 </td>
               </tr>
+            ) : filteredEmployees.length === 0 ? (
+              <tr>
+                <td colSpan="4" className="text-center py-24">
+                  <div className="w-12 h-12 bg-gray-50 dark:bg-[#162722] rounded-full flex items-center justify-center mx-auto text-gray-400 dark:text-gray-500 mb-3">
+                    <User size={20} />
+                  </div>
+                  <h3 className="text-sm font-semibold text-[#201515] dark:text-white">No employee nodes found</h3>
+                  <p className="text-xs text-[#939084] dark:text-[#a3a094] mt-1">Try adjusting your filters or search terms.</p>
+                </td>
+              </tr>
             ) : (
               paginatedEmployees.map((emp) => (
                 <tr key={emp._id} className="hover:bg-[#fffdf9] dark:hover:bg-[#1c2e26]/30 transition-colors group">
@@ -253,6 +279,13 @@ const Employees = () => {
                     <div className="flex items-center justify-end gap-3 opacity-60 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => navigate(`/admin/employees/view/${emp._id}`)} className="w-10 h-10 flex items-center justify-center text-[#201515] bg-white border border-[#eceae3] rounded-xl hover:border-[#ff4f00] hover:text-[#ff4f00] transition-all shadow-sm"><Eye size={18} /></button>
                       <button onClick={() => navigate(`/admin/employees/edit/${emp._id}`)} className="w-10 h-10 flex items-center justify-center text-[#201515] bg-white border border-[#eceae3] rounded-xl hover:border-[#ff4f00] hover:text-[#ff4f00] transition-all shadow-sm"><Edit3 size={18} /></button>
+                      <button
+                        onClick={() => handleDelete(emp._id)}
+                        className="w-10 h-10 flex items-center justify-center text-[#201515] bg-white border border-[#eceae3] rounded-xl hover:border-red-500 hover:text-red-500 transition-all shadow-sm"
+                        title="Remove/Delete"
+                      >
+                        <Trash2 size={18} />
+                      </button>
                       <button
                         onClick={() => handleToggleStatus(emp)}
                         className={`w-10 h-10 flex items-center justify-center bg-white border border-[#eceae3] rounded-xl transition-all shadow-sm ${(emp.status === 'active' || emp.userId?.status === 'active') ? 'text-[#ff4f00] hover:bg-[#ff4f00] hover:text-white' : 'text-[#24a148] hover:bg-[#24a148] hover:text-white'}`}

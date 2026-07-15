@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Search, UserPlus, Trash2, Edit3, User, Eye, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Search, UserPlus, Trash2, Edit3, User, Eye, CheckCircle, XCircle, RefreshCw, Download, SlidersHorizontal, MoreHorizontal, Plus } from 'lucide-react';
 import { API_BASE_URL, getImageUrl } from '@shared/services/api';
 
 const HREmployees = () => {
   const [dbEmployees, setDbEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterRole, setFilterRole] = useState('');
+  const [searchTerm, setSearchTerm] = useState(() => sessionStorage.getItem('hr_searchTerm') || '');
+  const [filterRole, setFilterRole] = useState(() => sessionStorage.getItem('hr_filterRole') || '');
+  const [filterStatus, setFilterStatus] = useState(() => sessionStorage.getItem('hr_filterStatus') || 'active');
+  const [showFiltersPanel, setShowFiltersPanel] = useState(false);
   const navigate = useNavigate();
+  const pathRole = window.location.pathname.split('/')[1] || 'hr';
 
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -35,12 +38,19 @@ const HREmployees = () => {
   // Global click listener to close actions dropdown on clicking outside
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterRole]);
+    sessionStorage.setItem('hr_searchTerm', searchTerm);
+    sessionStorage.setItem('hr_filterRole', filterRole);
+    sessionStorage.setItem('hr_filterStatus', filterStatus);
+  }, [searchTerm, filterRole, filterStatus]);
 
-  const filteredEmployees = employees.filter(emp => {
+  const uniqueEmployees = Array.from(new Map(dbEmployees.map(emp => [emp._id, emp])).values());
+  const filteredEmployees = uniqueEmployees.filter(emp => {
     const fullName = emp.fullName?.toLowerCase() || emp.userId?.name?.toLowerCase() || '';
     const email = emp.email?.toLowerCase() || emp.userId?.email?.toLowerCase() || '';
     const empId = emp.employeeId?.toLowerCase() || '';
+    const dept = emp.department?.toLowerCase() || '';
+    const desig = emp.designation?.toLowerCase() || '';
+    const search = searchTerm.toLowerCase();
 
     const matchesSearch = fullName.includes(search) ||
       email.includes(search) ||
@@ -48,8 +58,10 @@ const HREmployees = () => {
       desig.includes(search);
 
     const matchesRole = filterRole ? (emp.role === filterRole || emp.userId?.role === filterRole) : true;
+    const empStatus = emp.status?.toLowerCase() || emp.userId?.status?.toLowerCase() || 'active';
+    const matchesStatus = filterStatus ? empStatus === filterStatus : true;
 
-    return matchesSearch && matchesRole;
+    return matchesSearch && matchesRole && matchesStatus;
   });
 
   const itemsPerPage = 10;
@@ -60,16 +72,13 @@ const HREmployees = () => {
   );
 
   const handleDelete = async (id) => {
-    if (window.confirm('Eject this node from the matrix (Deactivate)?')) {
+    if (window.confirm('Are you sure you want to remove this employee? This will change their status to INACTIVE instead of permanently deleting the record.')) {
       try {
         const token = sessionStorage.getItem('token');
-        await axios.patch(`/api/employees/${emp._id}/status`,
-          { status: newStatus },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await axios.delete(`/api/employees/${id}`, { headers: { Authorization: `Bearer ${token}` } });
         fetchEmployees();
       } catch (err) {
-        console.error('Status update failed:', err);
+        console.error('Delete failed:', err);
       }
     }
   };
@@ -79,15 +88,15 @@ const HREmployees = () => {
       alert('Demo personnel records cannot be modified.');
       return;
     }
-    navigate(`/hr/employees/edit/${id}`);
+    navigate(`/${pathRole}/employees/edit/${id}`);
   };
 
   const handleView = (id) => {
     if (id.startsWith('sample-')) {
-      alert(`Viewing demo profile for ${SAMPLE_EMPLOYEES.find(e => e._id === id)?.fullName}`);
+      alert(`Viewing demo profile for ${id}`);
       return;
     }
-    navigate(`/hr/employees/view/${id}`);
+    navigate(`/${pathRole}/employees/view/${id}`);
   };
 
   const handleExportCSV = () => {
@@ -162,7 +171,7 @@ const HREmployees = () => {
             <span>Export</span>
           </button>
           <button
-            onClick={() => navigate('/hr/employees/create')}
+            onClick={() => navigate(`/${pathRole}/employees/create`)}
             className="zap-btn zap-btn-dark h-14 px-8 flex items-center gap-2"
           >
             <Plus size={16} />
@@ -210,6 +219,16 @@ const HREmployees = () => {
             <option value="manager">MANAGERS</option>
             <option value="employee">EMPLOYEES</option>
           </select>
+          
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="zap-input h-12 uppercase font-black ml-3"
+          >
+            <option value="">ALL STATUSES</option>
+            <option value="active">ACTIVE</option>
+            <option value="inactive">INACTIVE</option>
+          </select>
         </div>
       </div>
 
@@ -233,16 +252,18 @@ const HREmployees = () => {
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="border-b border-[#e2eae7] dark:border-[#1a2d29] bg-[#f9fafb]/50 dark:bg-[#162722]/30">
+                  <th className="py-4 px-6 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">EMPLOYEE ID</th>
                   <th className="py-4 px-6 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">EMPLOYEE</th>
-                  <th className="py-4 px-6 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">DEPARTMENT</th>
                   <th className="py-4 px-6 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">DESIGNATION</th>
                   <th className="py-4 px-6 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">JOIN DATE</th>
                   <th className="py-4 px-6 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">STATUS</th>
                   <th className="py-4 px-6 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider"></th>
                 </tr>
-                ) : paginatedEmployees.length === 0 ? (
+              </thead>
+              <tbody>
+                {paginatedEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="text-center py-24 border border-[#c5c0b1] bg-[#fffdf9] rounded-[8px]">
+                  <td colSpan="6" className="text-center py-24 border border-[#c5c0b1] bg-[#fffdf9] rounded-[8px]">
                     <p className="text-[16px] font-medium text-[#939084]">No active personnel nodes matching filter.</p>
                   </td>
                 </tr>
@@ -261,10 +282,7 @@ const HREmployees = () => {
                         <p className="text-[15px] font-bold text-[#201515] leading-none mb-2">{emp.fullName || emp.userId?.name || 'Anonymous Node'}</p>
                         <p className="text-[13px] font-medium text-[#939084] leading-none">{emp.email || emp.userId?.email}</p>
                       </div>
-                  </td>
-                  {/* Department */}
-                  <td className="py-4 px-6 text-sm text-gray-900 dark:text-gray-300">
-                    {emp.department}
+                    </div>
                   </td>
                   {/* Designation */}
                   <td className="py-4 px-6 text-sm text-gray-900 dark:text-gray-400">
@@ -280,14 +298,15 @@ const HREmployees = () => {
                   </td>
                   {/* Row-level dropdown options */}
                   <td className="py-4 px-6 text-right relative">
-                    <button
-                      onClick={() => navigate(`/hr/employees/view/${emp._id}`)}
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                      onClick={() => handleView(emp._id)}
                       className="zap-btn zap-btn-outline w-10 h-10 flex items-center justify-center p-0"
                     >
                       <MoreHorizontal size={18} />
                     </button>
                     <button
-                      onClick={() => navigate(`/hr/employees/edit/${emp._id}`)}
+                      onClick={() => handleEdit(emp._id)}
                       className="zap-btn zap-btn-outline w-10 h-10 flex items-center justify-center p-0"
                     >
                       <Edit3 size={18} />
@@ -306,6 +325,7 @@ const HREmployees = () => {
             </tbody>
           </table>
         </div>
+        )}
 
       {/* PAGINATION CONTROLS */}
       {totalPages > 1 && (

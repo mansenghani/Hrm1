@@ -34,6 +34,7 @@ const CreateUser = () => {
     middleName: '',
     lastName: '',
     email: '',
+    personalEmail: '',
     phone: '',
     password: '',
     role: 'employee',
@@ -110,12 +111,12 @@ const CreateUser = () => {
       }
     }
 
-    if (name === 'email') {
+    if (name === 'email' || name === 'personalEmail') {
       if (/\s/.test(value)) {
-        newErrors.email = 'Spaces are not allowed in email address.';
+        newErrors[name] = 'Spaces are not allowed in email address.';
         value = value.replace(/\s/g, '');
       } else if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-        newErrors.email = 'Please enter a valid email format (e.g., user@example.com).';
+        newErrors[name] = 'Please enter a valid email format (e.g., user@example.com).';
       }
     }
 
@@ -173,6 +174,10 @@ const CreateUser = () => {
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email format.';
     }
+
+    if (formData.personalEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.personalEmail)) {
+      newErrors.personalEmail = 'Please enter a valid personal email format.';
+    }
     if (!formData.phone) {
       newErrors.phone = 'Phone Number is required.';
     } else if (formData.phone.length !== 10) {
@@ -222,6 +227,7 @@ const CreateUser = () => {
       const payload = {
         name: `${formData.firstName} ${formData.middleName ? formData.middleName + ' ' : ''}${formData.lastName}`.trim(),
         email: formData.email,
+        personalEmail: formData.personalEmail,
         password: formData.password,
         role: formData.role,
         designation: formData.designation,
@@ -314,6 +320,7 @@ const CreateUser = () => {
         middleName: '',
         lastName: '',
         email: '',
+        personalEmail: '',
         password: '',
         role: formData.role,
         designation: '',
@@ -453,7 +460,7 @@ const CreateUser = () => {
 
               {/* Email Address */}
               <div className="space-y-4">
-                <label className="zap-caption-upper text-[#201515]">Email Address <span className="text-[#ff4f00] ml-1">*</span></label>
+                <label className="zap-caption-upper text-[#201515]">Office Email Address <span className="text-[#ff4f00] ml-1">*</span></label>
                 <div className="relative">
                   <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
                   <input
@@ -463,6 +470,20 @@ const CreateUser = () => {
                   />
                 </div>
                 {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+              </div>
+
+              {/* Personal Email Address */}
+              <div className="space-y-4">
+                <label className="zap-caption-upper text-[#201515]">Personal Email Address</label>
+                <div className="relative">
+                  <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
+                  <input
+                    name="personalEmail" value={formData.personalEmail} onChange={handleChange}
+                    className={`w-full h-14 pl-12 pr-4 bg-white border ${errors.personalEmail ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all`}
+                    placeholder="personal@gmail.com"
+                  />
+                </div>
+                {errors.personalEmail && <p className="text-red-500 text-sm mt-1">{errors.personalEmail}</p>}
               </div>
 
               {/* Phone Number */}

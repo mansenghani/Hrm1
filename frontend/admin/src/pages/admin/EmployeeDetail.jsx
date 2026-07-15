@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Mail, Phone, Calendar, Briefcase, MapPin, Building, Activity, ShieldCheck, Fingerprint, CreditCard, IdCard, Eye } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Calendar, Briefcase, MapPin, Building, Activity, ShieldCheck, Fingerprint, CreditCard, IdCard, Eye, FileText, Download } from 'lucide-react';
 
 const EmployeeDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(() => {
     const fetchEmployee = async () => {
@@ -19,6 +20,11 @@ const EmployeeDetail = () => {
         setEmployee(data);
       } catch (err) {
         console.error(err);
+        if (err.response && err.response.status === 403) {
+          setErrorMsg('Access Denied: You do not have permission to view this profile.');
+        } else {
+          setErrorMsg('Node Not Found');
+        }
       } finally {
         setLoading(false);
       }
@@ -27,6 +33,7 @@ const EmployeeDetail = () => {
   }, [id]);
 
   if (loading) return <div className="p-10 animate-pulse font-black text-xs uppercase tracking-widest">Scanning Registry...</div>;
+  if (errorMsg) return <div className="p-10 font-black text-xs uppercase tracking-widest text-[#F6465D]">{errorMsg}</div>;
   if (!employee) return <div className="p-10 font-black text-xs uppercase tracking-widest text-[#F6465D]">Node Not Found</div>;
 
   return (
@@ -185,7 +192,14 @@ const EmployeeDetail = () => {
                  <div className="flex flex-col items-center gap-5 p-6 bg-[#F5F5F5] rounded-2xl border border-[#E6E8EA] group hover:border-[#F0B90B] transition-all">
                     <div className="w-full aspect-square max-w-[120px] rounded-xl bg-white flex items-center justify-center text-[#F0B90B] shadow-md border border-[#E6E8EA] group-hover:scale-[1.03] transition-all overflow-hidden">
                        {employee.adharCard ? (
-                         <img src={employee.adharCard} alt="" className="w-full h-full object-cover" />
+                         (employee.adharCard.toLowerCase().endsWith('.pdf') || employee.adharCard.startsWith('data:application/pdf')) ? (
+                           <div className="flex flex-col items-center gap-2 text-center p-4">
+                             <FileText size={40} className="text-[#F0B90B]" />
+                             <span className="text-[9px] font-bold text-[#1E2026]">View PDF</span>
+                           </div>
+                         ) : (
+                           <img src={employee.adharCard} alt="" className="w-full h-full object-cover" />
+                         )
                        ) : (
                          <div className="flex flex-col items-center gap-2">
                             <Fingerprint size={32} className="opacity-10" />
@@ -198,9 +212,26 @@ const EmployeeDetail = () => {
                        <p className="text-[12px] font-black text-[#1E2026]">Adharcard</p>
                     </div>
                     {employee.adharCard ? (
-                      <a href={employee.adharCard} target="_blank" rel="noopener noreferrer" className="w-full text-center py-2.5 bg-[#1E2026] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95">
-                        <Eye size={12} /> View Asset
-                      </a>
+                      <div className="flex gap-2 w-full mt-1">
+                        <a href={employee.adharCard} target="_blank" rel="noopener noreferrer" className="flex-1 py-2 bg-[#1E2026] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-black transition-all flex items-center justify-center gap-1 shadow-md active:scale-95">
+                          <Eye size={12} /> View
+                        </a>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = employee.adharCard;
+                            link.download = `AdharCard_${employee.employeeId || 'doc'}`;
+                            link.target = "_blank";
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }}
+                          className="flex-1 py-2 bg-white text-[#1E2026] border border-[#E6E8EA] text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-1 shadow-sm active:scale-95"
+                        >
+                          <Download size={12} /> Save
+                        </button>
+                      </div>
                     ) : (
                       <span className="text-[9px] font-bold text-[#848E9C] uppercase italic">Not Linked</span>
                     )}
@@ -210,7 +241,14 @@ const EmployeeDetail = () => {
                  <div className="flex flex-col items-center gap-5 p-6 bg-[#F5F5F5] rounded-2xl border border-[#E6E8EA] group hover:border-[#F0B90B] transition-all">
                     <div className="w-full aspect-square max-w-[120px] rounded-xl bg-white flex items-center justify-center text-[#F0B90B] shadow-md border border-[#E6E8EA] group-hover:scale-[1.03] transition-all overflow-hidden">
                        {employee.bankDetails ? (
-                         <img src={employee.bankDetails} alt="" className="w-full h-full object-cover" />
+                         (employee.bankDetails.toLowerCase().endsWith('.pdf') || employee.bankDetails.startsWith('data:application/pdf')) ? (
+                           <div className="flex flex-col items-center gap-2 text-center p-4">
+                             <FileText size={40} className="text-[#F0B90B]" />
+                             <span className="text-[9px] font-bold text-[#1E2026]">View PDF</span>
+                           </div>
+                         ) : (
+                           <img src={employee.bankDetails} alt="" className="w-full h-full object-cover" />
+                         )
                        ) : (
                          <div className="flex flex-col items-center gap-2">
                             <CreditCard size={32} className="opacity-10" />
@@ -223,9 +261,26 @@ const EmployeeDetail = () => {
                        <p className="text-[12px] font-black text-[#1E2026]">Bank Details</p>
                     </div>
                     {employee.bankDetails ? (
-                      <a href={employee.bankDetails} target="_blank" rel="noopener noreferrer" className="w-full text-center py-2.5 bg-[#1E2026] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95">
-                        <Eye size={12} /> View Asset
-                      </a>
+                      <div className="flex gap-2 w-full mt-1">
+                        <a href={employee.bankDetails} target="_blank" rel="noopener noreferrer" className="flex-1 py-2 bg-[#1E2026] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-black transition-all flex items-center justify-center gap-1 shadow-md active:scale-95">
+                          <Eye size={12} /> View
+                        </a>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = employee.bankDetails;
+                            link.download = `BankDetails_${employee.employeeId || 'doc'}`;
+                            link.target = "_blank";
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }}
+                          className="flex-1 py-2 bg-white text-[#1E2026] border border-[#E6E8EA] text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-1 shadow-sm active:scale-95"
+                        >
+                          <Download size={12} /> Save
+                        </button>
+                      </div>
                     ) : (
                       <span className="text-[9px] font-bold text-[#848E9C] uppercase italic">Not Linked</span>
                     )}
@@ -235,7 +290,14 @@ const EmployeeDetail = () => {
                  <div className="flex flex-col items-center gap-5 p-6 bg-[#F5F5F5] rounded-2xl border border-[#E6E8EA] group hover:border-[#F0B90B] transition-all">
                     <div className="w-full aspect-square max-w-[120px] rounded-xl bg-white flex items-center justify-center text-[#F0B90B] shadow-md border border-[#E6E8EA] group-hover:scale-[1.03] transition-all overflow-hidden">
                        {employee.panCard ? (
-                         <img src={employee.panCard} alt="" className="w-full h-full object-cover" />
+                         (employee.panCard.toLowerCase().endsWith('.pdf') || employee.panCard.startsWith('data:application/pdf')) ? (
+                           <div className="flex flex-col items-center gap-2 text-center p-4">
+                             <FileText size={40} className="text-[#F0B90B]" />
+                             <span className="text-[9px] font-bold text-[#1E2026]">View PDF</span>
+                           </div>
+                         ) : (
+                           <img src={employee.panCard} alt="" className="w-full h-full object-cover" />
+                         )
                        ) : (
                          <div className="flex flex-col items-center gap-2">
                             <IdCard size={32} className="opacity-10" />
@@ -248,9 +310,26 @@ const EmployeeDetail = () => {
                        <p className="text-[12px] font-black text-[#1E2026]">PAN Card</p>
                     </div>
                     {employee.panCard ? (
-                      <a href={employee.panCard} target="_blank" rel="noopener noreferrer" className="w-full text-center py-2.5 bg-[#1E2026] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95">
-                        <Eye size={12} /> View Asset
-                      </a>
+                      <div className="flex gap-2 w-full mt-1">
+                        <a href={employee.panCard} target="_blank" rel="noopener noreferrer" className="flex-1 py-2 bg-[#1E2026] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-black transition-all flex items-center justify-center gap-1 shadow-md active:scale-95">
+                          <Eye size={12} /> View
+                        </a>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = employee.panCard;
+                            link.download = `PAN_${employee.employeeId || 'doc'}`;
+                            link.target = "_blank";
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }}
+                          className="flex-1 py-2 bg-white text-[#1E2026] border border-[#E6E8EA] text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-1 shadow-sm active:scale-95"
+                        >
+                          <Download size={12} /> Save
+                        </button>
+                      </div>
                     ) : (
                       <span className="text-[9px] font-bold text-[#848E9C] uppercase italic">Not Linked</span>
                     )}

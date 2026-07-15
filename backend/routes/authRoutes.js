@@ -6,7 +6,7 @@ const upload = require('../middleware/upload');
 
 router.post('/login', login);
 router.post('/forgot-password', forgotPassword);
-router.post('/reset-password', resetPassword);
+router.post('/reset-password/:token', resetPassword);
 router.post('/create-user', protect, createUser);
 router.get('/me', protect, getMe);
 router.put('/update-password', protect, updatePassword);

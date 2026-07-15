@@ -14,7 +14,9 @@ const userSchema = new mongoose.Schema({
   profileImage: { type: String, default: null },
   teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null },
   reportingManager: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-  status: { type: String, enum: ['active', 'inactive'], default: 'active' }
+  status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+  resetPasswordToken: String,
+  resetPasswordExpire: Date
 }, { timestamps: true });
 
 userSchema.pre('save', async function () {
@@ -24,6 +26,17 @@ userSchema.pre('save', async function () {
 
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Generate password reset token
+userSchema.methods.createPasswordResetToken = function () {
+  const crypto = require('crypto');
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  
+  this.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  this.resetPasswordExpire = Date.now() + 30 * 60 * 1000; // 30 minutes
+  
+  return resetToken;
 };
 
 module.exports = mongoose.model('User', userSchema);
