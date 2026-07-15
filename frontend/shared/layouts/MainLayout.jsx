@@ -65,6 +65,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   const [liveNotifications, setLiveNotifications] = useState([]);
   const notificationRef = React.useRef(null);
   const profileRef = React.useRef(null);
+  const searchRef = React.useRef(null);
   const triggerRef = React.useRef(null);
   const dropdownRef = React.useRef(null);
   const quickActionRef = React.useRef(null);
