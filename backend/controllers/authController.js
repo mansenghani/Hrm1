@@ -228,8 +228,8 @@ exports.forgotPassword = async (req, res) => {
     await user.save({ validateBeforeSave: false });
 
     // Create reset URL
-    // Pointing to frontend which runs on port 4000/5000/etc based on the request origin, or a standard host
-    const resetUrl = `${req.protocol}://${req.get('host').replace(/:\d+/, ':4000')}/reset-password/${resetToken}`;
+    // Pointing to frontend which runs on port 3000 based on the request origin, or a standard host
+    const resetUrl = `${req.protocol}://${req.get('host').replace(/:\d+/, ':3000')}/reset-password/${resetToken}`;
 
     const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please click on the link below to reset your password:\n\n${resetUrl}\n\nIf you did not request a password reset, please ignore this email.\nThis link will expire in 30 minutes.`;
 

@@ -3,7 +3,15 @@ const nodemailer = require('nodemailer');
 const sendEmail = async (options) => {
   // Use Ethereal for testing if no actual SMTP is provided
   let transporter;
-  if (process.env.SMTP_HOST) {
+  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+  } else if (process.env.SMTP_HOST) {
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT,
