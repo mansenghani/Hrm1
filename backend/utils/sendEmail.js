@@ -5,11 +5,17 @@ const sendEmail = async (options) => {
   let transporter;
   if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // TLS
+      connectionTimeout: 10000, // 10 seconds
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
+      tls: {
+        rejectUnauthorized: false
+      }
     });
   } else if (process.env.SMTP_HOST) {
     transporter = nodemailer.createTransport({
