@@ -26,13 +26,13 @@ exports.login = async (req, res) => {
     if (user && (await user.comparePassword(password))) {
       // Just check if the role they are logging into matches their actual role or if they are admin
       if (role && user.role !== role && user.role !== 'admin') {
-         return res.status(403).json({ message: `Access Denied: You are not authorized for role ${role}` });
+        return res.status(403).json({ message: `Access Denied: You are not authorized for role ${role}` });
       }
 
       const token = jwt.sign(
-        { 
-          id: user._id, 
-          role: user.role, 
+        {
+          id: user._id,
+          role: user.role,
           name: user.name
         },
         process.env.JWT_SECRET || 'fallback_secret',
@@ -96,7 +96,7 @@ exports.createUser = async (req, res) => {
     });
 
     await newEmployee.save();
-    
+
     return res.status(201).json({
       message: `${userRole} profile synchronized successfully`,
       user: { _id: newUser._id, email: newUser.email, role: newUser.role, employeeId: finalEmployeeId }
@@ -115,7 +115,7 @@ exports.getMe = async (req, res) => {
 
     // 👤 MASTER REGISTRY BRIDGE: Always fetch from the Employee model for personnel details
     const employeeData = await Employee.findOne({ userId: req.user.id }).populate('reportingManager', 'name email').lean();
-    
+
     // 🛰️ DYNAMIC SHADOW LOOKUP: Fetch role-specific metadata if needed
     let roleMetadata = {};
     if (user.role === 'hr') {
@@ -125,7 +125,7 @@ exports.getMe = async (req, res) => {
     }
 
     console.log(`[PROFILE TRACE] User Role: ${user.role} | Master Registry: ${!!employeeData} | Shadow: ${!!roleMetadata}`);
-    
+
     // Merge data - preserve the master User role and use registry data only for identity fields.
     const profile = {
       ...employeeData,
@@ -184,7 +184,7 @@ exports.uploadProfileImage = async (req, res) => {
 
     // Update User
     const user = await User.findByIdAndUpdate(req.user.id, { profileImage: imagePath }, { new: true });
-    
+
     // Update Shadow Registry (Employee/HR/Manager)
     let shadowModel;
     if (user.role === 'hr') {
@@ -197,9 +197,9 @@ exports.uploadProfileImage = async (req, res) => {
 
     await shadowModel.findOneAndUpdate({ userId: req.user.id }, { profileImage: imagePath });
 
-    res.json({ 
+    res.json({
       message: 'Profile image updated successfully',
-      profileImage: imagePath 
+      profileImage: imagePath
     });
   } catch (error) {
     console.error('🔥 Upload Error:', error);
@@ -233,11 +233,41 @@ exports.forgotPassword = async (req, res) => {
 
     const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please click on the link below to reset your password:\n\n${resetUrl}\n\nIf you did not request a password reset, please ignore this email.\nThis link will expire in 30 minutes.`;
 
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 8px; background-color: #f9f9f9;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h1 style="color: #00a76b; margin: 0;">FluidHR</h1>
+          <p style="color: #666; margin-top: 5px;">Reset your FluidHR password</p>
+        </div>
+        
+        <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+          <h2 style="color: #333; margin-top: 0;">Hello,</h2>
+          <p style="color: #555; line-height: 1.6;">
+            A password reset was requested for your account. Click below to set a new password. Link expires in 30 minutes and works only once.
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #00a76b; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 4px; font-size: 16px;">
+              Reset Password
+            </a>
+          </div>
+          
+          <p style="color: #555; line-height: 1.6;">
+            Didn't request this? Ignore this email.
+          </p>
+          <p style="color: #999; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
+            Please do not reply to this message.
+          </p>
+        </div>
+      </div>
+    `;
+
     try {
       await sendEmail({
         email: user.email,
         subject: 'FluidHR - Password Reset Token',
-        message
+        message,
+        html
       });
 
       res.status(200).json({ message: 'A password reset link has been sent.' });
@@ -288,7 +318,7 @@ exports.resetPassword = async (req, res) => {
     user.password = password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
-    
+
     await user.save();
 
     res.json({ message: 'Password has been successfully reset. You can now login.' });
