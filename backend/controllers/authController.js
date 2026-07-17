@@ -226,10 +226,9 @@ exports.forgotPassword = async (req, res) => {
     // Generate token
     const resetToken = user.createPasswordResetToken();
     await user.save({ validateBeforeSave: false });
-
-    // Create reset URL
-    // Pointing to frontend which runs on port 3000 based on the request origin, or a standard host
-    const resetUrl = `${req.protocol}://${req.get('host').replace(/:\d+/, ':3000')}/reset-password/${resetToken}`;
+    // Create reset URL using CLIENT_URL environment variable if set, otherwise falling back to request protocol/host
+    const clientUrl = process.env.CLIENT_URL || `${req.protocol}://${req.get('host').replace(/:\d+/, ':4000')}`;
+    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
     const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please click on the link below to reset your password:\n\n${resetUrl}\n\nIf you did not request a password reset, please ignore this email.\nThis link will expire in 30 minutes.`;
 
@@ -272,7 +271,11 @@ exports.forgotPassword = async (req, res) => {
 
       res.status(200).json({ message: 'A password reset link has been sent.' });
     } catch (err) {
-      console.error("🔥 Error sending email:", err);
+      // Detailed server logs
+      console.error("🔥 Password Reset Email Sending Error:");
+      console.error(`- Recipient: ${user.email}`);
+      console.error(`- Reset URL: ${resetUrl}`);
+      console.error(`- Error Details:`, err.stack || err.message || err);
       
       // Local fallback for developers to test reset link
       if (process.env.NODE_ENV === 'development') {
@@ -290,14 +293,14 @@ exports.forgotPassword = async (req, res) => {
         }
       }
 
+      // Clear the tokens if sending failed
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;
       await user.save({ validateBeforeSave: false });
 
-      return res.status(500).json({ message: `Email could not be sent: ${err.message}` });
-    }
-
-  } catch (error) {
+      // User-friendly error message that does not expose raw SMTP/provider error
+      return res.status(500).json({ message: 'Unable to send password reset email. Please try again later.' });
+    }  } catch (error) {
     console.error('🔥 Forgot Password Error:', error);
     res.status(500).json({ message: 'Server error during password recovery validation' });
   }
