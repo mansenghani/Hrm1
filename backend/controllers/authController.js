@@ -348,3 +348,30 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ message: 'Server error during password reset' });
   }
 };
+
+// 🔄 RECOVERY: Verify Reset Token (GET request to validate token and return user details)
+exports.verifyResetToken = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    // Hash token to compare with DB
+    const resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired password reset token' });
+    }
+
+    res.status(200).json({
+      name: user.name,
+      email: user.email
+    });
+  } catch (error) {
+    console.error('🔥 Verify Reset Token Error:', error);
+    res.status(500).json({ message: 'Server error during token verification' });
+  }
+};
