@@ -227,7 +227,7 @@ exports.forgotPassword = async (req, res) => {
     const resetToken = user.createPasswordResetToken();
     await user.save({ validateBeforeSave: false });
     // Create reset URL using CLIENT_URL environment variable if set, otherwise falling back to request protocol/host
-    const clientUrl = process.env.CLIENT_URL || `${req.protocol}://${req.get('host').replace(/:\d+/, ':4000')}`;
+    const clientUrl = (process.env.CLIENT_URL || `${req.protocol}://${req.get('host').replace(/:\d+/, ':4000')}`).replace(/\/+$/, '');
     const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
     const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please click on the link below to reset your password:\n\n${resetUrl}\n\nIf you did not request a password reset, please ignore this email.\nThis link will expire in 30 minutes.`;
