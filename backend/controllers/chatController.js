@@ -29,27 +29,8 @@ exports.getAvailableUsers = async (req, res) => {
     let query = {};
     const currentUser = await User.findById(id);
 
-    if (role === 'admin') {
-      query = { _id: { $ne: id } }; // Admin can chat with anyone except themselves
-    } else if (role === 'hr') {
-      query = { role: { $in: ['manager', 'employee', 'admin', 'hr'] }, _id: { $ne: id } }; // HR can chat with anyone
-    } else if (role === 'manager') {
-      query = {
-        $or: [
-          { role: 'hr' }, // Can chat with HR
-          { reportingManager: id } // Can chat with their team
-        ],
-        _id: { $ne: id }
-      };
-    } else if (role === 'employee') {
-      query = {
-        $or: [
-          { role: 'hr' }, // Can chat with HR
-          { _id: currentUser.reportingManager } // Can chat with their manager
-        ],
-        _id: { $ne: id }
-      };
-    }
+    // Allow everyone to chat with everyone in the company
+    query = { _id: { $ne: id } };
 
     // Filter out any broken/legacy accounts without a name
     const finalQuery = {
@@ -72,13 +53,19 @@ exports.getChats = async (req, res) => {
       .populate('lastMessage')
       .sort({ updatedAt: -1 });
 
+    console.log(`[getChats] User ${id} fetched ${chats.length} chats. Map of blockedBy:`, chats.map(c => ({ id: c._id, blockedBy: c.blockedBy })));
+
     const chatsWithUnread = await Promise.all(chats.map(async (chat) => {
       const unreadCount = await Message.countDocuments({
         chatId: chat._id,
         receiverId: id,
         status: { $ne: 'seen' }
       });
-      return { ...chat.toObject(), unreadCount };
+      const hasStarredMessage = await Message.exists({
+        chatId: chat._id,
+        starredBy: { $in: [id] }
+      });
+      return { ...chat.toObject(), unreadCount, hasStarredMessage: !!hasStarredMessage };
     }));
 
     res.json(chatsWithUnread);
@@ -412,7 +399,11 @@ exports.toggleStar = async (req, res) => {
     const msg = await Message.findById(messageId);
     if (!msg) return res.status(404).json({ message: 'Message not found' });
 
-    const index = msg.starredBy.indexOf(userId);
+    if (!msg.starredBy) {
+      msg.starredBy = [];
+    }
+
+    const index = msg.starredBy.findIndex(sid => String(sid) === String(userId));
     if (index > -1) {
       msg.starredBy.splice(index, 1);
     } else {
@@ -562,7 +553,32 @@ exports.toggleChatState = async (req, res) => {
     const { stateType } = req.body;
     const { id: userId } = req.user;
 
-    const chat = await Chat.findById(chatId);
+    let chat = await Chat.findById(chatId);
+    
+    // If chat not found, it might be that the frontend passed a User ID instead of a Chat ID
+    // (which happens when toggling state for a contact you haven't messaged yet)
+    if (!chat) {
+      if (chatId.length === 24) { // Valid ObjectId length
+        const targetUser = await User.findById(chatId);
+        if (targetUser) {
+          // See if a DM already exists
+          chat = await Chat.findOne({
+            isGroup: false,
+            participants: { $all: [userId, chatId] }
+          });
+          
+          if (!chat) {
+            // Create a new empty chat document
+            chat = new Chat({
+              participants: [userId, chatId],
+              isGroup: false
+            });
+            await chat.save();
+          }
+        }
+      }
+    }
+    
     if (!chat) return res.status(404).json({ message: 'Chat not found' });
 
     let arrayToUpdate;
@@ -591,6 +607,10 @@ exports.toggleChatState = async (req, res) => {
         if (!chat.blockedBy) chat.blockedBy = [];
         arrayToUpdate = chat.blockedBy;
         break;
+      case 'star':
+        if (!chat.starredBy) chat.starredBy = [];
+        arrayToUpdate = chat.starredBy;
+        break;
       default: return res.status(400).json({ message: 'Invalid state type' });
     }
 
@@ -599,6 +619,20 @@ exports.toggleChatState = async (req, res) => {
       arrayToUpdate.splice(index, 1);
     } else {
       arrayToUpdate.push(userId);
+    }
+
+    // Explicitly mark the array as modified to ensure Mongoose saves it
+    const arrayNameMap = {
+      'archive': 'archivedBy',
+      'pin': 'pinnedBy',
+      'mute': 'mutedBy',
+      'lock': 'lockedBy',
+      'unread': 'unreadBy',
+      'block': 'blockedBy',
+      'star': 'starredBy'
+    };
+    if (arrayNameMap[stateType]) {
+      chat.markModified(arrayNameMap[stateType]);
     }
 
     await chat.save();

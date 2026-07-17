@@ -11,7 +11,11 @@ exports.searchGlobal = async (req, res) => {
       return res.json({ employees: [], leaves: [], payroll: [], documents: [] });
     }
 
-    const regex = new RegExp(q, 'i');
+    const escapeRegex = (string) => {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    };
+    const escapedQuery = escapeRegex(q);
+    const regex = new RegExp(escapedQuery, 'i');
 
     // 1. Search Users first to map to leaves/payroll
     const users = await User.find({ name: regex }).select('_id');

@@ -13,7 +13,8 @@ const chatSchema = new mongoose.Schema({
   lockedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   unreadBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   deletedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  blockedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+  blockedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  starredBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Chat', chatSchema);

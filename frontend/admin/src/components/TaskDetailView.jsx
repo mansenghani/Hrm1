@@ -100,7 +100,11 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
   const [showShareDropdown, setShowShareDropdown] = useState(false);
   const [personnelList, setPersonnelList] = useState([]);
   const [searchShareQuery, setSearchShareQuery] = useState('');
-  
+  const [showActivitySearch, setShowActivitySearch] = useState(false);
+  const [activitySearchQuery, setActivitySearchQuery] = useState('');
+  const [activitySortOrder, setActivitySortOrder] = useState('newest'); // newest | oldest
+  const [showCommentEmojiPicker, setShowCommentEmojiPicker] = useState(false);
+
   const [showMoreDropdown, setShowMoreDropdown] = useState(false);
   
   const [showAISidebar, setShowAISidebar] = useState(false);
@@ -852,27 +856,28 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
     if (!comment.trim()) return;
     setIsSubmitting(true);
     
-    const myName = currentUser?.fullName || currentUser?.name || 'System Admin';
-    const myRole = currentUser?.role || 'admin';
-    const newComment = {
-      text: comment,
-      userName: myName,
-      userRole: myRole,
-      createdAt: new Date().toISOString()
-    };
-    
-    const updatedComments = [...(task?.comments || []), newComment];
-    setTask(prev => prev ? { ...prev, comments: updatedComments } : prev);
-    setComment('');
-    
     try {
-      const auth = getAuth();
-      if (auth && task?._id) {
-        await axios.put(`/api/tasks/${task._id}`, { comments: updatedComments }, auth);
-      }
       if (onAddComment) {
         await onAddComment(comment);
+      } else {
+        // Fallback for standalone usage
+        const myName = currentUser?.fullName || currentUser?.name || 'System Admin';
+        const myRole = currentUser?.role || 'admin';
+        const newComment = {
+          text: comment,
+          userName: myName,
+          userRole: myRole,
+          createdAt: new Date().toISOString()
+        };
+        const updatedComments = [...(task?.comments || []), newComment];
+        setTask(prev => prev ? { ...prev, comments: updatedComments } : prev);
+        
+        const auth = getAuth();
+        if (auth && task?._id) {
+          await axios.put(`/api/tasks/${task._id}`, { comments: updatedComments }, auth);
+        }
       }
+      setComment('');
     } catch (err) {
       toast.error('Failed to save comment');
     } finally {
@@ -1620,14 +1625,38 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                 {/* Activity Header */}
                 <div className="h-12 flex items-center justify-between px-5 border-b border-[#c5c0b1] shrink-0">
                   <span className="text-[11px] font-black uppercase tracking-widest text-[#201515]">Activity</span>
-                  <div className="flex items-center gap-1">
-                    <button className="p-1.5 hover:bg-[#eceae3] rounded-[4px] text-[#939084] transition-colors"><Search size={14}/></button>
-                    <button className="p-1.5 hover:bg-[#eceae3] rounded-[4px] text-[#939084] transition-colors"><Filter size={14}/></button>
+                  <div className="flex items-center gap-1 relative">
+                    <button 
+                      onClick={() => { setShowActivitySearch(!showActivitySearch); setActivitySearchQuery(''); }} 
+                      className={`p-1.5 rounded-[4px] transition-colors ${showActivitySearch ? 'bg-[#00a76b] text-white' : 'hover:bg-[#eceae3] text-[#939084]'}`}
+                    >
+                      <Search size={14}/>
+                    </button>
+                    <button 
+                      onClick={() => setActivitySortOrder(prev => prev === 'newest' ? 'oldest' : 'newest')} 
+                      className="p-1.5 hover:bg-[#eceae3] rounded-[4px] text-[#939084] transition-colors"
+                      title={`Sort by: ${activitySortOrder === 'newest' ? 'Newest First' : 'Oldest First'}`}
+                    >
+                      <Filter size={14}/>
+                    </button>
                   </div>
                 </div>
 
                 {/* Activity Feed */}
                 <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-1 custom-scrollbar text-sm">
+                  {showActivitySearch && (
+                    <div className="mb-4">
+                      <input 
+                        type="text" 
+                        autoFocus
+                        placeholder="Search activity..." 
+                        value={activitySearchQuery}
+                        onChange={(e) => setActivitySearchQuery(e.target.value)}
+                        className="w-full text-xs bg-[#f3f4f6] dark:bg-[#111c18] text-[#201515] dark:text-white border-none rounded p-2 outline-none focus:ring-1 focus:ring-[#00a76b]"
+                      />
+                    </div>
+                  )}
+                  
                   <div className="flex gap-3">
                     <div className="w-8 h-8 rounded-full bg-[#201515] shrink-0 flex items-center justify-center text-white text-[10px] font-black uppercase">
                       {task?.employeeName?.substring(0, 2) || 'KP'}
@@ -1640,14 +1669,26 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                       <p className="text-[#939084] text-[11px] font-bold">created this task</p>
                     </div>
                   </div>
-                  {task?.comments?.map((c, idx) => (
-                    <div 
-                      className="flex gap-3 group relative border border-transparent py-0.5 px-2 -mx-2 rounded-[4px] transition-all duration-200 hover:py-2 hover:bg-[#eceae3] hover:border-[#c5c0b1]" 
-                      key={idx}
-                    >
-                      <div className="w-7 h-7 rounded-full bg-[#eceae3] border border-[#c5c0b1] shrink-0 flex items-center justify-center text-[#201515] text-[10px] font-black uppercase mt-1">
-                        {c.userName?.substring(0, 2) || 'U'}
-                      </div>
+                  
+                  {(() => {
+                    const processedComments = (task?.comments || [])
+                      .filter(c => !activitySearchQuery || (c.text || '').toLowerCase().includes(activitySearchQuery.toLowerCase()) || (c.userName || '').toLowerCase().includes(activitySearchQuery.toLowerCase()))
+                      .sort((a, b) => {
+                        const dateA = new Date(a.createdAt || 0).getTime();
+                        const dateB = new Date(b.createdAt || 0).getTime();
+                        return activitySortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+                      });
+
+                    return processedComments.length === 0 && activitySearchQuery ? (
+                      <div className="text-center py-4 text-[11px] text-[#939084] font-bold">No matching activity found</div>
+                    ) : processedComments.map((c, idx) => (
+                      <div 
+                        className="flex gap-3 group relative border border-transparent py-0.5 px-2 -mx-2 rounded-[4px] transition-all duration-200 hover:py-2 hover:bg-[#eceae3] hover:border-[#c5c0b1]" 
+                        key={idx}
+                      >
+                        <div className="w-7 h-7 rounded-full bg-[#eceae3] border border-[#c5c0b1] shrink-0 flex items-center justify-center text-[#201515] text-[10px] font-black uppercase mt-1">
+                          {c.userName?.substring(0, 2) || 'U'}
+                        </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-black text-[12px] uppercase text-[#201515] whitespace-nowrap">{c.userName || 'Unknown'}</span>
@@ -1794,7 +1835,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                         </div>
                       </div>
                     </div>
-                  ))}
+                  ))})()}
                   <div ref={messagesEndRef} />
                 </div>
 
@@ -1808,11 +1849,50 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                       className="w-full bg-transparent text-sm text-[#201515] placeholder:text-[#939084] p-3 outline-none resize-none min-h-[60px] font-medium"
                     />
                     <div className="flex items-center justify-between px-2 pb-2">
-                      <div className="flex items-center gap-1">
-                        <button className="p-1.5 text-[#939084] hover:text-[#201515] hover:bg-[#fffdf9] rounded-[4px] transition-colors"><Plus size={15}/></button>
-                        <button className="p-1.5 text-[#939084] hover:text-[#201515] hover:bg-[#fffdf9] rounded-[4px] transition-colors"><MessageSquare size={15}/></button>
-                        <button className="p-1.5 text-[#939084] hover:text-[#201515] hover:bg-[#fffdf9] rounded-[4px] transition-colors"><Paperclip size={15}/></button>
-                        <button className="p-1.5 text-[#939084] hover:text-[#201515] hover:bg-[#fffdf9] rounded-[4px] transition-colors"><Smile size={15}/></button>
+                      <div className="flex items-center gap-1 relative">
+                        <button 
+                          onClick={() => setComment(prev => prev + '@')}
+                          className="p-1.5 text-[#939084] hover:text-[#201515] hover:bg-[#fffdf9] rounded-[4px] transition-colors"
+                          title="Mention someone"
+                        ><Plus size={15}/></button>
+                        
+                        <button 
+                          onClick={() => setComment(prev => prev + (prev.length > 0 && !prev.endsWith('\n') ? '\n> ' : '> '))}
+                          className="p-1.5 text-[#939084] hover:text-[#201515] hover:bg-[#fffdf9] rounded-[4px] transition-colors"
+                          title="Add a quote"
+                        ><MessageSquare size={15}/></button>
+                        
+                        <label className="p-1.5 text-[#939084] hover:text-[#201515] hover:bg-[#fffdf9] rounded-[4px] transition-colors cursor-pointer" title="Attach file">
+                          <Paperclip size={15}/>
+                          <input type="file" className="hidden" onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              setComment(prev => prev + (prev.length > 0 ? `\n` : '') + `[Attached file: ${e.target.files[0].name}] `);
+                            }
+                          }}/>
+                        </label>
+                        
+                        <button 
+                          onClick={() => setShowCommentEmojiPicker(!showCommentEmojiPicker)}
+                          className="p-1.5 text-[#939084] hover:text-[#201515] hover:bg-[#fffdf9] rounded-[4px] transition-colors"
+                          title="Add an emoji"
+                        ><Smile size={15}/></button>
+
+                        {showCommentEmojiPicker && (
+                          <div className="absolute bottom-full left-0 mb-2 bg-white border border-[#c5c0b1] rounded-[6px] p-2 shadow-xl z-50 flex gap-1 flex-wrap w-48">
+                            {['😀','😂','🥰','😎','🤔','🙌','👍','🔥','🎉','❤️','👀','🚀'].map(emoji => (
+                              <button
+                                key={emoji}
+                                onClick={() => {
+                                  setComment(prev => prev + emoji);
+                                  setShowCommentEmojiPicker(false);
+                                }}
+                                className="w-7 h-7 flex items-center justify-center hover:bg-[#eceae3] rounded transition-colors text-base"
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <button 
                         onClick={handleCommentSubmit}

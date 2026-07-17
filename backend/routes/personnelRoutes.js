@@ -27,7 +27,7 @@ router.get('/employees', authorize('admin', 'hr', 'manager'), async (req, res) =
   res.json(employees);
 });
 
-router.get('/all', authorize('admin', 'hr', 'manager'), async (req, res) => {
+router.get('/all', authorize('admin', 'hr', 'manager', 'employee'), async (req, res) => {
   try {
     const all = await User.find({ role: { $ne: 'admin' } }, 'name email role');
     res.json(all);
