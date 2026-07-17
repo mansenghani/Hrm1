@@ -80,7 +80,7 @@ const ResetPassword = () => {
       <div className="w-full max-w-[760px] h-full max-h-[calc(100vh-2rem)] grid grid-cols-1 lg:grid-cols-12 bg-[#fffefb] rounded-[8px] border border-[#c5c0b1] shadow-sm overflow-hidden">
         
         {/* BRAND SIDEBAR */}
-        <div className="hidden lg:flex lg:col-span-5 bg-[#201515] p-6 flex-col justify-between relative overflow-hidden">
+        <div className="hidden lg:flex lg:col-span-5 bg-[#201515] p-6 flex-col justify-between relative overflow-hidden h-full">
            <div className="absolute -top-24 -left-24 w-80 h-80 bg-[#00a76b] opacity-10 blur-[100px] rounded-full"></div>
            
            <div className="relative z-10 flex items-center gap-3">
@@ -108,12 +108,9 @@ const ResetPassword = () => {
         </div>
 
         {/* RECOVERY FORM */}
-        <div className="lg:col-span-7 p-6 md:p-10 flex flex-col bg-[#fffefb] relative overflow-y-auto">
-           <Link to="/login" className="absolute top-8 left-8 text-[#939084] hover:text-[#201515] transition-colors flex items-center gap-2 text-sm font-bold">
-             <ArrowLeft size={16} /> Back to Login
-           </Link>
+        <div className="lg:col-span-7 p-6 md:p-10 flex flex-col bg-[#fffefb] relative overflow-y-auto justify-center">
            
-           <div className="max-w-[400px] w-full mx-auto mt-20">
+           <div className="max-w-[400px] w-full mx-auto my-auto py-4">
               <div className="mb-6">
                  <p className="zap-caption-upper mb-3 text-[#00a76b]">Account Recovery</p>
                  <h1 className="text-[34px] font-medium text-[#201515] tracking-tight mb-3 leading-[1.0]">
