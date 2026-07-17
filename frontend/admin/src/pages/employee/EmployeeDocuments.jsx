@@ -180,7 +180,40 @@ const EmployeeDocuments = () => {
   );
 
   const handleExport = () => {
-    alert('Exporting dossier metadata registry...');
+    if (dossierFiles.length === 0) {
+      alert('No documents to export.');
+      return;
+    }
+    
+    try {
+      const headers = ['File Name', 'Size', 'Upload Date', 'Type'];
+      const rows = dossierFiles.map(file => [
+        `"${(file.name || '').replace(/"/g, '""')}"`,
+        `"${file.size || ''}"`,
+        `"${file.date || ''}"`,
+        `"${file.type || 'other'}"`
+      ]);
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'document_metadata.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success('Document metadata exported successfully');
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Failed to export documents.');
+    }
   };
 
   return (

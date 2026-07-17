@@ -41,10 +41,12 @@ import {
   GraduationCap,
   IdCard,
   Plug,
-  Award
+  Award,
+  RefreshCw
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { API_BASE_URL, getImageUrl } from '@shared/services/api';
+import RoleSearchBar from '@shared/components/RoleSearchBar';
 
 const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -73,7 +75,48 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
 
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
-  const [currentLang, setCurrentLang] = useState('English');
+  const [currentLang, setCurrentLang] = useState(() => {
+    return localStorage.getItem('appLanguage') || 'English';
+  });
+
+  useEffect(() => {
+    const savedLang = localStorage.getItem('appLanguage');
+    if (savedLang && savedLang !== 'English') {
+      const langMap = { 'English': 'en', 'Spanish': 'es', 'French': 'fr', 'German': 'de' };
+      const translateTo = langMap[savedLang];
+
+      const triggerTranslation = (langCode) => {
+        const select = document.querySelector('.goog-te-combo');
+        if (select) {
+          select.value = langCode;
+          select.dispatchEvent(new Event('change'));
+        } else {
+          setTimeout(() => triggerTranslation(langCode), 500);
+        }
+      };
+
+      if (!document.getElementById('google-translate-script')) {
+        const script = document.createElement('script');
+        script.id = 'google-translate-script';
+        script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+        document.body.appendChild(script);
+
+        window.googleTranslateElementInit = () => {
+          new window.google.translate.TranslateElement({ pageLanguage: 'en', autoDisplay: false }, 'google_translate_element');
+        };
+
+        const style = document.createElement('style');
+        style.innerHTML = `
+          .skiptranslate iframe { display: none !important; }
+          body { top: 0px !important; }
+          #google_translate_element { display: none !important; }
+        `;
+        document.head.appendChild(style);
+
+        setTimeout(() => triggerTranslation(translateTo), 1000);
+      }
+    }
+  }, []);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -93,12 +136,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   const token = sessionStorage.getItem('token');
   const [userProfile, setUserProfile] = useState(null);
 
-  // Search state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const searchDebounceRef = React.useRef(null);
+
   const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState(null);
 
@@ -107,122 +145,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   const roleMap = { admin: 'admin', hr: 'hr', manager: 'manager', employee: 'employee' };
   const activeRole = roleMap[pathRole] ? pathRole : role;
 
-  // ── SEARCH HANDLER ──────────────────────────────────────────
-  const handleSearch = async (query) => {
-    setSearchQuery(query);
-    if (!query.trim()) { setSearchResults([]); setIsSearchOpen(false); return; }
-    setIsSearchOpen(true);
-    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-    searchDebounceRef.current = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const headers = { Authorization: `Bearer ${token}` };
-        const q = query.toLowerCase();
-        const results = [];
 
-        // Search Employees
-        try {
-          const empRes = await axios.get('/api/employees', { headers });
-          const emps = Array.isArray(empRes.data) ? empRes.data : [];
-          emps.filter(e => {
-            const name = (e.userId?.name || e.fullName || '').toLowerCase();
-            const id = (e.employeeId || '').toLowerCase();
-            const dept = (e.department || '').toLowerCase();
-            return name.includes(q) || id.includes(q) || dept.includes(q);
-          }).slice(0, 4).forEach(e => results.push({
-            category: 'Employee',
-            title: e.userId?.name || e.fullName || 'Unknown',
-            subtitle: `${e.employeeId || ''} · ${e.department || e.role || ''}`,
-            path: `/${activeRole}/employees/view/${e._id || e.id}`,
-            icon: '👤'
-          }));
-        } catch (_) { }
-
-        // Search Leave Requests
-        try {
-          const leaveRes = await axios.get('/api/leaves', { headers });
-          const leaves = Array.isArray(leaveRes.data) ? leaveRes.data : (leaveRes.data?.data || []);
-          leaves.filter(l => {
-            const type = (l.leaveType || l.type || '').toLowerCase();
-            const status = (l.status || '').toLowerCase();
-            const emp = (l.employee?.name || '').toLowerCase();
-            return type.includes(q) || status.includes(q) || emp.includes(q);
-          }).slice(0, 3).forEach(l => results.push({
-            category: 'Leave',
-            title: `${l.leaveType || l.type || 'Leave'} — ${l.employee?.name || 'Employee'}`,
-            subtitle: `Status: ${l.status} · ${new Date(l.startDate || l.createdAt).toLocaleDateString()}`,
-            path: `/${activeRole}/leave`,
-            icon: '📅'
-          }));
-        } catch (_) { }
-
-        // Search Payroll
-        try {
-          const payRes = await axios.get('/api/payroll', { headers });
-          const payrolls = Array.isArray(payRes.data) ? payRes.data : [];
-          payrolls.filter(p => {
-            const name = (p.employeeId?.userId?.name || p.employeeName || '').toLowerCase();
-            return name.includes(q);
-          }).slice(0, 3).forEach(p => results.push({
-            category: 'Payroll',
-            title: p.employeeId?.userId?.name || p.employeeName || 'Employee',
-            subtitle: `Net: ${p.netSalary || p.basicSalary || 'N/A'} · ${p.month || ''}`,
-            path: `/${activeRole}/payroll`,
-            icon: '💰'
-          }));
-        } catch (_) { }
-
-        // Quick nav page suggestions — full list from all roles
-        const allPages = [
-          { label: 'Dashboard', path: `/${activeRole}/dashboard` },
-          { label: 'Employees', path: `/${activeRole}/employees` },
-          { label: 'Departments', path: `/${activeRole}/departments` },
-          { label: 'Leave Management', path: `/${activeRole}/leave` },
-          { label: 'Attendance', path: `/${activeRole}/attendance` },
-          { label: 'Time Tracker', path: `/${activeRole}/time-tracker` },
-          { label: 'Payroll', path: `/${activeRole}/payroll` },
-          { label: 'Performance', path: `/${activeRole}/performance` },
-          { label: 'Tasks', path: `/${activeRole}/tasks` },
-          { label: 'Daily Tasks Board', path: `/${activeRole}/tasks` },
-          { label: 'Task Management', path: `/${activeRole}/task-management` },
-          { label: 'Reports', path: `/${activeRole}/reports` },
-          { label: 'Notifications', path: `/${activeRole}/notifications` },
-          { label: 'Settings', path: `/${activeRole}/settings` },
-          { label: 'Monitoring Logs', path: `/${activeRole}/screenshots` },
-          { label: 'Team Chat', path: `/${activeRole}/chat` },
-          { label: 'Global Chat', path: `/${activeRole}/chat` },
-          { label: 'Profile', path: `/${activeRole}/profile` },
-          { label: 'Create User', path: `/${activeRole}/create-user` },
-        ];
-        const navSuggestions = allPages.filter(s => s.label.toLowerCase().includes(q));
-
-        navSuggestions.slice(0, 3).forEach(s => results.push({
-          category: 'Page',
-          title: s.label,
-          subtitle: 'Go to page',
-          path: s.path,
-          icon: '🔗'
-        }));
-
-        setSearchResults(results);
-      } catch (err) {
-        console.error('[SEARCH ERROR]', err);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 350);
-  };
-
-  // Close search on outside click
-  useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setIsSearchOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, []);
 
 
   useEffect(() => {
@@ -262,9 +185,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setIsProfileDropdownOpen(false);
       }
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setSearchResults(null);
-      }
+
       if (quickActionRef.current && !quickActionRef.current.contains(event.target)) {
         setIsQuickActionOpen(false);
       }
@@ -329,27 +250,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     return () => socket.disconnect();
   }, [token, role, activeRole]);
 
-  // 🔍 REAL-TIME GLOBAL SEARCH DEBOUNCE HOOK
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults(null);
-      return;
-    }
-    const delayDebounce = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const res = await axios.get(`/api/search/global?q=${encodeURIComponent(searchQuery)}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setSearchResults(res.data);
-      } catch (err) {
-        console.error('Search failed:', err);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 300);
-    return () => clearTimeout(delayDebounce);
-  }, [searchQuery, token]);
+
 
   // 🛡️ KEYBOARD ACCESSIBILITY HANDLERS
   const handleDropdownKeyDown = (e) => {
@@ -880,121 +781,8 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
               <Menu size={22} />
             </button>
 
-            {/* Search bar in the center-left (hidden on mobile) */}
-            <div className="hidden sm:block flex-1 max-w-[340px] relative" ref={searchRef}>
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                <Search size={18} />
-              </div>
-              <input
-                type="text"
-                placeholder="Search employees, requests, payroll..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-[#f3f4f6] dark:bg-[#111c18] border-none rounded-full text-sm font-semibold text-gray-700 dark:text-[#a3b3af] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00a76b]/20 focus:bg-white dark:focus:bg-[#162722] transition-all"
-              />
-              {isSearching && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <RefreshCw size={14} className="animate-spin text-[#00a76b]" />
-                </div>
-              )}
-
-              {/* SEARCH RESULTS DROPDOWN */}
-              {searchResults && (searchQuery.trim().length > 0) && (
-                <div className="absolute top-[45px] left-0 w-[450px] bg-white dark:bg-[#0c1512] border border-[#eceae3] dark:border-[#1a2d29] rounded-[20px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden z-[110] max-h-[400px] overflow-y-auto p-4 space-y-4">
-                  {/* Category: Employees */}
-                  {searchResults.employees && searchResults.employees.length > 0 && (
-                    <div>
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-[#00a76b] mb-1.5">Employees</h4>
-                      <div className="space-y-1">
-                        {searchResults.employees.map(emp => (
-                          <div
-                            key={emp._id}
-                            onClick={() => { navigate(`/${activeRole}/employees/view/${emp._id}`); setSearchQuery(''); }}
-                            className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-[#162722] cursor-pointer"
-                          >
-                            <span className="text-xs font-bold text-gray-800 dark:text-white">{emp.fullName}</span>
-                            <span className="text-[10px] text-gray-400 dark:text-[#829e92] font-semibold">{emp.position || emp.role}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Category: Leave Requests */}
-                  {searchResults.leaves && searchResults.leaves.length > 0 && (
-                    <div>
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-1.5">Leave Requests</h4>
-                      <div className="space-y-1">
-                        {searchResults.leaves.map(l => (
-                          <div
-                            key={l._id}
-                            onClick={() => { navigate(`/${activeRole}/leave`); setSearchQuery(''); }}
-                            className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-[#162722] cursor-pointer"
-                          >
-                            <span className="text-xs font-bold text-gray-800 dark:text-white">
-                              {l.user?.name || 'Employee'} - {l.leaveType}
-                            </span>
-                            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${l.status === 'approved' ? 'bg-green-100 text-green-700 dark:bg-green-950/20 dark:text-green-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400'
-                              }`}>
-                              {l.status}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Category: Payroll */}
-                  {searchResults.payroll && searchResults.payroll.length > 0 && (
-                    <div>
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-1.5">Payroll</h4>
-                      <div className="space-y-1">
-                        {searchResults.payroll.map(p => (
-                          <div
-                            key={p._id}
-                            onClick={() => { navigate(activeRole === 'employee' ? '/employee/payslips' : `/${activeRole}/payroll`); setSearchQuery(''); }}
-                            className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-[#162722] cursor-pointer"
-                          >
-                            <span className="text-xs font-bold text-gray-800 dark:text-white">
-                              {p.user?.name || 'Employee'} ({p.month} {p.year})
-                            </span>
-                            <span className="text-xs font-extrabold text-[#00a76b]">${p.netSalary}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Category: Documents */}
-                  {searchResults.documents && searchResults.documents.length > 0 && (
-                    <div>
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-purple-500 mb-1.5">Documents</h4>
-                      <div className="space-y-1">
-                        {searchResults.documents.map(d => (
-                          <div
-                            key={d.id}
-                            onClick={() => { navigate(`/${activeRole}/documents`); setSearchQuery(''); }}
-                            className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-[#162722] cursor-pointer"
-                          >
-                            <span className="text-xs font-bold text-gray-800 dark:text-white truncate max-w-[280px]">{d.name}</span>
-                            <span className="text-[10px] text-gray-400 dark:text-[#829e92] font-semibold">{d.date}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Empty state */}
-                  {(!searchResults.employees || searchResults.employees.length === 0) &&
-                    (!searchResults.leaves || searchResults.leaves.length === 0) &&
-                    (!searchResults.payroll || searchResults.payroll.length === 0) &&
-                    (!searchResults.documents || searchResults.documents.length === 0) && (
-                      <p className="text-xs text-center text-gray-400 py-4 font-bold uppercase tracking-widest">No matching records found</p>
-                    )}
-                </div>
-              )}
-            </div>
-
+            {/* Role-based Search bar in the center-left (hidden on mobile) */}
+            <RoleSearchBar activeRole={activeRole} />
             {/* + Quick Action button */}
             <div className="relative" ref={quickActionRef}>
               <button
@@ -1008,7 +796,14 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
               {isQuickActionOpen && (
                 <div className="absolute top-[45px] left-4 w-56 bg-white dark:bg-[#0c1512] border border-[#eceae3] dark:border-[#1a2d29] rounded-[20px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden z-[110] p-2 flex flex-col">
                   <button
-                    onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/employees/add`); }}
+                    onClick={() => {
+                      setIsQuickActionOpen(false);
+                      if (['admin', 'hr'].includes(activeRole)) {
+                        navigate(`/${activeRole}/create-user`);
+                      } else {
+                        toast.error('You do not have permission to access this feature.');
+                      }
+                    }}
                     className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
                   >
                     Add Employee
@@ -1020,13 +815,27 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                     Apply Leave
                   </button>
                   <button
-                    onClick={() => { setIsQuickActionOpen(false); toast.success('Announcement Drafted'); }}
+                    onClick={() => {
+                      setIsQuickActionOpen(false);
+                      if (['admin', 'hr'].includes(activeRole)) {
+                        navigate(`/${activeRole}/notifications`);
+                      } else {
+                        toast.error('You do not have permission to access this feature.');
+                      }
+                    }}
                     className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
                   >
                     Create Announcement
                   </button>
                   <button
-                    onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/payroll`); }}
+                    onClick={() => {
+                      setIsQuickActionOpen(false);
+                      if (['admin', 'hr'].includes(activeRole)) {
+                        navigate(`/${activeRole}/payroll`);
+                      } else {
+                        toast.error('You do not have permission to access this feature.');
+                      }
+                    }}
                     className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
                   >
                     Generate Payroll
@@ -1073,6 +882,9 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                 </div>
               )}
 
+              {/* Google Translate Hidden Element */}
+              <div id="google_translate_element" style={{ display: 'none' }}></div>
+
               {/* Language Selector */}
               <div className="relative" ref={languageRef}>
                 <button
@@ -1088,8 +900,45 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                         key={lang}
                         onClick={() => {
                           setCurrentLang(lang);
+                          localStorage.setItem('appLanguage', lang);
                           setIsLanguageOpen(false);
-                          toast.success(`Language set to ${lang}`);
+
+                          const langMap = { 'English': 'en', 'Spanish': 'es', 'French': 'fr', 'German': 'de' };
+                          const translateTo = langMap[lang];
+
+                          const triggerTranslation = (langCode) => {
+                            const select = document.querySelector('.goog-te-combo');
+                            if (select) {
+                              select.value = langCode;
+                              select.dispatchEvent(new Event('change'));
+                              toast.success(`Language set to ${lang}`);
+                            } else {
+                              setTimeout(() => triggerTranslation(langCode), 500);
+                            }
+                          };
+
+                          if (!document.getElementById('google-translate-script')) {
+                            const script = document.createElement('script');
+                            script.id = 'google-translate-script';
+                            script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+                            document.body.appendChild(script);
+
+                            window.googleTranslateElementInit = () => {
+                              new window.google.translate.TranslateElement({ pageLanguage: 'en', autoDisplay: false }, 'google_translate_element');
+                            };
+
+                            const style = document.createElement('style');
+                            style.innerHTML = `
+                              .skiptranslate iframe { display: none !important; }
+                              body { top: 0px !important; }
+                              #google_translate_element { display: none !important; }
+                            `;
+                            document.head.appendChild(style);
+
+                            setTimeout(() => triggerTranslation(translateTo), 1000);
+                          } else {
+                            triggerTranslation(translateTo);
+                          }
                         }}
                         className={`w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold rounded-xl transition-colors border-none bg-transparent cursor-pointer ${currentLang === lang ? 'text-[#00a76b]' : 'text-gray-700 dark:text-slate-300'
                           }`}

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { API_BASE_URL, getImageUrl } from '@shared/services/api';
 import { Eye, Shield, Lock, FileText, Upload, Trash2, Check, RefreshCw, Plus } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
 const Profile = () => {
   const [userData, setUserData] = useState(null);
@@ -15,6 +16,19 @@ const Profile = () => {
   const [syncing, setSyncing] = useState(true);
 
   const token = sessionStorage.getItem('token');
+  const location = useLocation();
+  const securityRef = useRef(null);
+
+  useEffect(() => {
+    if (!syncing) {
+      const params = new URLSearchParams(location.search);
+      if (params.get('tab') === 'security' && securityRef.current) {
+        setTimeout(() => {
+          securityRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+    }
+  }, [location.search, syncing]);
 
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
   useEffect(() => {
@@ -302,7 +316,7 @@ const Profile = () => {
         </div>
 
         {/* SECURITY CHANGE PASSWORD */}
-        <div className="verdant-card">
+        <div className="verdant-card" ref={securityRef}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: isDark ? '#fff' : '#3b3e3c', marginBottom: 24, marginTop: 0 }}>Change Password</h3>
 
           <form onSubmit={handleUpdatePassword} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

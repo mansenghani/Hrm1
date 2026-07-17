@@ -48,6 +48,7 @@ import TaskCreate from './pages/TaskCreate';
 import TaskUpdate from './pages/TaskUpdate';
 import Notifications from './pages/Notifications';
 import AllNotifications from './pages/AllNotifications';
+import SmartTimeTracker from './pages/SmartTimeTracker';
 
 // ROUTE PROTECTION LOGIC
 const ProtectedRoute = ({ children, allowedRole }) => {
@@ -129,6 +130,7 @@ const App = () => {
           <Route path="profile" element={<Profile />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="notifications/all" element={<AllNotifications />} />
+          <Route path="time-tracker" element={<SmartTimeTracker />} />
           <Route path="documents" element={<EmployeeDocuments />} />
           <Route path="training" element={<Training />} />
           <Route path="roles-permissions" element={<RolesPermissions />} />
@@ -166,6 +168,7 @@ const App = () => {
           <Route path="profile" element={<Profile />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="notifications/all" element={<AllNotifications />} />
+          <Route path="time-tracker" element={<SmartTimeTracker />} />
           <Route path="documents" element={<EmployeeDocuments />} />
           <Route path="payroll" element={<Payroll />} />
           <Route path="settings" element={<Settings />} />
@@ -190,6 +193,7 @@ const App = () => {
           <Route path="projects" element={<EmployeeProjects />} />
           <Route path="leave" element={<EmployeeLeave />} />
           <Route path="attendance" element={<Attendance />} />
+          <Route path="time-tracker" element={<SmartTimeTracker />} />
           <Route path="payslips" element={<EmployeePayslips />} />
           <Route path="documents" element={<EmployeeDocuments />} />
           <Route path="performance" element={<EmployeePerformance />} />
@@ -230,6 +234,7 @@ const App = () => {
           <Route path="performance" element={<Performance />} />
           <Route path="reports" element={<Reports />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="time-tracker" element={<SmartTimeTracker />} />
           <Route path="documents" element={<EmployeeDocuments />} />
           <Route path="payroll" element={<Payroll />} />
           <Route path="settings" element={<Settings />} />

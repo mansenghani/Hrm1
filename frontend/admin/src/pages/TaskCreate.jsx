@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, ArrowLeft, Paperclip, X, CheckCircle2, 
-  Target, Info, FileText, Send, Zap, ShieldCheck, Clock, RefreshCw, MessageSquare, ChevronLeft, ChevronRight, Download, Type, Calendar, Users, ChevronDown, UserCheck, AlertCircle, ClipboardList, ClipboardCheck, Minus, Sparkles, Bell, Monitor, LayoutDashboard, User, Flag, Tag, MoreHorizontal, LayoutTemplate, Palette, Trash2, Layers
+  Target, Info, FileText, Send, Zap, ShieldCheck, Clock, RefreshCw, MessageSquare, ChevronLeft, ChevronRight, Download, Type, Calendar, Users, ChevronDown, UserCheck, AlertCircle, ClipboardList, ClipboardCheck, Minus, Sparkles, Bell, Monitor, LayoutDashboard, User, Flag, Tag, MoreHorizontal, LayoutTemplate, Palette, Trash2, Layers, Link2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import TaskDetailView from '../components/TaskDetailView';
@@ -99,6 +99,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
   // Tag Input & Custom Field states
   const [newTagInput, setNewTagInput] = useState('');
   const [showTagInput, setShowTagInput] = useState(false);
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [isAlertEnabled, setIsAlertEnabled] = useState(false);
 
   // Dropdown open states
@@ -131,7 +132,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
   const [isSyncing, setIsSyncing] = useState(false);
   const userRole = sessionStorage.getItem('role')?.toLowerCase() || 'employee';
   const isHigherRole = userRole === 'admin' || userRole === 'hr' || userRole === 'manager';
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => JSON.parse(sessionStorage.getItem('user')) || null);
   const [selectedTask, setSelectedTask] = useState(null);
   const today = getYYYYMMDD(new Date());
   const [registryDate, setRegistryDate] = useState(today); 
@@ -818,7 +819,7 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
             <div className="flex items-center justify-between w-full mb-2">
               <div>
                 <h1 className="text-3xl font-black text-[#201515] tracking-tighter uppercase">
-                  Hello {currentUser?.fullName?.split(' ')[0] || 'Man'}, <span className="text-[#00a76b]">{new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 18 ? 'Good afternoon' : 'Good evening'}.</span>
+                  Hello {currentUser?.fullName?.split(' ')[0] || currentUser?.name?.split(' ')[0] || ''}, <span className="text-[#00a76b]">{new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 18 ? 'Good afternoon' : 'Good evening'}.</span>
                 </h1>
               </div>
               <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-[#939084] hover:text-[#201515] font-black text-[10px] uppercase tracking-widest transition-all bg-transparent border-none cursor-pointer"><ArrowLeft size={14} /> Back</button>
@@ -1003,7 +1004,15 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                       </div>
 
                       {/* Due Date */}
-                      <div className="relative flex items-center gap-1.5 px-2.5 py-1 hover:bg-[#eceae3] rounded-[4px] text-[#939084] hover:text-[#201515] text-[11px] font-bold transition-colors border border-dashed border-[#c5c0b1]">
+                      <div 
+                        className="relative flex items-center gap-1.5 px-2.5 py-1 hover:bg-[#eceae3] rounded-[4px] text-[#939084] hover:text-[#201515] text-[11px] font-bold transition-colors border border-dashed border-[#c5c0b1] cursor-pointer"
+                        onClick={(e) => {
+                          const input = e.currentTarget.querySelector('input');
+                          if (input && input.showPicker) {
+                            try { input.showPicker(); } catch (err) {}
+                          }
+                        }}
+                      >
                         <Calendar size={12} />
                         <span>{dueDateVal ? new Date(dueDateVal).toLocaleDateString() : 'Due date'}</span>
                         <input
@@ -1011,6 +1020,13 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                           value={dueDateVal}
                           onChange={(e) => setDueDateVal(e.target.value)}
                           className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          onClick={(e) => {
+                            // Prevent bubbling if input is clicked directly, to avoid double showPicker
+                            e.stopPropagation();
+                            if (e.target.showPicker) {
+                              try { e.target.showPicker(); } catch (err) {}
+                            }
+                          }}
                         />
                       </div>
 
@@ -1064,9 +1080,40 @@ const TaskCreate = ({ isModal = false, onClose, onSuccess, defaultStatus = 'Ongo
                         )}
                       </div>
 
-                      <button type="button" className="p-1 hover:bg-[#eceae3] rounded-[4px] text-[#939084] transition-colors border border-transparent">
-                        <MoreHorizontal size={14} />
-                      </button>
+                      <div className="relative">
+                        <button 
+                          type="button" 
+                          onClick={() => setShowMoreOptions(!showMoreOptions)}
+                          className={`p-1 rounded-[4px] transition-colors border border-transparent ${showMoreOptions ? 'bg-[#00a76b] text-white' : 'hover:bg-[#eceae3] text-[#939084]'}`}
+                        >
+                          <MoreHorizontal size={14} />
+                        </button>
+                        {showMoreOptions && (
+                          <div className="absolute left-0 bottom-full mb-1 w-40 bg-[#fffefb] border border-[#c5c0b1] rounded-[5px] p-1 shadow-xl z-50">
+                            {[
+                              { label: 'Add Watchers', icon: <Users size={12} /> },
+                              { label: 'Set Dependencies', icon: <Link2 size={12} /> },
+                              { label: 'Make Private', icon: <ShieldCheck size={12} /> },
+                              { label: 'Clear Form', icon: <RefreshCw size={12} />, action: () => setFormData({ title: '', description: '', tags: '', dueDate: '', priority: 'Normal', projectId: '', assignedUser: null, attachments: [] }) }
+                            ].map((opt, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  if (opt.action) opt.action();
+                                  else toast.success(`${opt.label} feature coming soon`);
+                                  setShowMoreOptions(false);
+                                }}
+                                className="w-full flex items-center gap-2 text-left px-2 py-1.5 text-xs text-[#36342e] hover:bg-[#00a76b] hover:text-white rounded font-semibold transition-colors"
+                              >
+                                {opt.icon}
+                                <span>{opt.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Tag chips rendering */}

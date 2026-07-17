@@ -171,7 +171,7 @@ const HREmployees = () => {
             <span>Export</span>
           </button>
           <button
-            onClick={() => navigate(`/${pathRole}/employees/create`)}
+            onClick={() => navigate(`/${pathRole}/create-user`)}
             className="zap-btn zap-btn-dark h-14 px-8 flex items-center gap-2"
           >
             <Plus size={16} />
