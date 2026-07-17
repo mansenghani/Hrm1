@@ -16,15 +16,20 @@ export const EntryButton = ({ children, variant = 'primary', className = '', ...
   );
 };
 
-export const EntryInput = ({ label, icon, ...props }) => (
+export const EntryInput = ({ label, icon, rightElement, ...props }) => (
   <div className="flex flex-col gap-3 w-full text-left">
     {label && <label className="zap-caption-upper text-[#201515] ml-1">{label}</label>}
     <div className="relative group">
       {icon && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084] group-focus-within:text-[#00a76b] transition-colors">{icon}</span>}
       <input 
-        className={`w-full h-[56px] bg-[#fffefb] border border-[#c5c0b1] rounded-[4px] px-4 text-[16px] font-medium text-[#201515] placeholder-[#939084] focus:outline-none focus:border-[#00a76b] transition-all ${icon ? 'pl-12' : ''}`}
+        className={`w-full h-[56px] bg-[#fffefb] border border-[#c5c0b1] rounded-[4px] px-4 text-[16px] font-medium text-[#201515] placeholder-[#939084] focus:outline-none focus:border-[#00a76b] transition-all ${icon ? 'pl-12' : ''} ${rightElement ? 'pr-12' : ''}`}
         {...props}
       />
+      {rightElement && (
+        <span className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center text-[#939084] group-focus-within:text-[#00a76b] transition-colors">
+          {rightElement}
+        </span>
+      )}
     </div>
   </div>
 );
