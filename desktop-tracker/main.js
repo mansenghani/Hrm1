@@ -56,7 +56,7 @@ const IDLE_THRESHOLD = 60; // 1 minute (60 seconds)
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 350,
-    height: 720,
+    height: 540,
     resizable: false,
     frame: false,
     transparent: false,
