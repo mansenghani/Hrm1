@@ -1,9 +1,11 @@
 const nodemailer = require('nodemailer');
 
 const sendEmail = async (options) => {
-  // Create reusable transporter object using Gmail SMTP
+  // Use explicit host and port 587 (STARTTLS) to bypass Render's port 465 block
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // false for port 587
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
@@ -19,7 +21,7 @@ const sendEmail = async (options) => {
   };
 
   try {
-    console.log(`Sending email to ${options.email} via Gmail SMTP...`);
+    console.log(`Sending email to ${options.email} via Gmail SMTP (Port 587)...`);
     const info = await transporter.sendMail(mailOptions);
     console.log(`Email successfully sent: ${info.messageId}`);
     return info;
