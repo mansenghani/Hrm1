@@ -1,11 +1,11 @@
 const nodemailer = require('nodemailer');
 
 const sendEmail = async (options) => {
-  // Use explicit host and port 587 (STARTTLS) to bypass Render's port 465 block
+  // Use custom SMTP settings (defaulting to Brevo SMTP on port 2525 to bypass Render port blocks)
   const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // false for port 587
+    host: process.env.EMAIL_HOST || 'smtp-relay.brevo.com',
+    port: parseInt(process.env.EMAIL_PORT || '2525', 10),
+    secure: false, // false for port 2525 / 587
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
@@ -21,13 +21,13 @@ const sendEmail = async (options) => {
   };
 
   try {
-    console.log(`Sending email to ${options.email} via Gmail SMTP (Port 587)...`);
+    console.log(`Sending email to ${options.email} via SMTP (${transporter.options.host}:${transporter.options.port})...`);
     const info = await transporter.sendMail(mailOptions);
     console.log(`Email successfully sent: ${info.messageId}`);
     return info;
   } catch (err) {
-    console.error("🔥 Gmail SMTP Error:", err.message);
-    throw new Error(`Gmail SMTP Error: ${err.message}`);
+    console.error("🔥 SMTP Error:", err.message);
+    throw new Error(`SMTP Error: ${err.message}`);
   }
 };
 
