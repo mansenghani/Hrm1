@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import ErrorBoundary from '@shared/components/ErrorBoundary';
+import ChangePasswordModal from '@shared/components/ChangePasswordModal';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import {
@@ -135,7 +136,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   const role = sessionStorage.getItem('role') || 'admin';
   const token = sessionStorage.getItem('token');
   const [userProfile, setUserProfile] = useState(null);
-
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState(null);
@@ -392,6 +393,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           { name: 'Team Chat', path: '/employee/chat', icon: MessageSquare },
           { name: 'Create Task', path: '/employee/task-management/create', icon: PlusCircle },
           { name: 'My Documents', path: '/employee/documents', icon: FileText },
+          { name: 'Notifications', path: '/employee/notifications', icon: Bell },
         ];
       case 'manager':
         return [
@@ -932,8 +934,12 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
 
               <div className="relative" ref={notificationRef}>
                 <button
-                  onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                  className={`w-9 h-9 flex items-center justify-center rounded-full transition-all relative border-none bg-transparent cursor-pointer ${isNotificationsOpen ? 'bg-[#00a76b] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800'}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsNotificationsOpen(prev => !prev);
+                  }}
+                  className={`w-9 h-9 flex items-center justify-center rounded-full transition-all relative border-none cursor-pointer outline-none ${isNotificationsOpen ? 'bg-[#00a76b] text-white shadow-lg' : 'bg-transparent text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 dark:text-slate-400 dark:hover:text-white'}`}
                 >
                   <Bell size={18} />
                   {liveNotifications.length > 0 && (
@@ -978,7 +984,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                       )}
                     </div>
                     <button
-                      onClick={() => { navigate(`/${role}/dashboard`); setIsNotificationsOpen(false); }}
+                      onClick={() => { navigate(`/${activeRole}/notifications`); setIsNotificationsOpen(false); }}
                       className="w-full py-3 bg-[#eceae3] dark:bg-[#162722] text-[10px] font-black text-[#201515] dark:text-white uppercase tracking-[0.2em] hover:bg-[#c5c0b1] dark:hover:bg-[#111c18] transition-all border-none cursor-pointer"
                     >
                       View All Notifications
@@ -1077,18 +1083,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                         <span>My Profile</span>
                       </button>
 
-                      <button
-                        role="menuitem"
-                        onClick={() => {
-                          setIsProfileDropdownOpen(false);
-                          const empId = userProfile?.employeeId || userProfile?._id || '';
-                          navigate(empId ? `/${activeRole}/employees/view/${empId}` : `/${activeRole}/profile`);
-                        }}
-                        className="w-full px-6 py-2.5 flex items-center gap-3.5 text-left text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#162722]/50 hover:text-slate-900 dark:hover:text-white transition-colors border-none bg-transparent cursor-pointer outline-none"
-                      >
-                        <User size={16} className="text-slate-400 dark:text-[#829e92]" />
-                        <span>Employee Info</span>
-                      </button>
+
 
                       <button
                         role="menuitem"
@@ -1106,7 +1101,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                         role="menuitem"
                         onClick={() => {
                           setIsProfileDropdownOpen(false);
-                          navigate(`/${activeRole}/profile?tab=security`);
+                          setIsPasswordModalOpen(true);
                         }}
                         className="w-full px-6 py-2.5 flex items-center gap-3.5 text-left text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#162722]/50 hover:text-slate-900 dark:hover:text-white transition-colors border-none bg-transparent cursor-pointer outline-none"
                       >
@@ -1114,17 +1109,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                         <span>Change Password</span>
                       </button>
 
-                      <button
-                        role="menuitem"
-                        onClick={() => {
-                          setIsProfileDropdownOpen(false);
-                          navigate(`/${activeRole}/settings?tab=audit-logs`);
-                        }}
-                        className="w-full px-6 py-2.5 flex items-center gap-3.5 text-left text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#162722]/50 hover:text-slate-900 dark:hover:text-white transition-colors border-none bg-transparent cursor-pointer outline-none"
-                      >
-                        <FileText size={16} className="text-slate-400 dark:text-[#829e92]" />
-                        <span>Activity Log</span>
-                      </button>
+
 
                       <div className="h-px bg-slate-100 dark:bg-slate-800/80 w-full my-1" />
 
@@ -1183,6 +1168,12 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
           </footer>
         )}
       </div>
+      
+      {/* Change Password Modal */}
+      <ChangePasswordModal 
+        isOpen={isPasswordModalOpen} 
+        onClose={() => setIsPasswordModalOpen(false)} 
+      />
     </div>
   );
 };

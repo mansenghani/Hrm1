@@ -35,7 +35,7 @@ const fmtHrs = (secs) => {
 const fmtCurrency = (n) => n != null ? `₹${Number(n).toLocaleString('en-IN')}` : '--';
 
 const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 // ─── MINI COMPONENTS ─────────────────────────────────────────
 
@@ -214,14 +214,14 @@ const Dashboard = () => {
     try {
       await axios.post('/api/attendance/clock-in', {}, { headers: { Authorization: `Bearer ${token()}` } });
       setTimerStatus(s => ({ ...s, isRunning: true }));
-      fetchAll(false).catch(() => {});
+      fetchAll(false).catch(() => { });
     } catch (e) {
       // Try time tracker start
       try {
         await axios.post('/api/time/start', {}, { headers: { Authorization: `Bearer ${token()}` } });
         setTimerStatus(s => ({ ...s, isRunning: true }));
-        fetchAll(false).catch(() => {});
-      } catch {}
+        fetchAll(false).catch(() => { });
+      } catch { }
     } finally { setCheckInLoading(false); }
   };
 
@@ -230,13 +230,13 @@ const Dashboard = () => {
     try {
       await axios.put('/api/attendance/clock-out', {}, { headers: { Authorization: `Bearer ${token()}` } });
       setTimerStatus(s => ({ ...s, isRunning: false }));
-      fetchAll(false).catch(() => {});
+      fetchAll(false).catch(() => { });
     } catch (e) {
       try {
         await axios.post('/api/time/stop', {}, { headers: { Authorization: `Bearer ${token()}` } });
         setTimerStatus(s => ({ ...s, isRunning: false }));
-        fetchAll(false).catch(() => {});
-      } catch {}
+        fetchAll(false).catch(() => { });
+      } catch { }
     } finally { setCheckInLoading(false); }
   };
 
@@ -349,7 +349,7 @@ const Dashboard = () => {
             <Bell size={16} style={{ color: 'var(--text-muted)' }} />
           }>
           {loading ? (
-            <div className="space-y-3">{[...Array(3)].map((_,i) => <Skeleton key={i} h="56px" />)}</div>
+            <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} h="56px" />)}</div>
           ) : notifications.length === 0 ? (
             <div className="text-center py-8">
               <Bell size={24} className="mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
@@ -419,7 +419,7 @@ const Dashboard = () => {
             </span>
           }>
           {loading ? (
-            <div className="space-y-2">{[...Array(4)].map((_,i) => <Skeleton key={i} h="44px" />)}</div>
+            <div className="space-y-2">{[...Array(4)].map((_, i) => <Skeleton key={i} h="44px" />)}</div>
           ) : tasks.length === 0 ? (
             <div className="text-center py-8">
               <Briefcase size={24} className="mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
@@ -481,7 +481,7 @@ const Dashboard = () => {
             </span>
           }>
           {loading ? (
-            <div className="space-y-3">{[...Array(3)].map((_,i) => <Skeleton key={i} h="52px" />)}</div>
+            <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} h="52px" />)}</div>
           ) : payroll.length === 0 ? (
             <div className="text-center py-8">
               <FileText size={24} className="mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
@@ -529,7 +529,7 @@ const Dashboard = () => {
             <span className="badge badge-blue">{leaves.length} total</span>
           }>
           {loading ? (
-            <div className="space-y-3">{[...Array(3)].map((_,i) => <Skeleton key={i} h="52px" />)}</div>
+            <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} h="52px" />)}</div>
           ) : leaves.length === 0 ? (
             <div className="text-center py-8">
               <Calendar size={24} className="mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
@@ -566,10 +566,9 @@ const Dashboard = () => {
                         {l.endDate && l.endDate !== l.startDate ? ` – ${new Date(l.endDate).toLocaleDateString()}` : ''}
                       </p>
                     </div>
-                    <span className={`badge ${
-                      l.status === 'approved' ? 'badge-green' :
-                      l.status === 'pending' ? 'badge-amber' : 'badge-red'
-                    }`}>
+                    <span className={`badge ${l.status === 'approved' ? 'badge-green' :
+                        l.status === 'pending' ? 'badge-amber' : 'badge-red'
+                      }`}>
                       {l.status}
                     </span>
                   </div>

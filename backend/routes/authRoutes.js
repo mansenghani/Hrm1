@@ -12,5 +12,6 @@ router.post('/create-user', protect, createUser);
 router.get('/me', protect, getMe);
 router.put('/update-password', protect, updatePassword);
 router.post('/profile-image', protect, uploadProfileImage);
+router.put('/profile', protect, updateProfile);
 
 module.exports = router;

@@ -181,10 +181,14 @@ const EmployeeDashboard = () => {
         setSession({ ...s, isRunning });
 
         if (isRunning) {
+          const startTime = new Date(s.segmentStart || Date.now()).getTime();
+          const initialElapsed = Math.floor((Date.now() - startTime) / 1000);
+          const exactTime = totalActive + Math.max(0, initialElapsed);
+          
           // Soft sync: only jump if difference > 2 seconds to avoid UI jitter
           setTimer(prev => {
-            if (Math.abs(prev - totalActive) > 2 || prev === 0) {
-              return totalActive;
+            if (Math.abs(prev - exactTime) > 2 || prev === 0) {
+              return exactTime;
             }
             return prev;
           });
@@ -238,14 +242,23 @@ const EmployeeDashboard = () => {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  // Live timer tick
+  // Live timer tick based on exact absolute time
   useEffect(() => {
-    if (!session?.isRunning) return;
-    const id = setInterval(() => {
-      setTimer(prev => prev + 1);
+    if (!session || !session.isRunning) return;
+
+    const baseTime = session.activeTime || 0;
+    const startTime = new Date(session.segmentStart || Date.now()).getTime();
+
+    const interval = setInterval(() => {
+      const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+      setTimer(baseTime + Math.max(0, elapsedSeconds));
     }, 1000);
-    return () => clearInterval(id);
-  }, [session?.isRunning]);
+
+    const initialElapsed = Math.floor((Date.now() - startTime) / 1000);
+    setTimer(baseTime + Math.max(0, initialElapsed));
+
+    return () => clearInterval(interval);
+  }, [session?.isRunning, session?.segmentStart, session?.activeTime]);
 
   const handleAction = async (action) => {
     setActionLoading(true);
@@ -255,7 +268,14 @@ const EmployeeDashboard = () => {
       if (s) {
         if (s.hasActiveSession) {
           setSession(s);
-          setTimer(s.activeTime || 0);
+          const isRunning = s.isRunning !== undefined ? s.isRunning : s.status === 'active';
+          if (isRunning) {
+            const startTime = new Date(s.segmentStart || Date.now()).getTime();
+            const initialElapsed = Math.floor((Date.now() - startTime) / 1000);
+            setTimer((s.activeTime || 0) + Math.max(0, initialElapsed));
+          } else {
+            setTimer(s.activeTime || 0);
+          }
         } else {
           setSession(null);
           setTimer(0);

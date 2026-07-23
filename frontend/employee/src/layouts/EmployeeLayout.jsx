@@ -47,6 +47,7 @@ const useTheme = () => {
 const SIDEBAR_ITEMS = {
   OVERVIEW: [
     { label: 'Dashboard', path: '/employee/dashboard', icon: LayoutDashboard },
+    { label: 'Notifications', path: '/employee/notifications', icon: Bell },
   ],
   ME: [
     { label: 'My Profile', path: '/employee/profile', icon: User },
@@ -448,8 +449,12 @@ const EmployeeLayout = () => {
             {/* Notifications Alert Dropdown */}
             <div className="relative" ref={notifRef}>
               <button
-                onClick={() => setNotifOpen(!notifOpen)}
-                className={`w-9 h-9 flex items-center justify-center rounded-full transition-all relative border-none bg-transparent cursor-pointer ${notifOpen ? 'bg-[#00a76b] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-100'}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setNotifOpen(!notifOpen);
+                }}
+                className={`w-9 h-9 flex items-center justify-center rounded-full transition-all relative border-none cursor-pointer outline-none ${notifOpen ? 'bg-[#00a76b] text-white shadow-lg' : 'bg-transparent text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 dark:text-slate-400 dark:hover:text-white'}`}
               >
                 <Bell size={18} />
                 {unreadCount > 0 && (
@@ -567,19 +572,7 @@ const EmployeeLayout = () => {
 
                   {/* Dropdown Options */}
                   <div className="flex flex-col">
-                    <button
-                      role="menuitem"
-                      onClick={() => {
-                        setIsProfileDropdownOpen(false);
-                        navigate(`/employee/profile`);
-                      }}
-                      className="w-full px-6 py-3 flex items-center gap-3.5 text-left text-[14px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#162722]/50 hover:text-slate-900 dark:hover:text-white transition-colors duration-150 border-none bg-transparent cursor-pointer select-none outline-none focus-visible:bg-slate-50 dark:focus-visible:bg-[#162722]/50"
-                    >
-                      <User size={18} className="text-slate-400 dark:text-slate-500" />
-                      <span>Employee Information</span>
-                    </button>
 
-                    <div className="h-px bg-slate-100 dark:bg-slate-800/80 w-full" />
 
                     <button
                       role="menuitem"

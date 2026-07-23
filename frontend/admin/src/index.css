@@ -474,3 +474,75 @@
 .dark table tbody td.text-gray-600 {
   color: #d1d5db !important;
 }
+
+/* 8. Orange to Green Mapping for Dark Mode (#ff4f00 -> #00A76B) */
+.dark .text-\[\#ff4f00\] {
+  color: #00a76b !important;
+}
+
+/* Fix group-hover overriding the text color */
+.dark .group:hover .group-hover\:text-white {
+  color: #ffffff !important;
+}
+
+.dark .bg-\[\#ff4f00\] {
+  background-color: #00a76b !important;
+}
+
+.dark .hover\:bg-\[\#e64600\]:hover {
+  background-color: #008f5c !important;
+}
+
+.dark .group:hover .group-hover\:bg-\[\#ff4f00\] {
+  background-color: #00a76b !important;
+}
+
+.dark .hover\:border-\[\#ff4f00\]:hover {
+  border-color: #00a76b !important;
+}
+
+.dark .bg-\[\#ff4f00\]\/10 {
+  background-color: rgba(0, 167, 107, 0.1) !important;
+}
+
+.dark .hover\:border-\[\#ff4f00\]\/30:hover {
+  border-color: rgba(0, 167, 107, 0.3) !important;
+}
+
+/* SVG / Recharts overrides */
+.dark stop[stop-color="#ff4f00"], .dark stop[stopColor="#ff4f00"] {
+  stop-color: #00a76b !important;
+}
+
+.dark path[stroke="#ff4f00"] {
+  stroke: #00a76b !important;
+}
+
+.dark circle[fill="#ff4f00"] {
+  fill: #00a76b !important;
+}
+
+/* Tailwind standard orange classes mapping */
+.dark .text-orange-500 {
+  color: #00a76b !important;
+}
+
+.dark .text-orange-600 {
+  color: #00a76b !important;
+}
+
+.dark .text-orange-700 {
+  color: #008f5c !important;
+}
+
+.dark .bg-orange-50 {
+  background-color: rgba(0, 167, 107, 0.1) !important;
+}
+
+.dark .bg-orange-100 {
+  background-color: rgba(0, 167, 107, 0.2) !important;
+}
+
+.dark .border-orange-100 {
+  border-color: rgba(0, 167, 107, 0.3) !important;
+}
