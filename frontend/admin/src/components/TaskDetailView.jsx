@@ -5,7 +5,7 @@ import {
   PlusCircle, ListTodo, Link2, CheckSquare, Search, Filter, 
   MoreHorizontal, Star, X, MessageSquare, Paperclip, Smile, Send,
   Play, ChevronDown, Bookmark, Pencil, UserPlus, Reply, ThumbsUp, AlignLeft, Clock, Pause, ShieldCheck, MoreVertical, Trash2,
-  Minimize2, Copy, Download, Printer
+  Minimize2, Copy, Download, Printer, ArrowDown, ArrowUp
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
@@ -104,6 +104,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
   const [activitySearchQuery, setActivitySearchQuery] = useState('');
   const [activitySortOrder, setActivitySortOrder] = useState('newest'); // newest | oldest
   const [showCommentEmojiPicker, setShowCommentEmojiPicker] = useState(false);
+  const [showMentionPicker, setShowMentionPicker] = useState(false);
 
   const [showMoreDropdown, setShowMoreDropdown] = useState(false);
   
@@ -225,10 +226,13 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
           setShowPriorityDropdown(false);
         }
       }
+      if (!event.target.closest('[data-mention-picker]') && !event.target.closest('[data-mention-trigger]')) {
+        setShowMentionPicker(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutsideDropdowns);
     return () => document.removeEventListener('mousedown', handleClickOutsideDropdowns);
-  }, [showShareDropdown, showMoreDropdown, showStatusDropdown, showAssigneeDropdown, showPriorityDropdown]);
+  }, [showShareDropdown, showMoreDropdown, showStatusDropdown, showAssigneeDropdown, showPriorityDropdown, showMentionPicker]);
 
   const handleShareWithUser = async (user) => {
     if (!task?._id) return;
@@ -1033,7 +1037,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
               
               {/* Status */}
               <div className="flex items-center justify-between group relative">
-                <div className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wider text-[#939084] w-32"><Circle size={13}/> Status</div>
+                <div className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wider text-[#939084] w-[135px] shrink-0 mr-3"><Circle size={13}/> Status</div>
                 <div className="flex-1 flex items-center gap-1.5" ref={statusDropdownRef}>
                   <button 
                     onClick={() => setShowStatusDropdown(!showStatusDropdown)}
@@ -1081,7 +1085,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
 
               {/* Assignees */}
               <div className="flex items-center justify-between group relative">
-                <div className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wider text-[#939084] w-32"><User size={13}/> Assignees</div>
+                <div className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wider text-[#939084] w-[135px] shrink-0 mr-3"><User size={13}/> Assignees</div>
                 <div className="flex-1" ref={assigneeDropdownRef}>
                   <button 
                     onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}
@@ -1114,7 +1118,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
 
               {/* Time Estimate */}
               <div className="flex items-center justify-between group">
-                <div className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wider text-[#939084] w-32"><Hourglass size={13}/> Time estimate</div>
+                <div className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wider text-[#939084] w-[135px] shrink-0 mr-3"><Hourglass size={13}/> Time estimate</div>
                 <div className="flex-1">
                   {isEditingEstimate ? (
                     <input
@@ -1149,7 +1153,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
               {/* Track Time */}
               <div className="flex flex-col gap-1.5 group relative w-full">
                 <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wider text-[#939084] w-32"><Timer size={13}/> Track time</div>
+                  <div className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wider text-[#939084] w-[135px] shrink-0 mr-3"><Timer size={13}/> Track time</div>
                   <div className="flex-1 flex items-center gap-1.5">
                     <button 
                       onClick={() => setShowTimePopup(!showTimePopup)}
@@ -1285,7 +1289,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
 
               {/* Dates - Row 3 */}
               <div className="flex items-center justify-between group">
-                <div className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wider text-[#939084] w-32"><Calendar size={13}/> Dates</div>
+                <div className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wider text-[#939084] w-[135px] shrink-0 mr-3"><Calendar size={13}/> Dates</div>
                 <div className="flex-1 flex items-center gap-1.5 text-[13px] text-[#939084] font-bold">
                   <input
                     type="date"
@@ -1301,7 +1305,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
 
               {/* Sprint Points - Row 3 */}
               <div className="flex items-center justify-between group">
-                <div className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wider text-[#939084] w-32"><Target size={13}/> Sprint points</div>
+                <div className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wider text-[#939084] w-[135px] shrink-0 mr-3"><Target size={13}/> Sprint points</div>
                 <div className="flex-1">
                   {isEditingSprintPoints ? (
                     <input
@@ -1334,7 +1338,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
 
               {/* Priority */}
               <div className="flex items-center justify-between group relative">
-                <div className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wider text-[#939084] w-32"><Flag size={13}/> Priority</div>
+                <div className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wider text-[#939084] w-[135px] shrink-0 mr-3"><Flag size={13}/> Priority</div>
                 <div className="flex-1" ref={priorityDropdownRef}>
                   <button 
                     onClick={() => setShowPriorityDropdown(!showPriorityDropdown)}
@@ -1363,7 +1367,7 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
 
               {/* Tags */}
               <div className="flex items-center justify-between group">
-                <div className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wider text-[#939084] w-32"><Tag size={13}/> Tags</div>
+                <div className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wider text-[#939084] w-[135px] shrink-0 mr-3"><Tag size={13}/> Tags</div>
                 <div className="flex-1 flex flex-wrap gap-1 items-center">
                   {task?.tags && task.tags.map(t => (
                     <span key={t} className="bg-[#eceae3] text-[#201515] border border-[#c5c0b1] text-[12px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded flex items-center gap-1">
@@ -1633,11 +1637,15 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                       <Search size={14}/>
                     </button>
                     <button 
-                      onClick={() => setActivitySortOrder(prev => prev === 'newest' ? 'oldest' : 'newest')} 
+                      onClick={() => {
+                        const newOrder = activitySortOrder === 'newest' ? 'oldest' : 'newest';
+                        setActivitySortOrder(newOrder);
+                        toast.success(`Sorted by ${newOrder === 'newest' ? 'Newest' : 'Oldest'} first`);
+                      }} 
                       className="p-1.5 hover:bg-[#eceae3] rounded-[4px] text-[#939084] transition-colors"
                       title={`Sort by: ${activitySortOrder === 'newest' ? 'Newest First' : 'Oldest First'}`}
                     >
-                      <Filter size={14}/>
+                      {activitySortOrder === 'newest' ? <ArrowDown size={14}/> : <ArrowUp size={14}/>}
                     </button>
                   </div>
                 </div>
@@ -1851,16 +1859,43 @@ const TaskDetailView = ({ onClose, task: initialTask, onAddComment, onAddTimeLog
                     <div className="flex items-center justify-between px-2 pb-2">
                       <div className="flex items-center gap-1 relative">
                         <button 
-                          onClick={() => setComment(prev => prev + '@')}
+                          data-mention-trigger="true"
+                          onClick={(e) => { e.stopPropagation(); setShowMentionPicker(!showMentionPicker); setShowCommentEmojiPicker(false); }}
                           className="p-1.5 text-[#939084] hover:text-[#201515] hover:bg-[#fffdf9] rounded-[4px] transition-colors"
                           title="Mention someone"
                         ><Plus size={15}/></button>
-                        
-                        <button 
-                          onClick={() => setComment(prev => prev + (prev.length > 0 && !prev.endsWith('\n') ? '\n> ' : '> '))}
-                          className="p-1.5 text-[#939084] hover:text-[#201515] hover:bg-[#fffdf9] rounded-[4px] transition-colors"
-                          title="Add a quote"
-                        ><MessageSquare size={15}/></button>
+
+                        {showMentionPicker && (
+                          <div 
+                            data-mention-picker="true"
+                            className="absolute left-0 bottom-full mb-1 w-64 max-h-36 overflow-y-auto bg-[#fffdf9] border border-[#c5c0b1] rounded-[6px] shadow-xl z-50 p-1 divide-y divide-[#eceae3] text-left"
+                          >
+                            <div className="px-2 py-1 text-[8px] font-semibold not-italic uppercase text-[#939084] tracking-wider flex justify-between items-center bg-[#eceae3]/20">
+                              <span>Mention Employee</span>
+                              <button 
+                                type="button" 
+                                onClick={(e) => { e.stopPropagation(); setShowMentionPicker(false); }}
+                                className="text-[#939084] hover:text-[#201515]"
+                              >
+                                <X size={10} />
+                              </button>
+                            </div>
+                            {personnelList.map(p => (
+                              <button
+                                key={p._id}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setComment(prev => prev + `@${p.fullName || p.name} `);
+                                  setShowMentionPicker(false);
+                                }}
+                                className="w-full text-left px-2.5 py-1.5 hover:bg-[#eceae3] text-[10px] font-semibold not-italic text-[#201515] transition-colors uppercase truncate block border-none bg-transparent cursor-pointer"
+                              >
+                                {p.fullName || p.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                         
                         <label className="p-1.5 text-[#939084] hover:text-[#201515] hover:bg-[#fffdf9] rounded-[4px] transition-colors cursor-pointer" title="Attach file">
                           <Paperclip size={15}/>

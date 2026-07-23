@@ -1,15 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import {
-  Play, Square, Clock, Activity, Zap, Timer, TrendingUp,
-  AlertTriangle, CheckCircle, MousePointer, Keyboard, Monitor,
-  BarChart3, ArrowUpRight, Users, User, Shield, Eye, Search, Filter, RefreshCw, Pause
+  Play, Square, Clock, Users, Search, Filter, RefreshCw, Pause, ChevronLeft, ChevronRight, Calendar as CalendarIcon, FileDown, X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const HEARTBEAT_INTERVAL = 15000; // 15 seconds
-const IDLE_THRESHOLD = 300; // 5 minutes in seconds
-const STATUS_POLL_INTERVAL = 10000; // 10 seconds for cross-app sync
 const API_BASE = '/api/time';
 
 const formatTime = (seconds) => {
@@ -33,20 +28,25 @@ const SmartTimeTracker = () => {
   const [session, setSession] = useState(null);
   const [timer, setTimer] = useState(0);
   const [idleTime, setIdleTime] = useState(0);
-  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+  const [loading, setLoading] = useState(true);
 
-  // Sync theme status reactively
+  // Role management
+  const [userRole, setUserRole] = useState('employee');
+  const [userId, setUserId] = useState('');
+
   useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains('dark'));
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
+    const token = sessionStorage.getItem('token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUserRole(payload.role || 'employee');
+        setUserId(payload.id);
+      } catch (e) {
+        console.error('Failed to parse token');
+      }
+    }
   }, []);
 
-  const [todaySessions, setTodaySessions] = useState([]);
-  const [teamData, setTeamData] = useState([]);
-  const [loading, setLoading] = useState(true);
   const getLocalDate = (date) => {
     const d = new Date(date);
     const year = d.getFullYear();
@@ -55,18 +55,78 @@ const SmartTimeTracker = () => {
     return `${year}-${month}-${day}`;
   };
 
-  const [viewDate, setViewDate] = useState(getLocalDate(new Date()));
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Refs
-  const lastActivityRef = useRef(Date.now());
-  const heartbeatRef = useRef(null);
-  const activityTypeRef = useRef(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [calendarData, setCalendarData] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(getLocalDate(new Date()));
 
   const getAuth = () => {
     const token = sessionStorage.getItem('token');
     if (!token) return null;
     return { headers: { Authorization: `Bearer ${token}` } };
+  };
+
+  const fetchCalendarData = useCallback(async () => {
+    try {
+      const auth = getAuth();
+      if (!auth || !userId) return;
+      const monthStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
+      const res = await axios.get(`${API_BASE}/calendar/${userId}?month=${monthStr}`, auth);
+      setCalendarData(res.data);
+    } catch (err) {
+      console.error('Failed to fetch calendar data', err);
+    }
+  }, [currentMonth, userId]);
+
+  useEffect(() => {
+    if (userId) fetchCalendarData();
+  }, [fetchCalendarData, userId]);
+
+  const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+  const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
+  const handlePrevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  const handleNextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+
+  // Table & Modal State
+  const [tableData, setTableData] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [selectedLog, setSelectedLog] = useState(null);
+
+  // Daily Summary State
+  const [summaryRange, setSummaryRange] = useState('week'); // 'week' or 'month'
+  const [summaryDateRef, setSummaryDateRef] = useState(new Date());
+  const [summaryData, setSummaryData] = useState([]);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+
+  const fetchTableData = async () => {
+    try {
+      const auth = getAuth();
+      if (!auth) return;
+      
+      let url = '';
+      if (userRole === 'admin' || userRole === 'hr') {
+        const queryParams = [];
+        if (dateRange.start && dateRange.end) {
+          queryParams.push(`startDate=${dateRange.start}&endDate=${dateRange.end}`);
+        } else {
+          queryParams.push(`startDate=${selectedDate}&endDate=${selectedDate}`);
+        }
+        url = `${API_BASE}/all-logs?${queryParams.join('&')}`;
+      } else {
+        const queryParams = [];
+        if (dateRange.start && dateRange.end) {
+          queryParams.push(`startDate=${dateRange.start}&endDate=${dateRange.end}`);
+        } else {
+          queryParams.push(`startDate=${selectedDate}&endDate=${selectedDate}`);
+        }
+        url = `${API_BASE}/my?${queryParams.join('&')}`;
+      }
+
+      const res = await axios.get(url, auth);
+      setTableData(Array.isArray(res.data) ? res.data : [res.data].filter(Boolean));
+    } catch (err) {
+      console.error('Failed to fetch table data:', err);
+    }
   };
 
   const fetchData = async () => {
@@ -77,12 +137,7 @@ const SmartTimeTracker = () => {
         return;
       }
 
-      console.log('--- TRACKER RECOVERY SYNC ---');
-      const [statusRes, myRes, teamRes] = await Promise.all([
-        axios.get(`${API_BASE}/status`, auth).catch(() => ({ data: { hasActiveSession: false } })),
-        axios.get(`${API_BASE}/my?date=${viewDate}`, auth).catch(() => ({ data: [] })),
-        axios.get(`${API_BASE}/team?date=${viewDate}`, auth).catch(() => ({ data: [] }))
-      ]);
+      const statusRes = await axios.get(`${API_BASE}/status`, auth).catch(() => ({ data: { hasActiveSession: false } }));
 
       if (statusRes.data && statusRes.data.hasActiveSession) {
         const s = statusRes.data;
@@ -93,15 +148,10 @@ const SmartTimeTracker = () => {
         setIdleTime(s.idleTime || 0);
 
         if (isRunning) {
-          lastActivityRef.current = Date.now();
-
-          // 🛡️ SOFT SYNC: Only jump if difference > 2s to avoid jitter
-          setTimer(prev => {
-            if (Math.abs(prev - totalActive) > 2 || prev === 0) {
-              return totalActive;
-            }
-            return prev;
-          });
+          const baseTime = totalActive;
+          const startTime = new Date(s.segmentStart || Date.now()).getTime();
+          const elapsed = Math.floor((Date.now() - startTime) / 1000);
+          setTimer(baseTime + Math.max(0, elapsed));
         } else {
           setTimer(totalActive);
         }
@@ -110,9 +160,8 @@ const SmartTimeTracker = () => {
         setTimer(0);
         setIdleTime(0);
       }
-
-      setTodaySessions(Array.isArray(myRes.data) ? myRes.data : []);
-      setTeamData(Array.isArray(teamRes.data) ? teamRes.data : []);
+      
+      fetchTableData();
 
     } catch (err) {
       console.error('Data pull disrupted:', err.message);
@@ -121,22 +170,79 @@ const SmartTimeTracker = () => {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(() => fetchData(), STATUS_POLL_INTERVAL);
-    return () => clearInterval(interval);
-  }, [viewDate]);
+  const getWeekRange = (date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday start
+    const start = new Date(d.setDate(diff));
+    const end = new Date(d.setDate(start.getDate() + 6));
+    return { start: getLocalDate(start), end: getLocalDate(end) };
+  };
 
-  // 🛡️ HARDENED TIMER ENGINE
+  const fetchSummaryData = useCallback(async () => {
+    try {
+      const auth = getAuth();
+      if (!auth || !userId || userRole === 'admin' || userRole === 'hr') return;
+      
+      setSummaryLoading(true);
+      let query = '';
+      if (summaryRange === 'week') {
+        const { start, end } = getWeekRange(summaryDateRef);
+        query = `?range=week&startDate=${start}&endDate=${end}`;
+      } else {
+        const month = `${summaryDateRef.getFullYear()}-${String(summaryDateRef.getMonth() + 1).padStart(2, '0')}`;
+        query = `?range=month&month=${month}`;
+      }
+      
+      const res = await axios.get(`${API_BASE}/daily-summary/${userId}${query}`, auth);
+      setSummaryData(res.data);
+    } catch (err) {
+      console.error('Failed to fetch summary data:', err);
+    } finally {
+      setSummaryLoading(false);
+    }
+  }, [summaryRange, summaryDateRef, userId, userRole]);
+
   useEffect(() => {
-    if (!session?.isRunning) return;
+    if (userId) fetchData();
+    const interval = setInterval(() => {
+      if (userId) fetchData();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [selectedDate, dateRange, userId, userRole]);
+
+  useEffect(() => {
+    fetchSummaryData();
+  }, [fetchSummaryData]);
+
+  const handlePrevSummary = () => {
+    const d = new Date(summaryDateRef);
+    if (summaryRange === 'week') d.setDate(d.getDate() - 7);
+    else d.setMonth(d.getMonth() - 1);
+    setSummaryDateRef(d);
+  };
+  
+  const handleNextSummary = () => {
+    const d = new Date(summaryDateRef);
+    if (summaryRange === 'week') d.setDate(d.getDate() + 7);
+    else d.setMonth(d.getMonth() + 1);
+    setSummaryDateRef(d);
+  };
+
+  // Timer Engine
+  useEffect(() => {
+    if (!session || !session.isRunning) return;
+
+    const baseTime = session.activeTime || 0;
+    const startTime = new Date(session.segmentStart || Date.now()).getTime();
 
     const interval = setInterval(() => {
-      setTimer(prev => prev + 1);
+      const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+      setTimer(baseTime + Math.max(0, elapsedSeconds));
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [session?.isRunning]);
+  }, [session?.isRunning, session?.segmentStart, session?.activeTime]);
 
   const handleAction = async (action) => {
     try {
@@ -148,284 +254,649 @@ const SmartTimeTracker = () => {
       const config = { ...auth, timeout: 5000 };
       await axios.post(`${API_BASE}/${action}`, {}, config);
       fetchData();
+      fetchCalendarData(); // refresh calendar as status might change
+      if (!isAdmin) fetchSummaryData(); // refresh summary log table
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Action Interrupted';
       alert(`Tracker Error: ${msg}`);
     }
   };
 
-  // Activity Tracking
-  const normalizeActivityType = (eventType) => {
-    switch (eventType) {
-      case 'keydown': return 'keyboard';
-      case 'mousemove':
-      case 'mousedown': return 'mouse';
-      case 'click': return 'click';
-      case 'scroll': return 'scroll';
-      case 'focus': return 'focus';
-      case 'touchstart': return 'touch';
-      default: return 'active';
+  const handleExport = async () => {
+    try {
+      const auth = getAuth();
+      if (!auth) return;
+      const queryParams = [];
+      if (dateRange.start && dateRange.end) {
+        queryParams.push(`startDate=${dateRange.start}&endDate=${dateRange.end}`);
+      } else {
+        queryParams.push(`startDate=${selectedDate}&endDate=${selectedDate}`);
+      }
+      const url = `${API_BASE}/export?${queryParams.join('&')}`;
+      
+      const res = await axios.get(url, { ...auth, responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'text/csv' });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `time_logs_${new Date().getTime()}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('Export failed', err);
+      alert('Export Failed');
     }
   };
 
-  const handleUserActivity = useCallback((type) => {
-    if (session?.status === 'paused') return;
-    lastActivityRef.current = Date.now();
-    activityTypeRef.current = normalizeActivityType(type);
-  }, [session]);
-
-  // 🛡️ REDUNDANT ACTIVITY LISTENERS REMOVED - Managed by MainLayout.jsx
-
-  // 🛡️ REDUNDANT HEARTBEAT REMOVED - Managed by MainLayout.jsx
-
   if (loading) return (
-    <div className="h-[60vh] flex flex-col items-center justify-center gap-6">
-      <RefreshCw size={32} className="text-[#00a76b] animate-spin" />
-      <p className="zap-caption-upper text-[#939084]">Initializing Time Protocol...</p>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-6" style={{ colorScheme: 'light' }}>
+      <RefreshCw size={32} className="text-[#10B981] animate-spin" />
+      <p className="text-gray-500 font-medium uppercase tracking-widest text-sm">Initializing Time Protocol...</p>
     </div>
   );
 
-  const activePercent = (timer + idleTime) > 0 ? Math.round((timer / (timer + idleTime)) * 100) : 100;
+  const isAdmin = userRole === 'admin' || userRole === 'hr';
+
+  // Summary logic for admin
+  const totalEmployeesPresent = isAdmin ? new Set(tableData.map(d => d.employeeId?._id)).size : 0;
+  const totalHoursLogged = isAdmin ? tableData.reduce((acc, curr) => acc + (curr.totalActiveTime || curr.activeTime || 0), 0) : 0;
+  const currentlyActive = isAdmin ? tableData.filter(d => d.status === 'active' || d.isRunning).length : 0;
+  const onBreak = isAdmin ? tableData.filter(d => d.status === 'paused').length : 0;
+
+  const filteredData = tableData.filter(item => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    const name = item.employeeId?.fullName || item.employeeId?.name || '';
+    return name.toLowerCase().includes(searchLower);
+  });
 
   return (
-    <div className="animate-fade-in pb-32 max-w-[1400px] mx-auto px-6">
+    <div className="min-h-screen bg-[#F0F2F5] dark:bg-[#0f0d0a] p-6 font-sans text-gray-900 dark:text-gray-100 transition-colors">
       {/* HEADER */}
-      <div className={`mb-12 flex flex-col md:flex-row justify-between items-end border-b pb-10 ${
-        isDark ? 'border-[#38352e]' : 'border-[#c5c0b1]'
-      }`}>
+      <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4 border-b border-gray-200 dark:border-[#38352e] pb-6">
         <div>
-          <p className="zap-caption-upper text-[#00a76b] mb-4">Activity Monitoring Protocol</p>
-          <h1 className="zap-display-hero">Smart <span className="text-[#00a76b]">Time Tracker.</span></h1>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white tracking-tight">Smart Time Tracker</h1>
+          <p className="text-sm text-gray-500 dark:text-[#a3a094] mt-1">Manage your working hours efficiently.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-6 mt-6 md:mt-0">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" size={18} />
-            <input
-              type="text"
-              placeholder="Search personnel..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className={`pl-12 pr-6 h-12 border rounded-[4px] text-[14px] font-medium focus:outline-none focus:border-[#00a76b] w-64 shadow-sm ${
-                isDark 
-                  ? 'bg-[#181612] border-[#38352e] text-white focus:bg-[#0f0d0a]' 
-                  : 'bg-white border-[#c5c0b1] text-[#201515]'
-              }`}
-            />
-          </div>
-          <button
-            onClick={fetchData}
-            className={`h-12 px-6 rounded-[4px] text-[12px] font-black uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-[#00a76b] transition-all shadow-lg cursor-pointer border-none ${
-              isDark 
-                ? 'bg-[#282520] text-white' 
-                : 'bg-[#201515] text-[#fffefb]'
-            }`}
-          >
+        <div className="flex items-center gap-4">
+          {isAdmin && (
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-[#a3a094]" size={16} />
+              <input 
+                type="text" 
+                placeholder="Search personnel..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 pr-4 py-2 border border-gray-300 dark:border-[#38352e] rounded-lg text-sm bg-white dark:bg-[#181612] text-gray-900 dark:text-white focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] shadow-sm w-64" 
+              />
+            </div>
+          )}
+          <button 
+            onClick={fetchData} 
+            className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-[#282520] border border-gray-300 dark:border-[#38352e] shadow-sm rounded-lg text-sm font-bold uppercase tracking-wider hover:bg-gray-50 dark:hover:bg-[#38352e] transition-colors text-gray-700 dark:text-white">
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             Sync Registry
           </button>
-          <input
-            type="date"
-            value={viewDate}
-            onChange={(e) => setViewDate(e.target.value)}
-            className={`h-12 px-5 border rounded-[4px] text-[14px] font-bold outline-none shadow-sm ${
-              isDark 
-                ? 'bg-[#181612] border-[#38352e] text-white' 
-                : 'bg-white border-[#c5c0b1] text-[#201515]'
-            }`}
-          />
         </div>
       </div>
 
-      {/* TRACKER PANEL */}
-      <div className="grid grid-cols-12 gap-8 mb-12">
-        <div className={`col-span-12 lg:col-span-8 zap-card p-10 transition-all duration-700 relative overflow-hidden shadow-xl ${
-          session?.isRunning 
-            ? (session.status === 'idle' 
-                ? (isDark ? 'bg-[#181612] border-[#00a76b] text-white' : 'bg-[#fffdf9] border-[#00a76b] text-[#201515]') 
-                : (isDark ? 'bg-[#181612] border-[#24a148] text-white' : 'bg-[#fffdf9] border-[#24a148] text-[#201515]')) 
-            : (isDark ? 'bg-[#0f0d0a] border-[#38352e] text-white' : 'bg-[#201515] text-[#fffefb]')
-        }`}>
-          <div className="relative z-10 flex flex-col h-full justify-between">
-            <div className="flex justify-between items-start mb-12">
-              <div className="flex items-center gap-4">
-                <div className={`w-3 h-3 rounded-full ${session?.isRunning ? (session.status === 'idle' ? 'bg-[#00a76b] animate-pulse' : 'bg-[#24a148] animate-pulse') : 'bg-[#939084]'}`}></div>
-                <span className={`zap-caption-upper !text-[11px] font-black tracking-widest ${(!session?.isRunning && !isDark) || (session?.isRunning && isDark) ? 'text-white' : 'text-[#201515]'}`}>
-                  {session?.isRunning ? (session.status === 'idle' ? 'Idle — Sync Paused' : 'Actively Monitoring') : (session?.status === 'paused' ? 'Session Paused' : 'Timer Disconnected')}
+      {/* TOP ROW: 60/40 SPLIT */}
+      <div className="flex flex-col lg:flex-row gap-6 mb-8">
+        
+        {/* TIME TRACKER CARD (60%) */}
+        <div className="lg:w-[60%] bg-white dark:bg-[#181612] rounded-2xl border border-gray-200 dark:border-[#38352e] shadow-sm p-10 flex flex-col justify-center relative overflow-hidden">
+          <div className="flex justify-between items-start mb-10 relative z-10">
+            <div>
+              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Current Session</h2>
+              <div className="flex items-center gap-2">
+                <div className={`w-2.5 h-2.5 rounded-full ${session?.isRunning ? (session.status === 'active' ? 'bg-[#10B981] animate-pulse' : 'bg-amber-500 animate-pulse') : 'bg-gray-400 dark:bg-gray-600'}`}></div>
+                <span className="text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-[#a3a094]">
+                  {session?.isRunning ? (session.status === 'active' ? 'Working' : 'On Break') : (session?.status === 'completed' ? 'Stopped' : 'Not Started')}
                 </span>
               </div>
-              {session && session.startTime && (
-                <span className={`text-[11px] font-black uppercase tracking-widest ${(!session?.isRunning && !isDark) || (session?.isRunning && isDark) ? 'text-white/60' : 'text-[#939084]'}`}>
-                  Sync: {new Date(session.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              )}
             </div>
+            <Clock size={28} className="text-gray-300 dark:text-gray-600" />
+          </div>
 
-            <div className="text-center mb-12">
-              <h2 className={`text-[80px] font-black tabular-nums tracking-tighter leading-none mb-4 italic ${(!session?.isRunning && !isDark) || (session?.isRunning && isDark) ? 'text-white' : 'text-[#201515]'}`}>
-                {formatTime(timer)}
-              </h2>
-              <p className={`text-[11px] font-black uppercase tracking-widest ${(!session?.isRunning && !isDark) || (session?.isRunning && isDark) ? 'text-white/60' : 'text-[#939084]'}`}>Active Workspace Participation</p>
+          <div className="text-center mb-12 relative z-10">
+            <div className="text-[5rem] leading-none font-black text-gray-900 dark:text-white font-mono tracking-tighter mb-4">
+              {formatTime(timer)}
             </div>
+            <p className="text-xs text-gray-400 dark:text-[#a3a094] font-bold tracking-[0.2em] uppercase">Total Time Tracked</p>
+          </div>
 
-            {session?.isRunning && (
-              <div className="grid grid-cols-3 gap-6 mb-12">
-                <div className={`border p-6 rounded-xl text-center ${isDark ? 'bg-white/5 border-white/10' : 'bg-[#fffdf9]/50 border-black/5'}`}>
-                  <p className="text-[10px] font-black text-[#939084] uppercase tracking-widest mb-2">Active</p>
-                  <p className="text-[20px] font-black text-[#24a148] tracking-tighter">{formatMinutes(timer)}</p>
-                </div>
-                <div className={`border p-6 rounded-xl text-center ${isDark ? 'bg-white/5 border-white/10' : 'bg-[#fffdf9]/50 border-black/5'}`}>
-                  <p className="text-[10px] font-black text-[#939084] uppercase tracking-widest mb-2">Idle</p>
-                  <p className="text-[20px] font-black text-[#00a76b] tracking-tighter">{formatMinutes(idleTime)}</p>
-                </div>
-                <div className={`border p-6 rounded-xl text-center ${isDark ? 'bg-white/5 border-white/10' : 'bg-[#fffdf9]/50 border-black/5'}`}>
-                  <p className="text-[10px] font-black text-[#939084] uppercase tracking-widest mb-2">Yield</p>
-                  <p className={`text-[20px] font-black tracking-tighter ${isDark ? 'text-white' : 'text-[#201515]'}`}>{activePercent}%</p>
-                </div>
-              </div>
-            )}
-
-            <div className="flex flex-col md:flex-row gap-4">
-              {!session ? (
-                <button
-                  onClick={() => handleAction('start')}
-                  className="bg-[#00a76b] text-white h-16 flex-1 rounded-xl font-black text-[16px] uppercase tracking-widest flex items-center justify-center gap-3 hover:opacity-90 active:scale-95 transition-all cursor-pointer border-none"
-                >
-                  <Play size={20} fill="white" /> START
-                </button>
-              ) : (
-                <>
-                  {!session.isRunning ? (
-                    <button
-                      onClick={() => handleAction('resume')}
-                      className="bg-[#24a148] text-white h-16 flex-1 rounded-xl font-black text-[16px] uppercase tracking-widest flex items-center justify-center gap-3 hover:opacity-90 active:scale-95 transition-all cursor-pointer border-none"
-                    >
-                      <Play size={20} fill="white" /> RESUME
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleAction('pause')}
-                      className={`h-16 flex-1 rounded-xl font-black text-[16px] uppercase tracking-widest flex items-center justify-center gap-3 transition-all cursor-pointer border-none ${
-                        isDark 
-                          ? 'bg-[#282520] text-white hover:bg-[#00a76b]' 
-                          : 'bg-[#fffefb] text-[#201515] hover:bg-[#eceae3]'
-                      }`}
-                    >
-                      <Pause size={20} /> PAUSE
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleAction('stop')}
-                    className="bg-[#00a76b] text-white h-16 flex-1 rounded-xl font-black text-[16px] uppercase tracking-widest flex items-center justify-center gap-3 hover:opacity-90 active:scale-95 transition-all cursor-pointer border-none"
-                  >
-                    <Square size={20} fill="white" /> STOP
+          <div className="flex flex-col sm:flex-row justify-center gap-4 relative z-10">
+            {(!session || session.status === 'completed') ? (
+              <button 
+                onClick={() => handleAction('start')} 
+                className="flex-1 flex items-center justify-center gap-2 py-4 bg-[#10B981] text-white rounded-xl font-bold text-sm tracking-wider uppercase shadow-md hover:bg-[#059669] active:scale-95 transition-all">
+                <Play size={18} fill="currentColor" /> START
+              </button>
+            ) : (
+              <>
+                {session.status === 'active' ? (
+                  <button 
+                    onClick={() => handleAction('pause')} 
+                    className="flex-1 flex items-center justify-center gap-2 py-4 bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20 rounded-xl font-bold text-sm tracking-wider uppercase shadow-sm hover:bg-[#10B981]/20 active:scale-95 transition-all">
+                    <Pause size={18} fill="currentColor" /> PAUSE
                   </button>
-                </>
-              )}
-            </div>
+                ) : (
+                  <button 
+                    onClick={() => handleAction('resume')} 
+                    className="flex-1 flex items-center justify-center gap-2 py-4 bg-[#10B981] text-white rounded-xl font-bold text-sm tracking-wider uppercase shadow-md hover:bg-[#059669] active:scale-95 transition-all">
+                    <Play size={18} fill="currentColor" /> RESUME
+                  </button>
+                )}
+                
+                <button 
+                  onClick={() => handleAction('stop')} 
+                  className="flex-1 flex items-center justify-center gap-2 py-4 bg-rose-500 text-white rounded-xl font-bold text-sm tracking-wider uppercase shadow-md hover:bg-rose-600 active:scale-95 transition-all">
+                  <Square size={18} fill="currentColor" /> STOP
+                </button>
+              </>
+            )}
           </div>
         </div>
 
-        {/* SIDE ACTIVITY */}
-        <div className="col-span-12 lg:col-span-4 space-y-8">
-          <div className={`border p-8 rounded-3xl transition-colors ${
-            isDark ? 'bg-[#0f0d0a] border-[#38352e]' : 'bg-[#fffdf9] border-[#c5c0b1]'
-          }`}>
-            <h3 className={`text-[12px] font-black uppercase tracking-widest mb-8 flex items-center gap-3 italic ${
-              isDark ? 'text-white' : 'text-[#201515]'
-            }`}>
-              <Monitor size={18} />
-              Node Sensor Stream
-            </h3>
-            <div className="space-y-4">
-              {[
-                { icon: MousePointer, label: 'Mouse Movement', active: session?.isRunning && session.status === 'active' },
-                { icon: Keyboard, label: 'Keyboard Input', active: session?.isRunning && session.status === 'active' },
-                { icon: Monitor, label: 'Tab Focus', active: session?.isRunning },
-              ].map((item, i) => (
-                <div key={i} className={`flex items-center justify-between p-4 border rounded-xl transition-colors ${
-                  isDark ? 'bg-[#181612] border-[#38352e] text-white' : 'bg-white border-[#c5c0b1] text-[#201515]'
-                }`}>
-                  <div className="flex items-center gap-4">
-                    <item.icon size={16} />
-                    <span className="text-[11px] font-black uppercase tracking-wider">{item.label}</span>
-                  </div>
-                  <div className={`w-2 h-2 rounded-full ${item.active ? 'bg-[#24a148] animate-pulse' : 'bg-[#c5c0b1]'}`}></div>
-                </div>
-              ))}
+        {/* DYNAMIC CALENDAR (40%) */}
+        <div className="lg:w-[40%] bg-white dark:bg-[#181612] rounded-2xl border border-gray-200 dark:border-[#38352e] shadow-sm p-8 flex flex-col">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+              <CalendarIcon size={20} className="text-[#10B981]" />
+              {currentMonth.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+            </h2>
+            <div className="flex gap-2">
+              <button onClick={handlePrevMonth} className="p-2 hover:bg-gray-100 dark:hover:bg-[#282520] rounded-lg transition-colors bg-transparent border-none cursor-pointer"><ChevronLeft size={18} className="text-gray-600 dark:text-[#a3a094]" /></button>
+              <button onClick={handleNextMonth} className="p-2 hover:bg-gray-100 dark:hover:bg-[#282520] rounded-lg transition-colors bg-transparent border-none cursor-pointer"><ChevronRight size={18} className="text-gray-600 dark:text-[#a3a094]" /></button>
             </div>
           </div>
 
-          <div className={`p-8 rounded-3xl shadow-2xl transition-colors ${
-            isDark ? 'bg-[#0f0d0a] border border-[#38352e] text-white' : 'bg-[#201515] text-white'
-          }`}>
-            <h3 className="text-[12px] font-black text-[#00a76b] uppercase tracking-widest mb-8 italic">Historical Pulse</h3>
-            <div className="space-y-4">
-              {todaySessions.length === 0 ? (
-                <p className="text-[10px] text-white/40 uppercase font-black tracking-widest">No previous segments</p>
-              ) : (
-                todaySessions.slice(0, 4).map((s, i) => (
-                  <div key={i} className="flex justify-between items-center border-b border-white/5 pb-4">
-                    <span className="text-[10px] font-black text-white/40 uppercase tracking-tighter">Segment {todaySessions.length - i}</span>
-                    <span className="text-[16px] font-black text-[#00a76b]">{formatTime(s.activeTime)}</span>
-                  </div>
-                ))
-              )}
-            </div>
+          <div className="grid grid-cols-7 gap-1 text-center mb-3">
+            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+              <div key={d} className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{d}</div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 gap-1 text-center flex-1 content-start">
+            {Array.from({ length: firstDayOfMonth }).map((_, i) => <div key={`empty-${i}`} />)}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              const dayData = calendarData.find(d => d.date === dateStr);
+              const hasLog = !!dayData;
+              const isSelected = dateStr === selectedDate;
+              const isToday = dateStr === getLocalDate(new Date());
+
+              return (
+                <button
+                  key={day}
+                  onClick={() => setSelectedDate(dateStr)}
+                  className={`
+                    relative w-full aspect-square flex items-center justify-center text-sm font-semibold rounded-xl transition-all border-none cursor-pointer
+                    ${isSelected ? 'bg-[#10B981] text-white shadow-md' : 'hover:bg-gray-100 dark:hover:bg-[#282520] text-gray-700 dark:text-gray-300 bg-transparent'}
+                    ${isToday && !isSelected ? 'border-2 border-[#10B981] text-[#10B981]' : ''}
+                  `}
+                >
+                  {day}
+                  {hasLog && !isSelected && (
+                    <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-[#10B981] rounded-full"></div>
+                  )}
+                  {hasLog && isSelected && (
+                    <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white rounded-full"></div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          
+          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-[#38352e] text-center">
+             <p className="text-sm font-bold text-gray-500 dark:text-[#a3a094]">
+               Selected: <span className="text-gray-800 dark:text-white">{new Date(selectedDate).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric'})}</span>
+             </p>
           </div>
         </div>
       </div>
 
-      {/* TEAM TABLE */}
-      {teamData.length > 0 && (
-        <div className={`border rounded-3xl overflow-hidden shadow-xl transition-colors ${
-          isDark ? 'bg-[#0f0d0a] border-[#38352e]' : 'bg-white border-[#c5c0b1]'
-        }`}>
-          <div className={`p-8 border-b flex justify-between items-center transition-colors ${
-            isDark ? 'bg-[#181612] border-[#38352e]' : 'bg-[#eceae3] border-[#c5c0b1]'
-          }`}>
-            <h3 className={`text-[12px] font-black uppercase tracking-widest ${isDark ? 'text-white' : 'text-[#201515]'}`}>Personnel Time Registry</h3>
+      {/* SUMMARY CARDS (ADMIN ONLY) */}
+      {isAdmin && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white dark:bg-[#181612] rounded-xl border border-gray-200 dark:border-[#38352e] p-6 shadow-sm">
+            <p className="text-xs font-bold text-gray-400 dark:text-[#a3a094] uppercase tracking-widest mb-1">Present Today</p>
+            <p className="text-2xl font-black text-gray-800 dark:text-white">{totalEmployeesPresent}</p>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <div className="bg-white dark:bg-[#181612] rounded-xl border border-gray-200 dark:border-[#38352e] p-6 shadow-sm">
+            <p className="text-xs font-bold text-gray-400 dark:text-[#a3a094] uppercase tracking-widest mb-1">Total Hours</p>
+            <p className="text-2xl font-black text-gray-800 dark:text-white">{formatMinutes(totalHoursLogged)}</p>
+          </div>
+          <div className="bg-white dark:bg-[#181612] rounded-xl border border-gray-200 dark:border-[#38352e] p-6 shadow-sm">
+            <p className="text-xs font-bold text-gray-400 dark:text-[#a3a094] uppercase tracking-widest mb-1">Currently Active</p>
+            <p className="text-2xl font-black text-[#10B981]">{currentlyActive}</p>
+          </div>
+          <div className="bg-white dark:bg-[#181612] rounded-xl border border-gray-200 dark:border-[#38352e] p-6 shadow-sm">
+            <p className="text-xs font-bold text-gray-400 dark:text-[#a3a094] uppercase tracking-widest mb-1">On Break</p>
+            <p className="text-2xl font-black text-amber-500">{onBreak}</p>
+          </div>
+        </div>
+      )}
+
+      {/* BOTTOM ROW: ROLE-BASED DAILY ACTIVITY LOG */}
+      <div className="bg-white dark:bg-[#181612] rounded-2xl border border-gray-200 dark:border-[#38352e] shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-200 dark:border-[#38352e] flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/50 dark:bg-[#282520]">
+          <h3 className="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-widest flex items-center gap-4">
+            {isAdmin ? 'All Employees Daily Activity Log' : 'My Daily Activity Log'}
+            {!isAdmin && (
+              <input 
+                type="date" 
+                className="text-sm outline-none text-gray-700 dark:text-gray-300 font-normal bg-white dark:bg-[#181612] border border-gray-200 dark:border-[#38352e] rounded-lg px-3 py-1.5 shadow-sm focus:ring-1 focus:ring-[#10B981] focus:border-[#10B981]" 
+                value={selectedDate} 
+                onChange={e => setSelectedDate(e.target.value)} 
+              />
+            )}
+          </h3>
+          
+          {isAdmin && (
+             <div className="flex gap-4 items-center">
+                <div className="flex items-center gap-2 bg-white dark:bg-[#181612] border border-gray-200 dark:border-[#38352e] rounded-lg px-3 py-1.5">
+                   <span className="text-xs font-bold text-gray-400 dark:text-[#a3a094] uppercase">Range:</span>
+                   <input type="date" className="text-sm outline-none text-gray-700 dark:text-gray-300 bg-transparent" value={dateRange.start} onChange={e => setDateRange({...dateRange, start: e.target.value})} />
+                   <span className="text-gray-400 dark:text-[#a3a094]">-</span>
+                   <input type="date" className="text-sm outline-none text-gray-700 dark:text-gray-300 bg-transparent" value={dateRange.end} onChange={e => setDateRange({...dateRange, end: e.target.value})} />
+                </div>
+                <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-gray-800 dark:bg-[#282520] text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-gray-900 dark:hover:bg-[#38352e] transition-colors">
+                  <FileDown size={14} /> Export CSV
+                </button>
+             </div>
+          )}
+        </div>
+        
+        <div className="overflow-x-auto">
+          {isAdmin ? (
+            <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
-                <tr className={`border-b ${isDark ? 'bg-[#181612] border-[#38352e]' : 'bg-[#fffdf9] border-[#c5c0b1]'}`}>
-                  <th className={`px-8 py-5 text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-[#a3a094]' : 'text-[#939084]'}`}>Personnel</th>
-                  <th className={`px-8 py-5 text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-[#a3a094]' : 'text-[#939084]'}`}>Active Yield</th>
-                  <th className={`px-8 py-5 text-[10px] font-black uppercase tracking-widest text-right ${isDark ? 'text-[#a3a094]' : 'text-[#939084]'}`}>Status</th>
+                <tr className="bg-gray-50 dark:bg-[#1e1c18] border-b border-gray-200 dark:border-[#38352e]">
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider">Employee Name</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider">Check-in Time</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider text-center">No. of Pauses</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider">Total Break Time</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider">Stop Time</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider text-right">Total Hours Worked</th>
                 </tr>
               </thead>
-              <tbody className={`divide-y ${isDark ? 'divide-[#38352e]' : 'divide-[#c5c0b1]'}`}>
-                {teamData.map((s, i) => (
-                  <tr key={i} className={`transition-colors ${isDark ? 'hover:bg-[#181612]/50' : 'hover:bg-[#fffdf9]'} group`}>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-black ${
-                          isDark ? 'bg-[#282520] text-white' : 'bg-[#eceae3] text-[#201515]'
-                        }`}>
-                          {s.employeeRole?.charAt(0) || 'U'}
-                        </div>
-                        <div>
-                          <p className={`text-[14px] font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-[#201515]'}`}>
-                            {s.employeeRole || 'Unknown Node'}
-                          </p>
-                          <p className={`text-[9px] font-black uppercase ${isDark ? 'text-[#a3a094]' : 'text-[#939084]'}`}>Node ID: {String(s.employeeId || '').slice(-6)}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6 text-[18px] font-black text-[#24a148] tabular-nums tracking-tighter">{formatTime(s.activeTime)}</td>
-                    <td className="px-8 py-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <div className={`w-2 h-2 rounded-full ${s.isRunning ? 'bg-[#24a148] animate-pulse' : 'bg-[#c5c0b1]'}`}></div>
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-white' : 'text-[#201515]'}`}>{s.status}</span>
-                      </div>
+              <tbody className="divide-y divide-gray-100 dark:divide-[#38352e]">
+                {filteredData.length > 0 ? (
+                  filteredData.map((log, i) => {
+                    const checkin = log.startTime ? new Date(log.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+                    let checkout = log.endTime ? new Date(log.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+                    
+                    const isRunningToday = (log.status === 'active' || log.status === 'paused') && log.date === getLocalDate(new Date());
+                    
+                    const numPauses = log.sessions ? log.sessions.filter(s => s.pause).length : 0;
+                    const breakMins = Math.floor((log.idleTime || 0) / 60);
+                    const activeSecs = log.totalActiveTime || log.activeTime || 0;
+                    
+                    return (
+                      <tr key={i} onClick={() => setSelectedLog(log)} className="hover:bg-gray-50 dark:hover:bg-[#282520] transition-colors group cursor-pointer">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 flex items-center justify-center font-bold text-xs uppercase">
+                              {(log.employeeId?.name || log.employeeId?.fullName || 'U').charAt(0)}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-gray-800 dark:text-white">{log.employeeId?.fullName || log.employeeId?.name || 'Unknown'}</p>
+                              <p className="text-xs font-semibold text-gray-400 dark:text-[#a3a094] capitalize">{log.employeeRole || 'N/A'}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-300">{log.date}</td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-700 dark:text-gray-300">{checkin}</td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-600 dark:text-gray-300 text-center">{numPauses}</td>
+                        <td className="px-6 py-4 text-sm font-medium text-amber-600 dark:text-amber-500">{breakMins > 0 ? `${breakMins} mins` : '-'}</td>
+                        <td className="px-6 py-4 text-sm font-medium">
+                          <div className="flex items-center gap-2">
+                            {isRunningToday ? (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#10B981]/10 dark:bg-[#10B981]/20 text-[#10B981] dark:text-[#34d399] uppercase tracking-wider">Live</span>
+                            ) : (
+                              <span className="text-gray-700 dark:text-gray-300">{checkout}</span>
+                            )}
+                            {log.isAutoStop && (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 uppercase tracking-wider border border-amber-200 dark:border-amber-900/50">Auto</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span className="text-sm font-bold text-[#10B981]">{formatMinutes(activeSecs)}</span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center">
+                      <p className="text-sm font-bold text-gray-400 dark:text-[#a3a094] uppercase tracking-widest">No activity recorded for this criteria.</p>
                     </td>
                   </tr>
-                ))}
+                )}
+              </tbody>
+            </table>
+          ) : (
+            <table className="w-full text-left border-collapse min-w-[800px]">
+              <thead>
+                <tr className="bg-gray-50 dark:bg-[#1e1c18] border-b border-gray-200 dark:border-[#38352e]">
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider">Check-in Time</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider text-center">No. of Pauses</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider">Resume Time</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider">Pause Time</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider text-right">Total Time</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-[#38352e]">
+                {(() => {
+                  let employeeRows = [];
+                  if (filteredData.length > 0) {
+                      const log = filteredData[0];
+                      const checkinStr = log.startTime ? new Date(log.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+                      
+                      if (log.sessions && log.sessions.length > 0) {
+                          log.sessions.forEach((session, idx) => {
+                               const startOrResume = session.start || session.resume;
+                               const pauseOrEnd = session.pause || session.end;
+                               
+                               if (startOrResume) {
+                                   const resumeStr = new Date(startOrResume).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                   let pauseStr = 'Running...';
+                                   let isLive = false;
+                                   let totalStr = '0m';
+                                   
+                                   if (pauseOrEnd) {
+                                       pauseStr = new Date(pauseOrEnd).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                       const diffSecs = Math.floor((new Date(pauseOrEnd).getTime() - new Date(startOrResume).getTime()) / 1000);
+                                       totalStr = formatMinutes(diffSecs);
+                                   } else {
+                                       const isLastSession = idx === log.sessions.length - 1;
+                                       const isToday = log.date === getLocalDate(new Date());
+                                       
+                                       if (isLastSession && isToday && log.status === 'active') {
+                                           isLive = true;
+                                           const diffSecs = Math.floor((Date.now() - new Date(startOrResume).getTime()) / 1000);
+                                           const h = Math.floor(diffSecs / 3600);
+                                           const m = Math.floor((diffSecs % 3600) / 60);
+                                           const s = diffSecs % 60;
+                                           totalStr = `${h}h ${m}m ${s}s (running)`;
+                                       } else {
+                                           isLive = false;
+                                           let fallbackEnd = null;
+                                           
+                                           if (!isLastSession && log.sessions[idx + 1] && (log.sessions[idx + 1].start || log.sessions[idx + 1].resume)) {
+                                               fallbackEnd = log.sessions[idx + 1].start || log.sessions[idx + 1].resume;
+                                           } else if (log.endTime) {
+                                               fallbackEnd = log.endTime;
+                                           } else if (!isToday) {
+                                               fallbackEnd = new Date(`${log.date}T23:59:59`);
+                                           }
+                                           
+                                           if (fallbackEnd) {
+                                               pauseStr = new Date(fallbackEnd).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                               const diffSecs = Math.max(0, Math.floor((new Date(fallbackEnd).getTime() - new Date(startOrResume).getTime()) / 1000));
+                                               totalStr = formatMinutes(diffSecs);
+                                           } else {
+                                               pauseStr = 'Missing';
+                                               totalStr = '0m';
+                                           }
+                                       }
+                                   }
+                                   
+                                   const liveBadge = isLive;
+                                   
+                                   employeeRows.push({
+                                       checkin: checkinStr,
+                                       pauseNo: idx + 1,
+                                       resumeTime: resumeStr,
+                                       pauseTime: pauseStr,
+                                       totalTime: totalStr,
+                                       isLive: liveBadge
+                                   });
+                               }
+                          });
+                      }
+                  }
+                  
+                  if (employeeRows.length > 0) {
+                      return employeeRows.map((row, idx) => (
+                          <tr key={idx} className={`transition-colors ${row.isLive ? 'bg-[#10B981]/10 dark:bg-[#10B981]/20 hover:bg-[#10B981]/20 dark:hover:bg-[#10B981]/30' : 'hover:bg-gray-50 dark:hover:bg-[#282520]'}`}>
+                            <td className="px-6 py-4 text-sm font-medium text-gray-700 dark:text-gray-300">{row.checkin}</td>
+                            <td className="px-6 py-4 text-sm font-medium text-gray-600 dark:text-gray-400 text-center">{row.pauseNo}</td>
+                            <td className="px-6 py-4 text-sm font-medium text-gray-700 dark:text-gray-300">{row.resumeTime}</td>
+                            <td className="px-6 py-4 text-sm font-medium">
+                               {row.isLive ? (
+                                   <span className="text-[#10B981] font-bold animate-pulse">{row.pauseTime}</span>
+                               ) : (
+                                   <span className="text-gray-700 dark:text-gray-300">{row.pauseTime}</span>
+                               )}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                               <div className="flex items-center justify-end gap-2">
+                                 <span className={`text-sm font-bold ${row.isLive ? 'text-[#10B981]' : 'text-gray-700 dark:text-gray-300'}`}>
+                                   {row.totalTime}
+                                 </span>
+                                 {row.isLive && (
+                                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#10B981] text-white uppercase tracking-wider">Live</span>
+                                 )}
+                               </div>
+                            </td>
+                          </tr>
+                      ));
+                  } else {
+                      return (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-12 text-center">
+                            <p className="text-sm font-bold text-gray-400 dark:text-[#a3a094] uppercase tracking-widest">No activity recorded for this date.</p>
+                          </td>
+                        </tr>
+                      );
+                  }
+                })()}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {/* DAILY SUMMARY LOG (EMPLOYEE ONLY) */}
+      {!isAdmin && (
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mt-16 mb-8">
+          <div className="p-6 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/50">
+            <h3 className="text-sm font-bold text-gray-800 uppercase tracking-widest">
+              Daily Summary Log
+            </h3>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex items-center bg-gray-100 p-1 rounded-lg">
+                <button 
+                  onClick={() => setSummaryRange('week')}
+                  className={`px-4 py-1.5 text-xs font-bold uppercase rounded-md transition-all ${summaryRange === 'week' ? 'bg-white text-[#10B981] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  Week
+                </button>
+                <button 
+                  onClick={() => setSummaryRange('month')}
+                  className={`px-4 py-1.5 text-xs font-bold uppercase rounded-md transition-all ${summaryRange === 'month' ? 'bg-white text-[#10B981] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  Month
+                </button>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <button onClick={handlePrevSummary} className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"><ChevronLeft size={16} className="text-gray-600" /></button>
+                <span className="text-xs font-bold text-gray-600 uppercase w-24 text-center">
+                  {summaryRange === 'week' 
+                    ? `Week of ${new Date(getWeekRange(summaryDateRef).start).toLocaleDateString(undefined, {month:'short', day:'numeric'})}` 
+                    : summaryDateRef.toLocaleString('default', { month: 'short', year: 'numeric' })}
+                </span>
+                <button onClick={handleNextSummary} className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"><ChevronRight size={16} className="text-gray-600" /></button>
+              </div>
+            </div>
+          </div>
+          
+          <div className="overflow-x-auto relative min-h-[100px]">
+            {summaryLoading && (
+              <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center">
+                <RefreshCw size={24} className="text-[#10B981] animate-spin" />
+              </div>
+            )}
+            
+            <table className="w-full text-left border-collapse min-w-[600px]">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Check-in</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Check-out</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Total Hours</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {summaryData.length > 0 ? (
+                  summaryData.map((dayLog, i) => {
+                    const checkInTime = dayLog.checkIn ? new Date(dayLog.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+                    let checkOutTime = dayLog.checkOut ? new Date(dayLog.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+                    
+                    let totalStr = formatMinutes(dayLog.totalHours);
+                    let isLive = dayLog.isLive;
+                    
+                    if (isLive) {
+                        checkOutTime = 'Running...';
+                        const diffSecs = timer;
+                        const h = Math.floor(diffSecs / 3600);
+                        const m = Math.floor((diffSecs % 3600) / 60);
+                        const s = diffSecs % 60;
+                        totalStr = `${h}h ${m}m ${s}s (running)`;
+                    } else if (dayLog.status === 'active' && !dayLog.checkOut) {
+                        checkOutTime = 'Missing';
+                    }
+                    
+                    return (
+                      <tr key={i} className={`transition-colors ${isLive ? 'bg-[#10B981]/10 hover:bg-[#10B981]/20' : 'hover:bg-gray-50'}`}>
+                        <td className="px-6 py-4 text-sm font-semibold text-gray-600">{new Date(dayLog.date).toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'})}</td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-700">{checkInTime}</td>
+                        <td className="px-6 py-4 text-sm font-medium">
+                          <div className="flex items-center gap-2">
+                             {isLive ? (
+                                 <span className="text-[#10B981] font-bold animate-pulse">{checkOutTime}</span>
+                             ) : (
+                                 <span className="text-gray-700">{checkOutTime}</span>
+                             )}
+                             {dayLog.isAutoStop && !isLive && (
+                               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 uppercase tracking-wider border border-amber-200">Auto</span>
+                             )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                           <div className="flex items-center justify-end gap-2">
+                             <span className={`text-sm font-bold ${isLive ? 'text-[#10B981]' : 'text-gray-700'}`}>
+                               {totalStr}
+                             </span>
+                             {isLive && (
+                                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#10B981] text-white uppercase tracking-wider">Live</span>
+                             )}
+                           </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-12 text-center">
+                      <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No activity recorded for this period.</p>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
       )}
+
+      {/* DETAILED MODAL */}
+      {selectedLog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">Activity Breakdown</h3>
+                <p className="text-xs text-gray-500 font-semibold">{selectedLog.date} • {selectedLog.employeeId?.fullName || selectedLog.employeeId?.name || 'Unknown'}</p>
+              </div>
+              <button onClick={() => setSelectedLog(null)} className="p-2 text-gray-400 hover:text-gray-800 hover:bg-gray-200 rounded-lg transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 max-h-[60vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6 p-4 bg-[#10B981]/10 rounded-xl border border-[#10B981]/20">
+                <div className="text-center">
+                  <p className="text-[10px] font-bold text-[#10B981] uppercase tracking-widest">Total Active</p>
+                  <p className="text-xl font-black text-gray-900">{formatMinutes(selectedLog.totalActiveTime || selectedLog.activeTime || 0)}</p>
+                </div>
+                <div className="w-px h-8 bg-[#10B981]/20"></div>
+                <div className="text-center">
+                  <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Total Break</p>
+                  <p className="text-xl font-black text-gray-900">{Math.floor((selectedLog.idleTime || 0) / 60)}m</p>
+                </div>
+                <div className="w-px h-8 bg-[#10B981]/20"></div>
+                <div className="text-center">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Pauses</p>
+                  <p className="text-xl font-black text-gray-900">{selectedLog.sessions ? selectedLog.sessions.filter(s => s.pause).length : 0}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 relative before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
+                {selectedLog.sessions && selectedLog.sessions.map((event, idx) => (
+                  <React.Fragment key={idx}>
+                    {event.start && (
+                      <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active mb-4">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full border border-white bg-white text-gray-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                          <Play size={12} className="text-[#10B981]" fill="currentColor" />
+                        </div>
+                        <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="text-sm font-bold text-gray-800 capitalize">Start / Resume</h4>
+                            <span className="text-xs font-semibold text-gray-400">{new Date(event.start || event.resume).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {event.pause && (
+                      <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active mb-4">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full border border-white bg-white text-gray-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                          <Pause size={12} className="text-amber-500" fill="currentColor" />
+                        </div>
+                        <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="text-sm font-bold text-gray-800 capitalize">Pause</h4>
+                            <span className="text-xs font-semibold text-gray-400">{new Date(event.pause).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {event.end && (
+                      <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active mb-4">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full border border-white bg-white text-gray-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                          <Square size={12} className="text-gray-800" fill="currentColor" />
+                        </div>
+                        <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="text-sm font-bold text-gray-800 capitalize">Stop</h4>
+                            <span className="text-xs font-semibold text-gray-400">{new Date(event.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

@@ -919,7 +919,7 @@ const Tasks = () => {
               {/* Group Table */}
               {!isCollapsed && (
                 <>
-                  <div className="overflow-x-auto">
+                  <div className="w-full">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-[#c5c0b1] bg-[#fffdf9] text-[10px] uppercase font-black tracking-widest text-[#939084]">

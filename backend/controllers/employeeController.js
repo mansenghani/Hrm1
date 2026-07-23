@@ -68,9 +68,37 @@ exports.createEmployee = async (req, res) => {
   try {
     const { email, password, fullName, role, ...employeeData } = req.body;
     
-    // 1. Create User
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ message: 'Email already exists' });
+    if (!email) return res.status(400).json({ message: 'Email Address is required' });
+    const lowerEmail = email.toLowerCase();
+    
+    if (!employeeData.personalEmail) {
+      return res.status(400).json({ message: 'Personal Email Address is required.' });
+    }
+    const lowerPersonalEmail = employeeData.personalEmail.trim().toLowerCase();
+
+    if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(lowerPersonalEmail)) {
+      return res.status(400).json({ message: 'Personal Email must be a valid @gmail.com address' });
+    }
+
+    if (lowerEmail === lowerPersonalEmail) {
+      return res.status(400).json({ message: 'Office Email and Personal Email cannot be the same' });
+    }
+
+    // Check cross-uniqueness for Office Email
+    const emailInUser = await User.findOne({ email: lowerEmail });
+    const emailInPersonal = await Employee.findOne({ personalEmail: lowerEmail });
+    if (emailInUser || emailInPersonal) {
+      return res.status(400).json({ message: 'Email already exists in the system' });
+    }
+
+    // Check cross-uniqueness for Personal Email
+    const personalInUser = await User.findOne({ email: lowerPersonalEmail });
+    const personalInPersonal = await Employee.findOne({ personalEmail: lowerPersonalEmail });
+    if (personalInUser || personalInPersonal) {
+      return res.status(400).json({ message: 'Personal Email already exists in the system' });
+    }
+
+    employeeData.personalEmail = lowerPersonalEmail;
     
     const userRole = role || 'employee';
     
@@ -118,6 +146,25 @@ exports.updateEmployee = async (req, res) => {
     }
     if (updateData.dob) {
       delete updateData.dob;
+    }
+
+    if (updateData.personalEmail !== undefined) {
+      const lowerPersonalEmail = updateData.personalEmail.trim().toLowerCase();
+      if (!lowerPersonalEmail) {
+        return res.status(400).json({ message: 'Personal Email Address is required.' });
+      }
+      if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(lowerPersonalEmail)) {
+        return res.status(400).json({ message: 'Personal Email must be a valid @gmail.com address' });
+      }
+      
+      const existingPersonal = await Employee.findOne({ personalEmail: lowerPersonalEmail, _id: { $ne: req.params.id } });
+      const personalInUser = await User.findOne({ email: lowerPersonalEmail });
+      
+      if (existingPersonal || personalInUser) {
+        return res.status(400).json({ message: 'Personal Email already exists in the system' });
+      }
+
+      updateData.personalEmail = lowerPersonalEmail;
     }
 
     const employee = await Employee.findById(req.params.id);

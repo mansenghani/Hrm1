@@ -45,9 +45,12 @@ const AttendanceDashboard = ({ userRole }) => {
   const handleCheckIn = async () => {
     try {
       const token = sessionStorage.getItem('token');
-      await axios.post('/api/attendance/checkin', {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const authHeader = { headers: { Authorization: `Bearer ${token}` } };
+      
+      // Start Time Tracker session simultaneously
+      await axios.post('/api/time/start', {}, authHeader).catch(() => null);
+      
+      await axios.post('/api/attendance/checkin', {}, authHeader);
       toast.success('Checked in successfully!');
       fetchAttendance();
     } catch (err) {
@@ -58,9 +61,12 @@ const AttendanceDashboard = ({ userRole }) => {
   const handleCheckOut = async () => {
     try {
       const token = sessionStorage.getItem('token');
-      await axios.post('/api/attendance/checkout', {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const authHeader = { headers: { Authorization: `Bearer ${token}` } };
+      
+      // Stop Time Tracker session simultaneously
+      await axios.post('/api/time/stop', {}, authHeader).catch(() => null);
+      
+      await axios.post('/api/attendance/checkout', {}, authHeader);
       toast.success('Checked out successfully!');
       fetchAttendance();
     } catch (err) {

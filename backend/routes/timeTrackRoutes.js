@@ -8,14 +8,18 @@ const {
   stopTracking,
   updateActivity,
   getMyTime,
-  getTeamTime,
   getHRTime,
   getAllTime,
+  getAllTimeLogs,
+  exportTimeLogs,
   getSessionStatus,
   getTimeSummary,
   getLogs,
   getTimeByDate,
-  getDashboardData
+  getDashboardData,
+  getCalendarData,
+  getDailyData,
+  getDailySummaryLogs
 } = require('../controllers/timeTrackController');
 
 // 🟢 Session Control
@@ -36,13 +40,16 @@ router.get('/my', protect, getMyTime);
 router.get('/summary', protect, getTimeSummary);
 router.get('/logs', protect, getLogs);
 router.get('/date/:date', protect, getTimeByDate);
-
+router.get('/calendar/:employeeId', protect, getCalendarData);
+router.get('/daily/:employeeId/:date', protect, getDailyData);
+router.get('/daily-summary/:employeeId', protect, getDailySummaryLogs);
 // 🚀 UNIFIED DASHBOARD
 router.get('/dashboard', protect, getDashboardData);
 
 // 👨‍💼 Role-Based Views
-router.get('/team', protect, authorize('manager', 'admin'), getTeamTime);
 router.get('/hr', protect, authorize('hr', 'admin'), getHRTime);
 router.get('/all', protect, authorize('admin'), getAllTime);
+router.get('/all-logs', protect, authorize('hr', 'admin', 'superadmin'), getAllTimeLogs);
+router.get('/export', protect, authorize('hr', 'admin', 'superadmin'), exportTimeLogs);
 
 module.exports = router;

@@ -40,7 +40,7 @@ const Attendance = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  
+
   // Layout States
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -213,11 +213,11 @@ const Attendance = () => {
   const calculateStats = (data) => {
     const today = new Date().toISOString().split('T')[0];
     const todaysLogs = data.filter(log => log.date === today || log.date === '2026-06-07');
-    
+
     const present = todaysLogs.filter(log => log.status === 'Present' || log.status === 'Late').length;
     const absent = todaysLogs.filter(log => log.status === 'Absent').length;
     const leave = todaysLogs.filter(log => log.status === 'On Leave').length;
-    
+
     setStats({
       presentToday: present || 140,
       absentToday: absent || 8,
@@ -248,12 +248,12 @@ const Attendance = () => {
       const now = new Date();
       const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
       const dateStr = now.toISOString().split('T')[0];
-      
+
       // Call standard timer API
       const res = await axios.post('/api/time/start', {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       // Also record in attendance log API
       await axios.post('/api/attendance/clock-in', {
         date: dateStr,
@@ -264,7 +264,7 @@ const Attendance = () => {
       }).catch(() => null); // Silent fallback if duplicate
 
       toast.success('Successfully checked in!');
-      
+
       fetchSessionStatus();
       fetchData();
     } catch (err) {
@@ -297,7 +297,7 @@ const Attendance = () => {
       }).catch(() => null);
 
       toast.success('Successfully checked out!');
-      
+
       setSession(null);
       setTimer(0);
       fetchData();
@@ -502,7 +502,7 @@ const Attendance = () => {
 
       {/* 3. ROW 2: CHART + QUICK ACTIONS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
-        
+
         {/* Weekly Attendance Chart Card */}
         <div className="lg:col-span-2">
           <WeeklyAttendanceChart isZapTheme={true} className="zap-card flex flex-col w-full transition-all duration-300" />
@@ -520,7 +520,7 @@ const Attendance = () => {
               <span className="font-mono text-3xl font-black tracking-widest tabular-nums border border-[#c5c0b1] dark:border-slate-800 px-5 py-2.5 rounded-xl shadow-sm bg-white dark:bg-[#0c0a0a] text-[#201515] dark:text-white mb-4">
                 {session ? formatTimer(timer) : '00:00:00'}
               </span>
-              
+
               {session ? (
                 <div className="flex gap-2 w-full">
                   <button
@@ -629,11 +629,10 @@ const Attendance = () => {
                       </button>
                     </>
                   ) : (
-                    <span className={`px-2.5 py-1 text-[10px] font-bold rounded-lg uppercase tracking-wider ${
-                      req.status === 'Approved' 
-                        ? 'bg-green-50 text-[#24a148] dark:bg-green-950/20' 
-                        : 'bg-red-50 text-red-650 dark:bg-red-950/20'
-                    }`}>
+                    <span className={`px-2.5 py-1 text-[10px] font-bold rounded-lg uppercase tracking-wider ${req.status === 'Approved'
+                      ? 'bg-green-50 text-[#24a148] dark:bg-green-950/20'
+                      : 'bg-red-50 text-red-650 dark:bg-red-950/20'
+                      }`}>
                       {req.status}
                     </span>
                   )}
@@ -646,7 +645,7 @@ const Attendance = () => {
 
       {/* 5. DETAILED ATTENDANCE LOG TABLE */}
       <div className="zap-card p-0 overflow-hidden">
-        
+
         {/* Table Controller */}
         <div className="p-6 border-b border-[#c5c0b1] dark:border-slate-800 bg-[#fffdf9] dark:bg-[#141212] flex flex-col md:flex-row justify-between items-center gap-4">
           <div>
@@ -730,11 +729,10 @@ const Attendance = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[9px] font-bold rounded border ${
-                        row.clockOut 
-                          ? 'bg-[#eceae3] dark:bg-slate-800 text-[#939084] dark:text-[#a3a094] border-[#c5c0b1] dark:border-slate-700' 
-                          : 'bg-green-50 dark:bg-green-950/20 text-[#24a148] border-green-200 dark:border-transparent'
-                      }`}>
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[9px] font-bold rounded border ${row.clockOut
+                        ? 'bg-[#eceae3] dark:bg-slate-800 text-[#939084] dark:text-[#a3a094] border-[#c5c0b1] dark:border-slate-700'
+                        : 'bg-green-50 dark:bg-green-950/20 text-[#24a148] border-green-200 dark:border-transparent'
+                        }`}>
                         {row.clockOut ? 'Node Closed' : 'Node Open'}
                       </span>
                     </td>
@@ -757,7 +755,7 @@ const Attendance = () => {
       {isCorrectionModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsCorrectionModalOpen(false)}></div>
-          
+
           <div className="bg-[#fffefb] dark:bg-[#0c0a0a] border border-[#c5c0b1] dark:border-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 z-50">
             <div className="px-6 py-4 border-b border-[#c5c0b1] dark:border-slate-800 bg-[#fffdf9] dark:bg-[#141212] flex justify-between items-center">
               <h3 className="text-sm font-bold text-[#201515] dark:text-white">Request Clock Correction</h3>

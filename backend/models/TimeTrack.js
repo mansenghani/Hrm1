@@ -67,6 +67,10 @@ const timeTrackSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isAutoStop: {
+    type: Boolean,
+    default: false
+  },
   totalActiveTime: {
     type: Number, // in seconds, accumulated from previous segments
     default: 0
@@ -84,17 +88,6 @@ const timeTrackSchema = new mongoose.Schema({
     pause: { type: Date },
     resume: { type: Date },
     end: { type: Date }
-  }],
-  // Activity log for detailed tracking
-  activityLog: [{
-    timestamp: { type: Date, default: Date.now },
-    type: {
-      type: String,
-      enum: [
-        'mouse', 'keyboard', 'click', 'scroll', 'touch', 'focus', 'tab',
-        'resume', 'pause', 'idle_start', 'idle', 'heartbeat', 'active', 'start', 'stop'
-      ]
-    }
   }]
 }, { timestamps: true });
 

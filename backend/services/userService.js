@@ -12,9 +12,34 @@ exports.createNewUserAtomic = async (userData) => {
   try {
     const { name, email, password, role, ...extraData } = userData;
 
+    if (!email) throw new Error('Email Address is required');
+    const lowerEmail = email.toLowerCase();
+    
+    if (!extraData.personalEmail) throw new Error('Personal Email Address is required.');
+    const lowerPersonalEmail = extraData.personalEmail.trim().toLowerCase();
+
+    if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(lowerPersonalEmail)) {
+      throw new Error('Personal Email must be a valid @gmail.com address');
+    }
+
+    if (lowerEmail === lowerPersonalEmail) {
+      throw new Error('Office Email and Personal Email cannot be the same');
+    }
+
     // 1. Uniqueness Protocol
-    const existing = await User.findOne({ email });
-    if (existing) throw new Error('Duplicate email addresses are not allowed. This email is already registered.');
+    const emailInUser = await User.findOne({ email: lowerEmail });
+    const emailInPersonal = await Employee.findOne({ personalEmail: lowerEmail });
+    if (emailInUser || emailInPersonal) {
+      throw new Error('Duplicate email addresses are not allowed. This Office Email is already registered.');
+    }
+
+    const personalInUser = await User.findOne({ email: lowerPersonalEmail });
+    const personalInPersonal = await Employee.findOne({ personalEmail: lowerPersonalEmail });
+    if (personalInUser || personalInPersonal) {
+      throw new Error('Duplicate email addresses are not allowed. This Personal Email is already registered.');
+    }
+
+    extraData.personalEmail = lowerPersonalEmail;
 
     // 2. Strict ID Generation (Format: hr-004.hr)
     const roleMatch = role.toLowerCase();

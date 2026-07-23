@@ -131,7 +131,17 @@ const EmployeeForm = () => {
     const newErrors = {};
     if (!formData.firstName) newErrors.firstName = 'First Name is required.';
     if (!formData.lastName) newErrors.lastName = 'Last Name is required.';
-    if (!formData.email) newErrors.email = 'Email Address is required.';
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!formData.email) {
+      newErrors.email = 'Office Email Address is required.';
+    } else if (!emailRegex.test(formData.email) || /@(gmal|gaml|gmil|gmial|gmaill)\.com$/i.test(formData.email)) {
+      newErrors.email = 'Please enter a valid office email format with correct spelling.';
+    }
+    if (!formData.personalEmail) {
+      newErrors.personalEmail = 'Personal Email Address is required.';
+    } else if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(formData.personalEmail.trim())) {
+      newErrors.personalEmail = 'Personal Email must be a valid @gmail.com address (e.g. name@gmail.com).';
+    }
     if (!formData.phone) {
       newErrors.phone = 'Phone Number is required.';
     } else if (formData.phone.length !== 10) {
@@ -198,7 +208,14 @@ const EmployeeForm = () => {
       const pathRole = window.location.pathname.split('/')[1];
       navigate(`/${pathRole}/employees`);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save employee');
+      const errMsg = err.response?.data?.message || 'Failed to save employee';
+      if (errMsg.toLowerCase().includes('personal email')) {
+        setErrors(prev => ({ ...prev, personalEmail: errMsg }));
+      } else if (errMsg.toLowerCase().includes('email')) {
+        setErrors(prev => ({ ...prev, email: errMsg }));
+      } else {
+        setError(errMsg);
+      }
     } finally {
       setLoading(false);
     }
@@ -585,10 +602,10 @@ const EmployeeForm = () => {
                {errors.email && <p className="text-[10px] text-[#F6465D] font-bold uppercase tracking-widest mt-1">{errors.email}</p>}
              </div>
              
-             <div className="space-y-2">
-               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Personal Email Address</label>
-               <input 
-                 type="email" name="personalEmail" value={formData.personalEmail} onChange={handleChange} 
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#848E9C]">Personal Email Address *</label>
+                <input 
+                  type="email" required name="personalEmail" value={formData.personalEmail} onChange={handleChange} 
                  className={`w-full px-4 py-3 bg-[#F5F5F5] focus:bg-white border-2 ${errors.personalEmail ? 'border-[#F6465D]' : 'border-transparent focus:border-[#F0B90B]'} rounded-xl font-bold text-sm`} 
                  placeholder="john.doe@gmail.com" 
                />
