@@ -108,7 +108,7 @@ const Login = () => {
                 </div>
                 
                 <h1 className="text-[32px] font-medium text-[#201515] tracking-tight mb-3 leading-[1.1]">
-                   Handshake Successful!
+                   Login Successful!
                 </h1>
                 
                 <p className="text-[14px] text-[#36342e] font-medium leading-relaxed mb-8">
