@@ -24,6 +24,20 @@ let isIdle = false;
 let idleNotificationSent = false;
 let authToken = '';
 
+// ── Local Ticking Engine State (for smooth UI updates) ────
+let baseActiveSeconds = 0;
+let segmentStartTime = null;
+let isSessionRunning = false;
+
+// Local clock loop for smooth UI ticking (matches Web App behavior)
+setInterval(() => {
+  if (isSessionRunning && segmentStartTime) {
+    const elapsed = Math.floor((Date.now() - segmentStartTime) / 1000);
+    activeSeconds = baseActiveSeconds + Math.max(0, elapsed);
+    updateDisplay();
+  }
+}, 500);
+
 // ── Intervals ─────────────────────────────────────────────
 let pollInterval = null;  // polls /status every 1s
 let heartbeatInterval = null; // sends /activity every 10s
@@ -140,6 +154,8 @@ function applyServerState(data) {
     activeSeconds = 0;
     inactiveSeconds = 0;
     isIdle = false;
+    isSessionRunning = false;
+    segmentStartTime = null;
     stopPolling();
     stopHeartbeat();
     stopScreenshotLoop();
@@ -148,9 +164,19 @@ function applyServerState(data) {
     return;
   }
 
-  // Set display values directly from backend — no local math
-  activeSeconds = data.activeTime ?? 0;
+  // Set display values directly from backend
+  baseActiveSeconds = data.activeTime ?? 0;
   inactiveSeconds = data.idleTime ?? 0;
+  segmentStartTime = data.segmentStart ? new Date(data.segmentStart).getTime() : null;
+  isSessionRunning = data.isRunning;
+
+  // Calculate immediate activeSeconds to avoid delay on poll response
+  if (isSessionRunning && segmentStartTime) {
+    const elapsed = Math.floor((Date.now() - segmentStartTime) / 1000);
+    activeSeconds = baseActiveSeconds + Math.max(0, elapsed);
+  } else {
+    activeSeconds = baseActiveSeconds;
+  }
 
   const serverStatus = String(data.status || '').toLowerCase();
 
