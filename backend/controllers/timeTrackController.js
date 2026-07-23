@@ -286,7 +286,7 @@ exports.updateActivity = async (req, res) => {
           session.activeTime = Math.max(0, session.activeTime - rewindAmount);
 
           session.inactivityCount += 1;
-          session.idleTime = session.inactivityCount * IDLE_THRESHOLD_SECONDS;
+          session.idleTime = (session.idleTime || 0) + rewindAmount;
           session.idleApplied = true;
 
           const idleTimeStart = new Date(now.getTime() - rewindAmount * 1000);
