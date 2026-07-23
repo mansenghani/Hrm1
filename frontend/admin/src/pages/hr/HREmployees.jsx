@@ -149,7 +149,7 @@ const HREmployees = () => {
         ? 'bg-[#e2f7ed] text-[#00875a] dark:bg-[#112a20] dark:text-[#3cd070]'
         : 'bg-[#f4f5f7] text-[#5e6c84] dark:bg-[#202528] dark:text-[#a0a5aa]'
         }`}>
-        {isActive ? 'Active' : 'On Leave'}
+        {isActive ? 'Active' : 'Inactive'}
       </span>
     );
   };
@@ -182,8 +182,8 @@ const HREmployees = () => {
 
       {/* 2. Search & Filter Row */}
       <div className="w-full mb-6">
-        <div className="flex gap-3 items-center w-full">
-          <div className="relative flex-1">
+        <div className="flex gap-3 items-center w-full justify-between">
+          <div className="relative w-full max-w-[320px]">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
@@ -193,42 +193,47 @@ const HREmployees = () => {
               className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-[#111c18] border border-gray-200 dark:border-[#1a2d29] rounded-full text-sm font-medium focus:outline-none focus:border-[#00a76b] focus:ring-2 focus:ring-[#00a76b]/10 transition-all shadow-sm text-gray-800 dark:text-white"
             />
           </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowFiltersPanel(!showFiltersPanel);
-            }}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-full border text-sm font-semibold transition-all shadow-sm cursor-pointer whitespace-nowrap ${showFiltersPanel
-              ? 'bg-[#e2f7ed] border-[#00a76b] text-[#00a76b] dark:bg-[#162722] dark:border-[#00a76b]'
-              : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-[#111c18] dark:border-[#1a2d29] dark:text-[#cbd5e1] dark:hover:bg-[#162722]'
-              }`}
-          >
-            <SlidersHorizontal size={15} />
-            <span>Filters</span>
-          </button>
-        </div>
-        <div>
-          <select
-            value={filterRole}
-            onChange={(e) => setFilterRole(e.target.value)}
-            className="zap-input h-12 uppercase font-black"
-          >
-            <option value="">ALL ROLES</option>
-            <option value="admin">ADMINS</option>
-            <option value="hr">HR OFFICERS</option>
-            <option value="manager">MANAGERS</option>
-            <option value="employee">EMPLOYEES</option>
-          </select>
-          
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="zap-input h-12 uppercase font-black ml-3"
-          >
-            <option value="">ALL STATUSES</option>
-            <option value="active">ACTIVE</option>
-            <option value="inactive">INACTIVE</option>
-          </select>
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowFiltersPanel(!showFiltersPanel);
+              }}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full border text-sm font-semibold transition-all shadow-sm cursor-pointer whitespace-nowrap ${showFiltersPanel
+                ? 'bg-[#e2f7ed] border-[#00a76b] text-[#00a76b] dark:bg-[#162722] dark:border-[#00a76b]'
+                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-[#111c18] dark:border-[#1a2d29] dark:text-[#cbd5e1] dark:hover:bg-[#162722]'
+                }`}
+            >
+              <SlidersHorizontal size={15} />
+              <span>Filters</span>
+            </button>
+            
+            {showFiltersPanel && (
+              <div className="absolute right-0 top-[calc(100%+8px)] z-50 p-4 bg-white dark:bg-[#162722] border border-gray-200 dark:border-[#1a2d29] rounded-[16px] shadow-lg flex flex-col gap-3 min-w-[200px] animate-in fade-in slide-in-from-top-2">
+                <select
+                  value={filterRole}
+                  onChange={(e) => setFilterRole(e.target.value)}
+                  className="bg-gray-50 dark:bg-[#111c18] border border-gray-200 dark:border-[#1a2d29] rounded-xl text-xs font-black focus:outline-none focus:border-[#00a76b] focus:ring-2 focus:ring-[#00a76b]/10 transition-all shadow-sm text-gray-800 dark:text-white px-4 h-10 cursor-pointer uppercase appearance-none w-full"
+                >
+                  <option value="">ALL ROLES</option>
+                  <option value="admin">ADMINS</option>
+                  <option value="hr">HR OFFICERS</option>
+                  <option value="manager">MANAGERS</option>
+                  <option value="employee">EMPLOYEES</option>
+                </select>
+                
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="bg-gray-50 dark:bg-[#111c18] border border-gray-200 dark:border-[#1a2d29] rounded-xl text-xs font-black focus:outline-none focus:border-[#00a76b] focus:ring-2 focus:ring-[#00a76b]/10 transition-all shadow-sm text-gray-800 dark:text-white px-4 h-10 cursor-pointer uppercase appearance-none w-full"
+                >
+                  <option value="">ALL STATUSES</option>
+                  <option value="active">ACTIVE</option>
+                  <option value="inactive">INACTIVE</option>
+                </select>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

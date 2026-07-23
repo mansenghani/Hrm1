@@ -102,7 +102,7 @@ const SmartTimeTracker = () => {
     try {
       const auth = getAuth();
       if (!auth) return;
-      
+
       let url = '';
       if (userRole === 'admin' || userRole === 'hr') {
         const queryParams = [];
@@ -160,7 +160,7 @@ const SmartTimeTracker = () => {
         setTimer(0);
         setIdleTime(0);
       }
-      
+
       fetchTableData();
 
     } catch (err) {
@@ -183,7 +183,7 @@ const SmartTimeTracker = () => {
     try {
       const auth = getAuth();
       if (!auth || !userId || userRole === 'admin' || userRole === 'hr') return;
-      
+
       setSummaryLoading(true);
       let query = '';
       if (summaryRange === 'week') {
@@ -193,7 +193,7 @@ const SmartTimeTracker = () => {
         const month = `${summaryDateRef.getFullYear()}-${String(summaryDateRef.getMonth() + 1).padStart(2, '0')}`;
         query = `?range=month&month=${month}`;
       }
-      
+
       const res = await axios.get(`${API_BASE}/daily-summary/${userId}${query}`, auth);
       setSummaryData(res.data);
     } catch (err) {
@@ -221,7 +221,7 @@ const SmartTimeTracker = () => {
     else d.setMonth(d.getMonth() - 1);
     setSummaryDateRef(d);
   };
-  
+
   const handleNextSummary = () => {
     const d = new Date(summaryDateRef);
     if (summaryRange === 'week') d.setDate(d.getDate() + 7);
@@ -273,7 +273,7 @@ const SmartTimeTracker = () => {
         queryParams.push(`startDate=${selectedDate}&endDate=${selectedDate}`);
       }
       const url = `${API_BASE}/export?${queryParams.join('&')}`;
-      
+
       const res = await axios.get(url, { ...auth, responseType: 'blob' });
       const blob = new Blob([res.data], { type: 'text/csv' });
       const downloadUrl = window.URL.createObjectURL(blob);
@@ -323,17 +323,17 @@ const SmartTimeTracker = () => {
           {isAdmin && (
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-[#a3a094]" size={16} />
-              <input 
-                type="text" 
-                placeholder="Search personnel..." 
+              <input
+                type="text"
+                placeholder="Search personnel..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-4 py-2 border border-gray-300 dark:border-[#38352e] rounded-lg text-sm bg-white dark:bg-[#181612] text-gray-900 dark:text-white focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] shadow-sm w-64" 
+                className="pl-9 pr-4 py-2 border border-gray-300 dark:border-[#38352e] rounded-lg text-sm bg-white dark:bg-[#181612] text-gray-900 dark:text-white focus:outline-none focus:border-[#10B981] focus:ring-1 focus:ring-[#10B981] shadow-sm w-64"
               />
             </div>
           )}
-          <button 
-            onClick={fetchData} 
+          <button
+            onClick={fetchData}
             className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-[#282520] border border-gray-300 dark:border-[#38352e] shadow-sm rounded-lg text-sm font-bold uppercase tracking-wider hover:bg-gray-50 dark:hover:bg-[#38352e] transition-colors text-gray-700 dark:text-white">
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             Sync Registry
@@ -343,9 +343,9 @@ const SmartTimeTracker = () => {
 
       {/* TOP ROW: 60/40 SPLIT */}
       <div className="flex flex-col lg:flex-row gap-6 mb-8">
-        
+
         {/* TIME TRACKER CARD (60%) */}
-        <div className="lg:w-[60%] bg-white dark:bg-[#181612] rounded-2xl border border-gray-200 dark:border-[#38352e] shadow-sm p-10 flex flex-col justify-center relative overflow-hidden">
+        <div className="lg:w-[60%] bg-white dark:bg-[#181612] rounded-2xl border border-gray-200 dark:border-[#38352e] shadow-sm px-10 py-6 flex flex-col justify-center relative overflow-hidden">
           <div className="flex justify-between items-start mb-10 relative z-10">
             <div>
               <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Current Session</h2>
@@ -366,45 +366,40 @@ const SmartTimeTracker = () => {
             <p className="text-xs text-gray-400 dark:text-[#a3a094] font-bold tracking-[0.2em] uppercase">Total Time Tracked</p>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-4 relative z-10">
-            {(!session || session.status === 'completed') ? (
-              <button 
-                onClick={() => handleAction('start')} 
-                className="flex-1 flex items-center justify-center gap-2 py-4 bg-[#10B981] text-white rounded-xl font-bold text-sm tracking-wider uppercase shadow-md hover:bg-[#059669] active:scale-95 transition-all">
-                <Play size={18} fill="currentColor" /> START
-              </button>
-            ) : (
-              <>
-                {session.status === 'active' ? (
-                  <button 
-                    onClick={() => handleAction('pause')} 
-                    className="flex-1 flex items-center justify-center gap-2 py-4 bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20 rounded-xl font-bold text-sm tracking-wider uppercase shadow-sm hover:bg-[#10B981]/20 active:scale-95 transition-all">
-                    <Pause size={18} fill="currentColor" /> PAUSE
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => handleAction('resume')} 
-                    className="flex-1 flex items-center justify-center gap-2 py-4 bg-[#10B981] text-white rounded-xl font-bold text-sm tracking-wider uppercase shadow-md hover:bg-[#059669] active:scale-95 transition-all">
-                    <Play size={18} fill="currentColor" /> RESUME
-                  </button>
-                )}
-                
-                <button 
-                  onClick={() => handleAction('stop')} 
-                  className="flex-1 flex items-center justify-center gap-2 py-4 bg-rose-500 text-white rounded-xl font-bold text-sm tracking-wider uppercase shadow-md hover:bg-rose-600 active:scale-95 transition-all">
-                  <Square size={18} fill="currentColor" /> STOP
-                </button>
-              </>
-            )}
-          </div>
+
         </div>
 
         {/* DYNAMIC CALENDAR (40%) */}
-        <div className="lg:w-[40%] bg-white dark:bg-[#181612] rounded-2xl border border-gray-200 dark:border-[#38352e] shadow-sm p-8 flex flex-col">
+        <div className="lg:w-[40%] bg-white dark:bg-[#181612] rounded-2xl border border-gray-200 dark:border-[#38352e] shadow-sm px-8 py-4 flex flex-col">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
-              <CalendarIcon size={20} className="text-[#10B981]" />
-              {currentMonth.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+            <h2 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-1">
+              <CalendarIcon size={20} className="text-[#10B981] mr-1" />
+              <select 
+                value={currentMonth.getMonth()} 
+                onChange={(e) => {
+                  const newDate = new Date(currentMonth);
+                  newDate.setMonth(parseInt(e.target.value));
+                  setCurrentMonth(newDate);
+                }}
+                className="bg-transparent outline-none cursor-pointer hover:text-[#10B981] transition-colors appearance-none text-center"
+              >
+                {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m, i) => (
+                  <option key={m} value={i} className="text-gray-800 dark:text-white bg-white dark:bg-[#181612]">{m}</option>
+                ))}
+              </select>
+              <select 
+                value={currentMonth.getFullYear()} 
+                onChange={(e) => {
+                  const newDate = new Date(currentMonth);
+                  newDate.setFullYear(parseInt(e.target.value));
+                  setCurrentMonth(newDate);
+                }}
+                className="bg-transparent outline-none cursor-pointer hover:text-[#10B981] transition-colors appearance-none text-center ml-1"
+              >
+                {Array.from({length: 100}, (_, i) => new Date().getFullYear() - 50 + i).map(y => (
+                  <option key={y} value={y} className="text-gray-800 dark:text-white bg-white dark:bg-[#181612]">{y}</option>
+                ))}
+              </select>
             </h2>
             <div className="flex gap-2">
               <button onClick={handlePrevMonth} className="p-2 hover:bg-gray-100 dark:hover:bg-[#282520] rounded-lg transition-colors bg-transparent border-none cursor-pointer"><ChevronLeft size={18} className="text-gray-600 dark:text-[#a3a094]" /></button>
@@ -419,7 +414,7 @@ const SmartTimeTracker = () => {
           </div>
 
           <div className="grid grid-cols-7 gap-1 text-center flex-1 content-start">
-            {Array.from({ length: firstDayOfMonth }).map((_, i) => <div key={`empty-${i}`} />)}
+            {Array.from({ length: firstDayOfMonth }).map((_, i) => <div key={`empty-${i}`} className="aspect-square" />)}
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
               const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -448,13 +443,10 @@ const SmartTimeTracker = () => {
                 </button>
               );
             })}
+            {Array.from({ length: 42 - (firstDayOfMonth + daysInMonth) }).map((_, i) => <div key={`empty-end-${i}`} className="aspect-square" />)}
           </div>
-          
-          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-[#38352e] text-center">
-             <p className="text-sm font-bold text-gray-500 dark:text-[#a3a094]">
-               Selected: <span className="text-gray-800 dark:text-white">{new Date(selectedDate).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric'})}</span>
-             </p>
-          </div>
+
+
         </div>
       </div>
 
@@ -484,32 +476,32 @@ const SmartTimeTracker = () => {
       <div className="bg-white dark:bg-[#181612] rounded-2xl border border-gray-200 dark:border-[#38352e] shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-200 dark:border-[#38352e] flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/50 dark:bg-[#282520]">
           <h3 className="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-widest flex items-center gap-4">
-            {isAdmin ? 'All Employees Daily Activity Log' : 'My Daily Activity Log'}
+            {isAdmin ? 'All Employees Daily Activity' : 'Daily Activity'}
             {!isAdmin && (
-              <input 
-                type="date" 
-                className="text-sm outline-none text-gray-700 dark:text-gray-300 font-normal bg-white dark:bg-[#181612] border border-gray-200 dark:border-[#38352e] rounded-lg px-3 py-1.5 shadow-sm focus:ring-1 focus:ring-[#10B981] focus:border-[#10B981]" 
-                value={selectedDate} 
-                onChange={e => setSelectedDate(e.target.value)} 
+              <input
+                type="date"
+                className="text-sm outline-none text-gray-700 dark:text-gray-300 font-normal bg-white dark:bg-[#181612] border border-gray-200 dark:border-[#38352e] rounded-lg px-3 py-1.5 shadow-sm focus:ring-1 focus:ring-[#10B981] focus:border-[#10B981]"
+                value={selectedDate}
+                onChange={e => setSelectedDate(e.target.value)}
               />
             )}
           </h3>
-          
+
           {isAdmin && (
-             <div className="flex gap-4 items-center">
-                <div className="flex items-center gap-2 bg-white dark:bg-[#181612] border border-gray-200 dark:border-[#38352e] rounded-lg px-3 py-1.5">
-                   <span className="text-xs font-bold text-gray-400 dark:text-[#a3a094] uppercase">Range:</span>
-                   <input type="date" className="text-sm outline-none text-gray-700 dark:text-gray-300 bg-transparent" value={dateRange.start} onChange={e => setDateRange({...dateRange, start: e.target.value})} />
-                   <span className="text-gray-400 dark:text-[#a3a094]">-</span>
-                   <input type="date" className="text-sm outline-none text-gray-700 dark:text-gray-300 bg-transparent" value={dateRange.end} onChange={e => setDateRange({...dateRange, end: e.target.value})} />
-                </div>
-                <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-gray-800 dark:bg-[#282520] text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-gray-900 dark:hover:bg-[#38352e] transition-colors">
-                  <FileDown size={14} /> Export CSV
-                </button>
-             </div>
+            <div className="flex gap-4 items-center">
+              <div className="flex items-center gap-2 bg-white dark:bg-[#181612] border border-gray-200 dark:border-[#38352e] rounded-lg px-3 py-1.5">
+                <span className="text-xs font-bold text-gray-400 dark:text-[#a3a094] uppercase">Range:</span>
+                <input type="date" className="text-sm outline-none text-gray-700 dark:text-gray-300 bg-transparent" value={dateRange.start} onChange={e => setDateRange({ ...dateRange, start: e.target.value })} />
+                <span className="text-gray-400 dark:text-[#a3a094]">-</span>
+                <input type="date" className="text-sm outline-none text-gray-700 dark:text-gray-300 bg-transparent" value={dateRange.end} onChange={e => setDateRange({ ...dateRange, end: e.target.value })} />
+              </div>
+              <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-gray-800 dark:bg-[#282520] text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-gray-900 dark:hover:bg-[#38352e] transition-colors">
+                <FileDown size={14} /> Export CSV
+              </button>
+            </div>
           )}
         </div>
-        
+
         <div className="overflow-x-auto">
           {isAdmin ? (
             <table className="w-full text-left border-collapse min-w-[800px]">
@@ -529,13 +521,13 @@ const SmartTimeTracker = () => {
                   filteredData.map((log, i) => {
                     const checkin = log.startTime ? new Date(log.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
                     let checkout = log.endTime ? new Date(log.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
-                    
+
                     const isRunningToday = (log.status === 'active' || log.status === 'paused') && log.date === getLocalDate(new Date());
-                    
+
                     const numPauses = log.sessions ? log.sessions.filter(s => s.pause).length : 0;
                     const breakMins = Math.floor((log.idleTime || 0) / 60);
                     const activeSecs = log.totalActiveTime || log.activeTime || 0;
-                    
+
                     return (
                       <tr key={i} onClick={() => setSelectedLog(log)} className="hover:bg-gray-50 dark:hover:bg-[#282520] transition-colors group cursor-pointer">
                         <td className="px-6 py-4">
@@ -595,106 +587,106 @@ const SmartTimeTracker = () => {
                 {(() => {
                   let employeeRows = [];
                   if (filteredData.length > 0) {
-                      const log = filteredData[0];
-                      const checkinStr = log.startTime ? new Date(log.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
-                      
-                      if (log.sessions && log.sessions.length > 0) {
-                          log.sessions.forEach((session, idx) => {
-                               const startOrResume = session.start || session.resume;
-                               const pauseOrEnd = session.pause || session.end;
-                               
-                               if (startOrResume) {
-                                   const resumeStr = new Date(startOrResume).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                   let pauseStr = 'Running...';
-                                   let isLive = false;
-                                   let totalStr = '0m';
-                                   
-                                   if (pauseOrEnd) {
-                                       pauseStr = new Date(pauseOrEnd).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                       const diffSecs = Math.floor((new Date(pauseOrEnd).getTime() - new Date(startOrResume).getTime()) / 1000);
-                                       totalStr = formatMinutes(diffSecs);
-                                   } else {
-                                       const isLastSession = idx === log.sessions.length - 1;
-                                       const isToday = log.date === getLocalDate(new Date());
-                                       
-                                       if (isLastSession && isToday && log.status === 'active') {
-                                           isLive = true;
-                                           const diffSecs = Math.floor((Date.now() - new Date(startOrResume).getTime()) / 1000);
-                                           const h = Math.floor(diffSecs / 3600);
-                                           const m = Math.floor((diffSecs % 3600) / 60);
-                                           const s = diffSecs % 60;
-                                           totalStr = `${h}h ${m}m ${s}s (running)`;
-                                       } else {
-                                           isLive = false;
-                                           let fallbackEnd = null;
-                                           
-                                           if (!isLastSession && log.sessions[idx + 1] && (log.sessions[idx + 1].start || log.sessions[idx + 1].resume)) {
-                                               fallbackEnd = log.sessions[idx + 1].start || log.sessions[idx + 1].resume;
-                                           } else if (log.endTime) {
-                                               fallbackEnd = log.endTime;
-                                           } else if (!isToday) {
-                                               fallbackEnd = new Date(`${log.date}T23:59:59`);
-                                           }
-                                           
-                                           if (fallbackEnd) {
-                                               pauseStr = new Date(fallbackEnd).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                               const diffSecs = Math.max(0, Math.floor((new Date(fallbackEnd).getTime() - new Date(startOrResume).getTime()) / 1000));
-                                               totalStr = formatMinutes(diffSecs);
-                                           } else {
-                                               pauseStr = 'Missing';
-                                               totalStr = '0m';
-                                           }
-                                       }
-                                   }
-                                   
-                                   const liveBadge = isLive;
-                                   
-                                   employeeRows.push({
-                                       checkin: checkinStr,
-                                       pauseNo: idx + 1,
-                                       resumeTime: resumeStr,
-                                       pauseTime: pauseStr,
-                                       totalTime: totalStr,
-                                       isLive: liveBadge
-                                   });
-                               }
+                    const log = filteredData[0];
+                    const checkinStr = log.startTime ? new Date(log.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+
+                    if (log.sessions && log.sessions.length > 0) {
+                      log.sessions.forEach((session, idx) => {
+                        const startOrResume = session.start || session.resume;
+                        const pauseOrEnd = session.pause || session.end;
+
+                        if (startOrResume) {
+                          const resumeStr = new Date(startOrResume).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                          let pauseStr = 'Running...';
+                          let isLive = false;
+                          let totalStr = '0m';
+
+                          if (pauseOrEnd) {
+                            pauseStr = new Date(pauseOrEnd).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            const diffSecs = Math.floor((new Date(pauseOrEnd).getTime() - new Date(startOrResume).getTime()) / 1000);
+                            totalStr = formatMinutes(diffSecs);
+                          } else {
+                            const isLastSession = idx === log.sessions.length - 1;
+                            const isToday = log.date === getLocalDate(new Date());
+
+                            if (isLastSession && isToday && log.status === 'active') {
+                              isLive = true;
+                              const diffSecs = Math.floor((Date.now() - new Date(startOrResume).getTime()) / 1000);
+                              const h = Math.floor(diffSecs / 3600);
+                              const m = Math.floor((diffSecs % 3600) / 60);
+                              const s = diffSecs % 60;
+                              totalStr = `${h}h ${m}m ${s}s (running)`;
+                            } else {
+                              isLive = false;
+                              let fallbackEnd = null;
+
+                              if (!isLastSession && log.sessions[idx + 1] && (log.sessions[idx + 1].start || log.sessions[idx + 1].resume)) {
+                                fallbackEnd = log.sessions[idx + 1].start || log.sessions[idx + 1].resume;
+                              } else if (log.endTime) {
+                                fallbackEnd = log.endTime;
+                              } else if (!isToday) {
+                                fallbackEnd = new Date(`${log.date}T23:59:59`);
+                              }
+
+                              if (fallbackEnd) {
+                                pauseStr = new Date(fallbackEnd).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                const diffSecs = Math.max(0, Math.floor((new Date(fallbackEnd).getTime() - new Date(startOrResume).getTime()) / 1000));
+                                totalStr = formatMinutes(diffSecs);
+                              } else {
+                                pauseStr = 'Missing';
+                                totalStr = '0m';
+                              }
+                            }
+                          }
+
+                          const liveBadge = isLive;
+
+                          employeeRows.push({
+                            checkin: checkinStr,
+                            pauseNo: idx + 1,
+                            resumeTime: resumeStr,
+                            pauseTime: pauseStr,
+                            totalTime: totalStr,
+                            isLive: liveBadge
                           });
-                      }
+                        }
+                      });
+                    }
                   }
-                  
+
                   if (employeeRows.length > 0) {
-                      return employeeRows.map((row, idx) => (
-                          <tr key={idx} className={`transition-colors ${row.isLive ? 'bg-[#10B981]/10 dark:bg-[#10B981]/20 hover:bg-[#10B981]/20 dark:hover:bg-[#10B981]/30' : 'hover:bg-gray-50 dark:hover:bg-[#282520]'}`}>
-                            <td className="px-6 py-4 text-sm font-medium text-gray-700 dark:text-gray-300">{row.checkin}</td>
-                            <td className="px-6 py-4 text-sm font-medium text-gray-600 dark:text-gray-400 text-center">{row.pauseNo}</td>
-                            <td className="px-6 py-4 text-sm font-medium text-gray-700 dark:text-gray-300">{row.resumeTime}</td>
-                            <td className="px-6 py-4 text-sm font-medium">
-                               {row.isLive ? (
-                                   <span className="text-[#10B981] font-bold animate-pulse">{row.pauseTime}</span>
-                               ) : (
-                                   <span className="text-gray-700 dark:text-gray-300">{row.pauseTime}</span>
-                               )}
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                               <div className="flex items-center justify-end gap-2">
-                                 <span className={`text-sm font-bold ${row.isLive ? 'text-[#10B981]' : 'text-gray-700 dark:text-gray-300'}`}>
-                                   {row.totalTime}
-                                 </span>
-                                 {row.isLive && (
-                                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#10B981] text-white uppercase tracking-wider">Live</span>
-                                 )}
-                               </div>
-                            </td>
-                          </tr>
-                      ));
+                    return employeeRows.map((row, idx) => (
+                      <tr key={idx} className={`transition-colors ${row.isLive ? 'bg-[#10B981]/10 dark:bg-[#10B981]/20 hover:bg-[#10B981]/20 dark:hover:bg-[#10B981]/30' : 'hover:bg-gray-50 dark:hover:bg-[#282520]'}`}>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-700 dark:text-gray-300">{row.checkin}</td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-600 dark:text-gray-400 text-center">{row.pauseNo}</td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-700 dark:text-gray-300">{row.resumeTime}</td>
+                        <td className="px-6 py-4 text-sm font-medium">
+                          {row.isLive ? (
+                            <span className="text-[#10B981] font-bold animate-pulse">{row.pauseTime}</span>
+                          ) : (
+                            <span className="text-gray-700 dark:text-gray-300">{row.pauseTime}</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <span className={`text-sm font-bold ${row.isLive ? 'text-[#10B981]' : 'text-gray-700 dark:text-gray-300'}`}>
+                              {row.totalTime}
+                            </span>
+                            {row.isLive && (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#10B981] text-white uppercase tracking-wider">Live</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ));
                   } else {
-                      return (
-                        <tr>
-                          <td colSpan={5} className="px-6 py-12 text-center">
-                            <p className="text-sm font-bold text-gray-400 dark:text-[#a3a094] uppercase tracking-widest">No activity recorded for this date.</p>
-                          </td>
-                        </tr>
-                      );
+                    return (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-12 text-center">
+                          <p className="text-sm font-bold text-gray-400 dark:text-[#a3a094] uppercase tracking-widest">No activity recorded for this date.</p>
+                        </td>
+                      </tr>
+                    );
                   }
                 })()}
               </tbody>
@@ -705,99 +697,99 @@ const SmartTimeTracker = () => {
 
       {/* DAILY SUMMARY LOG (EMPLOYEE ONLY) */}
       {!isAdmin && (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mt-16 mb-8">
-          <div className="p-6 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/50">
-            <h3 className="text-sm font-bold text-gray-800 uppercase tracking-widest">
-              Daily Summary Log
+        <div className="bg-white dark:bg-[#181612] rounded-2xl border border-gray-200 dark:border-[#38352e] shadow-sm overflow-hidden mt-16 mb-8">
+          <div className="p-6 border-b border-gray-200 dark:border-[#38352e] flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/50 dark:bg-[#282520]">
+            <h3 className="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-widest">
+              Daily Summary
             </h3>
-            
+
             <div className="flex items-center gap-4">
-              <div className="flex items-center bg-gray-100 p-1 rounded-lg">
-                <button 
+              <div className="flex items-center bg-gray-100 dark:bg-[#1e1c18] p-1 rounded-lg">
+                <button
                   onClick={() => setSummaryRange('week')}
-                  className={`px-4 py-1.5 text-xs font-bold uppercase rounded-md transition-all ${summaryRange === 'week' ? 'bg-white text-[#10B981] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  className={`px-4 py-1.5 text-xs font-bold uppercase rounded-md transition-all ${summaryRange === 'week' ? 'bg-white dark:bg-[#282520] text-[#10B981] shadow-sm' : 'text-gray-500 dark:text-[#a3a094] hover:text-gray-700 dark:hover:text-white'}`}>
                   Week
                 </button>
-                <button 
+                <button
                   onClick={() => setSummaryRange('month')}
-                  className={`px-4 py-1.5 text-xs font-bold uppercase rounded-md transition-all ${summaryRange === 'month' ? 'bg-white text-[#10B981] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  className={`px-4 py-1.5 text-xs font-bold uppercase rounded-md transition-all ${summaryRange === 'month' ? 'bg-white dark:bg-[#282520] text-[#10B981] shadow-sm' : 'text-gray-500 dark:text-[#a3a094] hover:text-gray-700 dark:hover:text-white'}`}>
                   Month
                 </button>
               </div>
-              
+
               <div className="flex items-center gap-2">
-                <button onClick={handlePrevSummary} className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"><ChevronLeft size={16} className="text-gray-600" /></button>
-                <span className="text-xs font-bold text-gray-600 uppercase w-24 text-center">
-                  {summaryRange === 'week' 
-                    ? `Week of ${new Date(getWeekRange(summaryDateRef).start).toLocaleDateString(undefined, {month:'short', day:'numeric'})}` 
+                <button onClick={handlePrevSummary} className="p-1.5 hover:bg-gray-200 dark:hover:bg-[#38352e] rounded-lg transition-colors"><ChevronLeft size={16} className="text-gray-600 dark:text-[#a3a094]" /></button>
+                <span className="text-xs font-bold text-gray-600 dark:text-[#a3a094] uppercase w-24 text-center">
+                  {summaryRange === 'week'
+                    ? `Week of ${new Date(getWeekRange(summaryDateRef).start).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
                     : summaryDateRef.toLocaleString('default', { month: 'short', year: 'numeric' })}
                 </span>
-                <button onClick={handleNextSummary} className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"><ChevronRight size={16} className="text-gray-600" /></button>
+                <button onClick={handleNextSummary} className="p-1.5 hover:bg-gray-200 dark:hover:bg-[#38352e] rounded-lg transition-colors"><ChevronRight size={16} className="text-gray-600 dark:text-[#a3a094]" /></button>
               </div>
             </div>
           </div>
-          
+
           <div className="overflow-x-auto relative min-h-[100px]">
             {summaryLoading && (
-              <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center">
+              <div className="absolute inset-0 bg-white/80 dark:bg-[#181612]/80 z-10 flex items-center justify-center">
                 <RefreshCw size={24} className="text-[#10B981] animate-spin" />
               </div>
             )}
-            
+
             <table className="w-full text-left border-collapse min-w-[600px]">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Check-in</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Check-out</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Total Hours</th>
+                <tr className="bg-gray-50 dark:bg-[#1e1c18] border-b border-gray-200 dark:border-[#38352e]">
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider">Check-in</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider">Check-out</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider text-right">Total Hours</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-[#38352e]">
                 {summaryData.length > 0 ? (
                   summaryData.map((dayLog, i) => {
                     const checkInTime = dayLog.checkIn ? new Date(dayLog.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
                     let checkOutTime = dayLog.checkOut ? new Date(dayLog.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
-                    
+
                     let totalStr = formatMinutes(dayLog.totalHours);
                     let isLive = dayLog.isLive;
-                    
+
                     if (isLive) {
-                        checkOutTime = 'Running...';
-                        const diffSecs = timer;
-                        const h = Math.floor(diffSecs / 3600);
-                        const m = Math.floor((diffSecs % 3600) / 60);
-                        const s = diffSecs % 60;
-                        totalStr = `${h}h ${m}m ${s}s (running)`;
+                      checkOutTime = 'Running...';
+                      const diffSecs = timer;
+                      const h = Math.floor(diffSecs / 3600);
+                      const m = Math.floor((diffSecs % 3600) / 60);
+                      const s = diffSecs % 60;
+                      totalStr = `${h}h ${m}m ${s}s (running)`;
                     } else if (dayLog.status === 'active' && !dayLog.checkOut) {
-                        checkOutTime = 'Missing';
+                      checkOutTime = 'Missing';
                     }
-                    
+
                     return (
-                      <tr key={i} className={`transition-colors ${isLive ? 'bg-[#10B981]/10 hover:bg-[#10B981]/20' : 'hover:bg-gray-50'}`}>
-                        <td className="px-6 py-4 text-sm font-semibold text-gray-600">{new Date(dayLog.date).toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'})}</td>
-                        <td className="px-6 py-4 text-sm font-medium text-gray-700">{checkInTime}</td>
+                      <tr key={i} className={`transition-colors ${isLive ? 'bg-[#10B981]/10 dark:bg-[#10B981]/20 hover:bg-[#10B981]/20 dark:hover:bg-[#10B981]/30' : 'hover:bg-gray-50 dark:hover:bg-[#282520]'}`}>
+                        <td className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-300">{new Date(dayLog.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-700 dark:text-gray-300">{checkInTime}</td>
                         <td className="px-6 py-4 text-sm font-medium">
                           <div className="flex items-center gap-2">
-                             {isLive ? (
-                                 <span className="text-[#10B981] font-bold animate-pulse">{checkOutTime}</span>
-                             ) : (
-                                 <span className="text-gray-700">{checkOutTime}</span>
-                             )}
-                             {dayLog.isAutoStop && !isLive && (
-                               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 uppercase tracking-wider border border-amber-200">Auto</span>
-                             )}
+                            {isLive ? (
+                              <span className="text-[#10B981] font-bold animate-pulse">{checkOutTime}</span>
+                            ) : (
+                              <span className="text-gray-700 dark:text-gray-300">{checkOutTime}</span>
+                            )}
+                            {dayLog.isAutoStop && !isLive && (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 uppercase tracking-wider border border-amber-200 dark:border-amber-900/50">Auto</span>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
-                           <div className="flex items-center justify-end gap-2">
-                             <span className={`text-sm font-bold ${isLive ? 'text-[#10B981]' : 'text-gray-700'}`}>
-                               {totalStr}
-                             </span>
-                             {isLive && (
-                                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#10B981] text-white uppercase tracking-wider">Live</span>
-                             )}
-                           </div>
+                          <div className="flex items-center justify-end gap-2">
+                            <span className={`text-sm font-bold ${isLive ? 'text-[#10B981]' : 'text-gray-700 dark:text-gray-300'}`}>
+                              {totalStr}
+                            </span>
+                            {isLive && (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#10B981] text-white uppercase tracking-wider">Live</span>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -805,7 +797,7 @@ const SmartTimeTracker = () => {
                 ) : (
                   <tr>
                     <td colSpan={4} className="px-6 py-12 text-center">
-                      <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No activity recorded for this period.</p>
+                      <p className="text-sm font-bold text-gray-400 dark:text-[#a3a094] uppercase tracking-widest">No activity recorded for this period.</p>
                     </td>
                   </tr>
                 )}
@@ -828,7 +820,7 @@ const SmartTimeTracker = () => {
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="p-6 max-h-[60vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6 p-4 bg-[#10B981]/10 rounded-xl border border-[#10B981]/20">
                 <div className="text-center">

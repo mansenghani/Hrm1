@@ -167,6 +167,82 @@ exports.updatePassword = async (req, res) => {
     res.status(500).json({ message: `System Error: ${error.message}` });
   }
 };
+// 📝 PROFILE: Update Details
+exports.updateProfile = async (req, res) => {
+  try {
+    const { fullName, personalEmail, phone, address, profileImage, adharCard, bankDetails, panCard } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const { saveBase64Image } = require('../utils/fileUpload');
+    
+    let imagePath = user.profileImage;
+    if (profileImage && profileImage.startsWith('data:')) {
+      const savedPath = saveBase64Image(profileImage, 'profile', `profile-${req.user.id}-${Date.now()}`);
+      if (savedPath) imagePath = savedPath;
+    }
+
+    let updateData = { profileImage: imagePath };
+
+    // New support for individual documents
+    if (adharCard && adharCard.startsWith('data:')) {
+      const savedPath = saveBase64Image(adharCard, 'documents', `adhar-${req.user.id}-${Date.now()}`);
+      if (savedPath) updateData.adharCard = savedPath;
+    }
+    if (bankDetails && bankDetails.startsWith('data:')) {
+      const savedPath = saveBase64Image(bankDetails, 'documents', `bank-${req.user.id}-${Date.now()}`);
+      if (savedPath) updateData.bankDetails = savedPath;
+    }
+    if (panCard && panCard.startsWith('data:')) {
+      const savedPath = saveBase64Image(panCard, 'documents', `pan-${req.user.id}-${Date.now()}`);
+      if (savedPath) updateData.panCard = savedPath;
+    }
+
+    // Update User
+    if (fullName) user.name = fullName;
+    user.profileImage = imagePath;
+    await user.save();
+
+    // Update Shadow Registry
+    let shadowModel;
+    if (user.role === 'hr') {
+      shadowModel = HR;
+    } else if (user.role === 'manager') {
+      shadowModel = Manager;
+    } else {
+      shadowModel = Employee;
+    }
+
+    if (fullName) updateData.fullName = fullName;
+    if (personalEmail !== undefined) updateData.personalEmail = personalEmail;
+    if (phone !== undefined) updateData.phone = phone;
+    if (address !== undefined) updateData.address = address;
+
+    const updatedProfile = await shadowModel.findOneAndUpdate(
+      { userId: req.user.id }, 
+      { $set: updateData },
+      { new: true }
+    );
+
+    res.json({
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profileImage: user.profileImage,
+        profile: updatedProfile
+      }
+    });
+  } catch (error) {
+    console.error('🔥 Profile Update Error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // 🖼️ PROFILE: Upload Image
 exports.uploadProfileImage = async (req, res) => {

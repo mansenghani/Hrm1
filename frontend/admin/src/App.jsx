@@ -201,6 +201,7 @@ const App = () => {
           <Route path="reports" element={<Reports />} />
           <Route path="chat" element={<Chat />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="notifications" element={<Notifications />} />
           <Route path="notifications/all" element={<AllNotifications />} />
           <Route path="training" element={<Training />} />
           <Route path="roles-permissions" element={<RolesPermissions />} />

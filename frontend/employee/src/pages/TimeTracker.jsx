@@ -325,10 +325,10 @@ const TimeTracker = () => {
 
       </div>
 
-      {/* DAILY ACTIVITY LOG TABLE */}
+      {/* DAILY ACTIVITY TABLE */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
-          <h2 className="text-lg font-semibold text-gray-800">Daily Activity Log</h2>
+          <h2 className="text-lg font-semibold text-gray-800">Daily Activity</h2>
           <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-md text-xs font-semibold">{selectedDate}</span>
         </div>
 

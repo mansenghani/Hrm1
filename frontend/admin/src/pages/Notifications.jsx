@@ -161,13 +161,13 @@ const Notifications = () => {
     <div className="px-6 md:px-10 pb-20 pt-0 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        <div className="flex items-center gap-4">
           <h1 className="text-[28px] font-black text-[#201515] tracking-tight">
-            Notification <span className="text-[#ff4f00]">Center</span>
+            Notification
           </h1>
-          <p className="text-[13px] font-medium text-[#939084] mt-1">
-            Send announcements and manage system notifications
-          </p>
+          <button onClick={fetchNotifications} className="text-[11px] font-bold text-[#ff4f00] hover:underline uppercase tracking-widest mt-2">
+            Refresh
+          </button>
         </div>
       </div>
 
@@ -403,12 +403,6 @@ const Notifications = () => {
         {/* ── NOTIFICATIONS LIST ── */}
         <div className={role === 'employee' ? 'xl:col-span-3' : 'xl:col-span-2'}>
           <div className="bg-white rounded-[5px] border border-[#eceae3] shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-[#eceae3] bg-[#fffdf9] flex items-center justify-between">
-              <h2 className="text-[14px] font-black text-[#201515] uppercase tracking-[0.15em]">Your Notifications</h2>
-              <button onClick={fetchNotifications} className="text-[11px] font-bold text-[#ff4f00] hover:underline uppercase tracking-widest">
-                Refresh
-              </button>
-            </div>
 
             {loading ? (
               <div className="flex items-center justify-center py-20">
