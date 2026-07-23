@@ -545,7 +545,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     const fetchStatus = async () => {
       if (!token) return;
       try {
-        const res = await axios.get('/api/time/time/status', { headers: { Authorization: `Bearer ${token}` } });
+        const res = await axios.get('/api/time/status', { headers: { Authorization: `Bearer ${token}` } });
         setIsTrackingActive(!!res.data?.isRunning);
         if (res.data?.status === 'idle') setIsPausedByIdle(true);
         setTrackerRawStatus(res.data?.status || 'offline');
