@@ -10,6 +10,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showThankYou, setShowThankYou] = useState(false);
 
   // REDIRECT IF ALREADY LOGGED IN
   useEffect(() => {
@@ -20,6 +21,7 @@ const Login = () => {
 
     if (token && role) {
       if (isDesktop) {
+        setShowThankYou(true);
         window.location.href = `fluidhr-tracker://auth?token=${encodeURIComponent(token)}`;
       } else {
         navigate(`/${role}/dashboard`);
@@ -53,6 +55,7 @@ const Login = () => {
       sessionStorage.setItem('role', role);
 
       if (isDesktop) {
+        setShowThankYou(true);
         window.location.href = `fluidhr-tracker://auth?token=${encodeURIComponent(token)}`;
       } else {
         navigate(`/${role}/dashboard`);
@@ -63,6 +66,79 @@ const Login = () => {
       setLoading(false);
     }
   };
+
+  if (showThankYou) {
+    const token = sessionStorage.getItem('token');
+    return (
+      <div className="h-screen overflow-hidden bg-[#eceae3] flex items-center justify-center p-4 selection:bg-[#00a76b] selection:text-white font-sans">
+        <div className="w-full max-w-[760px] h-full max-h-[calc(100vh-2rem)] grid grid-cols-1 lg:grid-cols-12 bg-[#fffefb] rounded-[8px] border border-[#c5c0b1] shadow-sm overflow-hidden">
+          {/* BRAND SIDEBAR */}
+          <div className="hidden lg:flex lg:col-span-5 bg-[#201515] p-6 flex-col justify-between relative overflow-hidden">
+             <div className="absolute -top-24 -left-24 w-80 h-80 bg-[#00a76b] opacity-10 blur-[100px] rounded-full"></div>
+             
+             <div className="relative z-10 flex items-center gap-3">
+                <div className="w-9 h-9 bg-[#00a76b] rounded-[4px] flex items-center justify-center">
+                  <ShieldCheck size={20} className="text-[#fffefb]" />
+                </div>
+                <span className="text-[22px] font-bold text-[#fffefb] tracking-tight">FluidHR</span>
+             </div>
+  
+             <div className="relative z-10">
+                <h2 className="text-[30px] font-medium text-[#fffefb] mb-5 leading-[1.1] tracking-tight">
+                   Identity <br/><span className="text-[#00a76b]">Linked</span>.
+                </h2>
+                <p className="text-[15px] text-[#c5c0b1] max-w-[260px] leading-relaxed font-medium">
+                   Your desktop protocol handshake has been completed.
+                </p>
+             </div>
+  
+             <div className="relative z-10 pt-10 border-t border-[#36342e]">
+                <div className="flex items-center gap-4 text-[#939084]">
+                  <Zap size={18} className="text-[#00a76b]" />
+                  <span className="text-[12px] font-bold uppercase tracking-[0.2em]">Auth Node v3.0.0</span>
+                </div>
+             </div>
+          </div>
+  
+          {/* THANK YOU CONTENT */}
+          <div className="lg:col-span-7 p-6 md:p-10 flex flex-col justify-center bg-[#fffefb] text-center">
+             <div className="max-w-[400px] w-full mx-auto">
+                <div className="w-16 h-16 bg-[#f6fff8] border border-[#24a148] rounded-full flex items-center justify-center mx-auto mb-6 text-[#24a148]">
+                   <ShieldCheck size={36} />
+                </div>
+                
+                <h1 className="text-[32px] font-medium text-[#201515] tracking-tight mb-3 leading-[1.1]">
+                   Handshake Successful!
+                </h1>
+                
+                <p className="text-[14px] text-[#36342e] font-medium leading-relaxed mb-8">
+                   Thank you for logging in. The **FluidHR Tracker** desktop app should launch automatically.
+                </p>
+  
+                <div className="space-y-4">
+                   <a 
+                     href={`fluidhr-tracker://auth?token=${encodeURIComponent(token)}`}
+                     className="h-[48px] w-full text-[15px] font-bold bg-[#00a76b] text-[#fffefb] hover:bg-[#201515] rounded-[4px] flex items-center justify-center gap-2 transition-all shadow-sm"
+                   >
+                      Open FluidHR Tracker <ArrowRight size={20} />
+                   </a>
+                   
+                   <button 
+                     onClick={() => {
+                       const role = sessionStorage.getItem('role');
+                       navigate(`/${role}/dashboard`);
+                     }}
+                     className="text-[14px] font-bold text-[#939084] hover:text-[#201515] transition-colors mt-4 block mx-auto"
+                   >
+                      Go to Web Dashboard instead
+                   </button>
+                </div>
+             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen overflow-hidden bg-[#eceae3] flex items-center justify-center p-4 selection:bg-[#00a76b] selection:text-white font-sans">
