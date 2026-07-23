@@ -691,7 +691,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                 )}
                 <div className="space-y-1.5">
                   {items.map((item) => {
-                    const isSettingsPath = item.path.includes('/settings');
+                    const isSettingsPath = location.pathname.includes('/settings');
                     const hasTabParam = item.path.includes('?tab=');
 
                     let isActive = false;
@@ -744,7 +744,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
 
       {/* 2. RIGHT CONTENT AREA (Header + main page content) */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 w-full z-[150] border-b bg-white dark:bg-[#08100e] transition-colors duration-300 ease-in-out" style={{ height: '70px', borderColor: isDarkMode ? '#1a2d29' : '#e2eae7' }}>
+        <header className="sticky top-0 w-full z-[150] border-b bg-white/80 dark:bg-[#08100e]/80 backdrop-blur-md transition-colors duration-300 ease-in-out" style={{ height: '70px', borderColor: isDarkMode ? '#1a2d29' : '#e2eae7' }}>
           <div className="flex items-center h-full w-full px-6">
             <button
               onClick={toggleSidebar}

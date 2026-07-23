@@ -16,9 +16,33 @@ const Screenshots = () => {
   const [loading, setLoading] = useState(true);
   const [filterUser, setFilterUser] = useState('');
   const [filterDate, setFilterDate] = useState('');
+  const [searchEmployeeName, setSearchEmployeeName] = useState('');
   const [viewMode, setViewMode] = useState('grid'); // grid, list
   const [selectedImage, setSelectedImage] = useState(null);
   const [navigationPath, setNavigationPath] = useState([]); // ['role', 'name']
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState(new Date());
+
+  const generateCalendarDays = (monthDate) => {
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    
+    const days = [];
+    const prevMonthTotalDays = new Date(year, month, 0).getDate();
+    for (let i = firstDayIndex - 1; i >= 0; i--) {
+      days.push(new Date(year, month - 1, prevMonthTotalDays - i));
+    }
+    for (let i = 1; i <= totalDays; i++) {
+      days.push(new Date(year, month, i));
+    }
+    const remaining = 42 - days.length;
+    for (let i = 1; i <= remaining; i++) {
+      days.push(new Date(year, month + 1, i));
+    }
+    return days;
+  };
   
   const token = sessionStorage.getItem('token');
   const role = sessionStorage.getItem('role');
@@ -97,21 +121,62 @@ const Screenshots = () => {
     return 0;
   };
 
-  // 📦 BULK DOWNLOAD ENGINE
-  const handleDownloadAll = () => {
+  // 📦 BULK DOWNLOAD ENGINE (Generates a single ZIP file)
+  const handleDownloadAll = async () => {
     if (filtered.length === 0) return;
-    if (!window.confirm(`Download all ${filtered.length} screenshots?`)) return;
+    if (!window.confirm(`Download all ${filtered.length} screenshots as a single ZIP archive?`)) return;
 
-    filtered.forEach((s, idx) => {
-      setTimeout(() => {
-        const link = document.createElement('a');
-        link.href = getImageUrl(s.imageUrl);
-        link.download = `Screenshot-${s.employeeName}-${new Date(s.timestamp).toLocaleDateString()}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }, idx * 300); // 🛡️ Staggered to prevent browser blocking
-    });
+    setLoading(true);
+    try {
+      // Load JSZip dynamically from CDN if not already loaded
+      if (!window.JSZip) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+
+      const zip = new window.JSZip();
+      
+      // Fetch all images as blobs and add them to the zip
+      const downloadPromises = filtered.map(async (s) => {
+        try {
+          const imageUrl = getImageUrl(s.imageUrl);
+          const response = await fetch(imageUrl);
+          const blob = await response.blob();
+          
+          // Generate a clean filename: BhavikKukadiya-2026-07-23-16-59.png
+          const dateStr = new Date(s.timestamp).toISOString().split('T')[0];
+          const timeStr = new Date(s.timestamp).toTimeString().split(' ')[0].replace(/:/g, '-');
+          const filename = `${s.employeeName}-${dateStr}-${timeStr}.png`;
+          
+          zip.file(filename, blob);
+        } catch (err) {
+          console.error(`Failed to download image: ${s.imageUrl}`, err);
+        }
+      });
+
+      await Promise.all(downloadPromises);
+
+      // Generate the zip and trigger download
+      const content = await zip.generateAsync({ type: 'blob' });
+      const dateStr = filterDate || new Date().toISOString().split('T')[0];
+      const zipFilename = `Screenshots-${navigationPath[1] || 'All'}-${dateStr}.zip`;
+      
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(content);
+      link.download = zipFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      alert('Failed to generate ZIP archive: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const setQuickDate = (type) => {
@@ -147,79 +212,185 @@ const Screenshots = () => {
   return (
     <div className="animate-fade-in pb-24">
       {/* HEADER SECTION */}
-      <div className="mb-12 border-b border-[#c5c0b1] pb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+      <div className="mb-4 border-b border-[#c5c0b1] pb-4 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 -mt-2">
         <div>
-          <p className="zap-caption-upper text-[#00a76b] mb-4">Monitoring Logs</p>
-          <h1 className="zap-display-hero">Screenshot <span className="text-[#00a76b]">Registry.</span></h1>
-        </div>
-        <div className="flex gap-3">
-          {navigationPath.length > 0 && (
-            <button 
-              onClick={() => setNavigationPath(prev => prev.slice(0, -1))}
-              className="zap-btn zap-btn-light h-14 px-6 gap-2"
-            >
-               <ArrowLeft size={18} /> BACK
-            </button>
-          )}
-          <div className="flex bg-[#eceae3] p-1 rounded-xl">
-             <button 
-               onClick={() => setViewMode('grid')}
-               className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-[#00a76b]' : 'text-[#939084] hover:text-[#201515]'}`}
-             >
-                <LayoutGrid size={20} />
-             </button>
-             <button 
-               onClick={() => setViewMode('list')}
-               className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-[#00a76b]' : 'text-[#939084] hover:text-[#201515]'}`}
-             >
-                <ListIcon size={20} />
-             </button>
-          </div>
-          <button onClick={fetchData} className="zap-btn zap-btn-light h-14 px-6">
-             <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
-          </button>
+          <h1 className="zap-display-hero">Screenshot</h1>
         </div>
       </div>
 
-      {renderBreadcrumbs()}
+      {/* BREADCRUMBS & FILTERS LINE */}
+      <div className="flex items-center justify-between gap-4 mb-4 animate-fade-in w-full">
+         {/* Left Side: Breadcrumbs */}
+         <div className="flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] text-[#939084]">
+            <button onClick={() => setNavigationPath([])} className={`hover:text-[#00a76b] transition-colors ${navigationPath.length === 0 ? 'text-[#201515]' : ''}`}>
+               All Folders
+            </button>
+            {navigationPath.map((path, idx) => (
+              <React.Fragment key={idx}>
+                 <ChevronRight size={14} className="opacity-40" />
+                 <button 
+                   onClick={() => setNavigationPath(navigationPath.slice(0, idx + 1))}
+                   className={`hover:text-[#00a76b] transition-colors ${idx === navigationPath.length - 1 ? 'text-[#201515]' : ''}`}
+                 >
+                    {path.charAt(0).toUpperCase() + path.slice(1)}
+                 </button>
+              </React.Fragment>
+            ))}
+         </div>
 
-      {/* FILTERS - Only show when viewing final images */}
-      {navigationPath.length === (role === 'manager' ? 1 : 2) && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 animate-fade-in">
-           <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" size={18} />
-              <input 
-                type="text" 
-                placeholder="Filter by Employee Name..." 
-                value={filterUser}
-                onChange={(e) => setFilterUser(e.target.value)}
-                className="w-full h-14 pl-12 pr-4 bg-white border border-[#c5c0b1] rounded-2xl text-[14px] font-bold text-[#201515] focus:outline-none focus:border-[#00a76b] shadow-sm italic"
-              />
-           </div>
-           <div className="relative">
-              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" size={18} />
-              <input 
-                type="date" 
-                value={filterDate}
-                max={getToday()}
-                onChange={(e) => setFilterDate(e.target.value)}
-                className="w-full h-14 pl-12 pr-4 bg-white border border-[#c5c0b1] rounded-2xl text-[14px] font-bold text-[#201515] focus:outline-none focus:border-[#00a76b] shadow-sm"
-              />
-           </div>
-           <div className="flex items-center justify-between gap-4 px-6 h-14 bg-[#fffdf9] border border-[#eceae3] rounded-2xl">
-              <div className="flex items-center gap-4">
-                <Filter size={18} className="text-[#00a76b]" />
-                <span className="text-[11px] font-black uppercase tracking-widest text-[#201515]">Total Results: {filtered.length} Captures</span>
-              </div>
-              <button 
-                onClick={handleDownloadAll}
-                className="flex items-center gap-2 px-4 py-2 bg-[#00a76b] text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-[#201515] transition-all"
-              >
-                <Download size={14} /> Download All
-              </button>
-           </div>
-        </div>
-      )}
+         {/* Right Side: Page Controls */}
+         <div className="flex flex-wrap items-center justify-end gap-4">
+            {/* Filters (Only visible when viewing final images) */}
+            {navigationPath.length === (role === 'manager' ? 1 : 2) && (
+              <>
+                 {/* Custom Theme Date Picker */}
+                 <div className="relative">
+                    <button 
+                      onClick={() => setShowDatePicker(!showDatePicker)}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-[#c5c0b1] hover:border-[#00a76b] text-sm font-bold text-[#201515] focus:outline-none transition-all shadow-sm relative pl-11 w-48"
+                    >
+                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" size={16} />
+                      <span>{filterDate ? new Date(filterDate).toLocaleDateString('en-GB') : 'dd-mm-yyyy'}</span>
+                      <span className="text-[10px] text-[#939084] font-black">▼</span>
+                    </button>
+
+                    {showDatePicker && (
+                      <div className="absolute right-0 mt-2 z-50 bg-[#fffdf9] border border-[#c5c0b1] rounded-2xl shadow-2xl p-4 w-72 animate-fade-in font-sans font-normal text-left">
+                        {/* Calendar Header */}
+                        <div className="flex justify-between items-center mb-3">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const d = new Date(currentCalendarMonth);
+                              d.setMonth(d.getMonth() - 1);
+                              setCurrentCalendarMonth(d);
+                            }}
+                            className="p-1.5 hover:bg-[#eceae3] rounded-lg transition-colors text-[#201515]"
+                          >
+                            <ChevronLeft size={16} />
+                          </button>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-[#201515]">
+                            {currentCalendarMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                          </span>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const d = new Date(currentCalendarMonth);
+                              d.setMonth(d.getMonth() + 1);
+                              setCurrentCalendarMonth(d);
+                            }}
+                            className="p-1.5 hover:bg-[#eceae3] rounded-lg transition-colors text-[#201515]"
+                          >
+                            <ChevronRight size={16} />
+                          </button>
+                        </div>
+
+                        {/* Days of Week */}
+                        <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                          {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+                            <span key={d} className="text-[9px] font-black uppercase tracking-widest text-[#939084] py-1">{d}</span>
+                          ))}
+                        </div>
+
+                        {/* Days Grid */}
+                        <div className="grid grid-cols-7 gap-1">
+                          {generateCalendarDays(currentCalendarMonth).map((day, idx) => {
+                            const isCurrentMonth = day.getMonth() === currentCalendarMonth.getMonth();
+                            const isSelected = filterDate && new Date(filterDate).toDateString() === day.toDateString();
+                            const isToday = new Date().toDateString() === day.toDateString();
+                            const isDisabled = day > new Date();
+                            return (
+                              <button
+                                key={idx}
+                                disabled={isDisabled}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFilterDate(day.toISOString().split('T')[0]);
+                                  setShowDatePicker(false);
+                                }}
+                                className={`text-[10px] font-bold py-1.5 rounded-lg transition-all ${
+                                  isSelected 
+                                    ? 'bg-[#00a76b] text-white shadow-md' 
+                                    : isToday
+                                      ? 'bg-[#eceae3] text-[#00a76b] border border-[#00a76b]/30'
+                                      : isCurrentMonth 
+                                        ? 'text-[#201515] hover:bg-[#eceae3]' 
+                                        : 'text-[#939084] opacity-30 hover:bg-[#eceae3]'
+                                } ${isDisabled ? 'opacity-20 cursor-not-allowed' : ''}`}
+                              >
+                                {day.getDate()}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Footer actions */}
+                        <div className="flex justify-between items-center mt-3 pt-3 border-t border-[#eceae3] text-[9px] font-black uppercase tracking-widest">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFilterDate('');
+                              setShowDatePicker(false);
+                            }}
+                            className="text-[#ff4f00] hover:underline"
+                          >
+                            Clear
+                          </button>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFilterDate(new Date().toISOString().split('T')[0]);
+                              setShowDatePicker(false);
+                            }}
+                            className="text-[#00a76b] hover:underline"
+                          >
+                            Today
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                 </div>
+
+                 {/* Total Images Count Card */}
+                 <div className="flex items-center px-4 py-2.5 bg-white border border-[#c5c0b1] rounded-xl text-sm font-bold text-[#201515] shadow-sm">
+                    {filtered.length} Captures
+                 </div>
+
+                 {/* Download All Button */}
+                 <button 
+                   onClick={handleDownloadAll}
+                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00a76b] hover:bg-[#201515] text-white text-sm font-bold transition-all shadow-sm"
+                 >
+                   <Download size={15} /> Download All
+                 </button>
+              </>
+            )}
+
+            {/* View Mode Toggle (Placed at the end) */}
+            <div className="flex bg-[#eceae3] p-1 rounded-xl h-10 items-center">
+               <button 
+                 onClick={() => setViewMode('grid')}
+                 className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-[#00a76b]' : 'text-[#939084] hover:text-[#201515]'}`}
+               >
+                  <LayoutGrid size={16} />
+               </button>
+               <button 
+                 onClick={() => setViewMode('list')}
+                 className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-[#00a76b]' : 'text-[#939084] hover:text-[#201515]'}`}
+               >
+                  <ListIcon size={16} />
+               </button>
+            </div>
+
+            {/* Refresh Button (Placed at the very end) */}
+            <button 
+              onClick={fetchData} 
+              className="flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-[#c5c0b1] hover:border-[#00a76b] text-[#201515] transition-all shadow-sm focus:outline-none"
+            >
+               <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+            </button>
+         </div>
+      </div>
 
       {/* 📅 QUICK DATE FILTERS */}
       {navigationPath.length === (role === 'manager' ? 1 : 2) && (
@@ -260,13 +431,13 @@ const Screenshots = () => {
                  <div 
                    key={r} 
                    onClick={() => setNavigationPath([r])}
-                   className="zap-card group hover:border-[#00a76b] transition-all cursor-pointer p-8 flex flex-col items-center text-center shadow-lg"
+                   className="bg-white dark:bg-[#0c1512] border border-[#e2eae7] dark:border-[#13221e] rounded-[24px] p-8 shadow-[0_4px_20px_rgba(0,0,0,0.01)] hover:shadow-lg dark:hover:shadow-emerald-950/20 hover:scale-[1.02] transition-all cursor-pointer flex flex-col items-center text-center group"
                  >
-                    <div className="w-20 h-20 rounded-3xl bg-[#eceae3] text-[#201515] group-hover:bg-[#00a76b] group-hover:text-white flex items-center justify-center transition-all mb-6">
-                       <Folder size={40} />
+                    <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 text-[#00a76b] flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
+                       <Folder size={32} />
                     </div>
-                    <h3 className="text-[16px] font-black uppercase tracking-widest text-[#201515]">{r} Folders</h3>
-                    <p className="text-[10px] font-bold text-[#939084] mt-2 uppercase tracking-widest italic">{countInFolder('role', r)} Total Captures</p>
+                    <h3 className="text-[16px] font-black uppercase tracking-widest text-slate-800 dark:text-white mb-2">{r} Folders</h3>
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-[#829e92] uppercase tracking-widest italic">{countInFolder('role', r)} Total Captures</p>
                  </div>
                ))}
             </div>
@@ -274,28 +445,43 @@ const Screenshots = () => {
 
           {/* LEVEL 1: EMPLOYEE NAME FOLDERS */}
           {((navigationPath.length === 1 && role !== 'manager') || (navigationPath.length === 0 && role === 'manager')) && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-               {[...new Set(screenshots
-                  .filter(s => role === 'manager' ? true : s.role === navigationPath[0])
-                  .map(s => s.employeeName))]
-                  .map(name => (
-                    <div 
-                      key={name} 
-                      onClick={() => setNavigationPath(role === 'manager' ? ['employee', name] : [navigationPath[0], name])}
-                      className="zap-card group hover:border-[#00a76b] transition-all cursor-pointer p-8 flex items-center gap-6 shadow-lg"
-                    >
-                       <div className="w-16 h-16 rounded-2xl bg-[#201515] text-white flex items-center justify-center font-black italic text-xl">
-                          {name?.[0]}
-                       </div>
-                       <div className="flex-1">
-                          <h3 className="text-[13px] font-black uppercase tracking-widest text-[#201515] mb-1">{name}</h3>
-                          <div className="flex items-center gap-2 text-[9px] font-bold text-[#939084] uppercase tracking-widest italic">
-                             <History size={12} className="text-[#00a76b]" />
-                             {countInFolder('name', name) || screenshots.filter(s => s.employeeName === name).length} captures
-                          </div>
-                       </div>
-                    </div>
-                  ))}
+            <div className="space-y-8">
+              {/* Employee search bar */}
+              <div className="relative max-w-md">
+                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" size={18} />
+                 <input 
+                   type="text" 
+                   placeholder="Search employee folder..." 
+                   value={searchEmployeeName}
+                   onChange={(e) => setSearchEmployeeName(e.target.value)}
+                   className="w-full h-14 pl-12 pr-4 bg-white border border-[#c5c0b1] rounded-2xl text-[14px] font-bold text-[#201515] focus:outline-none focus:border-[#00a76b] shadow-sm italic"
+                 />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                 {[...new Set(screenshots
+                    .filter(s => role === 'manager' ? true : s.role === navigationPath[0])
+                    .map(s => s.employeeName))]
+                    .filter(name => name?.toLowerCase().includes(searchEmployeeName.toLowerCase()))
+                    .map(name => (
+                      <div 
+                        key={name} 
+                        onClick={() => setNavigationPath(role === 'manager' ? ['employee', name] : [navigationPath[0], name])}
+                        className="bg-white dark:bg-[#0c1512] border border-[#e2eae7] dark:border-[#13221e] rounded-[24px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.01)] hover:shadow-lg dark:hover:shadow-emerald-950/20 hover:scale-[1.02] transition-all cursor-pointer flex items-center gap-6 group"
+                      >
+                         <div className="w-14 h-14 rounded-2xl bg-slate-900 dark:bg-[#1a2d29] text-white flex items-center justify-center font-black italic text-lg shadow-sm">
+                            {name?.[0]}
+                         </div>
+                         <div className="flex-1">
+                            <h3 className="text-[13px] font-black uppercase tracking-widest text-slate-800 dark:text-white mb-1">{name}</h3>
+                            <div className="flex items-center gap-2 text-[9px] font-bold text-slate-400 dark:text-[#829e92] uppercase tracking-widest italic">
+                               <History size={12} className="text-[#00a76b]" />
+                               {countInFolder('name', name) || screenshots.filter(s => s.employeeName === name).length} captures
+                            </div>
+                         </div>
+                      </div>
+                    ))}
+              </div>
             </div>
           )}
 
@@ -325,7 +511,7 @@ const Screenshots = () => {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                            {group.map((s) => (
-                             <div key={s._id} className="zap-card group p-0 overflow-hidden hover:border-[#00a76b] transition-all cursor-pointer shadow-xl">
+                             <div key={s._id} className="bg-white dark:bg-[#0c1512] border border-[#e2eae7] dark:border-[#13221e] rounded-[24px] p-0 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.01)] hover:shadow-lg dark:hover:shadow-emerald-950/20 hover:scale-[1.01] transition-all cursor-pointer group">
                                 <div 
                                   className="relative aspect-video bg-[#201515] overflow-hidden"
                                   onClick={() => setSelectedImage(getImageUrl(s.imageUrl))}
@@ -339,26 +525,26 @@ const Screenshots = () => {
                                 <div className="p-6">
                                    <div className="flex justify-between items-start mb-4">
                                       <div>
-                                         <p className="text-[14px] font-black text-[#201515] uppercase italic">{s.employeeName}</p>
+                                         <p className="text-[14px] font-black text-slate-800 dark:text-white uppercase italic">{s.employeeName}</p>
                                          <p className="text-[10px] font-bold text-[#00a76b] uppercase tracking-widest mt-1">{s.role}</p>
                                       </div>
                                       <div className="flex gap-2">
                                         <button 
                                           onClick={() => setSelectedImage(getImageUrl(s.imageUrl))}
-                                          className="w-8 h-8 rounded-lg bg-[#eceae3] flex items-center justify-center text-[#201515] hover:bg-[#00a76b] hover:text-white transition-all"
+                                          className="w-8 h-8 rounded-lg bg-[#eceae3] dark:bg-[#1a2d29] flex items-center justify-center text-slate-800 dark:text-white hover:bg-[#00a76b] hover:text-white transition-all"
                                         >
                                           <Eye size={14} />
                                         </button>
                                         <a 
                                           href={getImageUrl(s.imageUrl)} 
                                           download={`Screenshot-${s.employeeName}-${new Date(s.timestamp).toLocaleDateString()}.png`}
-                                          className="w-8 h-8 rounded-lg bg-[#eceae3] flex items-center justify-center text-[#201515] hover:bg-[#00a76b] hover:text-white transition-all"
+                                          className="w-8 h-8 rounded-lg bg-[#eceae3] dark:bg-[#1a2d29] flex items-center justify-center text-slate-800 dark:text-white hover:bg-[#00a76b] hover:text-white transition-all"
                                         >
                                           <Download size={14} />
                                         </a>
                                       </div>
                                    </div>
-                                   <div className="pt-4 border-t border-[#eceae3] flex justify-between items-center text-[10px] font-black text-[#939084] uppercase tracking-widest italic">
+                                   <div className="pt-4 border-t border-[#eceae3] dark:border-[#13221e] flex justify-between items-center text-[10px] font-black text-slate-500 dark:text-[#829e92] uppercase tracking-widest italic">
                                       <span>{new Date(s.timestamp).toLocaleDateString()}</span>
                                       <span>{new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                    </div>
@@ -370,59 +556,61 @@ const Screenshots = () => {
                    ))}
                 </div>
       ) : (
-        <div className="zap-card p-0 overflow-hidden shadow-xl">
-           <table className="w-full text-left border-collapse">
-              <thead>
-                 <tr className="bg-[#fffdf9] border-b border-[#c5c0b1]">
-                    <th className="px-8 py-5 text-[10px] font-black text-[#939084] uppercase tracking-[0.2em]">Employee Name</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-[#939084] uppercase tracking-[0.2em]">Capture Date</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-[#939084] uppercase tracking-[0.2em]">Screenshot</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-[#939084] uppercase tracking-[0.2em] text-right">Actions</th>
-                 </tr>
-              </thead>
-              <tbody className="divide-y divide-[#eceae3]">
-                 {filtered.map((s) => (
-                    <tr key={s._id} className="hover:bg-[#fffdf9] transition-colors group">
-                       <td className="px-8 py-6">
-                          <div className="flex items-center gap-4">
-                             <div className="w-10 h-10 rounded-xl bg-[#201515] text-white flex items-center justify-center font-black italic">
-                                {s.employeeName?.[0]}
-                             </div>
-                             <div>
-                                <p className="text-[13px] font-black text-[#201515] uppercase italic">{s.employeeName}</p>
-                                <p className="text-[9px] font-bold text-[#00a76b] uppercase tracking-widest">{s.role}</p>
-                             </div>
-                          </div>
-                       </td>
-                       <td className="px-8 py-6">
-                          <p className="text-[12px] font-black text-[#201515] italic">{new Date(s.timestamp).toLocaleString()}</p>
-                       </td>
-                       <td className="px-8 py-6">
-                          <div className="w-24 h-14 rounded-lg bg-[#201515] overflow-hidden border border-[#c5c0b1] cursor-pointer" onClick={() => setSelectedImage(getImageUrl(s.imageUrl))}>
-                             <img src={getImageUrl(s.imageUrl)} alt="" className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" />
-                          </div>
-                       </td>
-                       <td className="px-8 py-6 text-right">
-                          <div className="flex justify-end gap-2">
-                             <button 
-                               onClick={() => setSelectedImage(getImageUrl(s.imageUrl))}
-                               className="p-2 text-[#939084] hover:text-[#00a76b] transition-colors"
-                             >
-                               <Eye size={18} />
-                             </button>
-                             <a 
-                               href={getImageUrl(s.imageUrl)} 
-                               download={`Screenshot-${s.employeeName}.png`}
-                               className="p-2 text-[#939084] hover:text-[#00a76b] transition-colors"
-                             >
-                               <Download size={18} />
-                             </a>
-                          </div>
-                       </td>
+        <div className="bg-white dark:bg-[#181612] rounded-2xl border border-gray-200 dark:border-[#38352e] shadow-sm overflow-hidden">
+           <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[800px]">
+                 <thead>
+                    <tr className="bg-gray-50 dark:bg-[#1e1c18] border-b border-gray-200 dark:border-[#38352e]">
+                       <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider">Employee Name</th>
+                       <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider">Capture Date</th>
+                       <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider">Screenshot</th>
+                       <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-[#a3a094] uppercase tracking-wider text-right">Actions</th>
                     </tr>
-                 ))}
-              </tbody>
-           </table>
+                 </thead>
+                 <tbody className="divide-y divide-gray-100 dark:divide-[#38352e]">
+                    {filtered.map((s) => (
+                       <tr key={s._id} className="hover:bg-gray-50 dark:hover:bg-[#282520] transition-colors group">
+                          <td className="px-6 py-4">
+                             <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-xl bg-[#201515] text-white flex items-center justify-center font-black italic">
+                                   {s.employeeName?.[0]}
+                                </div>
+                                <div>
+                                   <p className="text-[13px] font-black text-[#201515] uppercase italic">{s.employeeName}</p>
+                                   <p className="text-[9px] font-bold text-[#00a76b] uppercase tracking-widest">{s.role}</p>
+                                </div>
+                             </div>
+                          </td>
+                          <td className="px-6 py-4">
+                             <p className="text-[12px] font-black text-[#201515] italic">{new Date(s.timestamp).toLocaleString()}</p>
+                          </td>
+                          <td className="px-6 py-4">
+                             <div className="w-24 h-14 rounded-lg bg-[#201515] overflow-hidden border border-[#c5c0b1] cursor-pointer" onClick={() => setSelectedImage(getImageUrl(s.imageUrl))}>
+                                <img src={getImageUrl(s.imageUrl)} alt="" className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" />
+                             </div>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                             <div className="flex justify-end gap-2">
+                                <button 
+                                  onClick={() => setSelectedImage(getImageUrl(s.imageUrl))}
+                                  className="p-2 text-[#939084] hover:text-[#00a76b] transition-colors"
+                                >
+                                  <Eye size={18} />
+                                </button>
+                                <a 
+                                  href={getImageUrl(s.imageUrl)} 
+                                  download={`Screenshot-${s.employeeName}.png`}
+                                  className="p-2 text-[#939084] hover:text-[#00a76b] transition-colors"
+                                >
+                                  <Download size={18} />
+                                </a>
+                             </div>
+                          </td>
+                       </tr>
+                    ))}
+                 </tbody>
+              </table>
+           </div>
         </div>
       )}
             </>
@@ -435,7 +623,7 @@ const Screenshots = () => {
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-12 animate-fade-in">
            {/* Glass Background */}
            <div 
-             className="absolute inset-0 bg-[#201515]/95 backdrop-blur-xl cursor-zoom-out"
+             className="absolute inset-0 bg-[#201515]/20 backdrop-blur-sm cursor-zoom-out"
              onClick={() => setSelectedImage(null)}
            ></div>
            
@@ -469,10 +657,6 @@ const Screenshots = () => {
                     <span className="text-[10px] font-black uppercase tracking-widest">Exit Trace</span>
                  </button>
               </div>
-              
-              <p className="mt-12 text-white/40 text-[10px] font-black uppercase tracking-[0.4em] italic">
-                 Secure Connection Active • Encrypted Registry
-              </p>
            </div>
         </div>
       )}
