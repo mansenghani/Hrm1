@@ -1,6 +1,6 @@
 {
   "name": "fluidhr-desktop-tracker",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "description": "Premium Time Tracking Node for FluidHR",
   "main": "main.js",
   "scripts": {
@@ -11,6 +11,14 @@
   "build": {
     "appId": "com.fluidhr.tracker",
     "productName": "FluidHR Tracker",
+    "protocols": [
+      {
+        "name": "FluidHR Tracker Protocol",
+        "schemes": [
+          "fluidhr-tracker"
+        ]
+      }
+    ],
     "win": {
       "target": "nsis",
       "icon": "icon.ico"

@@ -15,8 +15,15 @@ const Login = () => {
   useEffect(() => {
     const token = sessionStorage.getItem('token');
     const role = sessionStorage.getItem('role');
+    const queryParams = new URLSearchParams(window.location.search);
+    const isDesktop = queryParams.get('desktop') === 'true';
+
     if (token && role) {
-      navigate(`/${role}/dashboard`);
+      if (isDesktop) {
+        window.location.href = `fluidhr-tracker://auth?token=${encodeURIComponent(token)}`;
+      } else {
+        navigate(`/${role}/dashboard`);
+      }
     }
   }, [navigate]);
 
@@ -24,6 +31,9 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    const queryParams = new URLSearchParams(window.location.search);
+    const isDesktop = queryParams.get('desktop') === 'true';
 
     try {
       const response = await axios.post('/api/auth/login', {
@@ -42,7 +52,11 @@ const Login = () => {
       sessionStorage.setItem('user', JSON.stringify(user));
       sessionStorage.setItem('role', role);
 
-      navigate(`/${role}/dashboard`);
+      if (isDesktop) {
+        window.location.href = `fluidhr-tracker://auth?token=${encodeURIComponent(token)}`;
+      } else {
+        navigate(`/${role}/dashboard`);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid email or password');
     } finally {

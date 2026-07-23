@@ -549,28 +549,22 @@ function hideAuthSection() {
   if (authEl) authEl.style.display = 'none';
 }
 
-async function loginWithCredentials() {
-  const email = document.getElementById('email-input')?.value.trim();
-  const password = document.getElementById('password-input')?.value;
-  const errorEl = document.getElementById('auth-error');
-  if (errorEl) errorEl.style.display = 'none';
-  if (!email || !password) {
-    if (errorEl) { errorEl.innerText = 'Email and password required'; errorEl.style.display = 'block'; }
-    return;
+function redirectToWebLogin() {
+  const loginUrl = `${BACKEND_HOST}/login?desktop=true`;
+  if (window.electronAPI?.openExternal) {
+    window.electronAPI.openExternal(loginUrl);
+  } else {
+    window.open(loginUrl, '_blank');
   }
-  try {
-    const res = await fetch(`${BACKEND_HOST}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      if (errorEl) { errorEl.innerText = err.message || 'Wrong credentials'; errorEl.style.display = 'block'; }
-      return;
-    }
-    const data = await res.json();
-    authToken = data.token;
+}
+
+if (window.electronAPI?.onDeepLinkToken) {
+  window.electronAPI.onDeepLinkToken(async (token) => {
+    const errorEl = document.getElementById('auth-error');
+    if (errorEl) errorEl.style.display = 'none';
+    
+    console.log('Auth token received via deep link.');
+    authToken = token;
     await window.electronAPI.setStoreValue('authToken', authToken);
     hideAuthSection();
     await fetchUserProfile();
@@ -579,10 +573,7 @@ async function loginWithCredentials() {
     startPolling();
     startHeartbeat();
     updateUI();
-  } catch (err) {
-    console.error('[LOGIN ERROR]', err);
-    if (errorEl) { errorEl.innerText = 'Connection error. Is backend running?'; errorEl.style.display = 'block'; }
-  }
+  });
 }
 
 async function logout() {
@@ -625,19 +616,10 @@ document.getElementById('resume-btn')?.addEventListener('click', resumeSession);
 document.getElementById('stop-btn')?.addEventListener('click', stopSession);
 document.getElementById('minimize-btn')?.addEventListener('click', () => window.electronAPI.minimizeApp());
 document.getElementById('close-btn')?.addEventListener('click', () => window.electronAPI.closeApp());
-document.getElementById('auth-btn')?.addEventListener('click', loginWithCredentials);
+document.getElementById('web-auth-btn')?.addEventListener('click', redirectToWebLogin);
 document.getElementById('logout-btn')?.addEventListener('click', logout);
 document.getElementById('auth-minimize-btn')?.addEventListener('click', () => window.electronAPI.minimizeApp());
 document.getElementById('auth-close-btn')?.addEventListener('click', () => window.electronAPI.closeApp());
-
-// Submit login form on pressing Enter key
-const handleLoginEnter = (e) => {
-  if (e.key === 'Enter') {
-    loginWithCredentials();
-  }
-};
-document.getElementById('email-input')?.addEventListener('keydown', handleLoginEnter);
-document.getElementById('password-input')?.addEventListener('keydown', handleLoginEnter);
 
 // Re-poll when window regains focus (catches state changes while minimized)
 window.addEventListener('focus', () => { if (authToken) pollSessionStatus(); });

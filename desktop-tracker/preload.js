@@ -19,6 +19,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('update-downloaded-ui', callback),
   installUpdate: () => ipcRenderer.send('install-update'),
 
+  // ── Browser Authentication / Deep Linking ──────────────
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
+  onDeepLinkToken: (callback) =>
+    ipcRenderer.on('deep-link-token', (event, data) => callback(data)),
+
   // ── SYSTEM-WIDE IDLE STATUS ───────────────────────────
   // Fired every second from main process using powerMonitor.getSystemIdleTime()
   // Covers ALL apps on the PC — not just the Electron window

@@ -8,6 +8,15 @@ if (process.platform === 'win32') {
   app.setAppUserModelId('com.fluidhr.tracker');
 }
 
+// Register custom protocol client
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient('fluidhr-tracker', process.execPath, [path.resolve(process.argv[1])]);
+  }
+} else {
+  app.setAsDefaultProtocolClient('fluidhr-tracker');
+}
+
 // Window transparency fixes for Windows 11
 app.disableHardwareAcceleration();
 app.commandLine.appendSwitch('disable-gpu');
@@ -15,6 +24,31 @@ app.commandLine.appendSwitch('disable-gpu-rasterization');
 
 const store = new Store();
 let mainWindow;
+
+// Handle deep link logic
+function handleDeepLink(urlStr) {
+  try {
+    const parsedUrl = new URL(urlStr);
+    if (parsedUrl.protocol === 'fluidhr-tracker:') {
+      const token = parsedUrl.searchParams.get('token');
+      if (token && mainWindow) {
+        mainWindow.webContents.send('deep-link-token', token);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to parse deep link:', err);
+  }
+}
+
+// macOS open-url handler
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  if (mainWindow) {
+    handleDeepLink(url);
+  } else {
+    app.readyUrl = url;
+  }
+});
 
 // ── MUST match backend IDLE_THRESHOLD_SECONDS ─────────────
 const IDLE_THRESHOLD = 60; // 1 minute (60 seconds)
@@ -49,6 +83,10 @@ function createWindow() {
     setTimeout(() => {
       mainWindow.show();
       mainWindow.focus();
+      if (app.readyUrl) {
+        handleDeepLink(app.readyUrl);
+        app.readyUrl = null;
+      }
     }, 600);
   });
 }
@@ -58,15 +96,25 @@ const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   app.quit();
 } else {
-  app.on('second-instance', () => {
+  app.on('second-instance', (event, commandLine) => {
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
+      
+      const url = commandLine.find(arg => arg.startsWith('fluidhr-tracker://'));
+      if (url) {
+        handleDeepLink(url);
+      }
     }
   });
 
   app.whenReady().then(() => {
     createWindow();
+
+    const url = process.argv.find(arg => arg.startsWith('fluidhr-tracker://'));
+    if (url) {
+      handleDeepLink(url);
+    }
 
     // Check for updates
     autoUpdater.checkForUpdatesAndNotify();
@@ -105,6 +153,10 @@ app.on('window-all-closed', () => {
 // ── IPC HANDLERS ─────────────────────────────────────────
 ipcMain.handle('get-app-version', () => {
   return app.getVersion();
+});
+
+ipcMain.handle('open-external', (event, url) => {
+  return shell.openExternal(url);
 });
 
 ipcMain.handle('get-store-value', (event, key) => {
