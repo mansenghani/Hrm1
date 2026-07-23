@@ -602,12 +602,12 @@ const Recruitment = () => {
         ) : (
           <div className="space-y-4">
             <div className="hidden lg:grid grid-cols-12 gap-4 px-6 text-[11px] font-bold text-slate-400 dark:text-[#829e92] uppercase tracking-wider">
-              <div className="col-span-4">Job Title / Location</div>
+              <div className="col-span-3">Job Title / Location</div>
               <div className="col-span-2">Department / Type</div>
               <div className="col-span-2">Manager</div>
-              <div className="col-span-1 text-center">Applicants</div>
-              <div className="col-span-1">Status</div>
-              <div className="col-span-2 text-right">Actions</div>
+              <div className="col-span-1 text-left">Applicants</div>
+              <div className="col-span-1 text-left">Status</div>
+              <div className="col-span-3 text-right">Actions</div>
             </div>
 
             <div className="space-y-3">
@@ -617,7 +617,7 @@ const Recruitment = () => {
                   className="bg-[#fcfcfa] dark:bg-[#111c18]/20 border border-[#e2eae7] dark:border-[#1a2d29] hover:bg-[#eceae3]/20 dark:hover:bg-[#162722]/30 p-5 rounded-[20px] transition-all flex flex-col lg:grid lg:grid-cols-12 gap-4 items-start lg:items-center"
                 >
                   {/* Title & Location */}
-                  <div className="col-span-12 lg:col-span-4 flex items-start gap-3">
+                  <div className="col-span-12 lg:col-span-3 flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-[#00a76b]/10 dark:bg-[#00a76b]/5 text-[#00a76b] flex items-center justify-center shrink-0">
                       <Briefcase size={16} />
                     </div>
@@ -660,7 +660,7 @@ const Recruitment = () => {
                   </div>
 
                   {/* Applicants Count */}
-                  <div className="col-span-3 lg:col-span-1 text-left lg:text-center">
+                  <div className="col-span-3 lg:col-span-1 text-left">
                     <span className="lg:hidden text-[11px] font-bold text-slate-400 dark:text-[#829e92] uppercase mr-2">Applicants:</span>
                     <span className="text-xs font-bold px-2 py-1 bg-slate-100 dark:bg-[#1a2d29] rounded-lg text-slate-700 dark:text-slate-300">
                       {job.applicants || 0}
@@ -686,7 +686,7 @@ const Recruitment = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="col-span-12 lg:col-span-2 flex items-center justify-end gap-2 w-full">
+                  <div className="col-span-12 lg:col-span-3 flex items-center justify-end gap-2 w-full">
                     <button
                       onClick={() => openViewModal(job)}
                       title="View Details"

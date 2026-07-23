@@ -90,6 +90,7 @@ const Chat = () => {
   const [reactionsPopupId, setReactionsPopupId] = useState(null);
   const [showFullEmojiPickerId, setShowFullEmojiPickerId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
   const [deleteMsgTarget, setDeleteMsgTarget] = useState(null);
   const [forwardSearchQuery, setForwardSearchQuery] = useState('');
   const [showReactionDetailsId, setShowReactionDetailsId] = useState(null);
@@ -1009,7 +1010,7 @@ const Chat = () => {
                         if (currentUserRole === 'admin') navigate('/admin/settings');
                         else if (currentUserRole === 'hr') navigate('/hr/settings');
                         else if (currentUserRole === 'manager') navigate('/manager/settings');
-                        else navigate('/employee/profile?tab=security');
+                        else navigate('/employee/profile');
                       }}
                       className="w-full text-left px-4 py-2.5 text-sm text-[#1E2026] dark:text-white hover:bg-[#F5F7FA] dark:hover:bg-[#282520] font-medium transition-colors border-none bg-transparent cursor-pointer"
                     >
@@ -1298,6 +1299,39 @@ const Chat = () => {
                       </>
                     )}
                   </div>
+                  {showBlockModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowBlockModal(false)}>
+                      <div className="bg-white dark:bg-[#181612] w-full max-w-[320px] rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border dark:border-[#38352e]" onClick={e => e.stopPropagation()}>
+                        <div className="p-5">
+                          <h3 className="text-[17px] font-medium text-[#111B21] dark:text-white mb-6">
+                            Block {activeChat?.isGroup ? 'Group' : 'User'}?
+                          </h3>
+                          <div className="flex flex-col gap-1">
+                            <button
+                              onClick={() => {
+                                handleToggleChatState(activeChat.chatId || activeChat._id, 'block');
+                                setShowBlockModal(false);
+                              }}
+                              className="w-full text-right py-3 px-4 text-[#DF2828] hover:bg-gray-50 dark:hover:bg-[#282520] font-medium transition-colors border-none bg-transparent cursor-pointer"
+                            >
+                              Block User
+                            </button>
+                            <button
+                              onClick={async () => {
+                                await handleToggleChatState(activeChat.chatId || activeChat._id, 'block');
+                                await handleDeleteChat(activeChat.chatId || activeChat._id);
+                                setShowBlockModal(false);
+                              }}
+                              className="w-full text-right py-3 px-4 text-[#DF2828] hover:bg-gray-50 dark:hover:bg-[#282520] font-medium transition-colors border-none bg-transparent cursor-pointer"
+                            >
+                              Block and Clear Chat History
+                            </button>
+                            <button onClick={() => setShowBlockModal(false)} className="w-full text-right py-3 px-4 text-[#3E74FF] hover:bg-gray-50 dark:hover:bg-[#282520] font-medium transition-colors border-none bg-transparent cursor-pointer">Cancel</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <h3 className="text-[16px] font-extrabold text-[#1E2026] dark:text-white leading-none mb-1.5">
                       {activeChat.isGroup
@@ -1387,7 +1421,11 @@ const Chat = () => {
                         ) : (
                           <button
                             onClick={() => {
-                              handleToggleChatState(activeChat.chatId || activeChat._id, 'block');
+                              if (activeChat?.blockedBy?.some(id => String(id) === String(currentUserId))) {
+                                handleToggleChatState(activeChat.chatId || activeChat._id, 'block');
+                              } else {
+                                setShowBlockModal(true);
+                              }
                               setShowHeaderMenu(false);
                             }}
                             className={`w-full text-left px-4 py-2.5 text-sm ${activeChat?.blockedBy?.some(id => String(id) === String(currentUserId)) ? 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20' : 'text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20'} font-medium transition-colors border-none bg-transparent cursor-pointer`}
@@ -1592,7 +1630,7 @@ const Chat = () => {
                                 {activeMenuId === (msg._id || i) && (
                                   <>
                                     <div className="fixed inset-0 z-40 cursor-default" onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); }}></div>
-                                    <div className={`absolute ${i >= groups.length - 2 ? 'bottom-0' : 'top-0'} ${isMe ? 'right-0' : 'left-0'} mt-2 bg-white dark:bg-[#181612] shadow-xl rounded-xl py-2 w-48 z-50 animate-in fade-in zoom-in-95 duration-100 border border-[#E6E8EA] dark:border-[#38352e] flex flex-col`}>
+                                    <div className={`absolute ${i >= groups.length - 2 && i >= 4 ? 'bottom-0' : 'top-0'} ${isMe ? 'right-0' : 'left-0'} mt-2 bg-white dark:bg-[#181612] shadow-xl rounded-xl py-2 w-48 z-50 animate-in fade-in zoom-in-95 duration-100 border border-[#E6E8EA] dark:border-[#38352e] flex flex-col`}>
 
                                       {/* EMOJI QUICK REACTIONS */}
                                       <div className="flex items-center justify-around px-2 pb-2 border-b border-[#F5F6F6] dark:border-[#38352e] mb-1 relative">
@@ -1702,7 +1740,20 @@ const Chat = () => {
                                   )
                                 )}
 
-                                {msg.message && <p className="text-[14.5px] font-semibold leading-relaxed break-words whitespace-pre-wrap text-left">{msg.message}</p>}
+                                {msg.message && (
+                                  <div className="text-[14.5px] font-semibold leading-relaxed break-words whitespace-pre-wrap text-left">
+                                    {msg.message.split('\n').map((line, idx, arr) => {
+                                      if (line.trim().startsWith('>')) {
+                                        return (
+                                          <div key={idx} className={`my-1.5 pl-3 py-1.5 border-l-4 rounded-r-md italic text-[13.5px] ${isMe ? 'border-white/50 bg-white/10 text-indigo-50' : 'border-indigo-500 bg-indigo-50/50 dark:bg-black/20 text-gray-600 dark:text-gray-300'}`}>
+                                            {line.trim().substring(1).trim()}
+                                          </div>
+                                        );
+                                      }
+                                      return <span key={idx}>{line}{idx !== arr.length - 1 && <br />}</span>;
+                                    })}
+                                  </div>
+                                )}
                               </>
                             )}
                             <div className={`flex items-center justify-end gap-1 mt-1.5 opacity-60`}>
@@ -2445,8 +2496,8 @@ const Chat = () => {
           )}
 
           <div className="bg-white shadow-[0_1px_3px_rgba(11,20,26,0.05)] flex flex-col mt-2">
-            <button onClick={() => { handleToggleChatState(activeChat.chatId || activeChat._id, 'block'); setShowContactInfo(false); }} className="w-full p-4 flex items-center gap-4 text-[#DF2828] hover:bg-[#F5F6F6] transition-colors border-none bg-transparent cursor-pointer font-medium text-[16px]">
-              <Ban size={24} /> {activeChat.blockedBy?.includes(currentUserId) ? 'Unblock contact' : 'Block contact'}
+            <button onClick={() => { if (activeChat?.blockedBy?.includes(currentUserId)) { handleToggleChatState(activeChat.chatId || activeChat._id, 'block'); } else { setShowBlockModal(true); } setShowContactInfo(false); }} className="w-full p-4 flex items-center gap-4 text-[#DF2828] hover:bg-[#F5F6F6] transition-colors border-none bg-transparent cursor-pointer font-medium text-[16px]">
+              <Ban size={24} /> {activeChat?.blockedBy?.includes(currentUserId) ? 'Unblock contact' : 'Block contact'}
             </button>
             <button onClick={() => { handleDeleteChat(activeChat.chatId || activeChat._id); setShowContactInfo(false); }} className="w-full p-4 flex items-center gap-4 text-[#DF2828] hover:bg-[#F5F6F6] transition-colors border-none bg-transparent cursor-pointer font-medium text-[16px]">
               <Trash2 size={24} /> Delete chat

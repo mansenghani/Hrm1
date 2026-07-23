@@ -198,8 +198,7 @@ const LeaveManagement = () => {
               placeholder="Search by type, reason, or status..." 
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="verdant-input"
-              style={{ paddingLeft: 46 }}
+              className="verdant-input with-search-icon"
             />
           </div>
           <button 

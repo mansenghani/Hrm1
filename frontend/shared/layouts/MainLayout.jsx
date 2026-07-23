@@ -570,12 +570,8 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     return () => clearInterval(interval);
   }, [token, lastActivity]);
 
-  // 🛡️ REACTIVE IDLE TIMER
-  useEffect(() => {
-    if (isTrackingActive) {
-      resetIdleTimer();
-    }
-  }, [lastActivity, isTrackingActive]);
+  // 🛡️ REACTIVE IDLE TIMER REMOVED
+  // Timer runs continuously until stopped or paused manually.
 
   const [lastServerSync, setLastServerSync] = useState(0);
 
@@ -592,35 +588,14 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
 
   // 🛡️ NOTIFICATION LOGIC REMOVED PER USER REQUEST
   // Absolute silence protocol active. No browser notifications will be sent.
-
-  const pauseTimer = async () => {
-    try {
-      await axios.post('/api/time/timer/update', { type: 'idle' }, { headers: { Authorization: `Bearer ${token}` } });
-    } catch (err) { console.error('Pause failed:', err); }
-  };
-
-  const resetIdleTimer = (manualTime) => {
-    if (idleTimer) clearTimeout(idleTimer);
-
-    const referenceTime = manualTime || lastActivity;
-    const timeSinceLast = Date.now() - referenceTime;
-    const remaining = Math.max(0, (5 * 60 * 1000) - timeSinceLast);
-
-    const timer = setTimeout(() => {
-      if (isTrackingActive) {
-        pauseTimer();
-      }
-    }, remaining);
-
-    setIdleTimer(timer);
-  };
+  // 🛡️ IDLE TIMER REMOVED PER USER REQUEST
+  // Timer will only pause on explicit user interaction.
 
   // 🔄 GLOBAL ACTIVITY TRACKER
   useEffect(() => {
     const handleActivity = (e) => {
       const now = Date.now();
       setLastActivity(now);
-      resetIdleTimer(now);
       reportActivity(e?.type || 'active');
     };
 
@@ -639,8 +614,6 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    resetIdleTimer();
-
     return () => {
       window.removeEventListener('mousemove', handleActivity);
       window.removeEventListener('keydown', handleActivity);
@@ -648,7 +621,6 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
       window.removeEventListener('scroll', handleActivity);
       window.removeEventListener('focus', handleActivity);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (idleTimer) clearTimeout(idleTimer);
     };
   }, [isTrackingActive]);
 
@@ -795,57 +767,51 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
 
               {isQuickActionOpen && (
                 <div className="absolute top-[45px] left-4 w-56 bg-white dark:bg-[#0c1512] border border-[#eceae3] dark:border-[#1a2d29] rounded-[20px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden z-[110] p-2 flex flex-col">
-                  <button
-                    onClick={() => {
-                      setIsQuickActionOpen(false);
-                      if (['admin', 'hr'].includes(activeRole)) {
+                  {['admin', 'hr'].includes(activeRole) && (
+                    <button
+                      onClick={() => {
+                        setIsQuickActionOpen(false);
                         navigate(`/${activeRole}/create-user`);
-                      } else {
-                        toast.error('You do not have permission to access this feature.');
-                      }
-                    }}
-                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
-                  >
-                    Add Employee
-                  </button>
+                      }}
+                      className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
+                    >
+                      Add Employee
+                    </button>
+                  )}
                   <button
                     onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/leave`); }}
                     className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
                   >
                     Apply Leave
                   </button>
-                  <button
-                    onClick={() => {
-                      setIsQuickActionOpen(false);
-                      if (['admin', 'hr'].includes(activeRole)) {
-                        navigate(`/${activeRole}/notifications`);
-                      } else {
-                        toast.error('You do not have permission to access this feature.');
-                      }
-                    }}
-                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
-                  >
-                    Create Announcement
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsQuickActionOpen(false);
-                      if (['admin', 'hr'].includes(activeRole)) {
-                        navigate(`/${activeRole}/payroll`);
-                      } else {
-                        toast.error('You do not have permission to access this feature.');
-                      }
-                    }}
-                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
-                  >
-                    Generate Payroll
-                  </button>
-                  <button
-                    onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/recruitment`); }}
-                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
-                  >
-                    Schedule Interview
-                  </button>
+                  {['admin', 'hr'].includes(activeRole) && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setIsQuickActionOpen(false);
+                          navigate(`/${activeRole}/notifications`);
+                        }}
+                        className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
+                      >
+                        Create Announcement
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsQuickActionOpen(false);
+                          navigate(`/${activeRole}/payroll`);
+                        }}
+                        className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
+                      >
+                        Generate Payroll
+                      </button>
+                      <button
+                        onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/recruitment`); }}
+                        className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"
+                      >
+                        Schedule Interview
+                      </button>
+                    </>
+                  )}
                   <button
                     onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/task-management/create`); }}
                     className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer"

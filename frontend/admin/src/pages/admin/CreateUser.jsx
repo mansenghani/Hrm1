@@ -169,14 +169,17 @@ const CreateUser = () => {
     const newErrors = {};
     if (!formData.firstName) newErrors.firstName = 'First Name is required.';
     if (!formData.lastName) newErrors.lastName = 'Last Name is required.';
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!formData.email) {
       newErrors.email = 'Email Address is required.';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email format.';
+    } else if (!emailRegex.test(formData.email) || /@(gmal|gaml|gmil|gmial|gmaill)\.com$/i.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email format with correct spelling.';
     }
 
-    if (formData.personalEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.personalEmail)) {
-      newErrors.personalEmail = 'Please enter a valid personal email format.';
+    if (!formData.personalEmail) {
+      newErrors.personalEmail = 'Personal Email Address is required.';
+    } else if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(formData.personalEmail.trim())) {
+      newErrors.personalEmail = 'Personal Email must be a valid @gmail.com address (e.g. name@gmail.com).';
     }
     if (!formData.phone) {
       newErrors.phone = 'Phone Number is required.';
@@ -338,10 +341,17 @@ const CreateUser = () => {
       setPanFile(null);
 
     } catch (err) {
-      setMessage({
-        type: 'error',
-        text: err.response?.data?.message || 'Failed to create employee.'
-      });
+      const errMsg = err.response?.data?.message || 'Failed to create employee.';
+      if (errMsg.toLowerCase().includes('personal email')) {
+        setErrors(prev => ({ ...prev, personalEmail: errMsg }));
+      } else if (errMsg.toLowerCase().includes('email')) {
+        setErrors(prev => ({ ...prev, email: errMsg }));
+      } else {
+        setMessage({
+          type: 'error',
+          text: errMsg
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -474,11 +484,11 @@ const CreateUser = () => {
 
               {/* Personal Email Address */}
               <div className="space-y-4">
-                <label className="zap-caption-upper text-[#201515]">Personal Email Address</label>
+                <label className="zap-caption-upper text-[#201515]">Personal Email Address <span className="text-[#ff4f00] ml-1">*</span></label>
                 <div className="relative">
                   <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
                   <input
-                    name="personalEmail" value={formData.personalEmail} onChange={handleChange}
+                    required name="personalEmail" value={formData.personalEmail} onChange={handleChange}
                     className={`w-full h-14 pl-12 pr-4 bg-white border ${errors.personalEmail ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-[4px] text-[15px] font-medium text-[#201515] focus:outline-none focus:border-[#ff4f00] transition-all`}
                     placeholder="personal@gmail.com"
                   />

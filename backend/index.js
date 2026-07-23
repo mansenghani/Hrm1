@@ -21,6 +21,7 @@ const jobRoutes = require('./routes/jobRoutes');
 const roleRoutes = require('./routes/roleRoutes');
 const searchRoutes = require('./routes/searchRoutes');
 const path = require('path');
+const initCronJobs = require('./cron/timeTrackerCron');
 
 const http = require('http');
 const { Server } = require('socket.io');
@@ -67,11 +68,11 @@ io.on('connection', (socket) => {
     const normalizedUserId = String(userId);
     socket.join(userRoom(normalizedUserId));
     if (role) socket.join(`role_${role}`);
-    
+
     // Add to active users and broadcast
     activeUsers.set(normalizedUserId, socket.id);
     io.emit('user_status_change', { userId: normalizedUserId, status: 'online' });
-    
+
     console.log(`🔔 User joined notification rooms: ${userRoom(normalizedUserId)} ${role ? `role_${role}` : ''}`);
   });
 
@@ -194,4 +195,7 @@ mongoose.connect(MONGO_URI)
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server running on port ${PORT}`);
+  
+  // Initialize Cron Jobs
+  initCronJobs();
 });

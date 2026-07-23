@@ -51,8 +51,8 @@ const SAMPLE_RECORDS = (() => {
         date: dateStr,
         clockIn: `${String(clockInH).padStart(2, '0')}:${String(clockInM).padStart(2, '0')}`,
         clockOut: status === 'Half Day' ? `${String(12 + Math.floor(Math.random() * 2)).padStart(2, '0')}:${String(clockOutM).padStart(2, '0')}` :
-                  status === 'Absent' || status === 'Leave' ? null :
-                  `${String(clockOutH).padStart(2, '0')}:${String(clockOutM).padStart(2, '0')}`,
+          status === 'Absent' || status === 'Leave' ? null :
+            `${String(clockOutH).padStart(2, '0')}:${String(clockOutM).padStart(2, '0')}`,
         status,
         department: emp.dept
       });
@@ -107,9 +107,8 @@ const getInitials = (name) => {
 const ChartTooltip = ({ active, payload, label, isDark }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className={`border p-3 rounded-xl shadow-lg min-w-[140px] text-xs ${
-      isDark ? 'bg-[#0a1f1a] border-[#133029] text-white' : 'bg-white border-gray-100 text-gray-800'
-    }`}>
+    <div className={`border p-3 rounded-xl shadow-lg min-w-[140px] text-xs ${isDark ? 'bg-[#0a1f1a] border-[#133029] text-white' : 'bg-white border-gray-100 text-gray-800'
+      }`}>
       <p className="font-bold mb-2">{label}</p>
       <div className="space-y-1.5">
         {payload.map((item, idx) => (
@@ -500,9 +499,8 @@ const Attendance = () => {
             <div key={d} className="text-center text-[10px] font-bold text-slate-400 dark:text-[#829e92] uppercase tracking-wider py-2">{d}</div>
           ))}
           {calendarData.map((day, idx) => (
-            <div key={idx} className={`min-h-[60px] rounded-xl p-1.5 text-center transition-all ${
-              day ? 'hover:bg-slate-50 dark:hover:bg-[#0d2a22] cursor-pointer' : ''
-            } ${day?.dateStr === todayStr ? 'bg-emerald-50/60 dark:bg-emerald-950/20 ring-1 ring-emerald-300 dark:ring-emerald-800' : ''}`}>
+            <div key={idx} className={`min-h-[60px] rounded-xl p-1.5 text-center transition-all ${day ? 'hover:bg-slate-50 dark:hover:bg-[#0d2a22] cursor-pointer' : ''
+              } ${day?.dateStr === todayStr ? 'bg-emerald-50/60 dark:bg-emerald-950/20 ring-1 ring-emerald-300 dark:ring-emerald-800' : ''}`}>
               {day && (
                 <>
                   <span className={`text-xs font-bold ${day.dateStr === todayStr ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`}>
@@ -533,9 +531,8 @@ const Attendance = () => {
           <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#133029] rounded-xl p-1">
             {['daily', 'weekly', 'monthly'].map(mode => (
               <button key={mode} onClick={() => setViewMode(mode)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg capitalize transition-all ${
-                  viewMode === mode ? 'bg-white dark:bg-[#0a1f1a] text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 dark:text-[#829e92] hover:text-slate-700 dark:hover:text-white'
-                }`}>
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg capitalize transition-all ${viewMode === mode ? 'bg-white dark:bg-[#0a1f1a] text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 dark:text-[#829e92] hover:text-slate-700 dark:hover:text-white'
+                  }`}>
                 {mode}
               </button>
             ))}
@@ -591,9 +588,8 @@ const Attendance = () => {
                 ].map(col => (
                   <th key={col.key}
                     onClick={() => col.key !== 'hours' && col.key !== 'clockOut' && handleSort(col.key)}
-                    className={`px-4 py-3 text-left text-[11px] font-bold text-slate-500 dark:text-[#829e92] uppercase tracking-wider ${
-                      col.key !== 'hours' && col.key !== 'clockOut' ? 'cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 select-none' : ''
-                    }`}>
+                    className={`px-4 py-3 text-left text-[11px] font-bold text-slate-500 dark:text-[#829e92] uppercase tracking-wider ${col.key !== 'hours' && col.key !== 'clockOut' ? 'cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 select-none' : ''
+                      }`}>
                     <div className="flex items-center gap-1">
                       {col.label}
                       {sortField === col.key && (
@@ -682,11 +678,10 @@ const Attendance = () => {
                 else page = currentPage - 2 + i;
                 return (
                   <button key={page} onClick={() => setCurrentPage(page)}
-                    className={`w-8 h-8 text-xs font-bold rounded-lg transition-all ${
-                      currentPage === page
-                        ? 'bg-emerald-600 text-white shadow-sm'
-                        : 'text-slate-500 dark:text-[#829e92] hover:bg-slate-100 dark:hover:bg-[#133029]'
-                    }`}>
+                    className={`w-8 h-8 text-xs font-bold rounded-lg transition-all ${currentPage === page
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'text-slate-500 dark:text-[#829e92] hover:bg-slate-100 dark:hover:bg-[#133029]'
+                      }`}>
                     {page}
                   </button>
                 );

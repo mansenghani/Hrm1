@@ -255,3 +255,24 @@ body {
   animation: shimmer 1.4s ease-in-out infinite;
   border-radius: var(--radius-sm);
 }
+
+/* Time Tracker Table Overrides for Dark Mode */
+.dark table thead tr.bg-gray-50,
+.dark table thead tr.bg-gray-50\\/50 {
+  background-color: #1e1c18 !important;
+  border-color: #38352e !important;
+}
+.dark table thead th {
+  color: #a3a094 !important;
+}
+.dark table tbody tr {
+  border-color: #38352e !important;
+}
+.dark table tbody td {
+  color: #d1d5db !important;
+}
+.dark table tbody td.text-gray-700,
+.dark table tbody td.text-gray-600,
+.dark table tbody td.text-gray-800 {
+  color: #d1d5db !important;
+}

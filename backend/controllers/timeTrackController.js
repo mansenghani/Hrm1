@@ -15,8 +15,8 @@ const TimeTrack = require('../models/TimeTrack');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 
-// ── CONFIG // Constants for Idle tracking (MUST MATCH DESKTOP APP)
-const IDLE_THRESHOLD_SECONDS = 60; // 1 minute (60 seconds)
+// ── CONFIG // Constants for Idle tracking (MUST MATCH DESKTOP APP & WEB APP)
+const IDLE_THRESHOLD_SECONDS = 300; // 5 minutes (300 seconds)
 
 // ── HELPERS ───────────────────────────────────────────────
 const getToday = () => {
@@ -28,13 +28,13 @@ const isDBConnected = () => mongoose.connection.readyState === 1;
 
 const getRoleFilter = (user) => {
   if (user.role === 'admin') return {};
-  if (user.role === 'hr') return { 
+  if (user.role === 'hr') return {
     $or: [
       { employeeRole: { $in: ['employee', 'manager'] } },
       { employeeId: user.id }
-    ] 
+    ]
   };
-  if (user.role === 'manager') return { 
+  if (user.role === 'manager') return {
     $or: [
       { managerId: user.id },
       { employeeId: user.id }
@@ -80,7 +80,6 @@ exports.startTracking = async (req, res) => {
       session.lastHeartbeat = now;
       session.idleApplied = false;
       session.sessions.push({ start: now });
-      session.activityLog.push({ timestamp: now, type: 'resume' });
     } else {
       session = new TimeTrack({
         employeeId: id,
@@ -96,8 +95,7 @@ exports.startTracking = async (req, res) => {
         activeTime: 0,
         idleTime: 0,
         inactivityCount: 0,
-        sessions: [{ start: now }],
-        activityLog: [{ timestamp: now, type: 'start' }]
+        sessions: [{ start: now }]
       });
     }
 
@@ -137,8 +135,11 @@ exports.pauseTracking = async (req, res) => {
     session.idleApplied = false;
 
     const lastIdx = session.sessions.length - 1;
-    if (lastIdx >= 0) session.sessions[lastIdx].pause = now;
-    session.activityLog.push({ timestamp: now, type: 'pause' });
+    if (lastIdx >= 0) {
+      if (!session.sessions[lastIdx].pause && !session.sessions[lastIdx].end) {
+        session.sessions[lastIdx].pause = now;
+      }
+    }
 
     await session.save();
 
@@ -176,13 +177,7 @@ exports.resumeTracking = async (req, res) => {
     session.lastHeartbeat = now;
     session.idleApplied = false;
 
-    const lastIdx = session.sessions.length - 1;
-    if (lastIdx >= 0 && session.sessions[lastIdx].pause && !session.sessions[lastIdx].resume) {
-      session.sessions[lastIdx].resume = now;
-    } else {
-      session.sessions.push({ start: now });
-    }
-    session.activityLog.push({ timestamp: now, type: 'resume' });
+    session.sessions.push({ resume: now });
 
     await session.save();
 
@@ -224,8 +219,11 @@ exports.stopTracking = async (req, res) => {
     session.isRunning = false;
 
     const lastIdx = session.sessions.length - 1;
-    if (lastIdx >= 0) session.sessions[lastIdx].end = now;
-    session.activityLog.push({ timestamp: now, type: 'stop' });
+    if (lastIdx >= 0) {
+      if (!session.sessions[lastIdx].pause && !session.sessions[lastIdx].end) {
+        session.sessions[lastIdx].end = now;
+      }
+    }
 
     await session.save();
     res.json({ message: 'Tracking stopped', session: buildPayload(session) });
@@ -269,30 +267,33 @@ exports.updateActivity = async (req, res) => {
         ? (now - new Date(session.lastHeartbeat)) / 1000
         : 0;
 
-      if (isActiveSignal && sinceHeartbeat < IDLE_THRESHOLD_SECONDS) {
-        // ── Normal active heartbeat ──
+      if (isActiveSignal) {
+        // ── Normal active heartbeat (No Auto-Pause) ──
         // Commit elapsed seconds since last heartbeat to activeTime (high precision)
         session.activeTime += Math.max(0, sinceHeartbeat);
         session.lastHeartbeat = now;
+        session.segmentStart = now;
 
-        if (!['heartbeat', 'active'].includes(normalizedType)) {
-          session.activityLog.push({ timestamp: now, type: normalizedType });
-        }
-
-      } else if (isIdleSignal || sinceHeartbeat >= IDLE_THRESHOLD_SECONDS) {
+      } else if (isIdleSignal) {
         // ── Idle transition ──
         if (!session.idleApplied) {
           // ✅ Dynamic Rewind: Subtract the EXACT seconds of idleness reported by the OS
           // This eliminates gaps caused by heartbeat delays or network latency.
-          const rewindAmount = Math.max(IDLE_THRESHOLD_SECONDS, req.body.idleSeconds || 0);
-          
+          const rewindAmount = req.body.idleSeconds || IDLE_THRESHOLD_SECONDS;
+
           session.activeTime += Math.max(0, sinceHeartbeat);
           // Subtract the idle period (1 minute) from active time and assign it to inactive time
           session.activeTime = Math.max(0, session.activeTime - rewindAmount);
-          
+
           session.inactivityCount += 1;
           session.idleTime = session.inactivityCount * IDLE_THRESHOLD_SECONDS;
           session.idleApplied = true;
+
+          const idleTimeStart = new Date(now.getTime() - rewindAmount * 1000);
+          const lastIdx = session.sessions.length - 1;
+          if (lastIdx >= 0 && !session.sessions[lastIdx].pause && !session.sessions[lastIdx].end) {
+             session.sessions[lastIdx].pause = idleTimeStart;
+          }
 
           console.log(`[IDLE DYNAMIC] User ${id} — status set to idle, activeTime rewound by ${rewindAmount}s`);
         }
@@ -301,7 +302,6 @@ exports.updateActivity = async (req, res) => {
         session.isRunning = false;
         session.segmentStart = null;
         session.lastHeartbeat = now;
-        session.activityLog.push({ timestamp: now, type: 'idle_start' });
 
         await session.save();
 
@@ -345,28 +345,10 @@ exports.getSessionStatus = async (req, res) => {
     // console.log(`[STATUS CHECK] User: ${req.user.role} (${id}), Date: ${today}, Found: ${!!session}, Headers: ${req.headers['user-agent']}`);
     if (!session) return res.json({ hasActiveSession: false });
 
-    // ── Live active time ──
-    // If session is active, add seconds elapsed since last heartbeat (high precision)
-    let liveActiveTime = session.activeTime || 0;
-    if (session.status === 'active' && session.lastHeartbeat) {
-      const elapsed = (new Date() - new Date(session.lastHeartbeat)) / 1000;
-      // Only add if within threshold (prevents runaway if heartbeat stopped)
-      if (elapsed < IDLE_THRESHOLD_SECONDS) {
-        liveActiveTime += elapsed;
-      }
-    }
-    
-    // Floor only at the last moment for the response
-    res.json({
-      hasActiveSession: true,
-      status: session.status,
-      isRunning: session.isRunning,
-      activeTime: Math.floor(liveActiveTime),
-      idleTime: Math.floor(session.idleTime || 0),
-      inactivityCount: session.inactivityCount || 0,
-      startTime: session.startTime,
-      lastHeartbeat: session.lastHeartbeat
-    });
+    // ── Session Status ──
+    // The frontend is responsible for calculating elapsed time from segmentStart.
+    // We strictly return the database state to prevent double-counting.
+    res.json(buildPayload(session));
   } catch (err) {
     console.error('[STATUS ERROR]', err);
     res.status(500).json({ message: 'Status check failed', error: err.message });
@@ -381,7 +363,7 @@ exports.getTimeSummary = async (req, res) => {
     if (!isDBConnected()) return res.json({ stats: { active: 0, idle: 0, total: 0, productivity: 0 }, chartData: [], logs: [] });
 
     const filter = getRoleFilter(req.user);
-    
+
     const { timeRange } = req.query;
     let limitCount = 30; // default 30 days
     if (timeRange === '7days') limitCount = 7;
@@ -428,15 +410,19 @@ exports.getLogs = async (req, res) => {
 
 exports.getMyTime = async (req, res) => {
   try {
-    res.json(await TimeTrack.find({ employeeId: req.user.id }).sort({ date: -1 }));
+    const { startDate, endDate } = req.query;
+    let filter = { employeeId: req.user.id };
+    
+    if (startDate && endDate) {
+      filter.date = { $gte: startDate, $lte: endDate };
+    } else if (startDate) {
+      filter.date = startDate;
+    }
+    
+    res.json(await TimeTrack.find(filter).sort({ date: -1 }));
   } catch (err) { res.status(500).json({ message: 'My logs failed', error: err.message }); }
 };
 
-exports.getTeamTime = async (req, res) => {
-  try {
-    res.json(await TimeTrack.find({ managerId: req.user.id }).sort({ date: -1 }).populate('employeeId', 'name fullName email'));
-  } catch (err) { res.status(500).json({ message: 'Team logs failed', error: err.message }); }
-};
 
 exports.getHRTime = async (req, res) => {
   try {
@@ -450,6 +436,129 @@ exports.getAllTime = async (req, res) => {
   } catch (err) { res.status(500).json({ message: 'All logs failed', error: err.message }); }
 };
 
+exports.getAllTimeLogs = async (req, res) => {
+  try {
+    const { startDate, endDate, employeeId, role } = req.query;
+    let filter = {};
+
+    if (startDate && endDate) {
+      filter.date = { $gte: startDate, $lte: endDate };
+    } else if (startDate) {
+      filter.date = startDate;
+    }
+
+    if (employeeId) filter.employeeId = employeeId;
+    if (role) filter.employeeRole = role;
+
+    const logs = await TimeTrack.find(filter)
+      .populate('employeeId', 'name fullName email')
+      .sort({ date: -1, createdAt: -1 });
+      
+    res.json(logs);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch all logs', error: err.message });
+  }
+};
+
+exports.exportTimeLogs = async (req, res) => {
+  try {
+    const { startDate, endDate, employeeId, role } = req.query;
+    let filter = {};
+
+    if (startDate && endDate) {
+      filter.date = { $gte: startDate, $lte: endDate };
+    } else if (startDate) {
+      filter.date = startDate;
+    }
+
+    if (employeeId) filter.employeeId = employeeId;
+    if (role) filter.employeeRole = role;
+
+    const logs = await TimeTrack.find(filter)
+      .populate('employeeId', 'name fullName email')
+      .sort({ date: -1 });
+
+    const csvRows = [];
+    csvRows.push(['Employee Name', 'Role', 'Date', 'Check-in Time', 'Stop Time', 'Pauses', 'Total Break (mins)', 'Total Hours', 'Auto Stop?'].join(','));
+
+    for (const log of logs) {
+      const name = log.employeeId?.fullName || log.employeeId?.name || 'Unknown';
+      const roleStr = log.employeeRole || 'N/A';
+      const date = log.date;
+      const checkin = log.startTime ? new Date(log.startTime).toLocaleTimeString() : 'N/A';
+      const checkout = log.endTime ? new Date(log.endTime).toLocaleTimeString() : 'N/A';
+      const pauses = log.events ? log.events.filter(e => e.type === 'pause').length : 0;
+      const totalBreak = Math.floor((log.idleTime || 0) / 60);
+      const activeSecs = log.totalActiveTime || log.activeTime || 0;
+      const h = Math.floor(activeSecs / 3600);
+      const m = Math.floor((activeSecs % 3600) / 60);
+      const totalHours = `${h}h ${m}m`;
+      const isAuto = log.isAutoStop ? 'Yes' : 'No';
+
+      csvRows.push([
+        `"${name}"`,
+        `"${roleStr}"`,
+        date,
+        checkin,
+        checkout,
+        pauses,
+        totalBreak,
+        `"${totalHours}"`,
+        isAuto
+      ].join(','));
+    }
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=hr_logs_${Date.now()}.csv`);
+    res.status(200).send(csvRows.join('\n'));
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to export logs', error: err.message });
+  }
+};
+
+exports.getCalendarData = async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+    const { month } = req.query;
+
+    if (req.user.id !== employeeId && req.user.role !== 'admin' && req.user.role !== 'hr') {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    const regex = new RegExp(`^${month}`);
+    const tracks = await TimeTrack.find({ employeeId, date: { $regex: regex } }).select('date totalTime totalActiveTime status');
+
+    res.json(tracks);
+  } catch (err) {
+    res.status(500).json({ message: 'Calendar data failed', error: err.message });
+  }
+};
+
+exports.getDailyData = async (req, res) => {
+  try {
+    const { employeeId, date } = req.params;
+
+    if (req.user.id !== employeeId && req.user.role !== 'admin' && req.user.role !== 'hr') {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    const track = await TimeTrack.findOne({ employeeId, date });
+    if (!track) return res.status(404).json({ message: 'No data for this date' });
+
+    res.json({
+      date: track.date,
+      startTime: track.startTime,
+      endTime: track.endTime,
+      totalWorkedDuration: Math.floor((track.activeTime || 0) / 60),
+      totalPauseDuration: Math.floor((track.idleTime || 0) / 60),
+      pauseEvents: track.sessions ? track.sessions.filter(s => s.pause) : [],
+      isAutoStop: track.isAutoStop || false
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Daily data failed', error: err.message });
+  }
+};
+
 exports.getDashboardData = async (req, res) => {
   try {
     const { timeRange, userFilter, roleFilter } = req.query;
@@ -459,7 +568,7 @@ exports.getDashboardData = async (req, res) => {
 
     const now = new Date();
     const today = getToday();
-    
+
     if (timeRange === 'weekly' || timeRange === 'week') {
       const d = new Date(); d.setDate(now.getDate() - 7);
       filter.date = { $gte: d.toISOString().split('T')[0] };
@@ -510,6 +619,47 @@ exports.getDashboardData = async (req, res) => {
   }
 };
 
+exports.getDailySummaryLogs = async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+    const { range, startDate, endDate, month } = req.query;
+
+    if (req.user.id !== employeeId && req.user.role !== 'admin' && req.user.role !== 'hr') {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    let filter = { employeeId };
+
+    if (range === 'month' && month) {
+      filter.date = { $regex: `^${month}` };
+    } else if (startDate && endDate) {
+      filter.date = { $gte: startDate, $lte: endDate };
+    } else if (startDate) {
+      filter.date = { $gte: startDate };
+    }
+
+    const sessions = await TimeTrack.find(filter).sort({ date: 1 });
+
+    const summary = sessions.map(track => {
+      const isToday = track.date === getToday();
+      const isLive = isToday && track.status === 'active';
+      return {
+        date: track.date,
+        checkIn: track.startTime,
+        checkOut: track.endTime,
+        totalHours: track.activeTime || 0,
+        isAutoStop: track.isAutoStop || false,
+        isLive,
+        status: track.status
+      };
+    });
+
+    res.json(summary);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch summary logs', error: err.message });
+  }
+};
+
 // ============================================================
 // 🔧 INTERNAL HELPERS
 // ============================================================
@@ -519,12 +669,9 @@ exports.getDashboardData = async (req, res) => {
  * Does NOT mutate session — caller adds the result to session.activeTime.
  */
 function flushSegment(session, now) {
-  if (!session.lastHeartbeat) return 0;
-  const elapsed = (now - new Date(session.lastHeartbeat)) / 1000;
-  if (elapsed < IDLE_THRESHOLD_SECONDS) {
-    return Math.max(0, Math.floor(elapsed));
-  }
-  return 0;
+  if (!session.segmentStart) return 0;
+  const elapsed = (now - new Date(session.segmentStart)) / 1000;
+  return Math.max(0, Math.floor(elapsed));
 }
 
 /**
@@ -540,6 +687,7 @@ function buildPayload(session) {
     idleTime: Math.floor(session.idleTime || 0),
     inactivityCount: session.inactivityCount || 0,
     startTime: session.startTime,
-    lastHeartbeat: session.lastHeartbeat
+    lastHeartbeat: session.lastHeartbeat,
+    segmentStart: session.segmentStart
   };
 }

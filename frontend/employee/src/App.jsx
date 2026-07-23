@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import EmployeeLayout from './layouts/EmployeeLayout';
 import Dashboard from './pages/Dashboard';
 import Attendance from './pages/Attendance';
+import TimeTracker from './pages/TimeTracker';
 import useAuthStore from '@shared/store/authStore';
 import EmployeeDocuments from './pages/EmployeeDocuments';
 
@@ -52,11 +53,13 @@ function App() {
         <Route path="/employee" element={<EmployeeLayout />}>
           <Route index element={<Navigate to="/employee/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
-          <Route path="time-tracker" element={<PlaceholderPage title="Time Tracker" />} />
+          <Route path="time-tracker" element={<TimeTracker />} />
           <Route path="chat" element={<Chat />} />
           <Route path="task-management/create" element={<PlaceholderPage title="Create Task" />} />
           <Route path="task-management" element={<PlaceholderPage title="Task Management" />} />
           <Route path="profile" element={<PlaceholderPage title="My Profile" />} />
+          <Route path="settings" element={<PlaceholderPage title="Settings" />} />
+          <Route path="employees/view/:id" element={<PlaceholderPage title="Employee Information" />} />
           <Route path="attendance" element={<Attendance />} />
           <Route path="leave" element={<PlaceholderPage title="My Leaves" />} />
           <Route path="payslips" element={<PlaceholderPage title="Payslips" />} />
