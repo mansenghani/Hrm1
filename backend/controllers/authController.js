@@ -181,7 +181,7 @@ exports.updateProfile = async (req, res) => {
     
     let imagePath = user.profileImage;
     if (profileImage && profileImage.startsWith('data:')) {
-      const savedPath = saveBase64Image(profileImage, 'profile', `profile-${req.user.id}-${Date.now()}`);
+      const savedPath = await saveBase64Image(profileImage, 'profile', `profile-${req.user.id}-${Date.now()}`);
       if (savedPath) imagePath = savedPath;
     }
 
@@ -189,15 +189,15 @@ exports.updateProfile = async (req, res) => {
 
     // New support for individual documents
     if (adharCard && adharCard.startsWith('data:')) {
-      const savedPath = saveBase64Image(adharCard, 'documents', `adhar-${req.user.id}-${Date.now()}`);
+      const savedPath = await saveBase64Image(adharCard, 'documents', `adhar-${req.user.id}-${Date.now()}`);
       if (savedPath) updateData.adharCard = savedPath;
     }
     if (bankDetails && bankDetails.startsWith('data:')) {
-      const savedPath = saveBase64Image(bankDetails, 'documents', `bank-${req.user.id}-${Date.now()}`);
+      const savedPath = await saveBase64Image(bankDetails, 'documents', `bank-${req.user.id}-${Date.now()}`);
       if (savedPath) updateData.bankDetails = savedPath;
     }
     if (panCard && panCard.startsWith('data:')) {
-      const savedPath = saveBase64Image(panCard, 'documents', `pan-${req.user.id}-${Date.now()}`);
+      const savedPath = await saveBase64Image(panCard, 'documents', `pan-${req.user.id}-${Date.now()}`);
       if (savedPath) updateData.panCard = savedPath;
     }
 
@@ -253,7 +253,7 @@ exports.uploadProfileImage = async (req, res) => {
     }
 
     const { saveBase64Image } = require('../utils/fileUpload');
-    const imagePath = saveBase64Image(image, 'profile', `profile-${req.user.id}`);
+    const imagePath = await saveBase64Image(image, 'profile', `profile-${req.user.id}`);
     if (!imagePath) {
       return res.status(400).json({ message: 'Invalid image data' });
     }
