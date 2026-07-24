@@ -343,42 +343,7 @@ const EmployeeDashboard = () => {
                 {fmtTimer(timer)}
               </span>
             )}
-            {!session ? (
-              <button
-                onClick={() => handleAction('start')}
-                disabled={actionLoading}
-                className="px-6 py-2.5 bg-gradient-to-r from-[#00b27a] to-[#00915c] hover:from-[#00c285] hover:to-[#00a368] text-white font-bold text-sm rounded-full transition-all border-none cursor-pointer shadow-sm flex items-center gap-2"
-              >
-                Check In
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={() => handleAction('stop')}
-                  disabled={actionLoading}
-                  className="px-6 py-2.5 bg-white dark:bg-[#111c18] text-gray-700 dark:text-[#cbd5e1] border border-gray-300 dark:border-[#1a2d29] font-bold text-sm rounded-full transition-all cursor-pointer hover:bg-gray-50 dark:hover:bg-[#162722] flex items-center gap-2"
-                >
-                  Check out
-                </button>
-                {!session.isRunning ? (
-                  <button
-                    onClick={() => handleAction('resume')}
-                    disabled={actionLoading}
-                    className="px-6 py-2.5 bg-gradient-to-r from-[#00b27a] to-[#00915c] hover:from-[#00c285] hover:to-[#00a368] text-white font-bold text-sm rounded-full transition-all border-none cursor-pointer shadow-sm flex items-center gap-2"
-                  >
-                    <Play size={14} fill="white" /> Resume
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleAction('pause')}
-                    disabled={actionLoading}
-                    className="px-6 py-2.5 bg-white dark:bg-[#111c18] text-gray-700 dark:text-[#cbd5e1] border border-gray-300 dark:border-[#1a2d29] font-bold text-sm rounded-full transition-all cursor-pointer hover:bg-gray-50 dark:hover:bg-[#162722] flex items-center gap-2"
-                  >
-                    <Pause size={14} /> Pause
-                  </button>
-                )}
-              </>
-            )}
+
             <button
               onClick={fetchAll}
               disabled={loading}

@@ -567,7 +567,7 @@ const Dashboard = () => {
                       </p>
                     </div>
                     <span className={`badge ${l.status === 'approved' ? 'badge-green' :
-                        l.status === 'pending' ? 'badge-amber' : 'badge-red'
+                      l.status === 'pending' ? 'badge-amber' : 'badge-red'
                       }`}>
                       {l.status}
                     </span>

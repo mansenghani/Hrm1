@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import {
   Search, RefreshCcw, Play, Pause, Square,
@@ -17,9 +17,40 @@ const TimeTracker = () => {
   const [sessionStatus, setSessionStatus] = useState(null); // { hasActiveSession, status, activeTime, isRunning }
   const [displaySeconds, setDisplaySeconds] = useState(0);
 
-  // Calendar & Table State
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [calendarData, setCalendarData] = useState([]);
+  
+  // Custom Month-Year Picker State
+  const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
+  const [pickerMode, setPickerMode] = useState('month');
+  const [tempYear, setTempYear] = useState(new Date().getFullYear());
+  const pickerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (pickerRef.current && !pickerRef.current.contains(event.target)) {
+        setShowMonthYearPicker(false);
+      }
+    };
+    if (showMonthYearPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showMonthYearPicker]);
+
+  useEffect(() => {
+    if (pickerMode === 'year' && showMonthYearPicker) {
+      setTimeout(() => {
+        const selectedYearBtn = document.getElementById('selected-year-btn');
+        if (selectedYearBtn) {
+          selectedYearBtn.scrollIntoView({ block: 'center', behavior: 'auto' });
+        }
+      }, 10);
+    }
+  }, [pickerMode, showMonthYearPicker]);
+
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  // Calendar & Table State
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [dailyData, setDailyData] = useState(null);
 
@@ -206,10 +237,10 @@ const TimeTracker = () => {
       </div>
 
       {/* TOP ROW: 60/40 SPLIT */}
-      <div className="flex flex-col lg:flex-row gap-6 mb-8">
+      <div className="flex flex-col lg:flex-row gap-6 mb-8 items-start">
 
         {/* TIME TRACKER CARD (60%) */}
-        <div className="lg:w-[60%] bg-white rounded-2xl border border-gray-100 shadow-sm p-8 flex flex-col justify-center">
+        <div className="lg:w-[60%] bg-white rounded-2xl border border-gray-100 shadow-sm px-8 pt-6 pb-6 flex flex-col justify-center">
           <div className="flex justify-between items-start mb-6">
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-1">Current Session</h2>
@@ -218,61 +249,99 @@ const TimeTracker = () => {
             <Clock size={24} className="text-gray-300" />
           </div>
 
-          <div className="text-center mb-10">
+          <div className="text-center mb-0">
             <div className="text-6xl font-bold text-gray-800 font-mono tracking-tight mb-2">
               {formatTime(displaySeconds)}
             </div>
             <p className="text-sm text-gray-400 font-medium tracking-wide uppercase">Total Time Tracked</p>
           </div>
 
-          <div className="flex justify-center gap-4">
-            {(!sessionStatus?.hasActiveSession || sessionStatus?.status === 'completed') ? (
-              <button
-                onClick={() => handleAction('start')} disabled={isLoading}
-                className="flex items-center gap-2 px-8 py-3 bg-[#10B981] text-white rounded-xl font-semibold shadow-md hover:bg-[#059669] transition-all disabled:opacity-50">
-                <Play size={18} fill="currentColor" />
-                START
-              </button>
-            ) : (
-              <>
-                {sessionStatus.status === 'active' ? (
-                  <button
-                    onClick={() => handleAction('pause')} disabled={isLoading}
-                    className="flex items-center gap-2 px-8 py-3 bg-amber-500 text-white rounded-xl font-semibold shadow-md hover:bg-amber-600 transition-all disabled:opacity-50">
-                    <Pause size={18} fill="currentColor" />
-                    PAUSE
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleAction('resume')} disabled={isLoading}
-                    className="flex items-center gap-2 px-8 py-3 bg-[#10B981] text-white rounded-xl font-semibold shadow-md hover:bg-[#059669] transition-all disabled:opacity-50">
-                    <Play size={18} fill="currentColor" />
-                    RESUME
-                  </button>
-                )}
-
-                <button
-                  onClick={() => handleAction('stop')} disabled={isLoading}
-                  className="flex items-center gap-2 px-8 py-3 bg-gray-800 text-white rounded-xl font-semibold shadow-md hover:bg-gray-900 transition-all disabled:opacity-50">
-                  <Square size={18} fill="currentColor" />
-                  STOP
-                </button>
-              </>
-            )}
-          </div>
         </div>
 
         {/* DYNAMIC CALENDAR (40%) */}
-        <div className="lg:w-[40%] bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <CalendarIcon size={18} className="text-[#10B981]" />
+        <div className="lg:w-[40%] bg-white rounded-2xl border border-gray-100 shadow-sm px-5 pt-5 pb-3 relative">
+          <div className="flex justify-between items-center mb-4 relative">
+            <button 
+              className="text-lg font-semibold text-gray-800 flex items-center gap-2 hover:text-[#10B981] transition-colors cursor-pointer select-none"
+              onClick={() => {
+                setShowMonthYearPicker(!showMonthYearPicker);
+                if (!showMonthYearPicker) {
+                  setTempYear(currentMonth.getFullYear());
+                  setPickerMode('month');
+                }
+              }}
+            >
+              <CalendarIcon size={18} className={showMonthYearPicker ? "text-[#10B981]" : "text-gray-400"} />
               {currentMonth.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
-            </h2>
+            </button>
             <div className="flex gap-2">
               <button onClick={handlePrevMonth} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"><ChevronLeft size={18} className="text-gray-600" /></button>
               <button onClick={handleNextMonth} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"><ChevronRight size={18} className="text-gray-600" /></button>
             </div>
+            
+            {/* Custom Month-Year Picker Popup */}
+            {showMonthYearPicker && (
+              <div 
+                ref={pickerRef} 
+                className="absolute top-10 left-1/2 -translate-x-1/2 z-50 w-64 bg-white border border-gray-200 rounded-xl shadow-2xl p-4 flex flex-col"
+              >
+                {/* Selected Year Header (Clickable) */}
+                <button
+                  type="button"
+                  onClick={() => setPickerMode(pickerMode === 'year' ? 'month' : 'year')}
+                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors mb-3 flex justify-center items-center"
+                >
+                  {tempYear}
+                  <svg className={`w-4 h-4 ml-2 transition-transform ${pickerMode === 'year' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {pickerMode === 'year' ? (
+                  <div className="max-h-56 overflow-y-auto custom-scrollbar flex flex-col gap-1 pr-1">
+                    {Array.from({ length: 60 }, (_, i) => new Date().getFullYear() - 30 + i).map((y) => (
+                      <button
+                        key={y}
+                        id={tempYear === y ? 'selected-year-btn' : undefined}
+                        onClick={() => {
+                          setTempYear(y);
+                          setPickerMode('month');
+                        }}
+                        className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors ${
+                          tempYear === y 
+                            ? 'bg-[#E0F2FE] text-[#0284C7]' 
+                            : 'hover:bg-gray-50 text-gray-700'
+                        }`}
+                      >
+                        {y}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-4 gap-2">
+                    {monthNames.map((m, i) => {
+                      const isSelected = currentMonth.getFullYear() === tempYear && currentMonth.getMonth() === i;
+                      return (
+                        <button
+                          key={m}
+                          onClick={() => {
+                            setCurrentMonth(new Date(tempYear, i, 1));
+                            setShowMonthYearPicker(false);
+                          }}
+                          className={`py-2 rounded-lg text-xs font-bold transition-all ${
+                            isSelected 
+                              ? 'bg-[#10B981] text-white shadow-md' 
+                              : 'hover:bg-gray-50 text-gray-700'
+                          }`}
+                        >
+                          {m}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-7 gap-1 text-center mb-2">
@@ -314,13 +383,6 @@ const TimeTracker = () => {
             })}
           </div>
 
-          {/* Mini Stats under calendar based on selected date */}
-          <div className="mt-6 pt-4 border-t border-gray-100">
-            <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">Logged on {new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
-            <p className="text-xl font-bold text-gray-800">
-              {dailyData?.totalWorkedDuration ? formatHoursMinutes(dailyData.totalWorkedDuration) : '0h 0m'}
-            </p>
-          </div>
         </div>
 
       </div>

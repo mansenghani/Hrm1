@@ -62,7 +62,7 @@ const SIDEBAR_ITEMS = {
 // ─── AVATAR ───────────────────────────────────────────────────
 const Avatar = ({ name = '', image, size = 32 }) => {
   const initials = name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
-  const colors = ['#16a34a','#2563eb','#9333ea','#dc2626','#d97706'];
+  const colors = ['#16a34a', '#2563eb', '#9333ea', '#dc2626', '#d97706'];
   const color = colors[name.charCodeAt(0) % colors.length] || '#16a34a';
 
   const getUrl = (p) => {
@@ -150,7 +150,7 @@ const EmployeeLayout = () => {
       .then(r => {
         const items = Array.isArray(r.data) ? r.data : (r.data?.data || []);
         setNotifications(items.slice(0, 5));
-      }).catch(() => {});
+      }).catch(() => { });
     fetch();
     const id = setInterval(fetch, 60000);
     return () => clearInterval(id);
@@ -161,7 +161,7 @@ const EmployeeLayout = () => {
     if (!token) return;
     axios.get('/api/time/timer/status', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => { setTimerActive(!!r.data?.isRunning); if (r.data?.status === 'idle') setIsPaused(true); })
-      .catch(() => {});
+      .catch(() => { });
   }, [token]);
 
   // ── Socket ─────────────────────────────────────────────────
@@ -195,22 +195,22 @@ const EmployeeLayout = () => {
       triggerRef.current?.focus();
       return;
     }
-    
+
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
       const focusableElements = dropdownRef.current?.querySelectorAll('button, [role="menuitem"]');
       if (!focusableElements || focusableElements.length === 0) return;
-      
+
       const activeElement = document.activeElement;
       const index = Array.from(focusableElements).indexOf(activeElement);
-      
+
       let nextIndex = index;
       if (e.key === 'ArrowDown') {
         nextIndex = (index + 1) % focusableElements.length;
       } else if (e.key === 'ArrowUp') {
         nextIndex = (index - 1 + focusableElements.length) % focusableElements.length;
       }
-      
+
       focusableElements[nextIndex]?.focus();
     }
   };
@@ -226,21 +226,21 @@ const EmployeeLayout = () => {
   const handleLogout = () => { logout(); navigate('/login'); };
   const handleResume = () =>
     axios.post('/api/time/resume', {}, { headers: { Authorization: `Bearer ${token}` } })
-      .then(() => { setTimerActive(true); setIsPaused(false); }).catch(() => {});
+      .then(() => { setTimerActive(true); setIsPaused(false); }).catch(() => { });
 
   const displayName = profile?.name || profile?.fullName || 'Employee';
   const displayEmail = profile?.email || 'employee@fluidhr.com';
   const userRealRole = profile?.position || (
     profile?.role === 'admin' ? 'Super Admin' :
-    profile?.role === 'hr' ? 'HR Manager' :
-    profile?.role === 'manager' ? 'Team Manager' :
-    profile?.role === 'employee' ? 'Employee' : 'User'
+      profile?.role === 'hr' ? 'HR Manager' :
+        profile?.role === 'manager' ? 'Team Manager' :
+          profile?.role === 'employee' ? 'Employee' : 'User'
   );
   const activeRole = sessionStorage.getItem('role') || 'employee';
   const activeRoleTitle = activeRole === 'admin' ? 'Super Admin' :
-                          activeRole === 'hr' ? 'HR Manager' :
-                          activeRole === 'manager' ? 'Team Manager' :
-                          activeRole === 'employee' ? 'Employee' : 'User';
+    activeRole === 'hr' ? 'HR Manager' :
+      activeRole === 'manager' ? 'Team Manager' :
+        activeRole === 'employee' ? 'Employee' : 'User';
 
   const handleRoleSwitch = (targetRole) => {
     sessionStorage.setItem('role', targetRole);
@@ -400,7 +400,7 @@ const EmployeeLayout = () => {
             <PlusCircle size={15} strokeWidth={2.8} />
             <span>Quick action</span>
           </button>
-          
+
           <div className="ml-auto flex items-center h-full gap-2">
             {/* Inactivity banner / timer controls */}
             {isPaused && (
