@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Search, UserPlus, Trash2, Edit3, User, Eye, CheckCircle, XCircle, RefreshCw, Download, SlidersHorizontal, MoreHorizontal, Plus } from 'lucide-react';
@@ -8,9 +8,23 @@ const HREmployees = () => {
   const [dbEmployees, setDbEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(() => sessionStorage.getItem('hr_searchTerm') || '');
-  const [filterRole, setFilterRole] = useState(() => sessionStorage.getItem('hr_filterRole') || '');
-  const [filterStatus, setFilterStatus] = useState(() => sessionStorage.getItem('hr_filterStatus') || 'active');
+  const [filterRole, setFilterRole] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem('hr_filterRole')) || []; } catch { return []; }
+  });
+  const [filterStatus, setFilterStatus] = useState(() => {
+    try { 
+      const stored = sessionStorage.getItem('hr_filterStatus');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      return ['active']; 
+    } catch { return ['active']; }
+  });
+  const [tempFilterRole, setTempFilterRole] = useState([]);
+  const [tempFilterStatus, setTempFilterStatus] = useState([]);
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
+  const filtersRef = useRef(null);
   const navigate = useNavigate();
   const pathRole = window.location.pathname.split('/')[1] || 'hr';
 
@@ -35,12 +49,21 @@ const HREmployees = () => {
     fetchEmployees();
   }, []);
 
-  // Global click listener to close actions dropdown on clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (filtersRef.current && !filtersRef.current.contains(event.target)) {
+        setShowFiltersPanel(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   useEffect(() => {
     setCurrentPage(1);
     sessionStorage.setItem('hr_searchTerm', searchTerm);
-    sessionStorage.setItem('hr_filterRole', filterRole);
-    sessionStorage.setItem('hr_filterStatus', filterStatus);
+    sessionStorage.setItem('hr_filterRole', JSON.stringify(filterRole));
+    sessionStorage.setItem('hr_filterStatus', JSON.stringify(filterStatus));
   }, [searchTerm, filterRole, filterStatus]);
 
   const uniqueEmployees = Array.from(new Map(dbEmployees.map(emp => [emp._id, emp])).values());
@@ -57,9 +80,9 @@ const HREmployees = () => {
       dept.includes(search) ||
       desig.includes(search);
 
-    const matchesRole = filterRole ? (emp.role === filterRole || emp.userId?.role === filterRole) : true;
+    const matchesRole = filterRole.length > 0 ? (filterRole.includes(emp.role) || filterRole.includes(emp.userId?.role)) : true;
     const empStatus = emp.status?.toLowerCase() || emp.userId?.status?.toLowerCase() || 'active';
-    const matchesStatus = filterStatus ? empStatus === filterStatus : true;
+    const matchesStatus = filterStatus.length > 0 ? filterStatus.includes(empStatus) : true;
 
     return matchesSearch && matchesRole && matchesStatus;
   });
@@ -154,6 +177,34 @@ const HREmployees = () => {
     );
   };
 
+  const handleRoleToggle = (role) => {
+    setTempFilterRole(prev =>
+      prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
+    );
+  };
+
+  const handleStatusToggle = (status) => {
+    setTempFilterStatus(prev =>
+      prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+    );
+  };
+
+  const handleApplyFilters = () => {
+    setFilterRole(tempFilterRole);
+    setFilterStatus(tempFilterStatus);
+    setShowFiltersPanel(false);
+  };
+
+  const handleClearFilters = () => {
+    setTempFilterRole([]);
+    setTempFilterStatus(['active']);
+    setFilterRole([]);
+    setFilterStatus(['active']);
+    setShowFiltersPanel(false);
+  };
+
+  const activeFiltersCount = filterRole.length + filterStatus.length;
+
   return (
     <div className="animate-fade-in w-full pb-12">
       {/* 1. Page Title & Action Buttons Section */}
@@ -172,9 +223,9 @@ const HREmployees = () => {
           </button>
           <button
             onClick={() => navigate(`/${pathRole}/create-user`)}
-            className="zap-btn zap-btn-dark h-14 px-8 flex items-center gap-2"
+            className="verdant-btn-outline h-10 px-5 flex items-center gap-2 text-sm font-semibold rounded-full border border-gray-200 dark:border-[#1a2d29] bg-white dark:bg-[#111c18] hover:bg-gray-50 dark:hover:bg-[#162722] text-[#374151] dark:text-[#cbd5e1] transition-all shadow-sm cursor-pointer"
           >
-            <Plus size={16} />
+            <Plus size={15} />
             <span>Add employee</span>
           </button>
         </div>
@@ -193,10 +244,14 @@ const HREmployees = () => {
               className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-[#111c18] border border-gray-200 dark:border-[#1a2d29] rounded-full text-sm font-medium focus:outline-none focus:border-[#00a76b] focus:ring-2 focus:ring-[#00a76b]/10 transition-all shadow-sm text-gray-800 dark:text-white"
             />
           </div>
-          <div className="relative">
+          <div className="relative" ref={filtersRef}>
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                if (!showFiltersPanel) {
+                  setTempFilterRole(filterRole);
+                  setTempFilterStatus(filterStatus);
+                }
                 setShowFiltersPanel(!showFiltersPanel);
               }}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-full border text-sm font-semibold transition-all shadow-sm cursor-pointer whitespace-nowrap ${showFiltersPanel
@@ -205,32 +260,63 @@ const HREmployees = () => {
                 }`}
             >
               <SlidersHorizontal size={15} />
-              <span>Filters</span>
+              <span>Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}</span>
             </button>
             
             {showFiltersPanel && (
-              <div className="absolute right-0 top-[calc(100%+8px)] z-50 p-4 bg-white dark:bg-[#162722] border border-gray-200 dark:border-[#1a2d29] rounded-[16px] shadow-lg flex flex-col gap-3 min-w-[200px] animate-in fade-in slide-in-from-top-2">
-                <select
-                  value={filterRole}
-                  onChange={(e) => setFilterRole(e.target.value)}
-                  className="bg-gray-50 dark:bg-[#111c18] border border-gray-200 dark:border-[#1a2d29] rounded-xl text-xs font-black focus:outline-none focus:border-[#00a76b] focus:ring-2 focus:ring-[#00a76b]/10 transition-all shadow-sm text-gray-800 dark:text-white px-4 h-10 cursor-pointer uppercase appearance-none w-full"
-                >
-                  <option value="">ALL ROLES</option>
-                  <option value="admin">ADMINS</option>
-                  <option value="hr">HR OFFICERS</option>
-                  <option value="manager">MANAGERS</option>
-                  <option value="employee">EMPLOYEES</option>
-                </select>
-                
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="bg-gray-50 dark:bg-[#111c18] border border-gray-200 dark:border-[#1a2d29] rounded-xl text-xs font-black focus:outline-none focus:border-[#00a76b] focus:ring-2 focus:ring-[#00a76b]/10 transition-all shadow-sm text-gray-800 dark:text-white px-4 h-10 cursor-pointer uppercase appearance-none w-full"
-                >
-                  <option value="">ALL STATUSES</option>
-                  <option value="active">ACTIVE</option>
-                  <option value="inactive">INACTIVE</option>
-                </select>
+              <div className="absolute right-0 top-[calc(100%+8px)] z-50 p-4 bg-white dark:bg-[#162722] border border-gray-200 dark:border-[#1a2d29] rounded-[16px] shadow-lg flex flex-col gap-4 min-w-[340px] animate-in fade-in slide-in-from-top-2">
+                <div className="flex flex-row gap-6">
+                  <div className="flex-1">
+                    <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Roles</h4>
+                    <div className="flex flex-col gap-2">
+                      <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-200">
+                        <input type="checkbox" checked={tempFilterRole.length === 0} onChange={() => setTempFilterRole([])} className="accent-[#00a76b] cursor-pointer" />
+                        All Roles
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-200">
+                        <input type="checkbox" checked={tempFilterRole.includes('admin')} onChange={() => handleRoleToggle('admin')} className="accent-[#00a76b] cursor-pointer" />
+                        Admins
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-200">
+                        <input type="checkbox" checked={tempFilterRole.includes('hr')} onChange={() => handleRoleToggle('hr')} className="accent-[#00a76b] cursor-pointer" />
+                        HR Officers
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-200">
+                        <input type="checkbox" checked={tempFilterRole.includes('manager')} onChange={() => handleRoleToggle('manager')} className="accent-[#00a76b] cursor-pointer" />
+                        Managers
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-200">
+                        <input type="checkbox" checked={tempFilterRole.includes('employee')} onChange={() => handleRoleToggle('employee')} className="accent-[#00a76b] cursor-pointer" />
+                        Employees
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div className="w-px bg-gray-200 dark:bg-[#1a2d29] self-stretch"></div>
+                  
+                  <div className="flex-1">
+                    <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Status</h4>
+                    <div className="flex flex-col gap-2">
+                      <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-200">
+                        <input type="checkbox" checked={tempFilterStatus.length === 0} onChange={() => setTempFilterStatus([])} className="accent-[#00a76b] cursor-pointer" />
+                        All Statuses
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-200">
+                        <input type="checkbox" checked={tempFilterStatus.includes('active')} onChange={() => handleStatusToggle('active')} className="accent-[#00a76b] cursor-pointer" />
+                        Active
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-200">
+                        <input type="checkbox" checked={tempFilterStatus.includes('inactive')} onChange={() => handleStatusToggle('inactive')} className="accent-[#00a76b] cursor-pointer" />
+                        Inactive
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 mt-2 pt-4 border-t border-gray-200 dark:border-[#1a2d29]">
+                  <button onClick={handleApplyFilters} className="flex-1 bg-[#00a76b] hover:bg-[#008f5a] text-white text-xs font-bold py-2.5 rounded-lg transition-colors cursor-pointer">Apply Filters</button>
+                  <button onClick={handleClearFilters} className="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-[#111c18] dark:hover:bg-[#1a2d29] text-gray-700 dark:text-gray-300 text-xs font-bold py-2.5 rounded-lg transition-colors border border-gray-200 dark:border-[#1a2d29] cursor-pointer">Clear</button>
+                </div>
               </div>
             )}
           </div>

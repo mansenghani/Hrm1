@@ -3,7 +3,7 @@ import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const CustomDatePicker = ({ name, value, onChange, maxDate, className, placeholder }) => {
   const [isOpen, setIsOpen] = useState(false);
-  
+
   // Parse initial date carefully
   const getInitialDate = () => {
     if (value) {
@@ -70,18 +70,18 @@ const CustomDatePicker = ({ name, value, onChange, maxDate, className, placehold
 
   return (
     <div className="relative w-full" ref={wrapperRef}>
-      <div 
+      <div
         className={`${className} flex items-center cursor-pointer select-none`}
         onClick={() => setIsOpen(!isOpen)}
         tabIndex={0}
       >
         <Calendar size={18} className="absolute left-4 text-[#939084]" />
         <div className="pl-12 pr-4 w-full text-left">
-           {displayValue ? (
-             <span className="text-[#201515]">{displayValue}</span>
-           ) : (
-             <span className="text-gray-400">{placeholder}</span>
-           )}
+          {displayValue ? (
+            <span className="text-[#201515]">{displayValue}</span>
+          ) : (
+            <span className="text-gray-400">{placeholder}</span>
+          )}
         </div>
       </div>
 
@@ -92,8 +92,8 @@ const CustomDatePicker = ({ name, value, onChange, maxDate, className, placehold
               <ChevronLeft size={20} className="text-[#201515]" />
             </button>
             <div className="flex items-center gap-1 font-bold text-[#201515] text-[16px] tracking-wide">
-              <select 
-                value={month} 
+              <select
+                value={month}
                 onChange={(e) => {
                   e.stopPropagation();
                   setCurrentMonth(new Date(year, parseInt(e.target.value), 1));
@@ -104,15 +104,15 @@ const CustomDatePicker = ({ name, value, onChange, maxDate, className, placehold
                   <option key={m} value={i} className="text-[#201515]">{m}</option>
                 ))}
               </select>
-              <select 
-                value={year} 
+              <select
+                value={year}
                 onChange={(e) => {
                   e.stopPropagation();
                   setCurrentMonth(new Date(parseInt(e.target.value), month, 1));
                 }}
                 className="bg-transparent outline-none cursor-pointer hover:text-[#ff4f00] transition-colors appearance-none text-center px-1"
               >
-                {Array.from({length: 120}, (_, i) => new Date().getFullYear() - 100 + i).map(y => (
+                {Array.from({ length: 120 }, (_, i) => new Date().getFullYear() - 100 + i).map(y => (
                   <option key={y} value={y} className="text-[#201515]">{y}</option>
                 ))}
               </select>
@@ -131,7 +131,7 @@ const CustomDatePicker = ({ name, value, onChange, maxDate, className, placehold
           <div className="grid grid-cols-7 gap-y-2 gap-x-1">
             {days.map((day, idx) => {
               if (!day) return <div key={`empty-${idx}`} className="h-9 w-9"></div>;
-              
+
               const dateString = `${year}-${pad(month + 1)}-${pad(day)}`;
               const isSelected = value === dateString;
               const isToday = todayString === dateString;
@@ -144,7 +144,7 @@ const CustomDatePicker = ({ name, value, onChange, maxDate, className, placehold
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    if(!isDisabled) handleDateSelect(day);
+                    if (!isDisabled) handleDateSelect(day);
                   }}
                   disabled={isDisabled}
                   className={`

@@ -56,6 +56,38 @@ const SmartTimeTracker = () => {
   };
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  // Custom Month-Year Picker State
+  const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
+  const [pickerMode, setPickerMode] = useState('month');
+  const [tempYear, setTempYear] = useState(new Date().getFullYear());
+  const pickerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (pickerRef.current && !pickerRef.current.contains(event.target)) {
+        setShowMonthYearPicker(false);
+      }
+    };
+    if (showMonthYearPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showMonthYearPicker]);
+
+  useEffect(() => {
+    if (pickerMode === 'year' && showMonthYearPicker) {
+      setTimeout(() => {
+        const selectedYearBtn = document.getElementById('admin-selected-year-btn');
+        if (selectedYearBtn) {
+          selectedYearBtn.scrollIntoView({ block: 'center', behavior: 'auto' });
+        }
+      }, 10);
+    }
+  }, [pickerMode, showMonthYearPicker]);
+
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const fullMonthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   const [calendarData, setCalendarData] = useState([]);
   const [selectedDate, setSelectedDate] = useState(getLocalDate(new Date()));
 
@@ -345,7 +377,7 @@ const SmartTimeTracker = () => {
       <div className="flex flex-col lg:flex-row gap-6 mb-8">
 
         {/* TIME TRACKER CARD (60%) */}
-        <div className="lg:w-[60%] bg-white dark:bg-[#181612] rounded-2xl border border-gray-200 dark:border-[#38352e] shadow-sm px-10 py-6 flex flex-col justify-center relative overflow-hidden">
+        <div className="lg:w-[60%] bg-white dark:bg-[#181612] rounded-2xl border border-gray-200 dark:border-[#38352e] shadow-sm px-10 pt-6 pb-6 flex flex-col justify-center relative overflow-hidden">
           <div className="flex justify-between items-start mb-10 relative z-10">
             <div>
               <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Current Session</h2>
@@ -359,8 +391,8 @@ const SmartTimeTracker = () => {
             <Clock size={28} className="text-gray-300 dark:text-gray-600" />
           </div>
 
-          <div className="text-center mb-12 relative z-10">
-            <div className="text-[5rem] leading-none font-black text-gray-900 dark:text-white font-mono tracking-tighter mb-4">
+          <div className="text-center mb-4 relative z-10">
+            <div className="text-[5rem] leading-none font-black text-gray-900 dark:text-white font-mono tracking-tighter mb-2">
               {formatTime(timer)}
             </div>
             <p className="text-xs text-gray-400 dark:text-[#a3a094] font-bold tracking-[0.2em] uppercase">Total Time Tracked</p>
@@ -370,37 +402,86 @@ const SmartTimeTracker = () => {
         </div>
 
         {/* DYNAMIC CALENDAR (40%) */}
-        <div className="lg:w-[40%] bg-white dark:bg-[#181612] rounded-2xl border border-gray-200 dark:border-[#38352e] shadow-sm px-8 py-4 flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-1">
-              <CalendarIcon size={20} className="text-[#10B981] mr-1" />
-              <select 
-                value={currentMonth.getMonth()} 
-                onChange={(e) => {
-                  const newDate = new Date(currentMonth);
-                  newDate.setMonth(parseInt(e.target.value));
-                  setCurrentMonth(newDate);
-                }}
-                className="bg-transparent outline-none cursor-pointer hover:text-[#10B981] transition-colors appearance-none text-center"
+        <div className="lg:w-[40%] bg-white dark:bg-[#181612] rounded-2xl border border-gray-200 dark:border-[#38352e] shadow-sm px-8 pt-4 pb-2 flex flex-col">
+          <div className="flex justify-between items-center mb-6 relative">
+            <button 
+              className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-1 hover:text-[#10B981] transition-colors cursor-pointer select-none bg-transparent border-none"
+              onClick={() => {
+                setShowMonthYearPicker(!showMonthYearPicker);
+                if (!showMonthYearPicker) {
+                  setTempYear(currentMonth.getFullYear());
+                  setPickerMode('month');
+                }
+              }}
+            >
+              <CalendarIcon size={20} className={showMonthYearPicker ? "text-[#10B981] mr-1" : "text-[#10B981] mr-1 opacity-70"} />
+              {fullMonthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+            </button>
+
+            {/* Custom Month-Year Picker Popup */}
+            {showMonthYearPicker && (
+              <div 
+                ref={pickerRef} 
+                className="absolute top-10 left-1/2 -translate-x-1/2 z-50 w-64 bg-white dark:bg-[#1E2026] border border-gray-200 dark:border-[#38352e] rounded-xl shadow-2xl p-4 flex flex-col"
               >
-                {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m, i) => (
-                  <option key={m} value={i} className="text-gray-800 dark:text-white bg-white dark:bg-[#181612]">{m}</option>
-                ))}
-              </select>
-              <select 
-                value={currentMonth.getFullYear()} 
-                onChange={(e) => {
-                  const newDate = new Date(currentMonth);
-                  newDate.setFullYear(parseInt(e.target.value));
-                  setCurrentMonth(newDate);
-                }}
-                className="bg-transparent outline-none cursor-pointer hover:text-[#10B981] transition-colors appearance-none text-center ml-1"
-              >
-                {Array.from({length: 100}, (_, i) => new Date().getFullYear() - 50 + i).map(y => (
-                  <option key={y} value={y} className="text-gray-800 dark:text-white bg-white dark:bg-[#181612]">{y}</option>
-                ))}
-              </select>
-            </h2>
+                {/* Selected Year Header (Clickable) */}
+                <button
+                  type="button"
+                  onClick={() => setPickerMode(pickerMode === 'year' ? 'month' : 'year')}
+                  className="w-full bg-gray-100 dark:bg-[#2A2D35] hover:bg-gray-200 dark:hover:bg-[#32363F] text-gray-800 dark:text-white font-bold py-2 px-4 rounded-lg transition-colors mb-3 flex justify-center items-center"
+                >
+                  {tempYear}
+                  <svg className={`w-4 h-4 ml-2 transition-transform ${pickerMode === 'year' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {pickerMode === 'year' ? (
+                  <div className="max-h-56 overflow-y-auto custom-scrollbar flex flex-col gap-1 pr-1">
+                    {Array.from({ length: 60 }, (_, i) => new Date().getFullYear() - 30 + i).map((y) => (
+                      <button
+                        key={y}
+                        id={tempYear === y ? 'admin-selected-year-btn' : undefined}
+                        onClick={() => {
+                          setTempYear(y);
+                          setPickerMode('month');
+                        }}
+                        className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors ${
+                          tempYear === y 
+                            ? 'bg-[#E0F2FE] dark:bg-[#10B981]/20 text-[#0284C7] dark:text-[#10B981]' 
+                            : 'hover:bg-gray-50 dark:hover:bg-[#2A2D35] text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {y}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-4 gap-2">
+                    {monthNames.map((m, i) => {
+                      const isSelected = currentMonth.getFullYear() === tempYear && currentMonth.getMonth() === i;
+                      return (
+                        <button
+                          key={m}
+                          onClick={() => {
+                            setCurrentMonth(new Date(tempYear, i, 1));
+                            setShowMonthYearPicker(false);
+                          }}
+                          className={`py-2 rounded-lg text-xs font-bold transition-all ${
+                            isSelected 
+                              ? 'bg-[#10B981] text-white shadow-md' 
+                              : 'hover:bg-gray-50 dark:hover:bg-[#2A2D35] text-gray-700 dark:text-gray-300'
+                          }`}
+                        >
+                          {m}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="flex gap-2">
               <button onClick={handlePrevMonth} className="p-2 hover:bg-gray-100 dark:hover:bg-[#282520] rounded-lg transition-colors bg-transparent border-none cursor-pointer"><ChevronLeft size={18} className="text-gray-600 dark:text-[#a3a094]" /></button>
               <button onClick={handleNextMonth} className="p-2 hover:bg-gray-100 dark:hover:bg-[#282520] rounded-lg transition-colors bg-transparent border-none cursor-pointer"><ChevronRight size={18} className="text-gray-600 dark:text-[#a3a094]" /></button>
@@ -443,7 +524,6 @@ const SmartTimeTracker = () => {
                 </button>
               );
             })}
-            {Array.from({ length: 42 - (firstDayOfMonth + daysInMonth) }).map((_, i) => <div key={`empty-end-${i}`} className="aspect-square" />)}
           </div>
 
 
