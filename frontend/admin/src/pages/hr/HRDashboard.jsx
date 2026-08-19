@@ -104,6 +104,7 @@ const HRDashboard = () => {
   // Dropdown states
   const [attPeriod, setAttPeriod] = useState('This Week');
   const [leavePeriod, setLeavePeriod] = useState('This Month');
+  const [recPeriod, setRecPeriod] = useState('This Month');
   const [payrollPeriod, setPayrollPeriod] = useState(new Date().toLocaleString('default', { month: 'long', year: 'numeric' }));
   const [selectedLeaveApproval, setSelectedLeaveApproval] = useState(null);
   const [hoveredStatCard, setHoveredStatCard] = useState(null);
@@ -291,7 +292,7 @@ const HRDashboard = () => {
     );
   }
 
-  const { stats, charts, leaveOverview, payrollSummary, recentJoiners, pendingApprovals, announcements, upcomingCelebrations = [] } = dashboardData;
+  const { stats, charts, leaveOverview, payrollSummary, recruitmentOverview, recentJoiners, pendingApprovals, announcements, upcomingCelebrations = [] } = dashboardData;
   const getGreeting = () => {
     const h = new Date().getHours();
     if (h < 12) return 'Good Morning';
@@ -315,6 +316,14 @@ const HRDashboard = () => {
     pending: 0
   };
 
+  const currentRecOverview = recruitmentOverview?.byPeriod?.[recPeriod] || recruitmentOverview || {
+    newApplications: 0,
+    shortlisted: 0,
+    interviewsScheduled: 0,
+    offersIssued: 0,
+    hires: 0
+  };
+
   return (
     <div className="space-y-6 pb-2 font-['Inter',sans-serif] text-gray-800">
 
@@ -327,9 +336,13 @@ const HRDashboard = () => {
           </h1>
         </div>
         <div className="flex flex-wrap md:flex-nowrap items-center gap-4 mt-4 md:mt-0">
+          <div className="flex items-center whitespace-nowrap text-gray-600 dark:text-gray-300 bg-white dark:bg-[#161311] px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-[#28251e] font-medium font-mono tabular-nums">
+            <Clock size={18} className="mr-2 text-[#00a76b] shrink-0 animate-pulse" />
+            {liveTime.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+          </div>
           <div className="flex items-center whitespace-nowrap text-gray-600 dark:text-gray-300 bg-white dark:bg-[#161311] px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-[#28251e] font-medium">
             <Calendar size={18} className="mr-2 text-[#00a76b] shrink-0" />
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            {new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </div>
         </div>
       </div>
@@ -499,12 +512,12 @@ const HRDashboard = () => {
                         onMouseLeave={() => setHoveredRoleIndex(null)}
                         className={`flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-lg cursor-pointer transition-all duration-200 ${
                           isHovered
-                            ? 'bg-gray-100 dark:bg-gray-800 scale-105 shadow-xs'
+                            ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white scale-105 shadow-xs'
                             : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                         }`}
                       >
                         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
-                        <span>{entry.name}:</span>
+                        <span className={isHovered ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300'}>{entry.name}:</span>
                         <span className="text-gray-900 dark:text-white font-bold">{entry.value}</span>
                       </div>
                     );
@@ -571,12 +584,12 @@ const HRDashboard = () => {
                         onMouseLeave={() => setHoveredGenderIndex(null)}
                         className={`flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-lg cursor-pointer transition-all duration-200 ${
                           isHovered
-                            ? 'bg-gray-100 dark:bg-gray-800 scale-105 shadow-xs'
+                            ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white scale-105 shadow-xs'
                             : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                         }`}
                       >
                         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: ['#3b82f6', '#f43f5e', '#f59e0b'][index % 3] }}></span>
-                        <span>{entry.name}:</span>
+                        <span className={isHovered ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300'}>{entry.name}:</span>
                         <span className="text-gray-900 dark:text-white font-bold">{entry.value}</span>
                       </div>
                     );
@@ -594,13 +607,24 @@ const HRDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="p-6 flex flex-col justify-between">
           <div>
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-gray-900 dark:text-white">Leave Overview</h3>
-              <CustomDropdown
-                value={leavePeriod}
-                onChange={setLeavePeriod}
-                options={['This Month', 'This Week', 'This Year', 'All Time', 'Today']}
-              />
+            <div className="flex justify-between items-center mb-6 gap-2">
+              <h3 className="font-bold text-gray-900 dark:text-white text-base truncate min-w-0">Leave Overview</h3>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => navigate('/hr/leave', { state: { viewMode: 'hr' } })}
+                  className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 px-2 py-1 rounded-lg flex items-center gap-0.5 transition-all cursor-pointer whitespace-nowrap"
+                  title="View Leave Details"
+                >
+                  <span>View</span>
+                  <ChevronRight size={13} strokeWidth={2.5} />
+                </button>
+                <CustomDropdown
+                  value={leavePeriod}
+                  onChange={setLeavePeriod}
+                  options={['This Month', 'This Week', 'This Year', 'All Time', 'Today']}
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2.5 mb-3">
               <div className="p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
@@ -627,20 +651,28 @@ const HRDashboard = () => {
               <div className="bg-orange-500 h-full" style={{ width: `${currentLeaveOverview.total ? (currentLeaveOverview.cancelled / currentLeaveOverview.total) * 100 : 0}%` }}></div>
             </div>
           </div>
-          <button onClick={() => navigate('/hr/leave', { state: { viewMode: 'hr' } })} className="w-full mt-3 bg-gray-50 dark:bg-gray-800/60 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 font-bold py-2 rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
-            View Leave Details <ChevronRight size={14} />
-          </button>
         </Card>
 
         <Card className="p-6 flex flex-col justify-between">
           <div>
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-gray-900 dark:text-white">Payroll Summary</h3>
-              <CustomDropdown
-                value={payrollPeriod}
-                onChange={setPayrollPeriod}
-                options={[payrollPeriod]}
-              />
+            <div className="flex justify-between items-center mb-6 gap-2">
+              <h3 className="font-bold text-gray-900 dark:text-white text-base truncate min-w-0">Payroll Summary</h3>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => navigate('/hr/payroll')}
+                  className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 px-2 py-1 rounded-lg flex items-center gap-0.5 transition-all cursor-pointer whitespace-nowrap"
+                  title="View Payroll Details"
+                >
+                  <span>View</span>
+                  <ChevronRight size={13} strokeWidth={2.5} />
+                </button>
+                <CustomDropdown
+                  value={payrollPeriod}
+                  onChange={setPayrollPeriod}
+                  options={[payrollPeriod]}
+                />
+              </div>
             </div>
             <h2 className="text-[18px] font-black text-gray-900 dark:text-white mb-0.5">{formatCurrency(payrollSummary.total)}</h2>
             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3">Total Payroll Cost</p>
@@ -660,27 +692,42 @@ const HRDashboard = () => {
               </div>
             </div>
           </div>
-          <button onClick={() => navigate('/hr/payroll')} className="w-full mt-3 bg-gray-50 dark:bg-gray-800/60 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 font-bold py-2 rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
-            View Payroll Details <ChevronRight size={14} />
-          </button>
         </Card>
 
         <Card className="p-6 flex flex-col justify-between">
           <div>
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-gray-900 dark:text-white">Recruitment Overview</h3>
-              <CustomDropdown
-                value="This Month"
-                options={['This Month', 'Last Month', 'This Year']}
-              />
+            <div className="flex justify-between items-center mb-6 gap-2">
+              <h3 className="font-bold text-gray-900 dark:text-white text-base truncate min-w-0">Recruitment Overview</h3>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => navigate('/hr/recruitment')}
+                  className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 px-2 py-1 rounded-lg flex items-center gap-0.5 transition-all cursor-pointer whitespace-nowrap"
+                  title="View Recruitment Details"
+                >
+                  <span>View</span>
+                  <ChevronRight size={13} strokeWidth={2.5} />
+                </button>
+                <CustomDropdown
+                  value={recPeriod}
+                  onChange={setRecPeriod}
+                  options={['This Month', 'Last Month', 'This Year', 'All Time']}
+                />
+              </div>
             </div>
             <div className="space-y-2">
               {[
-                { label: 'New Applications', val: '0', icon: FileText, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-950/40' },
-                { label: 'Shortlisted', val: '0', icon: CheckCircle, color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-950/40' },
-                { label: 'Interviews Scheduled', val: '0', icon: Calendar, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-950/40' },
-                { label: 'Offers Issued', val: '0', icon: Briefcase, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-950/40' },
-                { label: 'Hires This Month', val: '0', icon: UserPlus, color: 'text-[#00a76b]', bg: 'bg-green-50 dark:bg-green-950/40' }
+                { label: 'New Applications', val: currentRecOverview.newApplications ?? 0, icon: FileText, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-950/40' },
+                { label: 'Shortlisted', val: currentRecOverview.shortlisted ?? 0, icon: CheckCircle, color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-950/40' },
+                { label: 'Interviews Scheduled', val: currentRecOverview.interviewsScheduled ?? 0, icon: Calendar, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-950/40' },
+                { label: 'Offers Issued', val: currentRecOverview.offersIssued ?? 0, icon: Briefcase, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-950/40' },
+                {
+                  label: recPeriod === 'This Month' ? 'Hires This Month' : recPeriod === 'Last Month' ? 'Hires Last Month' : recPeriod === 'This Year' ? 'Hires This Year' : 'Total Hires',
+                  val: currentRecOverview.hires ?? currentRecOverview.hiresThisMonth ?? 0,
+                  icon: UserPlus,
+                  color: 'text-[#00a76b]',
+                  bg: 'bg-green-50 dark:bg-green-950/40'
+                }
               ].map((r, i) => (
                 <div key={i} className="flex justify-between items-center py-2 px-2.5 rounded-lg border border-gray-50 dark:border-[#2b2722] hover:bg-gray-50 dark:hover:bg-[#1a1714] transition-colors">
                   <div className="flex items-center gap-2">
@@ -694,9 +741,6 @@ const HRDashboard = () => {
               ))}
             </div>
           </div>
-          <button onClick={() => navigate('/hr/recruitment')} className="w-full mt-3 bg-gray-50 dark:bg-gray-800/60 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 font-bold py-2 rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
-            View Recruitment Details <ChevronRight size={14} />
-          </button>
         </Card>
       </div>
 
