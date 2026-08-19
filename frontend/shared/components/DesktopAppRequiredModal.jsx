@@ -22,7 +22,7 @@ const DesktopAppRequiredModal = ({
   isRetrying = false
 }) => {
   const [appInfo, setAppInfo] = useState({
-    version: '1.1.9',
+    version: '1.2.0',
     platform: 'Windows (x64)',
     downloadUrl: '/api/desktop-app/download'
   });
