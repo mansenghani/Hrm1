@@ -31,7 +31,8 @@
       "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
       "shortcutName": "FluidHR Tracker",
-      "differentialPackage": false
+      "differentialPackage": false,
+      "runAfterFinish": false
     },
     "asarUnpack": [
       "**/node_modules/screenshot-desktop/**/*"
