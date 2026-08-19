@@ -213,19 +213,25 @@ function applyServerState(data) {
     isSessionRunning = false;
     segmentStartTime = null;
 
-    if (data.idleTime !== undefined && data.idleTime > 0) {
-      baseInactiveSeconds = Math.max(baseInactiveSeconds, data.idleTime);
+    if (data.idleTime !== undefined && data.idleTime >= 0) {
+      baseInactiveSeconds = data.idleTime;
       if (!idleStartTime) {
         inactiveSeconds = baseInactiveSeconds;
       }
     }
 
-    // 🛡️ When IDLE: Prefer the higher of local committed activeSeconds or server activeTime to prevent backward rewinds
-    if (data.activeTime !== undefined && data.activeTime > 0) {
-      baseActiveSeconds = Math.max(baseActiveSeconds, data.activeTime);
+    // 🛡️ When IDLE: Strictly synchronize authoritative server activeTime
+    if (data.activeTime !== undefined && data.activeTime >= 0) {
+      baseActiveSeconds = data.activeTime;
       activeSeconds = baseActiveSeconds;
     }
   } else if (serverStatus === 'active' && data.isRunning) {
+    // 🛡️ CRITICAL GUARD: If local state is currently IDLE (awaiting user to click RESUME),
+    // do NOT let a delayed background status poll overwrite IDLE back to ACTIVE!
+    if (status === 'IDLE' || isIdle) {
+      return;
+    }
+
     status = 'ACTIVE';
     isIdle = false;
     idleNotificationSent = false;
@@ -292,22 +298,20 @@ async function sendHeartbeat() {
 async function triggerIdle(idleSeconds = 60) {
   if (!authToken || status !== 'ACTIVE') return;
 
-  // 🚀 OPTIMISTIC UI: Instantly pause active timer and preserve exact active work time
+  // 🚀 OPTIMISTIC UI: Instantly freeze active timer and lock into IDLE state
   status = 'IDLE';
   isIdle = true;
   isSessionRunning = false;
+  segmentStartTime = null;
 
-  // Commit current elapsed segment to baseActiveSeconds so it freezes at exact current value
-  if (segmentStartTime) {
-    const elapsed = Math.floor((Date.now() - segmentStartTime) / 1000);
-    baseActiveSeconds += Math.max(0, elapsed);
-    segmentStartTime = null;
-  }
+  // 🛡️ Rewind the idle duration from baseActiveSeconds so active time does not count idle period
+  baseActiveSeconds = Math.max(0, baseActiveSeconds - idleSeconds);
   activeSeconds = baseActiveSeconds;
 
-  // 🕒 Record exact idle start timestamp (accounting for initial idleSeconds already elapsed)
-  idleStartTime = Date.now() - (idleSeconds * 1000);
-  inactiveSeconds = baseInactiveSeconds + idleSeconds;
+  // 🕒 Record exact idle start timestamp
+  baseInactiveSeconds += idleSeconds;
+  idleStartTime = Date.now();
+  inactiveSeconds = baseInactiveSeconds;
 
   updateDisplay();
   updateUI();
@@ -326,7 +330,6 @@ async function triggerIdle(idleSeconds = 60) {
     setTimeout(() => syncIndicator?.classList.remove('online'), 2000);
   } catch (err) {
     console.error('[IDLE TRIGGER ERROR]', err.message);
-    idleNotificationSent = false;
   }
 }
 

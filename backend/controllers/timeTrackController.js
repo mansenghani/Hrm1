@@ -306,26 +306,18 @@ exports.updateActivity = async (req, res) => {
     }
 
     const normalizedType = String(type || '').toLowerCase();
-    const isActiveSignal = ['mouse', 'keyboard', 'click', 'scroll', 'touch', 'focus', 'tab', 'heartbeat', 'active'].includes(normalizedType);
     const isIdleSignal = normalizedType === 'idle';
+    const isActiveSignal = ['mouse', 'keyboard', 'click', 'scroll', 'touch', 'focus', 'tab', 'active', 'heartbeat'].includes(normalizedType);
 
     if (session.status === 'active') {
       const sinceHeartbeat = session.lastHeartbeat
         ? (now - new Date(session.lastHeartbeat)) / 1000
         : 0;
 
-      if (isActiveSignal) {
-        // ── Normal active heartbeat (No Auto-Pause) ──
-        // Commit elapsed seconds since last heartbeat to activeTime (high precision)
-        session.activeTime += Math.max(0, sinceHeartbeat);
-        session.lastHeartbeat = now;
-        session.segmentStart = now;
-
-      } else if (isIdleSignal) {
+      if (isIdleSignal) {
         // ── Idle transition ──
         if (!session.idleApplied) {
           // ✅ Dynamic Rewind: Subtract the EXACT seconds of idleness reported by the OS
-          // This eliminates gaps caused by heartbeat delays or network latency.
           const rawRewind = req.body.idleSeconds || IDLE_THRESHOLD_SECONDS;
 
           // Calculate the maximum possible active time in the current start/resume period
@@ -374,11 +366,22 @@ exports.updateActivity = async (req, res) => {
         }
 
         return res.json(buildPayload(session));
+
+      } else if (isActiveSignal) {
+        // ── Normal active heartbeat (No Auto-Pause) ──
+        // Commit elapsed seconds since last heartbeat to activeTime (high precision)
+        session.activeTime += Math.max(0, sinceHeartbeat);
+        session.lastHeartbeat = now;
+        session.segmentStart = now;
       }
 
     } else if (session.status === 'idle') {
-      // While idle, just update heartbeat timestamp — no math
+      // 🛡️ STRICT IDLE LOCK: If session is currently IDLE in database:
+      // Passive heartbeats or ambient mouse moves MUST NOT un-idle or increment active time!
+      // Only an explicit POST /api/time/resume can un-idle the session.
       session.lastHeartbeat = now;
+      session.isRunning = false;
+      session.segmentStart = null;
     }
 
     await session.save();
