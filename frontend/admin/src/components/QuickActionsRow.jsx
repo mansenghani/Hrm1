@@ -12,10 +12,11 @@ const QuickActionsRow = ({ role = 'admin', title = 'Quick Actions' }) => {
   const navigate = useNavigate();
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [checkInLoading, setCheckInLoading] = useState(false);
+  const [initialChecking, setInitialChecking] = useState(true);
+  const [showTrackerModal, setShowTrackerModal] = useState(false);
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [checkInHovered, setCheckInHovered] = useState(false);
-  const [showTrackerModal, setShowTrackerModal] = useState(false);
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -44,68 +45,55 @@ const QuickActionsRow = ({ role = 'admin', title = 'Quick Actions' }) => {
 
       if (attRes?.data?.attendance) {
         const att = attRes.data.attendance;
-        const hasClockedOut = Boolean((att.clockOut && att.clockOut !== '--') || att.checkOutTime);
-        if ((att.checkInTime || att.clockIn) && !hasClockedOut) {
+        if (att.status === 'present' && att.inTime && !att.outTime) {
           setIsCheckedIn(true);
           return;
         }
       }
 
       setIsCheckedIn(false);
-    } catch (e) {
-      console.error('Error fetching check-in status:', e);
+    } catch (_) {
+    } finally {
+      setInitialChecking(false);
     }
   };
 
   useEffect(() => {
     fetchStatus();
-
-    const handleSync = () => fetchStatus();
-    window.addEventListener('timerStatusChanged', handleSync);
-    window.addEventListener('focus', handleSync);
-
-    return () => {
-      window.removeEventListener('timerStatusChanged', handleSync);
-      window.removeEventListener('focus', handleSync);
-    };
   }, []);
 
   const handleCheckIn = async () => {
     setCheckInLoading(true);
     try {
       const t = token();
-      if (!t) return;
+      if (!t) {
+        toast.error('Session expired. Please login again.');
+        setCheckInLoading(false);
+        return;
+      }
       const headers = { Authorization: `Bearer ${t}` };
 
-      // 🛡️ Verify that the Desktop Tracker is running / installed
-      const trackerRes = await startDesktopTracker(t);
-      if (!trackerRes || !trackerRes.success) {
+      // 1. Direct Backend Check-in (instant attendance record)
+      await axios.post('/api/attendance/clock-in', {}, { headers }).catch(() => null);
+
+      // 2. Start Desktop App Tracker
+      const trackerResult = await startDesktopTracker(t);
+      if (!trackerResult.success) {
         setShowTrackerModal(true);
+        setCheckInLoading(false);
         return;
       }
 
-      try {
-        await axios.post('/api/attendance/clock-in', {}, { headers });
-      } catch (err) {
-        if (err.response?.status === 400 && (err.response?.data?.message?.includes('Already clocked in') || err.response?.data?.message?.includes('already'))) {
-          setIsCheckedIn(true);
-          toast.success('You are currently checked in.');
-          return;
-        }
-        throw err;
-      }
-
-      try {
-        await axios.post('/api/time/start', {}, { headers });
-      } catch (_) {}
+      // 3. Start Web Work Session
+      await axios.post('/api/time/start', { taskName: 'General Work' }, { headers }).catch(() => null);
 
       setIsCheckedIn(true);
       toast.success('Check-in successful & Desktop Tracker started!', {
         style: {
           borderRadius: '12px',
-          background: '#0d2a22',
+          background: '#1c1917',
           color: '#fff',
-          border: '1px solid #10b981',
+          border: '1px solid #00a76b',
           fontSize: '13px',
           fontWeight: '600'
         }
@@ -122,14 +110,13 @@ const QuickActionsRow = ({ role = 'admin', title = 'Quick Actions' }) => {
     setCheckInLoading(true);
     try {
       const t = token();
+      if (!t) return;
       const headers = { Authorization: `Bearer ${t}` };
 
-      // 1. If desktop tracker is running, open it to show the confirmation dialog
-      const trackerActive = await stopDesktopTracker();
-      if (trackerActive) {
-        toast('Please confirm check-out in FluidHR Tracker app.', {
-          icon: '⚡',
-          duration: 4000,
+      // 1. Stop Desktop Tracker
+      const trackerResult = await stopDesktopTracker();
+      if (!trackerResult.success) {
+        toast.error(trackerResult.message || 'Please close/stop the Desktop Tracker application first to check out.', {
           style: {
             borderRadius: '12px',
             background: '#1c1917',
@@ -143,7 +130,7 @@ const QuickActionsRow = ({ role = 'admin', title = 'Quick Actions' }) => {
         return;
       }
 
-      // 2. Fallback direct checkout if app is not running
+      // 2. Direct backend clock-out
       try {
         await axios.put('/api/attendance/clock-out', {}, { headers });
       } catch (_) {}
@@ -213,7 +200,7 @@ const QuickActionsRow = ({ role = 'admin', title = 'Quick Actions' }) => {
             className="flex items-center justify-start gap-3 px-4 py-2.5 rounded-2xl w-full h-14 transition-all duration-200 shadow-xs hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
             style={{ 
               backgroundColor: checkInHovered ? (isDark ? 'rgba(239, 68, 68, 0.18)' : '#fef2f2') : (isDark ? '#151c28' : '#ffffff'),
-              borderWidth: checkInHovered ? '2px' : '1px',
+              borderWidth: '1px',
               borderStyle: 'solid',
               borderColor: checkInHovered ? '#ef4444' : (isDark ? 'rgba(255, 255, 255, 0.1)' : '#e2e8f0'), 
               color: '#ef4444',
@@ -235,7 +222,7 @@ const QuickActionsRow = ({ role = 'admin', title = 'Quick Actions' }) => {
             className="flex items-center justify-start gap-3 px-4 py-2.5 rounded-2xl w-full h-14 transition-all duration-200 shadow-xs hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
             style={{ 
               backgroundColor: checkInHovered ? (isDark ? 'rgba(16, 185, 129, 0.18)' : '#f0fdf4') : (isDark ? '#151c28' : '#ffffff'),
-              borderWidth: checkInHovered ? '2px' : '1px',
+              borderWidth: '1px',
               borderStyle: 'solid',
               borderColor: checkInHovered ? (isDark ? '#10b981' : '#00a76b') : (isDark ? 'rgba(255, 255, 255, 0.1)' : '#e2e8f0'), 
               color: '#00a76b',
@@ -262,7 +249,7 @@ const QuickActionsRow = ({ role = 'admin', title = 'Quick Actions' }) => {
               className="flex items-center justify-start gap-3 px-4 py-2.5 rounded-2xl w-full h-14 transition-all duration-200 shadow-xs hover:-translate-y-0.5 cursor-pointer"
               style={{ 
                 backgroundColor: isHovered ? (isDark ? act.darkBgHover : act.bgHover) : (isDark ? '#151c28' : '#ffffff'),
-                borderWidth: isHovered ? '2px' : '1px',
+                borderWidth: '1px',
                 borderStyle: 'solid',
                 borderColor: isHovered ? (isDark ? act.darkBorder : act.border) : (isDark ? 'rgba(255, 255, 255, 0.1)' : '#e2e8f0'), 
                 color: act.color,

@@ -398,7 +398,6 @@ const AdminDashboard = () => {
               onMouseLeave={() => setHoveredStatCard(null)}
               style={{
                 borderColor: isHovered ? stat.borderColor : undefined,
-                borderWidth: isHovered ? '2px' : undefined,
                 boxShadow: isHovered ? `0 0 16px ${stat.glowColor}` : undefined
               }}
               className="py-2 px-3.5 flex items-center justify-between hover:-translate-y-0.5 transition-all duration-200 cursor-pointer shadow-xs min-h-[52px]"
