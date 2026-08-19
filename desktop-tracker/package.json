@@ -26,7 +26,12 @@
     "nsis": {
       "oneClick": true,
       "perMachine": false,
-      "allowToChangeInstallationDirectory": false
+      "allowToChangeInstallationDirectory": false,
+      "deleteAppDataOnUninstall": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "FluidHR Tracker",
+      "differentialPackage": false
     },
     "asarUnpack": [
       "**/node_modules/screenshot-desktop/**/*"
