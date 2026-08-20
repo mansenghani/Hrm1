@@ -951,3 +951,13 @@ document.getElementById('update-later-btn')?.addEventListener('click', () => {
     updateSection.style.display = 'none';
   }
 });
+
+document.getElementById('update-minimize-btn')?.addEventListener('click', () => {
+  window.electronAPI?.minimizeApp();
+});
+document.getElementById('update-close-btn')?.addEventListener('click', () => {
+  const updateSection = document.getElementById('update-section');
+  if (updateSection) {
+    updateSection.style.display = 'none';
+  }
+});
