@@ -350,31 +350,28 @@ exports.updateActivity = async (req, res) => {
       if (isIdleSignal) {
         // ── Idle transition ──
         if (!session.idleApplied) {
-          // ✅ Dynamic Rewind: Subtract the 1-minute detection period from active time and assign to idle time
-          const rawRewind = req.body.idleSeconds || IDLE_THRESHOLD_SECONDS;
+          // ✅ Dynamic Rewind: Transfer the full inactivity detection period from active time to idle time
+          const rawRewind = Math.max(0, req.body.idleSeconds || IDLE_THRESHOLD_SECONDS);
 
-          let maxActiveInPeriod = sinceHeartbeat;
-          if (session.segmentStart) {
-            maxActiveInPeriod = Math.max(0, (now - new Date(session.segmentStart)) / 1000);
-          }
-
-          const rewindAmount = Math.min(maxActiveInPeriod, rawRewind);
-
+          // Add any elapsed active seconds since last heartbeat
           session.activeTime += Math.max(0, sinceHeartbeat);
-          session.activeTime = Math.max(0, session.activeTime - rewindAmount);
+
+          // Full rewind: move the entire idle period from activeTime to idleTime
+          const actualRewind = Math.min(session.activeTime, rawRewind);
+          session.activeTime = Math.max(0, session.activeTime - actualRewind);
 
           session.inactivityCount += 1;
-          session.idleTime = (session.idleTime || 0) + rewindAmount;
+          session.idleTime = (session.idleTime || 0) + actualRewind;
           session.idleStart = now; // 🕒 Ongoing idle time accumulates from now
           session.idleApplied = true;
 
-          const idleTimeStart = new Date(now.getTime() - rewindAmount * 1000);
+          const idleTimeStart = new Date(now.getTime() - actualRewind * 1000);
           const lastIdx = session.sessions.length - 1;
           if (lastIdx >= 0 && !session.sessions[lastIdx].pause && !session.sessions[lastIdx].end) {
             session.sessions[lastIdx].pause = idleTimeStart;
           }
 
-          console.log(`[IDLE DYNAMIC] User ${id} — status set to idle, activeTime rewound by ${rewindAmount}s, idleStart initialized`);
+          console.log(`[IDLE DYNAMIC] User ${id} — status set to idle, activeTime rewound by ${actualRewind}s to ${session.activeTime}s, idleTime increased to ${session.idleTime}s`);
         }
 
         session.status = 'idle';
