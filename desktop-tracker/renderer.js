@@ -555,7 +555,7 @@ function setControlState(currentStatus) {
     pauseBtn.style.display = 'flex';
     resumeBtn.style.display = 'none';
     if (stopBtn) stopBtn.style.display = 'flex';
-    if (logoutBtn) logoutBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'flex';
     if (statusEl) { statusEl.innerText = 'ACTIVE'; statusEl.className = 'status-badge status-active'; }
     if (alertEl) alertEl.style.display = 'none';
   } else {
@@ -564,7 +564,7 @@ function setControlState(currentStatus) {
     pauseBtn.style.display = 'none';
     resumeBtn.style.display = 'flex';
     if (stopBtn) stopBtn.style.display = 'flex';
-    if (logoutBtn) logoutBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'flex';
     if (statusEl) {
       statusEl.innerText = isIdle ? 'IDLE' : currentStatus;
       statusEl.className = 'status-badge status-idle';
@@ -889,6 +889,7 @@ document.getElementById('minimize-btn')?.addEventListener('click', () => window.
 document.getElementById('close-btn')?.addEventListener('click', () => window.electronAPI.closeApp());
 document.getElementById('web-auth-btn')?.addEventListener('click', redirectToWebLogin);
 document.getElementById('logout-btn')?.addEventListener('click', logout);
+document.getElementById('completed-logout-btn')?.addEventListener('click', logout);
 document.getElementById('auth-minimize-btn')?.addEventListener('click', () => window.electronAPI.minimizeApp());
 document.getElementById('auth-close-btn')?.addEventListener('click', () => window.electronAPI.closeApp());
 
