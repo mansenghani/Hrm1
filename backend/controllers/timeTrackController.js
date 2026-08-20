@@ -112,7 +112,6 @@ exports.startTracking = async (req, res) => {
     await session.save();
 
     // Sync with legacy Attendance model for HR dashboards
-    const existingAttendance = await Attendance.findOne({ user: id, date: today });
     if (!existingAttendance) {
       const hours = now.getHours();
       const minutes = now.getMinutes();
