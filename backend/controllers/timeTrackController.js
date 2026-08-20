@@ -422,7 +422,7 @@ exports.getSessionStatus = async (req, res) => {
 
     const { id, role } = req.user;
     let targetId = id;
-    if (req.query.userId && (role === 'admin' || role === 'hr' || role === 'manager')) {
+    if (req.query?.userId && (role === 'admin' || role === 'hr' || role === 'manager')) {
       targetId = req.query.userId;
     }
     const today = getToday();

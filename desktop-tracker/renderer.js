@@ -234,6 +234,12 @@ function applyServerState(data) {
   }
 
   if (serverStatus === 'idle') {
+    // 🛡️ GUARD: If the user explicitly resumed locally within the last 5 seconds,
+    // do NOT let a stale background poll or focus poll overwrite the state back to IDLE!
+    if (Date.now() - lastStartOrResumeTime < 5000) {
+      return;
+    }
+
     status = 'IDLE';
     isIdle = true;
     isSessionRunning = false;
@@ -251,7 +257,7 @@ function applyServerState(data) {
   } else if (serverStatus === 'active' && data.isRunning) {
     // 🛡️ CRITICAL GUARD: If local state is currently IDLE (awaiting user to click RESUME),
     // do NOT let a delayed background status poll overwrite IDLE back to ACTIVE!
-    if (status === 'IDLE' || isIdle) {
+    if ((status === 'IDLE' || isIdle) && Date.now() - lastStartOrResumeTime >= 5000) {
       return;
     }
 
@@ -425,6 +431,9 @@ async function resumeSession() {
   lastAppliedActive = activeSeconds;
   lastAppliedInactive = inactiveSeconds;
   lastAppliedTime = Date.now();
+
+  stopIdleReminderLoop();
+  updateDisplay();
   updateUI();
 
   try {
@@ -433,18 +442,22 @@ async function resumeSession() {
       headers: { Authorization: `Bearer ${authToken}` }
     });
     if (!res.ok) {
-      const err = await res.json();
-      if (!err.message?.toLowerCase().includes('already')) alert(err.message || 'Unable to resume.');
+      const err = await res.json().catch(() => ({}));
+      if (!err.message?.toLowerCase().includes('already')) {
+        console.warn(err.message || 'Unable to resume.');
+      }
+    } else {
+      const data = await res.json().catch(() => ({}));
+      if (data?.session) {
+        applyServerState(data.session);
+      }
     }
-    stopIdleReminderLoop();
-    await pollSessionStatus();
     startPolling();
     startHeartbeat();
     initScreenshotLoop(true);
-    await notifyDesktop('Session Resumed', 'Your tracking session is now active.');
+    notifyDesktop('Session Resumed', 'Your tracking session is now active.').catch(() => {});
   } catch (err) {
     console.error('[RESUME ERROR]', err);
-    alert('Unable to resume session.');
   }
 }
 
@@ -762,7 +775,10 @@ function hideAuthSection() {
 }
 
 function redirectToWebLogin() {
-  const loginUrl = `${BACKEND_HOST}/login?desktop=true`;
+  let loginUrl = `${BACKEND_HOST}/login?desktop=true`;
+  if (BACKEND_HOST.includes(':5000')) {
+    loginUrl = 'http://localhost:3000/login?desktop=true';
+  }
   if (window.electronAPI?.openExternal) {
     window.electronAPI.openExternal(loginUrl);
   } else {
