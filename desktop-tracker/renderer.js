@@ -27,26 +27,28 @@ let lastStartOrResumeTime = 0;
 
 // ── Local Ticking Engine State (for smooth UI updates) ────
 let baseActiveSeconds = 0;
-let segmentStartTime = null;
-let isSessionRunning = false;
 let baseInactiveSeconds = 0;
+let lastAppliedActive = 0;
+let lastAppliedInactive = 0;
+let lastAppliedTime = 0;
+let isSessionRunning = false;
 let idleStartTime = null;
 
 // Local clock loop for smooth UI ticking using real elapsed timestamps
 setInterval(() => {
   if (status === 'ACTIVE' && isSessionRunning) {
-    if (segmentStartTime) {
-      const elapsed = Math.floor((Date.now() - segmentStartTime) / 1000);
-      activeSeconds = baseActiveSeconds + Math.max(0, elapsed);
+    if (lastAppliedTime > 0) {
+      const elapsedSincePoll = Math.floor((Date.now() - lastAppliedTime) / 1000);
+      activeSeconds = lastAppliedActive + Math.max(0, elapsedSincePoll);
     } else {
       activeSeconds += 1;
     }
     updateDisplay();
   } else if (status === 'IDLE') {
     // 🛡️ When IDLE: Active Work Time is strictly frozen, Idle Time calculates from real elapsed timestamps
-    if (idleStartTime) {
-      const idleElapsed = Math.floor((Date.now() - idleStartTime) / 1000);
-      inactiveSeconds = baseInactiveSeconds + Math.max(0, idleElapsed);
+    if (lastAppliedTime > 0) {
+      const elapsedSincePoll = Math.floor((Date.now() - lastAppliedTime) / 1000);
+      inactiveSeconds = lastAppliedInactive + Math.max(0, elapsedSincePoll);
     } else {
       inactiveSeconds += 1;
     }
@@ -103,11 +105,8 @@ if (window.electronAPI?.onSystemIdleStatus) {
         triggerIdle(idleSeconds);
       }
     } else if (idleSeconds < 5) {
-      // Activity detected anywhere on PC
-      if (status === 'IDLE') {
-        console.log('[AUTO-RESUME] User activity detected on PC, resuming session...');
-        resumeSession();
-      } else if (status === 'ACTIVE') {
+      // Activity detected anywhere on PC while ACTIVE resets notification flag
+      if (status === 'ACTIVE') {
         idleNotificationSent = false;
         isIdle = false;
       }
@@ -134,6 +133,14 @@ async function loadSession() {
     console.error('Failed to get app version:', err);
   }
 
+  // 1. Immediately read stored authToken to preserve login across updates & launches
+  const savedToken = await window.electronAPI.getStoreValue('authToken');
+  if (savedToken) {
+    authToken = savedToken;
+    hideAuthSection();
+  }
+
+  // 2. Discover backend host with quick timeouts
   BACKEND_HOST = 'https://hrm1.onrender.com';
   const candidateHosts = [
     'http://localhost:5000',
@@ -145,7 +152,7 @@ async function loadSession() {
   ];
   for (const host of candidateHosts) {
     try {
-      const res = await fetch(`${host}/api/health`).catch(() => null);
+      const res = await fetch(`${host}/api/health`, { signal: AbortSignal.timeout(300) }).catch(() => null);
       if (res && res.ok) {
         BACKEND_HOST = host;
         console.log(`🔌 Local development backend detected! Connected to ${host}`);
@@ -155,15 +162,15 @@ async function loadSession() {
   }
   API_BASE = `${BACKEND_HOST}/api/time`;
 
-  const savedToken = await window.electronAPI.getStoreValue('authToken');
-  if (!savedToken) {
+  if (!authToken) {
     showAuthSection();
     return;
   }
-  authToken = savedToken;
+
   hideAuthSection();
   await fetchUserProfile();
   initSocket();
+  lastStartOrResumeTime = Date.now();
   await pollSessionStatus();
   startPolling();
   startHeartbeat();
@@ -180,10 +187,6 @@ async function pollSessionStatus() {
     const res = await fetch(`${API_BASE}/status`, {
       headers: { Authorization: `Bearer ${authToken}` }
     });
-    if (res.status === 401) {
-      logout();
-      return;
-    }
     if (!res.ok) return;
     const data = await res.json();
     applyServerState(data);
@@ -199,13 +202,15 @@ function applyServerState(data) {
     status = 'COMPLETED';
     isIdle = false;
     isSessionRunning = false;
-    segmentStartTime = null;
     stopPolling();
     stopHeartbeat();
     stopScreenshotLoop();
     stopIdleReminderLoop();
-    baseActiveSeconds = data.activeTime ?? baseActiveSeconds;
-    baseInactiveSeconds = data.idleTime ?? baseInactiveSeconds;
+    activeSeconds = data.activeTime ?? activeSeconds;
+    inactiveSeconds = data.idleTime ?? inactiveSeconds;
+    lastAppliedActive = activeSeconds;
+    lastAppliedInactive = inactiveSeconds;
+    lastAppliedTime = 0;
     updateDisplay();
     updateUI();
     return;
@@ -217,7 +222,9 @@ function applyServerState(data) {
     inactiveSeconds = 0;
     isIdle = false;
     isSessionRunning = false;
-    segmentStartTime = null;
+    lastAppliedActive = 0;
+    lastAppliedInactive = 0;
+    lastAppliedTime = 0;
     stopPolling();
     stopHeartbeat();
     stopScreenshotLoop();
@@ -230,20 +237,17 @@ function applyServerState(data) {
     status = 'IDLE';
     isIdle = true;
     isSessionRunning = false;
-    segmentStartTime = null;
 
     if (data.idleTime !== undefined && data.idleTime >= 0) {
-      baseInactiveSeconds = data.idleTime;
-      if (!idleStartTime) {
-        inactiveSeconds = baseInactiveSeconds;
-      }
+      inactiveSeconds = data.idleTime;
+      lastAppliedInactive = data.idleTime;
     }
 
-    // 🛡️ When IDLE: Strictly synchronize authoritative server activeTime
     if (data.activeTime !== undefined && data.activeTime >= 0) {
-      baseActiveSeconds = data.activeTime;
-      activeSeconds = baseActiveSeconds;
+      activeSeconds = data.activeTime;
+      lastAppliedActive = data.activeTime;
     }
+    lastAppliedTime = Date.now();
   } else if (serverStatus === 'active' && data.isRunning) {
     // 🛡️ CRITICAL GUARD: If local state is currently IDLE (awaiting user to click RESUME),
     // do NOT let a delayed background status poll overwrite IDLE back to ACTIVE!
@@ -255,18 +259,16 @@ function applyServerState(data) {
     isIdle = false;
     idleNotificationSent = false;
     isSessionRunning = true;
-    idleStartTime = null;
-    baseActiveSeconds = data.activeTime ?? baseActiveSeconds;
-    baseInactiveSeconds = data.idleTime ?? baseInactiveSeconds;
-    inactiveSeconds = baseInactiveSeconds;
-    segmentStartTime = data.segmentStart ? new Date(data.segmentStart).getTime() : segmentStartTime;
 
-    if (segmentStartTime) {
-      const elapsed = Math.floor((Date.now() - segmentStartTime) / 1000);
-      activeSeconds = baseActiveSeconds + Math.max(0, elapsed);
-    } else {
-      activeSeconds = baseActiveSeconds;
+    if (data.activeTime !== undefined && data.activeTime >= 0) {
+      activeSeconds = data.activeTime;
+      lastAppliedActive = data.activeTime;
     }
+    if (data.idleTime !== undefined && data.idleTime >= 0) {
+      inactiveSeconds = data.idleTime;
+      lastAppliedInactive = data.idleTime;
+    }
+    lastAppliedTime = Date.now();
 
     if (!screenshotTimeout) {
       initScreenshotLoop(true);
@@ -275,10 +277,11 @@ function applyServerState(data) {
     status = 'PAUSED';
     isIdle = false;
     isSessionRunning = false;
-    segmentStartTime = null;
-    baseActiveSeconds = data.activeTime ?? baseActiveSeconds;
-    inactiveSeconds = data.idleTime ?? inactiveSeconds;
-    activeSeconds = baseActiveSeconds;
+    if (data.activeTime !== undefined) activeSeconds = data.activeTime;
+    if (data.idleTime !== undefined) inactiveSeconds = data.idleTime;
+    lastAppliedActive = activeSeconds;
+    lastAppliedInactive = inactiveSeconds;
+    lastAppliedTime = Date.now();
   }
 
   updateDisplay();
@@ -313,16 +316,13 @@ async function triggerIdle(idleSeconds = 60) {
   status = 'IDLE';
   isIdle = true;
   isSessionRunning = false;
-  segmentStartTime = null;
 
-  // 🛡️ Rewind the idle duration from baseActiveSeconds so active time does not count idle period
-  baseActiveSeconds = Math.max(0, baseActiveSeconds - idleSeconds);
-  activeSeconds = baseActiveSeconds;
-
-  // 🕒 Record exact idle start timestamp
-  baseInactiveSeconds += idleSeconds;
-  idleStartTime = Date.now();
-  inactiveSeconds = baseInactiveSeconds;
+  // 🛡️ Rewind the idle duration from activeSeconds so active time does not count idle period
+  activeSeconds = Math.max(0, activeSeconds - idleSeconds);
+  inactiveSeconds += idleSeconds;
+  lastAppliedActive = activeSeconds;
+  lastAppliedInactive = inactiveSeconds;
+  lastAppliedTime = Date.now();
 
   updateDisplay();
   updateUI();
@@ -363,13 +363,20 @@ async function startSession() {
       const err = await res.json();
       return alert(err.message || 'Unable to start session.');
     }
-    // 🔔 Trigger notification IMMEDIATELY on success (fixes delayed notification bug)
+    const data = await res.json();
     notifyDesktop('Session Started', 'Your tracking session is now active.');
 
-    stopIdleReminderLoop();
+    status = 'ACTIVE';
+    isIdle = false;
+    isSessionRunning = true;
     idleNotificationSent = false;
     lastStartOrResumeTime = Date.now();
-    await pollSessionStatus();
+
+    if (data?.session) {
+      applyServerState(data.session);
+    }
+
+    stopIdleReminderLoop();
     startPolling();
     startHeartbeat();
     initScreenshotLoop(true);
@@ -409,21 +416,15 @@ async function pauseSession() {
 async function resumeSession() {
   if (!authToken) return alert('Please login first.');
 
-  // 🕒 Commit accumulated idle duration to baseInactiveSeconds
-  if (idleStartTime) {
-    const idleDuration = Math.floor((Date.now() - idleStartTime) / 1000);
-    baseInactiveSeconds += Math.max(0, idleDuration);
-    idleStartTime = null;
-  }
-  inactiveSeconds = baseInactiveSeconds;
-
   // 🚀 OPTIMISTIC UI: Instantly clear idle status and banner
   status = 'ACTIVE';
   isIdle = false;
   isSessionRunning = true;
-  segmentStartTime = Date.now(); // 🎯 Start fresh active segment
   idleNotificationSent = false;
   lastStartOrResumeTime = Date.now();
+  lastAppliedActive = activeSeconds;
+  lastAppliedInactive = inactiveSeconds;
+  lastAppliedTime = Date.now();
   updateUI();
 
   try {
@@ -698,10 +699,6 @@ async function fetchUserProfile() {
     const res = await fetch(`${BACKEND_HOST}/api/auth/me`, {
       headers: { Authorization: `Bearer ${authToken}` }
     });
-    if (res.status === 401) {
-      logout();
-      return;
-    }
     if (!res.ok) return;
     const user = await res.json();
     const nameEl = document.getElementById('display-name');

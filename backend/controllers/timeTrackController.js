@@ -84,6 +84,11 @@ exports.startTracking = async (req, res) => {
 
     if (session) {
       // Resume existing day session
+      if (session.idleStart) {
+        const idleDuration = Math.floor((now - new Date(session.idleStart)) / 1000);
+        session.idleTime += Math.max(0, idleDuration);
+        session.idleStart = null;
+      }
       session.status = 'active';
       session.isRunning = true;
       session.segmentStart = now;       // start of THIS active segment
