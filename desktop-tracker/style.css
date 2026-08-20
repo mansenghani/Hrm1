@@ -148,9 +148,90 @@ body {
     color: var(--text-gray);
 }
 
-.status-badge.active { color: var(--success); background: rgba(0, 167, 107, 0.15); }
-.status-badge.idle { color: var(--accent-gold); background: rgba(245, 158, 11, 0.15); }
-.status-badge.paused { color: var(--danger); background: rgba(239, 68, 68, 0.15); }
+.status-badge.active, .status-badge.status-active { color: var(--success); background: rgba(0, 167, 107, 0.15); }
+.status-badge.idle, .status-badge.status-idle { color: var(--accent-gold); background: rgba(245, 158, 11, 0.15); }
+.status-badge.paused, .status-badge.status-paused { color: var(--danger); background: rgba(239, 68, 68, 0.15); }
+.status-badge.status-completed { color: #00a76b; background: rgba(0, 167, 107, 0.12); border: 1px solid rgba(0, 167, 107, 0.25); }
+
+.checkout-completed-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px 12px 20px;
+    margin: auto 0;
+    -webkit-app-region: no-drag;
+    animation: fadeInCard 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInCard {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.completed-icon-wrapper {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: rgba(0, 167, 107, 0.12);
+    border: 2px solid rgba(0, 167, 107, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #00a76b;
+    margin-bottom: 18px;
+    box-shadow: 0 10px 24px rgba(0, 167, 107, 0.18);
+}
+
+.completed-icon-wrapper .material-symbols-outlined {
+    font-size: 38px;
+}
+
+.completed-title {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    color: var(--text-white);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.completed-desc {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-gray);
+    line-height: 1.5;
+    margin-bottom: 20px;
+    max-width: 260px;
+}
+
+.completed-info-box {
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    text-align: left;
+    max-width: 290px;
+}
+
+.completed-info-box .info-icon {
+    font-size: 18px;
+    color: #00a76b;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.completed-info-text {
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--text-white);
+    margin: 0;
+}
 
 .sync-pulse {
     width: 8px;

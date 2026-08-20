@@ -190,6 +190,24 @@ async function pollSessionStatus() {
 }
 
 function applyServerState(data) {
+  const serverStatus = String(data?.status || '').toLowerCase();
+
+  if (serverStatus === 'completed') {
+    status = 'COMPLETED';
+    isIdle = false;
+    isSessionRunning = false;
+    segmentStartTime = null;
+    stopPolling();
+    stopHeartbeat();
+    stopScreenshotLoop();
+    stopIdleReminderLoop();
+    baseActiveSeconds = data.activeTime ?? baseActiveSeconds;
+    baseInactiveSeconds = data.idleTime ?? baseInactiveSeconds;
+    updateDisplay();
+    updateUI();
+    return;
+  }
+
   if (!data?.hasActiveSession) {
     status = 'OFFLINE';
     activeSeconds = 0;
@@ -204,8 +222,6 @@ function applyServerState(data) {
     updateUI();
     return;
   }
-
-  const serverStatus = String(data.status || '').toLowerCase();
 
   if (serverStatus === 'idle') {
     status = 'IDLE';
@@ -254,14 +270,6 @@ function applyServerState(data) {
     }
   } else if (serverStatus === 'paused') {
     status = 'PAUSED';
-    isIdle = false;
-    isSessionRunning = false;
-    segmentStartTime = null;
-    baseActiveSeconds = data.activeTime ?? baseActiveSeconds;
-    inactiveSeconds = data.idleTime ?? inactiveSeconds;
-    activeSeconds = baseActiveSeconds;
-  } else if (serverStatus === 'completed') {
-    status = 'OFFLINE';
     isIdle = false;
     isSessionRunning = false;
     segmentStartTime = null;
@@ -471,7 +479,13 @@ async function confirmStopSession() {
     stopScreenshotLoop();
     stopIdleReminderLoop();
     idleNotificationSent = false;
-    await pollSessionStatus();
+
+    // 🛡️ Lock into COMPLETED state immediately after checkout
+    status = 'COMPLETED';
+    isIdle = false;
+    isSessionRunning = false;
+    segmentStartTime = null;
+    updateUI();
     await notifyDesktop('Workday Ended', 'You have successfully checked out for today.');
   } catch (err) {
     console.error('[STOP ERROR]', err);
@@ -498,8 +512,33 @@ function setControlState(currentStatus) {
   const pauseBtn = document.getElementById('pause-btn');
   const resumeBtn = document.getElementById('resume-btn');
   const stopBtn = document.getElementById('stop-btn');
+  const logoutBtn = document.getElementById('logout-btn');
   const binaryControls = document.querySelector('.binary-controls');
+  const controlMatrix = document.querySelector('.control-matrix');
+  const timerDisplay = document.querySelector('.timer-display');
+  const completedSection = document.getElementById('checkout-completed-section');
+  const alertEl = document.getElementById('desktop-alert');
+
   if (!startBtn || !pauseBtn || !resumeBtn || !binaryControls) return;
+
+  if (currentStatus === 'COMPLETED') {
+    // 🛡️ WORKDAY COMPLETED / CHECKED OUT:
+    // Hide ALL control buttons (START, PAUSE, RESUME, CHECK OUT, LOGOUT) and the active timer
+    if (controlMatrix) controlMatrix.style.display = 'none';
+    if (timerDisplay) timerDisplay.style.display = 'none';
+    if (alertEl) alertEl.style.display = 'none';
+    if (completedSection) completedSection.style.display = 'flex';
+    if (statusEl) {
+      statusEl.innerText = 'WORKDAY COMPLETED';
+      statusEl.className = 'status-badge status-completed';
+    }
+    return;
+  }
+
+  // Active / Offline / Paused states: restore standard layout
+  if (completedSection) completedSection.style.display = 'none';
+  if (controlMatrix) controlMatrix.style.display = 'block';
+  if (timerDisplay) timerDisplay.style.display = 'flex';
 
   const isActuallyActive = currentStatus === 'ACTIVE' && !isIdle;
 
@@ -507,8 +546,8 @@ function setControlState(currentStatus) {
     startBtn.style.display = 'flex';
     binaryControls.style.display = 'none';
     if (stopBtn) stopBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'flex';
     if (statusEl) { statusEl.innerText = 'OFFLINE'; statusEl.className = 'status-badge'; }
-    const alertEl = document.getElementById('desktop-alert');
     if (alertEl) alertEl.style.display = 'none';
   } else if (isActuallyActive) {
     startBtn.style.display = 'none';
@@ -516,8 +555,8 @@ function setControlState(currentStatus) {
     pauseBtn.style.display = 'flex';
     resumeBtn.style.display = 'none';
     if (stopBtn) stopBtn.style.display = 'flex';
+    if (logoutBtn) logoutBtn.style.display = 'none';
     if (statusEl) { statusEl.innerText = 'ACTIVE'; statusEl.className = 'status-badge status-active'; }
-    const alertEl = document.getElementById('desktop-alert');
     if (alertEl) alertEl.style.display = 'none';
   } else {
     startBtn.style.display = 'none';
@@ -525,6 +564,7 @@ function setControlState(currentStatus) {
     pauseBtn.style.display = 'none';
     resumeBtn.style.display = 'flex';
     if (stopBtn) stopBtn.style.display = 'flex';
+    if (logoutBtn) logoutBtn.style.display = 'none';
     if (statusEl) {
       statusEl.innerText = isIdle ? 'IDLE' : currentStatus;
       statusEl.className = 'status-badge status-idle';

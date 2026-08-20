@@ -72,6 +72,15 @@ exports.startTracking = async (req, res) => {
     );
 
     let session = await TimeTrack.findOne({ employeeId: id, date: today });
+    const existingAttendance = await Attendance.findOne({ user: id, date: today });
+
+    // 🛡️ If user already checked out for today, require HR/Admin override
+    if (session?.status === 'completed' && existingAttendance?.checkOutTime && role === 'employee') {
+      return res.status(403).json({
+        message: 'You have already ended your workday for today. Please contact your HR, Manager, or Admin to restart your timer.',
+        checkedOut: true
+      });
+    }
 
     if (session) {
       // Resume existing day session
