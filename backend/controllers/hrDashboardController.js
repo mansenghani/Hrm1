@@ -47,6 +47,10 @@ exports.getDashboardStats = async (req, res) => {
 
     const getPeriodLeaveMetrics = async (start, end) => {
       const matchQuery = {};
+      if (req.user.role === 'hr') {
+        const allowedUsers = await User.find({ role: { $in: ['employee', 'manager'] } }).select('_id');
+        matchQuery.user = { $in: allowedUsers.map(u => u._id) };
+      }
       if (start && end) {
         matchQuery.$or = [
           {
@@ -141,7 +145,7 @@ exports.getDashboardStats = async (req, res) => {
       let pendingLeaveQuery = { status: { $in: ['pending', 'cancellation_pending'] } };
 
       if (currentUser.role === 'hr') {
-        const allowedUsers = await User.find({ role: { $nin: ['admin', 'manager'] } }).select('_id');
+        const allowedUsers = await User.find({ role: 'employee' }).select('_id');
         pendingLeaveQuery.user = { $in: allowedUsers.map(u => u._id) };
       } else if (currentUser.role === 'manager') {
         const allowedUsers = await User.find({ role: 'employee' }).select('_id');
@@ -164,6 +168,7 @@ exports.getDashboardStats = async (req, res) => {
       newJoinersThisMonth,
       pendingLeaveApprovals,
       employeesOnLeaveToday,
+      employeesPresentToday,
       [statsToday, statsThisWeek, statsThisMonth, statsThisYear, statsAllTime],
       [recThisMonth, recLastMonth, recThisYear, recAllTime],
       openPositions,
@@ -184,12 +189,39 @@ exports.getDashboardStats = async (req, res) => {
       Employee.countDocuments({}),
       Employee.countDocuments({ status: { $in: ['active', 'Active'] } }),
       Employee.countDocuments({ joinDate: { $gte: startOfMonth } }),
-      Leave.countDocuments({ status: { $in: ['pending', 'cancellation_pending'] } }),
-      Leave.countDocuments({
-        status: { $regex: /^approved$/i },
-        startDate: { $lte: endOfToday },
-        endDate: { $gte: startOfToday }
-      }),
+      req.user.role === 'hr'
+        ? (async () => {
+            const allowedUsers = await User.find({ role: 'employee' }).select('_id');
+            return Leave.countDocuments({ user: { $in: allowedUsers.map(u => u._id) }, status: { $in: ['pending', 'cancellation_pending'] } });
+          })()
+        : Leave.countDocuments({ status: { $in: ['pending', 'cancellation_pending'] } }),
+      (async () => {
+        const leaveQuery = {
+          status: { $regex: /^approved$/i },
+          startDate: { $lte: endOfToday },
+          endDate: { $gte: startOfToday }
+        };
+        if (req.user.role === 'hr') {
+          const allowedUsers = await User.find({ role: { $in: ['employee', 'manager'] } }).select('_id');
+          leaveQuery.user = { $in: allowedUsers.map(u => u._id) };
+        }
+        const approvedLeaves = await Leave.find(leaveQuery).select('user').lean();
+        return new Set(approvedLeaves.map(l => (l.user?._id || l.user).toString())).size;
+      })(),
+      (async () => {
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
+        const records = await Attendance.find({
+          $or: [
+            { date: todayStr },
+            { date: { $gte: startOfToday, $lte: endOfToday } }
+          ],
+          status: { $in: ['Present', 'Late', 'Half Day', 'present', 'late', 'half day'] }
+        }).select('user').lean();
+        return new Set(records.map(r => (r.user?._id || r.user).toString())).size;
+      })(),
       Promise.all([
         getPeriodLeaveMetrics(startOfToday, endOfToday),
         getPeriodLeaveMetrics(startOfWeek, endOfWeek),
@@ -417,6 +449,7 @@ exports.getDashboardStats = async (req, res) => {
           activeEmployees: activeEmployeesCount,
           activeEmployeesPercent: totalEmployees > 0 ? ((activeEmployeesCount / totalEmployees) * 100).toFixed(2) : 0,
           newJoiners: newJoinersThisMonth,
+          employeesPresent: employeesPresentToday,
           employeesOnLeave: employeesOnLeaveToday,
           employeesOnLeavePercent: totalEmployees > 0 ? ((employeesOnLeaveToday / totalEmployees) * 100).toFixed(2) : 0,
           pendingLeaveApprovals,

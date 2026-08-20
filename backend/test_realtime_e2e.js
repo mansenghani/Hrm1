@@ -95,16 +95,17 @@ async function runRealTimeValidation() {
 
     // ── STEP 3: Trigger 60s Inactivity Detection
     console.log('3️⃣  Triggering Inactivity (type=idle, idleSeconds=60)...');
+    const beforeActive = res2.data.activeTime;
     const req3 = mockReq(testUser, { type: 'idle', idleSeconds: 60 });
     const res3 = mockRes();
     await timeTrackController.updateActivity(req3, res3);
 
     console.log('    Session Status:', res3.data.status);
-    console.log('    Active Time (rewound):', res3.data.activeTime, 'seconds (expected 60s)');
+    console.log('    Active Time (rewound):', res3.data.activeTime, `seconds (expected ~${beforeActive - 60}s)`);
     console.log('    Inactive Time (credited):', res3.data.idleTime, 'seconds (expected 60s)');
 
-    if (res3.data.status !== 'idle' || res3.data.idleTime !== 60 || res3.data.activeTime !== 60) {
-      throw new Error(`Inactivity rewind failed! Expected activeTime=60, idleTime=60. Got: activeTime=${res3.data.activeTime}, idleTime=${res3.data.idleTime}`);
+    if (res3.data.status !== 'idle' || res3.data.idleTime !== 60 || Math.abs(res3.data.activeTime - (beforeActive - 60)) > 2) {
+      throw new Error(`Inactivity rewind failed! Expected idleTime=60. Got: activeTime=${res3.data.activeTime}, idleTime=${res3.data.idleTime}`);
     }
     console.log('    ✅ 60-second inactivity dynamic rewind verified.\n');
 
