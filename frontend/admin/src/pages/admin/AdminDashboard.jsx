@@ -353,56 +353,56 @@ const AdminDashboard = () => {
       {/* 2. Stats Cards Row */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
         {[
-          { 
-            label: 'Total Employees', 
-            val: stats.totalEmployees, 
-            icon: Users, 
-            color: 'text-blue-600 dark:text-blue-400', 
-            bg: 'bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-900/40', 
+          {
+            label: 'Total Employees',
+            val: stats.totalEmployees,
+            icon: Users,
+            color: 'text-blue-600 dark:text-blue-400',
+            bg: 'bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-900/40',
             borderColor: '#3b82f6',
             glowColor: 'rgba(59, 130, 246, 0.45)'
           },
-          { 
-            label: 'Active Employees', 
-            val: stats.activeEmployees, 
-            icon: CheckCircle, 
-            color: 'text-emerald-600 dark:text-emerald-400', 
-            bg: 'bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/40', 
+          {
+            label: 'Active Employees',
+            val: stats.activeEmployees,
+            icon: CheckCircle,
+            color: 'text-emerald-600 dark:text-emerald-400',
+            bg: 'bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/40',
             borderColor: '#10b981',
             glowColor: 'rgba(16, 185, 129, 0.45)'
           },
-          { 
-            label: 'New Joiners', 
-            val: stats.newJoiners, 
-            icon: UserPlus, 
-            color: 'text-indigo-600 dark:text-indigo-400', 
-            bg: 'bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-900/40', 
+          {
+            label: 'New Joiners',
+            val: stats.newJoiners,
+            icon: UserPlus,
+            color: 'text-indigo-600 dark:text-indigo-400',
+            bg: 'bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-900/40',
             borderColor: '#6366f1',
             glowColor: 'rgba(99, 102, 241, 0.45)'
           },
-          { 
-            label: 'Employees on Leave', 
-            val: stats.employeesOnLeave, 
-            icon: Calendar, 
-            color: 'text-amber-600 dark:text-amber-400', 
-            bg: 'bg-amber-50 dark:bg-amber-950/50 border border-amber-100 dark:border-amber-900/40', 
+          {
+            label: 'Employees on Leave',
+            val: stats.employeesOnLeave,
+            icon: Calendar,
+            color: 'text-amber-600 dark:text-amber-400',
+            bg: 'bg-amber-50 dark:bg-amber-950/50 border border-amber-100 dark:border-amber-900/40',
             borderColor: '#f59e0b',
             glowColor: 'rgba(245, 158, 11, 0.45)'
           },
-          { 
-            label: 'Pending Leave', 
-            val: stats.pendingLeaveApprovals, 
-            icon: Clock, 
-            color: 'text-rose-600 dark:text-rose-400', 
-            bg: 'bg-rose-50 dark:bg-rose-950/50 border border-rose-100 dark:border-rose-900/40', 
+          {
+            label: 'Pending Leave',
+            val: stats.pendingLeaveApprovals,
+            icon: Clock,
+            color: 'text-rose-600 dark:text-rose-400',
+            bg: 'bg-rose-50 dark:bg-rose-950/50 border border-rose-100 dark:border-rose-900/40',
             borderColor: '#ef4444',
             glowColor: 'rgba(239, 68, 68, 0.45)'
           },
         ].map((stat, i) => {
           const isHovered = hoveredStatCard === i;
           return (
-            <Card 
-              key={i} 
+            <Card
+              key={i}
               onMouseEnter={() => setHoveredStatCard(i)}
               onMouseLeave={() => setHoveredStatCard(null)}
               style={{
