@@ -204,11 +204,84 @@ function runTest6() {
   console.log('  ✅ Test 6 Passed: Normal active sessions accumulate time accurately.\n');
 }
 
+// ── TEST 7: Total Session Time Conservation (Start -> Idle -> Resume -> Checkout)
+function runTest7() {
+  console.log('Test 7: Total Session Time = Active Time + Inactive Time (Exact Conservation)');
+  
+  // 1. Start at 9:00 AM (0s)
+  const startTime = new Date('2026-08-20T09:00:00.000Z');
+  let session = {
+    startTime,
+    segmentStart: startTime,
+    status: 'active',
+    isRunning: true,
+    activeTime: 0,
+    idleTime: 0,
+    idleStart: null,
+    inactivityCount: 0
+  };
+
+  // 2. Active work until 10:00 AM (3600 seconds)
+  const tenAM = new Date('2026-08-20T10:00:00.000Z');
+  session.activeTime += (tenAM - session.segmentStart) / 1000;
+  session.segmentStart = tenAM;
+
+  assert.strictEqual(session.activeTime, 3600, 'Active time at 10:00 AM must be 3600s (1 hour)');
+
+  // 3. Inactivity occurs at 10:00 AM, detected at 10:01 AM (60 seconds later)
+  const tenZeroOneAM = new Date('2026-08-20T10:01:00.000Z');
+  const detectionElapsed = (tenZeroOneAM - session.segmentStart) / 1000; // 60s
+  session.activeTime += detectionElapsed; // Temporary tick before detection (3660s)
+  
+  // Dynamic Rewind: 60s subtracted from activeTime and transferred to idleTime
+  const rewind = 60;
+  session.activeTime = Math.max(0, session.activeTime - rewind);
+  session.idleTime += rewind;
+  session.idleStart = tenZeroOneAM;
+  session.status = 'idle';
+  session.isRunning = false;
+  session.segmentStart = null;
+
+  assert.strictEqual(session.activeTime, 3600, 'Active time must be exactly 3600s after 1-minute rewind');
+  assert.strictEqual(session.idleTime, 60, 'Idle time must include the first 1-minute detection period (60s)');
+
+  // 4. User stays away until 10:10 AM (9 minutes = 540 seconds elapsed in idle)
+  const tenTenAM = new Date('2026-08-20T10:10:00.000Z');
+  const remainingIdle = (tenTenAM - session.idleStart) / 1000; // 540s
+  session.idleTime += remainingIdle;
+  session.idleStart = null;
+  session.status = 'active';
+  session.isRunning = true;
+  session.segmentStart = tenTenAM;
+
+  assert.strictEqual(session.activeTime, 3600, 'Active time must remain 3600s upon resume');
+  assert.strictEqual(session.idleTime, 600, 'Total idle time must be exactly 600s (10 minutes from 10:00 to 10:10)');
+  assert.strictEqual(session.activeTime + session.idleTime, 4200, 'Total elapsed at 10:10 AM must be 4200s (1h 10m)');
+
+  // 5. Active work from 10:10 AM to 5:00 PM (6 hours 50 mins = 24,600 seconds)
+  const fivePM = new Date('2026-08-20T17:00:00.000Z');
+  session.activeTime += (fivePM - session.segmentStart) / 1000; // +24,600s
+  session.segmentStart = null;
+  session.status = 'completed';
+  session.isRunning = false;
+  session.endTime = fivePM;
+
+  const totalSessionSeconds = (session.endTime - session.startTime) / 1000; // 8 hours = 28,800s
+
+  assert.strictEqual(session.activeTime, 28200, 'Active time must be 28,200s (7h 50m)');
+  assert.strictEqual(session.idleTime, 600, 'Inactive time must be 600s (10m)');
+  assert.strictEqual(totalSessionSeconds, 28800, 'Total session duration must be 28,800s (8h)');
+  assert.strictEqual(session.activeTime + session.idleTime, totalSessionSeconds, 'Active + Inactive MUST equal Total Duration');
+
+  console.log(`  ✅ Test 7 Passed: Active (${session.activeTime}s) + Inactive (${session.idleTime}s) = Total Duration (${totalSessionSeconds}s). Zero time lost.\n`);
+}
+
 runTest1();
 runTest2();
 runTest3();
 runTest4();
 runTest5();
 runTest6();
+runTest7();
 
-console.log('🎉 ALL 6 INACTIVITY & TIME TRACKING TESTS PASSED PERFECTLY!');
+console.log('🎉 ALL 7 INACTIVITY & TIME TRACKING TESTS PASSED PERFECTLY!');

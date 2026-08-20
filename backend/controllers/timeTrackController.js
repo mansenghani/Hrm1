@@ -17,7 +17,7 @@ const Attendance = require('../models/Attendance');
 const mongoose = require('mongoose');
 
 // ── CONFIG // Constants for Idle tracking (MUST MATCH DESKTOP APP & WEB APP)
-const IDLE_THRESHOLD_SECONDS = 300; // 5 minutes (300 seconds)
+const IDLE_THRESHOLD_SECONDS = 60; // 1 minute (60 seconds)
 
 // ── HELPERS ───────────────────────────────────────────────
 const getToday = () => {
@@ -160,6 +160,7 @@ exports.pauseTracking = async (req, res) => {
     // Commit the current active segment to activeTime
     session.activeTime += flushSegment(session, now);
     session.segmentStart = null;
+    session.idleStart = now; // 🕒 Track pause duration as inactive time
     session.status = 'paused';
     session.isRunning = false;
     session.lastHeartbeat = now;
@@ -185,7 +186,7 @@ exports.pauseTracking = async (req, res) => {
 };
 
 // ============================================================
-// ▶️ RESUME (manual)
+// ▶️ RESUME (manual / auto)
 // ============================================================
 exports.resumeTracking = async (req, res) => {
   try {
@@ -205,7 +206,13 @@ exports.resumeTracking = async (req, res) => {
       return res.json({ message: 'Tracking already active', session: buildPayload(session) });
     }
 
-    // idleTime is tracked by inactivityCount × IDLE_THRESHOLD — nothing to add on resume
+    // 🕒 Finalize accumulated idle duration into idleTime
+    if (session.idleStart) {
+      const idleDuration = Math.floor((now - new Date(session.idleStart)) / 1000);
+      session.idleTime += Math.max(0, idleDuration);
+      session.idleStart = null;
+    }
+
     session.status = 'active';
     session.isRunning = true;
     session.segmentStart = now;
@@ -227,7 +234,7 @@ exports.resumeTracking = async (req, res) => {
 };
 
 // ============================================================
-// 🔴 STOP
+// 🔴 STOP / CHECKOUT
 // ============================================================
 exports.stopTracking = async (req, res) => {
   try {
@@ -243,29 +250,35 @@ exports.stopTracking = async (req, res) => {
     });
     if (!session) return res.status(404).json({ message: 'No session to stop' });
 
-    // Commit final active segment
+    // Commit final active segment or idle segment
     if (session.status === 'active') {
       session.activeTime += flushSegment(session, now);
+    } else if ((session.status === 'idle' || session.status === 'paused') && session.idleStart) {
+      const idleDuration = Math.floor((now - new Date(session.idleStart)) / 1000);
+      session.idleTime += Math.max(0, idleDuration);
+      session.idleStart = null;
     }
 
     session.segmentStart = null;
+    session.idleStart = null;
     session.endTime = now;
     session.status = 'completed';
     session.isRunning = false;
+
+    const totalSeconds = Math.max(0, Math.floor((now - new Date(session.startTime)) / 1000));
+    session.totalTime = totalSeconds;
 
     // Sync with legacy Attendance model for HR dashboards
     try {
       const attendance = await Attendance.findOne({ user: id, date: session.date });
       if (attendance && !attendance.checkOutTime) {
         attendance.checkOutTime = now;
-        if (attendance.checkInTime) {
-          const activeSecs = session.activeTime || 0;
-          if (activeSecs > 0) {
-            attendance.totalHours = parseFloat((activeSecs / 3600).toFixed(4));
-          } else {
-            const diffMs = now - new Date(attendance.checkInTime);
-            attendance.totalHours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(4));
-          }
+        const activeSecs = session.activeTime || 0;
+        if (activeSecs > 0) {
+          attendance.totalHours = parseFloat((activeSecs / 3600).toFixed(4));
+        } else {
+          const diffMs = now - new Date(attendance.checkInTime);
+          attendance.totalHours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(4));
         }
         await attendance.save();
       }
@@ -325,27 +338,22 @@ exports.updateActivity = async (req, res) => {
       if (isIdleSignal) {
         // ── Idle transition ──
         if (!session.idleApplied) {
-          // ✅ Dynamic Rewind: Subtract the EXACT seconds of idleness reported by the OS
+          // ✅ Dynamic Rewind: Subtract the 1-minute detection period from active time and assign to idle time
           const rawRewind = req.body.idleSeconds || IDLE_THRESHOLD_SECONDS;
 
-          // Calculate the maximum possible active time in the current start/resume period
           let maxActiveInPeriod = sinceHeartbeat;
-          if (session.sessions && session.sessions.length > 0) {
-            const lastPeriod = session.sessions[session.sessions.length - 1];
-            const periodStart = lastPeriod.resume || lastPeriod.start;
-            if (periodStart) {
-              maxActiveInPeriod = Math.max(0, (now - new Date(periodStart)) / 1000);
-            }
+          if (session.segmentStart) {
+            maxActiveInPeriod = Math.max(0, (now - new Date(session.segmentStart)) / 1000);
           }
 
           const rewindAmount = Math.min(maxActiveInPeriod, rawRewind);
 
           session.activeTime += Math.max(0, sinceHeartbeat);
-          // Subtract the idle period from active time and assign it to inactive time
           session.activeTime = Math.max(0, session.activeTime - rewindAmount);
 
           session.inactivityCount += 1;
           session.idleTime = (session.idleTime || 0) + rewindAmount;
+          session.idleStart = now; // 🕒 Ongoing idle time accumulates from now
           session.idleApplied = true;
 
           const idleTimeStart = new Date(now.getTime() - rewindAmount * 1000);
@@ -354,7 +362,7 @@ exports.updateActivity = async (req, res) => {
             session.sessions[lastIdx].pause = idleTimeStart;
           }
 
-          console.log(`[IDLE DYNAMIC] User ${id} — status set to idle, activeTime rewound by ${rewindAmount}s`);
+          console.log(`[IDLE DYNAMIC] User ${id} — status set to idle, activeTime rewound by ${rewindAmount}s, idleStart initialized`);
         }
 
         session.status = 'idle';
@@ -377,16 +385,12 @@ exports.updateActivity = async (req, res) => {
 
       } else if (isActiveSignal) {
         // ── Normal active heartbeat (No Auto-Pause) ──
-        // Commit elapsed seconds since last heartbeat to activeTime (high precision)
         session.activeTime += Math.max(0, sinceHeartbeat);
         session.lastHeartbeat = now;
         session.segmentStart = now;
       }
 
     } else if (session.status === 'idle') {
-      // 🛡️ STRICT IDLE LOCK: If session is currently IDLE in database:
-      // Passive heartbeats or ambient mouse moves MUST NOT un-idle or increment active time!
-      // Only an explicit POST /api/time/resume can un-idle the session.
       session.lastHeartbeat = now;
       session.isRunning = false;
       session.segmentStart = null;
@@ -848,12 +852,25 @@ function flushSegment(session, now) {
  * Frontend MUST display these values directly — no local math.
  */
 function buildPayload(session) {
+  const now = Date.now();
+  let liveActive = Math.floor(session.activeTime || 0);
+  let liveIdle = Math.floor(session.idleTime || 0);
+
+  if (session.status === 'active' && session.segmentStart) {
+    const elapsed = Math.floor((now - new Date(session.segmentStart).getTime()) / 1000);
+    liveActive += Math.max(0, elapsed);
+  } else if ((session.status === 'idle' || session.status === 'paused') && session.idleStart) {
+    const idleElapsed = Math.floor((now - new Date(session.idleStart).getTime()) / 1000);
+    liveIdle += Math.max(0, idleElapsed);
+  }
+
   return {
     hasActiveSession: session.status !== 'completed',
     status: session.status,
     isRunning: session.isRunning,
-    activeTime: Math.floor(session.activeTime || 0),
-    idleTime: Math.floor(session.idleTime || 0),
+    activeTime: liveActive,
+    idleTime: liveIdle,
+    idleStart: session.idleStart,
     inactivityCount: session.inactivityCount || 0,
     startTime: session.startTime,
     lastHeartbeat: session.lastHeartbeat,

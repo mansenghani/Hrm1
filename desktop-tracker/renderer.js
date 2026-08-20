@@ -104,7 +104,10 @@ if (window.electronAPI?.onSystemIdleStatus) {
       }
     } else if (idleSeconds < 5) {
       // Activity detected anywhere on PC
-      if (status === 'ACTIVE') {
+      if (status === 'IDLE') {
+        console.log('[AUTO-RESUME] User activity detected on PC, resuming session...');
+        resumeSession();
+      } else if (status === 'ACTIVE') {
         idleNotificationSent = false;
         isIdle = false;
       }
