@@ -327,7 +327,7 @@ const AdminDashboard = () => {
     pending: 0
   };
 
-  const currentRecOverview = recruitmentOverview?.byPeriod?.[recPeriod] || recruitmentOverview || {
+  const currentRecOverview = recruitmentOverview?.byPeriod?.[recruitmentPeriod] || recruitmentOverview || {
     newApplications: 0,
     shortlisted: 0,
     interviewsScheduled: 0,
@@ -719,7 +719,7 @@ const AdminDashboard = () => {
                 { label: 'Interviews Scheduled', val: currentRecOverview.interviewsScheduled ?? 0, icon: Calendar, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/30' },
                 { label: 'Offers Issued', val: currentRecOverview.offersIssued ?? 0, icon: Briefcase, color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/30' },
                 {
-                  label: recPeriod === 'This Month' ? 'Hires This Month' : recPeriod === 'Last Month' ? 'Hires Last Month' : recPeriod === 'This Year' ? 'Hires This Year' : 'Total Hires',
+                  label: recruitmentPeriod === 'This Month' ? 'Hires This Month' : recruitmentPeriod === 'Last Month' ? 'Hires Last Month' : recruitmentPeriod === 'This Year' ? 'Hires This Year' : 'Total Hires',
                   val: currentRecOverview.hires ?? currentRecOverview.hiresThisMonth ?? 0,
                   icon: UserPlus,
                   color: 'text-[#00a76b]',
