@@ -104,7 +104,7 @@ const HRDashboard = () => {
   // Dropdown states
   const [attPeriod, setAttPeriod] = useState('This Week');
   const [leavePeriod, setLeavePeriod] = useState('This Month');
-  const [recPeriod, setRecPeriod] = useState('This Month');
+  const [recruitmentPeriod, setRecruitmentPeriod] = useState('This Month');
   const [payrollPeriod, setPayrollPeriod] = useState(new Date().toLocaleString('default', { month: 'long', year: 'numeric' }));
   const [selectedLeaveApproval, setSelectedLeaveApproval] = useState(null);
   const [hoveredStatCard, setHoveredStatCard] = useState(null);
@@ -166,11 +166,11 @@ const HRDashboard = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    fetchData(!dashboardData);
   }, [attPeriod, leavePeriod]);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (showSkeleton = false) => {
+    if (showSkeleton) setLoading(true);
     setError(null);
     try {
       const token = sessionStorage.getItem('token');
@@ -178,7 +178,7 @@ const HRDashboard = () => {
 
       // Profile and dashboard summary are independent, so fetch them together
       const [profRes, dashRes] = await Promise.all([
-        axios.get('/api/auth/me', { headers }),
+        profile ? Promise.resolve({ data: profile }) : axios.get('/api/auth/me', { headers }),
         axios.get('/api/hr-dashboard/summary', { headers, params: { attPeriod, leavePeriod } })
       ]);
       setProfile(profRes.data?.data || profRes.data);
@@ -194,7 +194,11 @@ const HRDashboard = () => {
     } catch (err) {
       console.error('Failed to fetch HR dashboard data:', err);
       const errMsg = err.response?.data?.message || err.message || 'Unknown error';
-      setError(`Unable to load dashboard data. Details: ${errMsg}`);
+      if (showSkeleton) {
+        setError(`Unable to load dashboard data. Details: ${errMsg}`);
+      } else {
+        toast.error(`Failed to update chart: ${errMsg}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -335,14 +339,14 @@ const HRDashboard = () => {
             <span className="inline-flex items-center">👋</span>
           </h1>
         </div>
-        <div className="flex flex-wrap md:flex-nowrap items-center gap-4 mt-4 md:mt-0">
-          <div className="flex items-center whitespace-nowrap text-gray-600 dark:text-gray-300 bg-white dark:bg-[#161311] px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-[#28251e] font-medium font-mono tabular-nums">
-            <Clock size={18} className="mr-2 text-[#00a76b] shrink-0 animate-pulse" />
-            {liveTime.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+        <div className="flex flex-wrap md:flex-nowrap items-center gap-2.5 mt-4 md:mt-0">
+          <div className="flex items-center whitespace-nowrap text-gray-600 dark:text-gray-300 bg-white dark:bg-[#161311] px-3.5 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-[#28251e] font-semibold text-xs font-mono tabular-nums">
+            <Clock size={16} className="mr-2 text-[#00a76b] shrink-0 animate-pulse" />
+            <span>{liveTime.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}</span>
           </div>
-          <div className="flex items-center whitespace-nowrap text-gray-600 dark:text-gray-300 bg-white dark:bg-[#161311] px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-[#28251e] font-medium">
-            <Calendar size={18} className="mr-2 text-[#00a76b] shrink-0" />
-            {new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          <div className="flex items-center whitespace-nowrap text-gray-600 dark:text-gray-300 bg-white dark:bg-[#161311] px-3.5 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-[#28251e] font-semibold text-xs">
+            <Calendar size={16} className="mr-2 text-[#00a76b] shrink-0" />
+            <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
           </div>
         </div>
       </div>
@@ -509,11 +513,10 @@ const HRDashboard = () => {
                         key={index}
                         onMouseEnter={() => setHoveredRoleIndex(index)}
                         onMouseLeave={() => setHoveredRoleIndex(null)}
-                        className={`flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-lg cursor-pointer transition-all duration-200 ${
-                          isHovered
+                        className={`flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-lg cursor-pointer transition-all duration-200 ${isHovered
                             ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white scale-105 shadow-xs'
                             : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                        }`}
+                          }`}
                       >
                         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
                         <span className={isHovered ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300'}>{entry.name}:</span>
@@ -581,11 +584,10 @@ const HRDashboard = () => {
                         key={index}
                         onMouseEnter={() => setHoveredGenderIndex(index)}
                         onMouseLeave={() => setHoveredGenderIndex(null)}
-                        className={`flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-lg cursor-pointer transition-all duration-200 ${
-                          isHovered
+                        className={`flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-lg cursor-pointer transition-all duration-200 ${isHovered
                             ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white scale-105 shadow-xs'
                             : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                        }`}
+                          }`}
                       >
                         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: ['#3b82f6', '#f43f5e', '#f59e0b'][index % 3] }}></span>
                         <span className={isHovered ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300'}>{entry.name}:</span>
@@ -606,24 +608,13 @@ const HRDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="p-6 flex flex-col justify-between">
           <div>
-            <div className="flex justify-between items-center mb-6 gap-2">
-              <h3 className="font-bold text-gray-900 dark:text-white text-base truncate min-w-0">Leave Overview</h3>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => navigate('/hr/leave', { state: { viewMode: 'hr' } })}
-                  className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 px-2 py-1 rounded-lg flex items-center gap-0.5 transition-all cursor-pointer whitespace-nowrap"
-                  title="View Leave Details"
-                >
-                  <span>View</span>
-                  <ChevronRight size={13} strokeWidth={2.5} />
-                </button>
-                <CustomDropdown
-                  value={leavePeriod}
-                  onChange={setLeavePeriod}
-                  options={['This Month', 'This Week', 'This Year', 'All Time', 'Today']}
-                />
-              </div>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-gray-900 dark:text-white">Team Leave Overview</h3>
+              <CustomDropdown
+                value={leavePeriod}
+                onChange={setLeavePeriod}
+                options={['This Month', 'This Week', 'This Year', 'All Time', 'Today']}
+              />
             </div>
             <div className="grid grid-cols-2 gap-2.5 mb-3">
               <div className="p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
@@ -695,24 +686,13 @@ const HRDashboard = () => {
 
         <Card className="p-6 flex flex-col justify-between">
           <div>
-            <div className="flex justify-between items-center mb-6 gap-2">
-              <h3 className="font-bold text-gray-900 dark:text-white text-base truncate min-w-0">Recruitment Overview</h3>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => navigate('/hr/recruitment')}
-                  className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 px-2 py-1 rounded-lg flex items-center gap-0.5 transition-all cursor-pointer whitespace-nowrap"
-                  title="View Recruitment Details"
-                >
-                  <span>View</span>
-                  <ChevronRight size={13} strokeWidth={2.5} />
-                </button>
-                <CustomDropdown
-                  value={recPeriod}
-                  onChange={setRecPeriod}
-                  options={['This Month', 'Last Month', 'This Year', 'All Time']}
-                />
-              </div>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-gray-900 dark:text-white">Recruitment Overview</h3>
+              <CustomDropdown
+                value={recruitmentPeriod}
+                onChange={setRecruitmentPeriod}
+                options={['This Month', 'Last Month', 'This Year', 'All Time']}
+              />
             </div>
             <div className="space-y-2">
               {[
