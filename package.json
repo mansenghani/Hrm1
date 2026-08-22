@@ -8,6 +8,7 @@
     "backend",
     "frontend/admin",
     "frontend/hr",
+    "frontend/manager",
     "frontend/employee",
     "frontend/shared"
   ],
