@@ -5,17 +5,17 @@
   "main": "index.js",
   "private": true,
   "workspaces": [
-    "backend",
     "frontend/admin",
     "frontend/hr",
-    "frontend/manager",
     "frontend/employee",
+    "frontend/manager",
     "frontend/shared"
   ],
   "scripts": {
     "install:all": "npm install",
     "dev": "concurrently \"npm run dev -w backend\" \"npm run dev --prefix frontend/admin\"",
     "build": "npm run build --prefix frontend/admin",
+    "build:staging": "npm run build --prefix frontend/admin && npm run build --prefix frontend/hr && npm run build --prefix frontend/employee && npm run build --prefix frontend/manager",
     "start": "node backend/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

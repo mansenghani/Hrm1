@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -47,16 +47,14 @@ function App() {
 
   if (!isAuthenticated) {
     return (
-      <Router>
-        <Routes>
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Router>
+      <Routes>
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
     );
   }
 
   return (
-    <Router>
+    <>
       <ScrollToTop />
       <Routes>
         {/* Employee portal — all routes live inside EmployeeLayout */}
@@ -93,7 +91,7 @@ function App() {
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/employee/dashboard" replace />} />
       </Routes>
-    </Router>
+    </>
   );
 }
 

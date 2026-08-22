@@ -229,26 +229,30 @@ app.use('/api/on-duty', require('./routes/onDutyRoutes'));
 app.get('/health', (req, res) => res.json({ status: 'API is running' }));
 app.get('/api/health', (req, res) => res.json({ status: 'API is running' }));
 
-// 🌐 Serve Static Frontend Assets & Handle Routing Fallback (SPA)
-// Guarded: only serves the frontend build if it actually exists on this
-// deployment. Prevents ENOENT crashes/log-spam on backend-only deployments
-// (e.g. API-only Hostinger apps) where frontend/admin/dist was never built.
-const FRONTEND_DIST = path.join(__dirname, '../frontend/admin/dist');
-const FRONTEND_INDEX = path.join(FRONTEND_DIST, 'index.html');
-const FRONTEND_AVAILABLE = fs.existsSync(FRONTEND_INDEX);
+// 🌐 Serve Static Frontend Apps (Multi-SPA Subpaths: /admin, /hr, /employee, /manager)
+const frontends = [
+  { prefix: '/admin', dir: path.join(__dirname, '../frontend/admin/dist') },
+  { prefix: '/hr', dir: path.join(__dirname, '../frontend/hr/dist') },
+  { prefix: '/employee', dir: path.join(__dirname, '../frontend/employee/dist') },
+  { prefix: '/manager', dir: path.join(__dirname, '../frontend/manager/dist') }
+];
 
-if (FRONTEND_AVAILABLE) {
-  app.use(express.static(FRONTEND_DIST));
-}
+frontends.forEach(({ prefix, dir }) => {
+  const indexPath = path.join(dir, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    // Serve static assets under the subpath
+    app.use(prefix, express.static(dir));
 
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
-    return next();
+    // Handle client-side routing fallback (SPA) for subpath
+    app.get([prefix, `${prefix}/*`], (req, res) => {
+      res.sendFile(indexPath);
+    });
   }
-  if (FRONTEND_AVAILABLE) {
-    return res.sendFile(FRONTEND_INDEX);
-  }
-  return res.status(404).json({ message: 'Not found' });
+});
+
+// 404 JSON fallback for unhandled requests (non-API, non-upload, non-frontend)
+app.use((req, res) => {
+  res.status(404).json({ message: 'Not found' });
 });
 
 // 🔌 Database Connection & Server Start
