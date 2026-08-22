@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import CustomDatePicker from '../../components/CustomDatePicker';
 
 const CreateUser = () => {
   const navigate = useNavigate();
@@ -587,7 +586,7 @@ const CreateUser = () => {
               <div className="space-y-4">
                 <label className="zap-caption-upper text-[#201515]">Join Date <span className="text-[#ff4f00] ml-1">*</span></label>
                 <div className="relative">
-                  <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084]" />
+                  <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084] pointer-events-none z-10" />
                   <input
                     required type="date" name="joinDate" value={formData.joinDate} onChange={handleChange}
                     className="w-full h-14 pl-12 pr-4 bg-white border border-[#c5c0b1] rounded-2xl text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#00a76b]"
@@ -600,13 +599,15 @@ const CreateUser = () => {
               <div className="space-y-4">
                 <label className="zap-caption-upper text-[#201515]">Date of Birth <span className="text-[#ff4f00] ml-1">*</span></label>
                 <div className="relative">
-                  <CustomDatePicker
+                  <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#939084] pointer-events-none z-10" />
+                  <input
+                    required
+                    type="date"
                     name="dob"
                     value={formData.dob}
                     onChange={handleChange}
-                    placeholder="Select Date"
-                    maxDate={new Date().toISOString().split('T')[0]}
-                    className={`w-full h-14 bg-white border ${errors.dob ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-2xl text-[15px] font-bold text-[#201515] transition-all hover:border-[#ff4f00]`}
+                    max={maxDobDate}
+                    className={`w-full h-14 pl-12 pr-4 bg-white border ${errors.dob ? 'border-red-500' : 'border-[#c5c0b1]'} rounded-2xl text-[15px] font-bold text-[#201515] focus:outline-none focus:border-[#00a76b] transition-all`}
                   />
                 </div>
                 {errors.dob && <p className="text-red-500 text-sm mt-1">{errors.dob}</p>}

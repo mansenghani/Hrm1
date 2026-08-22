@@ -1087,32 +1087,67 @@ const Attendance = () => {
   const exportCSV = () => {
     const headers = ['Date', 'Employee', 'Status', 'Clock In', 'Clock Out', 'Working Hours'];
 
-    const formatTimeHelper = (timeStr, dateVal) => {
-      if (timeStr) return timeStr;
-      if (dateVal) {
-        try { return new Date(dateVal).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); }
-        catch (e) { return '--'; }
-      }
-      return '--';
+    const formatCsvCell = (val) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
     };
 
-    const rows = filteredRecords.map(r => [
-      r.date || '',
-      r.user?.name || 'N/A',
-      r.status || 'N/A',
-      formatTimeHelper(r.clockInTime, r.checkInTime),
-      formatTimeHelper(r.clockOutTime, r.checkOutTime),
-      r.totalHours ? `${r.totalHours} hrs` : '--'
-    ]);
+    const formatDateForCsv = (rawDate) => {
+      if (!rawDate) return 'N/A';
+      try {
+        const cleanStr = typeof rawDate === 'string' ? rawDate.split('T')[0] : rawDate;
+        const parts = String(cleanStr).split('-');
+        if (parts.length === 3) {
+          const year = parts[0];
+          const monthIdx = parseInt(parts[1], 10) - 1;
+          const day = parts[2];
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          if (monthIdx >= 0 && monthIdx < 12) {
+            return `${day} ${monthNames[monthIdx]} ${year}`;
+          }
+        }
+        const d = new Date(rawDate);
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+      } catch (e) {}
+      return String(rawDate);
+    };
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const rows = filteredRecords.map(r => {
+      const formattedDateText = formatDateForCsv(r.date);
+      const employeeName = r.user?.name || r.userName || 'N/A';
+      const status = r.status || 'N/A';
+
+      const cInRaw = r.clockIn || r.clock_in || (r.checkInTime ? new Date(r.checkInTime).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false }) : null);
+      const cOutRaw = r.clockOut || r.clock_out || (r.checkOutTime ? new Date(r.checkOutTime).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false }) : null);
+
+      const clockIn = (cInRaw && cInRaw !== '--') ? formatTime12h(cInRaw) : 'N/A';
+      const clockOut = (cOutRaw && cOutRaw !== '--') ? formatTime12h(cOutRaw) : 'N/A';
+      const workingHoursRaw = getWorkingHours(cInRaw, cOutRaw, r.totalHours, r);
+      const workingHours = (!workingHoursRaw || workingHoursRaw === '--') ? 'N/A' : workingHoursRaw;
+
+      return [
+        formatCsvCell(`="${formattedDateText}"`),
+        formatCsvCell(employeeName),
+        formatCsvCell(status),
+        formatCsvCell(clockIn),
+        formatCsvCell(clockOut),
+        formatCsvCell(workingHours)
+      ];
+    });
+
+    const csvString = '\uFEFF' + [headers.map(formatCsvCell).join(','), ...rows.map(row => row.join(','))].join('\r\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `attendance_${viewMode}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `attendance_${viewMode}_${getLocalYYYYMMDD(new Date())}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Override / Reopen Accidental Checkout
