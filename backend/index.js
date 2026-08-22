@@ -244,7 +244,7 @@ frontends.forEach(({ prefix, dir }) => {
     app.use(prefix, express.static(dir));
 
     // Handle client-side routing fallback (SPA) for subpath
-    app.get([prefix, `${prefix}/*`], (req, res) => {
+    app.get([prefix, `${prefix}/*splat`], (req, res) => {
       res.sendFile(indexPath);
     });
   }
