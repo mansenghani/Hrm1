@@ -7,12 +7,7 @@ import ErrorBoundary from '@shared/components/ErrorBoundary';
 import './index.css';
 
 // 🛰️ DYNAMIC AXIOS BASE URL CONFIGURATION
-const isLocal = window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1' ||
-  window.location.hostname.startsWith('192.168.') ||
-  window.location.hostname.startsWith('10.') ||
-  window.location.hostname.startsWith('172.');
-axios.defaults.baseURL = isLocal ? '' : 'https://hrm1.onrender.com';
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
 
 // Configure global axios interceptor to automatically attach authorization header
 axios.interceptors.request.use((config) => {
@@ -29,9 +24,7 @@ axios.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       sessionStorage.clear();
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
+      window.location.href = '/';
     }
     return Promise.reject(error);
   }

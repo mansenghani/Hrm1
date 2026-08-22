@@ -18,6 +18,7 @@ import {
 
 import QuickActionsRow from '../../components/QuickActionsRow';
 import ActionConfirmModal from '../../components/ActionConfirmModal';
+import { getImageUrl } from '@shared/services/api';
 
 const COLORS = ['#00a76b', '#3b82f6', '#f43f5e', '#f59e0b', '#8b5cf6', '#64748b'];
 
@@ -196,7 +197,7 @@ const AdminDashboard = () => {
       ]);
       setProfile(profRes.data?.data || profRes.data);
 
-      const dData = dashRes.data.data;
+      const dData = dashRes.data?.data || dashRes.data || {};
       setDashboardData(dData);
 
       const serverWished = (dData?.upcomingCelebrations || [])
@@ -309,7 +310,17 @@ const AdminDashboard = () => {
     );
   }
 
-  const { stats, charts, leaveOverview, payrollSummary, recruitmentOverview, recentJoiners, pendingApprovals, announcements, upcomingCelebrations = [] } = dashboardData;
+  const {
+    stats = {},
+    charts = {},
+    leaveOverview = {},
+    payrollSummary = {},
+    recruitmentOverview = {},
+    recentJoiners = [],
+    pendingApprovals = [],
+    announcements = [],
+    upcomingCelebrations = []
+  } = dashboardData || {};
   const getGreeting = () => {
     const h = new Date().getHours();
     if (h < 12) return 'Good Morning';
@@ -434,7 +445,7 @@ const AdminDashboard = () => {
           </div>
           <div className="h-48 w-full">
             {(() => {
-              const isMock = !charts.attendanceOverview || charts.attendanceOverview.length === 0 || charts.attendanceOverview.every(d => d.present === 0 && d.absent === 0 && d.late === 0);
+              const isMock = !charts?.attendanceOverview || (charts.attendanceOverview || []).length === 0 || (charts.attendanceOverview || []).every(d => d.present === 0 && d.absent === 0 && d.late === 0);
               const displayData = isMock
                 ? [
                   { name: 'Mon', present: 85, absent: 5, late: 10 },
@@ -445,7 +456,7 @@ const AdminDashboard = () => {
                   { name: 'Sat', present: 40, absent: 50, late: 10 },
                   { name: 'Sun', present: 0, absent: 100, late: 0 }
                 ]
-                : charts.attendanceOverview;
+                : (charts.attendanceOverview || []);
 
               return (
                 <ResponsiveContainer width="100%" height="100%">
@@ -468,7 +479,7 @@ const AdminDashboard = () => {
         <Card className="p-4 sm:p-5 hover:!border-indigo-500 dark:hover:!border-indigo-400 transition-colors duration-300">
           <h3 className="font-bold text-gray-900 dark:text-white mb-3">Department Distribution</h3>
           <div className="flex flex-col items-center justify-center">
-            {charts.departmentDistribution.length > 0 ? (
+            {(charts?.departmentDistribution || []).length > 0 ? (
               <>
                 <div className="h-56 w-full relative">
                   <ResponsiveContainer width="100%" height="100%">
@@ -484,7 +495,7 @@ const AdminDashboard = () => {
                         onMouseEnter={(_, index) => setHoveredDeptIndex(index)}
                         onMouseLeave={() => setHoveredDeptIndex(null)}
                       >
-                        {charts.departmentDistribution.map((entry, index) => (
+                        {(charts.departmentDistribution || []).map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={COLORS[index % COLORS.length]}
@@ -497,19 +508,19 @@ const AdminDashboard = () => {
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none transition-all duration-200">
                     <span className="text-2xl font-black text-gray-900 dark:text-white transition-all duration-150">
-                      {hoveredDeptIndex !== null && charts.departmentDistribution[hoveredDeptIndex]
+                      {hoveredDeptIndex !== null && charts.departmentDistribution?.[hoveredDeptIndex]
                         ? charts.departmentDistribution[hoveredDeptIndex].value
-                        : stats.totalEmployees}
+                        : (stats?.totalEmployees || 0)}
                     </span>
                     <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center max-w-[100px] truncate transition-all duration-150">
-                      {hoveredDeptIndex !== null && charts.departmentDistribution[hoveredDeptIndex]
+                      {hoveredDeptIndex !== null && charts.departmentDistribution?.[hoveredDeptIndex]
                         ? charts.departmentDistribution[hoveredDeptIndex].name
                         : 'Total'}
                     </span>
                   </div>
                 </div>
                 <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1 w-full">
-                  {charts.departmentDistribution.map((entry, index) => {
+                  {(charts.departmentDistribution || []).map((entry, index) => {
                     const isHovered = hoveredDeptIndex === index;
                     return (
                       <div
@@ -539,7 +550,7 @@ const AdminDashboard = () => {
         <Card className="p-4 sm:p-5 hover:!border-blue-500 dark:hover:!border-blue-400 transition-colors duration-300">
           <h3 className="font-bold text-gray-900 dark:text-white mb-3">Gender Distribution</h3>
           <div className="flex flex-col items-center justify-center">
-            {charts.genderDistribution.length > 0 ? (
+            {(charts?.genderDistribution || []).length > 0 ? (
               <>
                 <div className="h-56 w-full relative">
                   <ResponsiveContainer width="100%" height="100%">
@@ -555,7 +566,7 @@ const AdminDashboard = () => {
                         onMouseEnter={(_, index) => setHoveredGenderIndex(index)}
                         onMouseLeave={() => setHoveredGenderIndex(null)}
                       >
-                        {charts.genderDistribution.map((entry, index) => (
+                        {(charts.genderDistribution || []).map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={['#3b82f6', '#f43f5e', '#f59e0b'][index % 3]}
@@ -568,19 +579,19 @@ const AdminDashboard = () => {
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none transition-all duration-200">
                     <span className="text-2xl font-black text-gray-900 dark:text-white transition-all duration-150">
-                      {hoveredGenderIndex !== null && charts.genderDistribution[hoveredGenderIndex]
+                      {hoveredGenderIndex !== null && charts.genderDistribution?.[hoveredGenderIndex]
                         ? charts.genderDistribution[hoveredGenderIndex].value
-                        : ((charts.genderDistribution || []).reduce((acc, curr) => acc + (Number(curr.value) || 0), 0) || stats.totalEmployees || 0)}
+                        : ((charts?.genderDistribution || []).reduce((acc, curr) => acc + (Number(curr.value) || 0), 0) || stats?.totalEmployees || 0)}
                     </span>
                     <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center max-w-[100px] truncate transition-all duration-150">
-                      {hoveredGenderIndex !== null && charts.genderDistribution[hoveredGenderIndex]
+                      {hoveredGenderIndex !== null && charts.genderDistribution?.[hoveredGenderIndex]
                         ? charts.genderDistribution[hoveredGenderIndex].name
                         : 'Total'}
                     </span>
                   </div>
                 </div>
                 <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1 w-full">
-                  {charts.genderDistribution.map((entry, index) => {
+                  {(charts.genderDistribution || []).map((entry, index) => {
                     const isHovered = hoveredGenderIndex === index;
                     return (
                       <div
@@ -924,7 +935,7 @@ const AdminDashboard = () => {
             {recentJoiners.length > 0 ? recentJoiners.map((rj) => (
               <div key={rj._id} className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
-                  <img src={rj.profileImage ? `http://localhost:5000${rj.profileImage}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(rj.name)}&background=random`} alt={rj.name} className="w-10 h-10 rounded-full border-2 border-white dark:border-[#2b2722] shadow-sm object-cover" />
+                  <img src={rj.profileImage ? getImageUrl(rj.profileImage) : `https://ui-avatars.com/api/?name=${encodeURIComponent(rj.name)}&background=random`} alt={rj.name} className="w-10 h-10 rounded-full border-2 border-white dark:border-[#2b2722] shadow-sm object-cover" />
                   <div>
                     <p className="font-bold text-sm text-gray-900 dark:text-white">{rj.name}</p>
                     <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{rj.role}</p>
@@ -962,7 +973,7 @@ const AdminDashboard = () => {
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <div className="relative shrink-0">
                       <img
-                        src={celeb.profileImage ? `http://localhost:5000${celeb.profileImage}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(celeb.name)}&background=random`}
+                        src={celeb.profileImage ? getImageUrl(celeb.profileImage) : `https://ui-avatars.com/api/?name=${encodeURIComponent(celeb.name)}&background=random`}
                         alt={celeb.name}
                         className="w-9 h-9 rounded-full border-2 border-white shadow-xs object-cover"
                       />
@@ -1295,7 +1306,7 @@ const AdminDashboard = () => {
                 {/* Employee Preview Badge */}
                 <div className="p-3.5 bg-gray-50 dark:bg-[#1f1b17] rounded-2xl border border-gray-100 dark:border-[#28251e] flex items-center gap-3">
                   <img
-                    src={selectedWishCeleb.profileImage ? `http://localhost:5000${selectedWishCeleb.profileImage}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedWishCeleb.name)}&background=random`}
+                    src={selectedWishCeleb.profileImage ? getImageUrl(selectedWishCeleb.profileImage) : `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedWishCeleb.name)}&background=random`}
                     alt={selectedWishCeleb.name}
                     className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-[#28251e] shadow-xs"
                   />

@@ -1,13 +1,7 @@
 import axios from 'axios';
 
 // 🛰️ DYNAMIC ENDPOINT CONFIGURATION
-const isLocalHost = window.location.hostname === 'localhost' || 
-                      window.location.hostname === '127.0.0.1' || 
-                      window.location.hostname.startsWith('192.168.') || 
-                      window.location.hostname.startsWith('10.') ||
-                      window.location.hostname.startsWith('172.');
-
-export const API_BASE_URL = isLocalHost ? window.location.origin : 'https://hrm1.onrender.com';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' ? window.location.origin : '');
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
@@ -31,7 +25,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       sessionStorage.clear();
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     return Promise.reject(error);
   }
@@ -45,13 +39,7 @@ export const getImageUrl = (path) => {
   const normalized = path.replace(/\\/g, '/');
   const cleanPath = normalized.startsWith('/') ? normalized : `/${normalized}`;
   
-  const isLocalHost = window.location.hostname === 'localhost' || 
-                        window.location.hostname === '127.0.0.1' || 
-                        window.location.hostname.startsWith('192.168.') || 
-                        window.location.hostname.startsWith('10.') ||
-                        window.location.hostname.startsWith('172.');
-  
-  const base = isLocalHost ? window.location.origin : 'https://hrm1.onrender.com';
+  const base = API_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
   return `${base}${cleanPath}`;
 };
 

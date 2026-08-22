@@ -18,6 +18,7 @@ import {
 
 import QuickActionsRow from '../../components/QuickActionsRow';
 import ActionConfirmModal from '../../components/ActionConfirmModal';
+import { getImageUrl } from '@shared/services/api';
 
 const COLORS = ['#00a76b', '#3b82f6', '#f43f5e', '#f59e0b', '#8b5cf6', '#64748b'];
 
@@ -183,7 +184,7 @@ const HRDashboard = () => {
       ]);
       setProfile(profRes.data?.data || profRes.data);
 
-      const dData = dashRes.data.data;
+      const dData = dashRes.data?.data || dashRes.data || {};
       setDashboardData(dData);
 
       const serverWished = (dData?.upcomingCelebrations || [])
@@ -288,15 +289,26 @@ const HRDashboard = () => {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[500px] text-red-500 bg-[#F8F9FB] dark:bg-transparent">
+      <div className="flex flex-col items-center justify-center min-h-[500px] text-red-500 bg-[#F8F9FB] dark:bg-[#110e0c]">
         <ShieldAlert size={48} className="mb-4" />
         <p className="font-semibold text-lg">{error}</p>
-        <button onClick={fetchData} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg">Retry</button>
+        <button onClick={fetchData} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg cursor-pointer">Retry</button>
       </div>
     );
   }
 
-  const { stats, charts, leaveOverview, payrollSummary, recruitmentOverview, recentJoiners, pendingApprovals, announcements, upcomingCelebrations = [] } = dashboardData;
+  const {
+    stats = {},
+    charts = {},
+    leaveOverview = {},
+    payrollSummary = {},
+    recruitmentOverview = {},
+    recentJoiners = [],
+    pendingApprovals = [],
+    announcements = [],
+    upcomingCelebrations = []
+  } = dashboardData || {};
+
   const getGreeting = () => {
     const h = new Date().getHours();
     if (h < 12) return 'Good Morning';
@@ -432,7 +444,7 @@ const HRDashboard = () => {
             />
           </div>
           <div className="h-48 w-full">
-            {charts.attendanceOverview.length > 0 ? (
+            {charts?.attendanceOverview && charts.attendanceOverview.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={charts.attendanceOverview} margin={{ top: 25, right: 20, left: 0, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#28251e" />
@@ -454,7 +466,7 @@ const HRDashboard = () => {
         <Card className="p-4 sm:p-5 hover:!border-rose-500 dark:hover:!border-rose-400 transition-colors duration-300">
           <h3 className="font-bold text-gray-900 dark:text-white mb-3">Role-wise Employees</h3>
           <div className="flex flex-col items-center justify-center">
-            {hrRoleDistribution.length > 0 ? (
+            {(hrRoleDistribution || []).length > 0 ? (
               <>
                 <div className="h-56 w-full relative">
                   <ResponsiveContainer width="100%" height="100%">
@@ -470,7 +482,7 @@ const HRDashboard = () => {
                         onMouseEnter={(_, index) => setHoveredRoleIndex(index)}
                         onMouseLeave={() => setHoveredRoleIndex(null)}
                       >
-                        {hrRoleDistribution.map((entry, index) => (
+                        {(hrRoleDistribution || []).map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={COLORS[index % COLORS.length]}
@@ -495,7 +507,7 @@ const HRDashboard = () => {
                   </div>
                 </div>
                 <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1 w-full">
-                  {hrRoleDistribution.map((entry, index) => {
+                  {(hrRoleDistribution || []).map((entry, index) => {
                     const isHovered = hoveredRoleIndex === index;
                     return (
                       <div
@@ -525,7 +537,7 @@ const HRDashboard = () => {
         <Card className="p-4 sm:p-5 hover:!border-blue-500 dark:hover:!border-blue-400 transition-colors duration-300">
           <h3 className="font-bold text-gray-900 dark:text-white mb-3">Gender Distribution</h3>
           <div className="flex flex-col items-center justify-center">
-            {charts.genderDistribution.length > 0 ? (
+            {(charts?.genderDistribution || []).length > 0 ? (
               <>
                 <div className="h-56 w-full relative">
                   <ResponsiveContainer width="100%" height="100%">
@@ -541,7 +553,7 @@ const HRDashboard = () => {
                         onMouseEnter={(_, index) => setHoveredGenderIndex(index)}
                         onMouseLeave={() => setHoveredGenderIndex(null)}
                       >
-                        {charts.genderDistribution.map((entry, index) => (
+                        {(charts.genderDistribution || []).map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={['#3b82f6', '#f43f5e', '#f59e0b'][index % 3]}
@@ -554,19 +566,19 @@ const HRDashboard = () => {
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none transition-all duration-200">
                     <span className="text-2xl font-black text-gray-900 dark:text-white transition-all duration-150">
-                      {hoveredGenderIndex !== null && charts.genderDistribution[hoveredGenderIndex]
+                      {hoveredGenderIndex !== null && charts.genderDistribution?.[hoveredGenderIndex]
                         ? charts.genderDistribution[hoveredGenderIndex].value
-                        : ((charts.genderDistribution || []).reduce((acc, curr) => acc + (Number(curr.value) || 0), 0) || stats.totalEmployees || 0)}
+                        : ((charts?.genderDistribution || []).reduce((acc, curr) => acc + (Number(curr.value) || 0), 0) || stats?.totalEmployees || 0)}
                     </span>
                     <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center max-w-[100px] truncate transition-all duration-150">
-                      {hoveredGenderIndex !== null && charts.genderDistribution[hoveredGenderIndex]
+                      {hoveredGenderIndex !== null && charts.genderDistribution?.[hoveredGenderIndex]
                         ? charts.genderDistribution[hoveredGenderIndex].name
                         : 'Total'}
                     </span>
                   </div>
                 </div>
                 <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1 w-full">
-                  {charts.genderDistribution.map((entry, index) => {
+                  {(charts.genderDistribution || []).map((entry, index) => {
                     const isHovered = hoveredGenderIndex === index;
                     return (
                       <div
@@ -906,7 +918,7 @@ const HRDashboard = () => {
             {recentJoiners.length > 0 ? recentJoiners.map((rj) => (
               <div key={rj._id} className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
-                  <img src={rj.profileImage ? `http://localhost:5000${rj.profileImage}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(rj.name)}&background=random`} alt={rj.name} className="w-10 h-10 rounded-full border-2 border-white dark:border-[#2b2722] shadow-sm object-cover" />
+                  <img src={rj.profileImage ? getImageUrl(rj.profileImage) : `https://ui-avatars.com/api/?name=${encodeURIComponent(rj.name)}&background=random`} alt={rj.name} className="w-10 h-10 rounded-full border-2 border-white dark:border-[#2b2722] shadow-sm object-cover" />
                   <div>
                     <p className="font-bold text-sm text-gray-900 dark:text-white">{rj.name}</p>
                     <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{rj.role}</p>
@@ -944,7 +956,7 @@ const HRDashboard = () => {
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <div className="relative shrink-0">
                       <img
-                        src={celeb.profileImage ? `http://localhost:5000${celeb.profileImage}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(celeb.name)}&background=random`}
+                        src={celeb.profileImage ? getImageUrl(celeb.profileImage) : `https://ui-avatars.com/api/?name=${encodeURIComponent(celeb.name)}&background=random`}
                         alt={celeb.name}
                         className="w-9 h-9 rounded-full border-2 border-white dark:border-[#2b2722] shadow-xs object-cover"
                       />
@@ -1276,7 +1288,7 @@ const HRDashboard = () => {
               {/* Employee Preview Badge */}
               <div className="p-3.5 bg-gray-50 dark:bg-[#1f1b17] rounded-2xl border border-gray-100 dark:border-[#28251e] flex items-center gap-3">
                 <img
-                  src={selectedWishCeleb.profileImage ? `http://localhost:5000${selectedWishCeleb.profileImage}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedWishCeleb.name)}&background=random`}
+                  src={selectedWishCeleb.profileImage ? getImageUrl(selectedWishCeleb.profileImage) : `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedWishCeleb.name)}&background=random`}
                   alt={selectedWishCeleb.name}
                   className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-[#28251e] shadow-xs"
                 />

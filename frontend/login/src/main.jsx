@@ -6,13 +6,8 @@ import App from './App';
 import ErrorBoundary from '@shared/components/ErrorBoundary';
 import './index.css';
 
-// Automatically route API requests to same origin when hosted together
-const isLocal = window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1' ||
-  window.location.hostname.startsWith('192.168.') ||
-  window.location.hostname.startsWith('10.') ||
-  window.location.hostname.startsWith('172.');
-axios.defaults.baseURL = '';
+// Automatically route API requests to same origin or VITE_API_URL
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
 
 // Attach auth token if available
 axios.interceptors.request.use((config) => {
