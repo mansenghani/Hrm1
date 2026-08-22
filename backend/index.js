@@ -24,6 +24,7 @@ const compOffRoutes = require('./routes/compOffRoutes');
 const roleRoutes = require('./routes/roleRoutes');
 const searchRoutes = require('./routes/searchRoutes');
 const path = require('path');
+const fs = require('fs');
 const initCronJobs = require('./cron/timeTrackerCron');
 
 const http = require('http');
@@ -102,7 +103,7 @@ io.on('connection', (socket) => {
         const TimeTrack = require('./models/TimeTrack');
         const Attendance = require('./models/Attendance');
         const now = new Date();
-        
+
         await TimeTrack.updateMany(
           { employeeId: userId, status: { $in: ['active', 'paused', 'idle'] } },
           { $set: { status: 'completed', isRunning: false, endTime: now, segmentStart: null } }
@@ -229,12 +230,25 @@ app.get('/health', (req, res) => res.json({ status: 'API is running' }));
 app.get('/api/health', (req, res) => res.json({ status: 'API is running' }));
 
 // 🌐 Serve Static Frontend Assets & Handle Routing Fallback (SPA)
-app.use(express.static(path.join(__dirname, '../frontend/admin/dist')));
+// Guarded: only serves the frontend build if it actually exists on this
+// deployment. Prevents ENOENT crashes/log-spam on backend-only deployments
+// (e.g. API-only Hostinger apps) where frontend/admin/dist was never built.
+const FRONTEND_DIST = path.join(__dirname, '../frontend/admin/dist');
+const FRONTEND_INDEX = path.join(FRONTEND_DIST, 'index.html');
+const FRONTEND_AVAILABLE = fs.existsSync(FRONTEND_INDEX);
+
+if (FRONTEND_AVAILABLE) {
+  app.use(express.static(FRONTEND_DIST));
+}
+
 app.use((req, res, next) => {
   if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
     return next();
   }
-  res.sendFile(path.join(__dirname, '../frontend/admin/dist/index.html'));
+  if (FRONTEND_AVAILABLE) {
+    return res.sendFile(FRONTEND_INDEX);
+  }
+  return res.status(404).json({ message: 'Not found' });
 });
 
 // 🔌 Database Connection & Server Start
