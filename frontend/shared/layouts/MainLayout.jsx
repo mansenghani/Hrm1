@@ -50,6 +50,18 @@ import { io } from 'socket.io-client';
 import { API_BASE_URL, getImageUrl } from '@shared/services/api';
 import RoleSearchBar from '@shared/components/RoleSearchBar';
 
+const renderIcon = (iconItem, props) => {
+  if (!iconItem) return <LayoutDashboard {...props} />;
+  if (React.isValidElement(iconItem)) {
+    return React.cloneElement(iconItem, {
+      size: props.size || 16,
+      className: `${iconItem.props.className || ''} ${props.className || ''}`.trim()
+    });
+  }
+  const IconComp = iconItem;
+  return <IconComp {...props} />;
+};
+
 const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -397,64 +409,60 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
     switch (currentRole) {
       case 'hr':
         return [
-          { name: 'Dashboard', path: '/hr/dashboard', icon: LayoutDashboard },
-          { name: 'Employees', path: '/hr/employees', icon: Users },
-          { name: 'Daily Tasks Board', path: '/hr/tasks', icon: CheckSquare },
-          { name: 'Events Management', path: '/hr/events', icon: Calendar },
-          // { name: 'Task Management', path: '/hr/task-management', icon: ClipboardList },
-          { name: 'Apply Leave', path: '/hr/leave', icon: ClipboardList },
-          { name: 'Attendance', path: '/hr/attendance', icon: Calendar },
-          { name: 'Team Chat', path: '/hr/chat', icon: MessageSquare },
-          { name: 'Payroll', path: '/hr/payroll', icon: Wallet },
-          { name: 'Recruitment', path: '/hr/recruitment', icon: UserPlus },
-          { name: 'Performance', path: '/hr/performance', icon: TrendingUp },
-          { name: 'Reports', path: '/hr/reports', icon: BarChart3 },
-          { name: 'Monitoring Logs', path: '/hr/screenshots', icon: Camera },
-          { name: 'Notifications', path: '/hr/notifications', icon: Bell },
-          { name: 'Settings', path: '/hr/settings', icon: Settings },
+          { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+          { name: 'Employees', path: '/employees', icon: Users },
+          { name: 'Daily Tasks Board', path: '/tasks', icon: CheckSquare },
+          { name: 'Events Management', path: '/events', icon: Calendar },
+          { name: 'Apply Leave', path: '/leave', icon: ClipboardList },
+          { name: 'Attendance', path: '/attendance', icon: Calendar },
+          { name: 'Team Chat', path: '/chat', icon: MessageSquare },
+          { name: 'Payroll', path: '/payroll', icon: Wallet },
+          { name: 'Recruitment', path: '/recruitment', icon: UserPlus },
+          { name: 'Performance', path: '/performance', icon: TrendingUp },
+          { name: 'Reports', path: '/reports', icon: BarChart3 },
+          { name: 'Monitoring Logs', path: '/screenshots', icon: Camera },
+          { name: 'Notifications', path: '/notifications', icon: Bell },
+          { name: 'Settings', path: '/settings', icon: Settings },
         ];
       case 'employee':
         return [
-          { name: 'Dashboard', path: '/employee/dashboard', icon: LayoutDashboard },
-          { name: 'Attendance', path: '/employee/attendance', icon: Calendar },
-          { name: 'Apply Leave', path: '/employee/leave', icon: ClipboardList },
-          { name: 'Team Chat', path: '/employee/chat', icon: MessageSquare },
-          { name: 'Create Task', path: '/employee/task-management/create', icon: PlusCircle },
-          { name: 'My Documents', path: '/employee/documents', icon: FileText },
-          { name: 'Notifications', path: '/employee/notifications', icon: Bell },
+          { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+          { name: 'Attendance', path: '/attendance', icon: Calendar },
+          { name: 'Apply Leave', path: '/leave', icon: ClipboardList },
+          { name: 'Team Chat', path: '/chat', icon: MessageSquare },
+          { name: 'Create Task', path: '/task-management/create', icon: PlusCircle },
+          { name: 'My Documents', path: '/documents', icon: FileText },
+          { name: 'Notifications', path: '/notifications', icon: Bell },
         ];
       case 'manager':
         return [
-          { name: 'Dashboard', path: '/manager/dashboard', icon: LayoutDashboard },
-          { name: 'Team / Employees', path: '/manager/employees', icon: Users },
-          { name: 'Daily Tasks Board', path: '/manager/tasks', icon: CheckSquare },
-          { name: 'Events Management', path: '/manager/events', icon: Calendar },
-          // { name: 'Task Management', path: '/manager/task-management', icon: ClipboardList },
-          // { name: 'Project Hub', path: '/manager/projects', icon: Briefcase },
-          { name: 'Team Chat', path: '/manager/chat', icon: MessageSquare },
-          { name: 'Team Attendance', path: '/manager/attendance', icon: Calendar },
-          { name: 'Monitoring Logs', path: '/manager/screenshots', icon: Camera },
-          { name: 'Notifications', path: '/manager/notifications', icon: Bell },
-          { name: 'Apply Leave', path: '/manager/leave', icon: FileText },
+          { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+          { name: 'Team / Employees', path: '/employees', icon: Users },
+          { name: 'Daily Tasks Board', path: '/tasks', icon: CheckSquare },
+          { name: 'Events Management', path: '/events', icon: Calendar },
+          { name: 'Team Chat', path: '/chat', icon: MessageSquare },
+          { name: 'Team Attendance', path: '/attendance', icon: Calendar },
+          { name: 'Monitoring Logs', path: '/screenshots', icon: Camera },
+          { name: 'Notifications', path: '/notifications', icon: Bell },
+          { name: 'Apply Leave', path: '/leave', icon: FileText },
         ];
       case 'admin':
       default:
         return [
-          { name: 'Dashboard', path: `/${currentRole}/dashboard`, icon: LayoutDashboard },
-          { name: 'Employees', path: `/${currentRole}/employees`, icon: Users },
-          { name: 'Daily Tasks Board', path: `/${currentRole}/tasks`, icon: CheckSquare },
-          { name: 'Events Management', path: `/${currentRole}/events`, icon: Calendar },
-          // { name: 'Task Management', path: `/${currentRole}/task-management`, icon: ClipboardList },
-          { name: 'Team Leave', path: `/${currentRole}/leave`, icon: ClipboardList },
-          { name: 'Attendance', path: `/${currentRole}/attendance`, icon: Calendar },
-          { name: 'Global Chat', path: `/${currentRole}/chat`, icon: MessageSquare },
-          { name: 'Payroll', path: `/${currentRole}/payroll`, icon: Wallet },
-          { name: 'Recruitment', path: `/${currentRole}/recruitment`, icon: UserPlus },
-          { name: 'Performance', path: `/${currentRole}/performance`, icon: TrendingUp },
-          { name: 'Reports', path: `/${currentRole}/reports`, icon: BarChart3 },
-          { name: 'Monitoring Logs', path: `/${currentRole}/screenshots`, icon: Camera },
-          { name: 'Notifications', path: `/${currentRole}/notifications`, icon: Bell },
-          { name: 'Settings', path: `/${currentRole}/settings`, icon: Settings },
+          { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+          { name: 'Employees', path: '/employees', icon: Users },
+          { name: 'Daily Tasks Board', path: '/tasks', icon: CheckSquare },
+          { name: 'Events Management', path: '/events', icon: Calendar },
+          { name: 'Team Leave', path: '/leave', icon: ClipboardList },
+          { name: 'Attendance', path: '/attendance', icon: Calendar },
+          { name: 'Global Chat', path: '/chat', icon: MessageSquare },
+          { name: 'Payroll', path: '/payroll', icon: Wallet },
+          { name: 'Recruitment', path: '/recruitment', icon: UserPlus },
+          { name: 'Performance', path: '/performance', icon: TrendingUp },
+          { name: 'Reports', path: '/reports', icon: BarChart3 },
+          { name: 'Monitoring Logs', path: '/screenshots', icon: Camera },
+          { name: 'Notifications', path: '/notifications', icon: Bell },
+          { name: 'Settings', path: '/settings', icon: Settings },
         ];
     }
   };
@@ -693,7 +701,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
       >
         {/* Brand Block / Logo (Fixed width matching expanded sidebar) */}
         <Link
-          to={`/${activeRole}/dashboard`}
+          to="/dashboard"
           className="px-4 flex items-center no-underline hover:opacity-90 transition-all duration-300 gap-3 shrink-0 h-full overflow-hidden"
           style={{ width: showExpandedSidebar ? '250px' : '72px' }}
         >
@@ -745,22 +753,22 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                 <div className="absolute top-[45px] left-4 w-56 bg-white dark:bg-[#0c1512] border border-[#eceae3] dark:border-[#1a2d29] rounded-[20px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden z-[110] p-2 flex flex-col">
                   {['admin', 'hr'].includes(activeRole) && (
                     <>
-                      <button onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/create-user`); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
+                      <button onClick={() => { setIsQuickActionOpen(false); navigate('/create-user'); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
                         Add Employee
                       </button>
-                      <button onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/leave`); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
+                      <button onClick={() => { setIsQuickActionOpen(false); navigate('/leave'); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
                         Apply Leave
                       </button>
-                      <button onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/notifications`); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
+                      <button onClick={() => { setIsQuickActionOpen(false); navigate('/notifications'); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
                         Create Announcement
                       </button>
-                      <button onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/payroll`); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
+                      <button onClick={() => { setIsQuickActionOpen(false); navigate('/payroll'); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
                         Generate Payroll
                       </button>
-                      <button onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/recruitment`); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
+                      <button onClick={() => { setIsQuickActionOpen(false); navigate('/recruitment'); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
                         Schedule Interview
                       </button>
-                      <button onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/task-management/create`); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
+                      <button onClick={() => { setIsQuickActionOpen(false); navigate('/task-management/create'); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
                         Assign Task
                       </button>
                     </>
@@ -768,13 +776,13 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
 
                   {activeRole === 'manager' && (
                     <>
-                      <button onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/task-management/create`); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
+                      <button onClick={() => { setIsQuickActionOpen(false); navigate('/task-management/create'); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
                         Assign / Reassign Task
                       </button>
-                      <button onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/leave`); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
+                      <button onClick={() => { setIsQuickActionOpen(false); navigate('/leave'); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
                         Approve / Reject Leave
                       </button>
-                      <button onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/create-user`); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
+                      <button onClick={() => { setIsQuickActionOpen(false); navigate('/create-user'); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
                         Add Team Member
                       </button>
                       <button onClick={() => { setIsQuickActionOpen(false); navigate(`/${activeRole}/events`); }} className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-[#162722] text-xs font-bold text-gray-700 dark:text-slate-300 rounded-xl transition-colors border-none bg-transparent cursor-pointer">
@@ -1066,7 +1074,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                       role="menuitem"
                       onClick={() => {
                         setIsProfileDropdownOpen(false);
-                        navigate(`/${activeRole}/profile`);
+                        navigate('/profile');
                       }}
                       className="w-full px-6 py-2.5 flex items-center gap-3.5 text-left text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#162722]/50 hover:text-slate-900 dark:hover:text-white transition-colors border-none bg-transparent cursor-pointer outline-none"
                     >
@@ -1077,7 +1085,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                       role="menuitem"
                       onClick={() => {
                         setIsProfileDropdownOpen(false);
-                        navigate(`/${activeRole}/settings`);
+                        navigate('/settings');
                       }}
                       className="w-full px-6 py-2.5 flex items-center gap-3.5 text-left text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#162722]/50 hover:text-slate-900 dark:hover:text-white transition-colors border-none bg-transparent cursor-pointer outline-none"
                     >
@@ -1173,14 +1181,10 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                       let isActive = false;
                       const isDashboard = item.name === 'Dashboard';
                       if (isDashboard) {
-                        isActive = location.pathname === item.path ||
-                          location.pathname === `/${activeRole}` ||
-                          location.pathname === `/${activeRole}/` ||
-                          location.pathname.startsWith(item.path + '/');
+                        isActive = location.pathname === '/' || location.pathname === '/dashboard' || location.pathname === '';
                       } else {
-                        isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+                        isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path + '/'));
                       }
-                      const Icon = item.icon;
                       return (
                         <Link
                           key={item.path}
@@ -1194,7 +1198,7 @@ const MainLayout = ({ children, navItems, userRole, userName, onLogout }) => {
                           title={!showExpandedSidebar ? item.name : ""}
                         >
                           <div className={`shrink-0 flex items-center justify-center transition-all ${showExpandedSidebar ? 'w-5' : 'w-8'}`}>
-                            <Icon size={16} className={isActive ? 'text-white' : 'text-slate-500 dark:text-[#829e92] group-hover:text-[#00a76b] transition-colors'} />
+                            {renderIcon(item.icon, { size: 16, className: isActive ? 'text-white' : 'text-slate-500 dark:text-[#829e92] group-hover:text-[#00a76b] transition-colors' })}
                           </div>
                           {showExpandedSidebar && <span className="truncate whitespace-nowrap overflow-hidden transition-opacity duration-200">{item.name}</span>}
                         </Link>

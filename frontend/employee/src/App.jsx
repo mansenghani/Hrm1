@@ -60,8 +60,8 @@ function App() {
       <ScrollToTop />
       <Routes>
         {/* Employee portal — all routes live inside EmployeeLayout */}
-        <Route path="/employee" element={<EmployeeLayout />}>
-          <Route index element={<Navigate to="/employee/dashboard" replace />} />
+        <Route path="/" element={<EmployeeLayout />}>
+          <Route index element={<Dashboard />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="time-tracker" element={<PlaceholderPage title="Time Tracker" />} />
           <Route path="chat" element={<Chat />} />
@@ -82,16 +82,11 @@ function App() {
           <Route path="reports" element={<PlaceholderPage title="Reports" />} />
         </Route>
 
-        {/* Legacy root routes (kept for backwards compatibility) */}
-        <Route path="/" element={<Navigate to="/employee/dashboard" replace />} />
-        <Route path="/attendance" element={<Navigate to="/employee/attendance" replace />} />
-        <Route path="/leave" element={<Navigate to="/employee/leave" replace />} />
-        <Route path="/timesheet" element={<Navigate to="/employee/time-tracker" replace />} />
-        <Route path="/tasks" element={<Navigate to="/employee/task-management" replace />} />
-        <Route path="/files" element={<Navigate to="/employee/documents" replace />} />
+        {/* Alias for /employee prefix if navigated from legacy links */}
+        <Route path="/employee/*" element={<Navigate to="/" replace />} />
 
         {/* Catch-all */}
-        <Route path="*" element={<Navigate to="/employee/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );

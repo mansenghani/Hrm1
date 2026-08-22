@@ -26,9 +26,9 @@ function App() {
   ];
 
   return (
-    <MainLayout 
-      navItems={navItems} 
-      userRole="HR / Manager" 
+    <MainLayout
+      navItems={navItems}
+      userRole="HR / Manager"
       userName={user?.profile?.firstName || 'HR Manager'}
       onLogout={logout}
     >

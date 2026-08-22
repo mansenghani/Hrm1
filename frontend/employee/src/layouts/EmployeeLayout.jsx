@@ -194,7 +194,7 @@ const EmployeeLayout = () => {
           const isRunning = !!(r.data?.isRunning && r.data?.status === 'active');
           setTimerActive(isRunning);
           setIsPaused(!isRunning);
-        }).catch(() => {});
+        }).catch(() => { });
     });
     return () => s.disconnect();
   }, [token]);
@@ -251,7 +251,7 @@ const EmployeeLayout = () => {
       .catch(() => {
         axios.post('/api/time/start', {}, { headers: { Authorization: `Bearer ${token}` } })
           .then(() => { setTimerActive(true); setIsPaused(false); })
-          .catch(() => {});
+          .catch(() => { });
       });
   };
 

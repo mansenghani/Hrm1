@@ -48,11 +48,11 @@ function App() {
   };
 
   const navItems = [
-    { label: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/' },
-    { label: 'Tasks', icon: <CheckSquare size={20} />, path: '/tasks' },
-    { label: 'Projects', icon: <Layers size={20} />, path: '/projects' },
-    { label: 'Leave Approvals', icon: <Calendar size={20} />, path: '/leaves' },
-    { label: 'Team Chat', icon: <MessageSquare size={20} />, path: '/chat' },
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
+    { label: 'Tasks', icon: CheckSquare, path: '/tasks' },
+    { label: 'Projects', icon: Layers, path: '/projects' },
+    { label: 'Leave Approvals', icon: Calendar, path: '/leaves' },
+    { label: 'Team Chat', icon: MessageSquare, path: '/chat' },
   ];
 
   return (
