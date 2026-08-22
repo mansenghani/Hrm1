@@ -92,32 +92,36 @@ const ProtectedRoute = ({ children, allowedRole }) => {
   const token = sessionStorage.getItem('token');
   const role = sessionStorage.getItem('role');
 
-  if (!token) return <Navigate to="/login" replace />;
+  if (!token) {
+    window.location.href = '/';
+    return null;
+  }
 
   // ROLE SPECIFIC CHECK (ADMIN OVERRIDE)
   if (role === 'admin') return children;
 
   if (allowedRole && role !== allowedRole) {
-    return <Navigate to={`/${role}/dashboard`} replace />;
+    const roleSubpaths = {
+      admin: '/admin',
+      hr: '/hr',
+      employee: '/employee',
+      manager: '/manager'
+    };
+    window.location.href = roleSubpaths[role] || `/${role}`;
+    return null;
   }
 
   return children;
 };
 
-// ROOT REDIRECT LOGIC: Redirect to appropriate dashboard if logged in, otherwise to login
+// ROOT REDIRECT LOGIC: Redirect to root login if not authenticated
 const RootRedirect = () => {
-  const navigate = useNavigate();
-
   React.useEffect(() => {
     const token = sessionStorage.getItem('token');
-    const role = sessionStorage.getItem('role');
-
-    if (token && role) {
-      navigate(`/${role}/dashboard`, { replace: true });
-    } else {
-      navigate('/login', { replace: true });
+    if (!token) {
+      window.location.href = '/';
     }
-  }, [navigate]);
+  }, []);
 
   return null;
 };

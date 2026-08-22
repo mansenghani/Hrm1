@@ -244,11 +244,22 @@ frontends.forEach(({ prefix, dir }) => {
     app.use(prefix, express.static(dir));
 
     // Handle client-side routing fallback (SPA) for subpath
-    app.get([prefix, `${prefix}/*splat`], (req, res) => {
+    app.get([prefix, `${prefix}/*splat`, `${prefix}/*`], (req, res) => {
       res.sendFile(indexPath);
     });
   }
 });
+
+// 🚪 Serve Root Unified Login Gateway (/)
+const LOGIN_DIST = path.join(__dirname, '../frontend/login/dist');
+const LOGIN_INDEX = path.join(LOGIN_DIST, 'index.html');
+
+if (fs.existsSync(LOGIN_INDEX)) {
+  app.use(express.static(LOGIN_DIST));
+  app.get(['/', '/login', '/forgot-password', '/reset-password'], (req, res) => {
+    res.sendFile(LOGIN_INDEX);
+  });
+}
 
 // 404 JSON fallback for unhandled requests (non-API, non-upload, non-frontend)
 app.use((req, res) => {

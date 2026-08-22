@@ -1,0 +1,17 @@
+@import '../../shared/styles/carbon.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #00a76b;
+  --bg: #f7f9fb;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  @apply bg-[#eceae3] text-[#201515] antialiased;
+}

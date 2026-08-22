@@ -7,6 +7,15 @@ import Dashboard from './pages/Dashboard';
 
 function App() {
   const { user, logout } = useAuthStore();
+  const token = sessionStorage.getItem('token');
+
+  React.useEffect(() => {
+    if (!token) {
+      window.location.href = '/';
+    }
+  }, [token]);
+
+  if (!token) return null;
 
   const navItems = [
     { label: 'Overview', icon: <LayoutDashboard size={22} />, path: '/' },

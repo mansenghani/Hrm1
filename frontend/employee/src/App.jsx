@@ -45,12 +45,14 @@ const PlaceholderPage = ({ title }) => (
 function App() {
   const { isAuthenticated } = useAuthStore();
 
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      window.location.href = '/';
+    }
+  }, [isAuthenticated]);
+
   if (!isAuthenticated) {
-    return (
-      <Routes>
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    );
+    return null;
   }
 
   return (

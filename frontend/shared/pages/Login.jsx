@@ -12,30 +12,40 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
 
+  const redirectToRole = (userRole, authToken) => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const isDesktop = queryParams.get('desktop') === 'true';
+
+    if (isDesktop) {
+      setShowThankYou(true);
+      window.location.href = `fluidhr-tracker://auth?token=${encodeURIComponent(authToken)}`;
+      return;
+    }
+
+    const roleSubpaths = {
+      admin: '/admin',
+      hr: '/hr',
+      employee: '/employee',
+      manager: '/manager'
+    };
+    const targetPath = roleSubpaths[userRole] || `/${userRole}`;
+    window.location.href = targetPath;
+  };
+
   // REDIRECT IF ALREADY LOGGED IN
   useEffect(() => {
     const token = sessionStorage.getItem('token');
     const role = sessionStorage.getItem('role');
-    const queryParams = new URLSearchParams(window.location.search);
-    const isDesktop = queryParams.get('desktop') === 'true';
 
     if (token && role) {
-      if (isDesktop) {
-        setShowThankYou(true);
-        window.location.href = `fluidhr-tracker://auth?token=${encodeURIComponent(token)}`;
-      } else {
-        navigate(`/${role}/dashboard`);
-      }
+      redirectToRole(role, token);
     }
-  }, [navigate]);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
-    const queryParams = new URLSearchParams(window.location.search);
-    const isDesktop = queryParams.get('desktop') === 'true';
 
     try {
       const response = await axios.post('/api/auth/login', {
@@ -54,12 +64,7 @@ const Login = () => {
       sessionStorage.setItem('user', JSON.stringify(user));
       sessionStorage.setItem('role', role);
 
-      if (isDesktop) {
-        setShowThankYou(true);
-        window.location.href = `fluidhr-tracker://auth?token=${encodeURIComponent(token)}`;
-      } else {
-        navigate(`/${role}/dashboard`);
-      }
+      redirectToRole(role, token);
     } catch (err) {
       if (!err.response) {
         setError('Network error: Unable to connect to the server. Please check if the backend is running.');

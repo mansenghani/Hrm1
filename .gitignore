@@ -28,13 +28,15 @@ pnpm-debug.log*
 
 # Node
 node_modules/
-!backend/node_modules/
+backend/node_modules/
+frontend/login/node_modules/
 frontend/admin/node_modules/
 frontend/hr/node_modules/
 frontend/manager/node_modules/
 frontend/employee/node_modules/
 
 # Vite
+frontend/login/dist/
 frontend/admin/dist/
 frontend/hr/dist/
 frontend/manager/dist/
